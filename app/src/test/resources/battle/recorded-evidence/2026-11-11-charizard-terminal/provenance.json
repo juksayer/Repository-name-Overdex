@@ -1,0 +1,62 @@
+{
+  "sourceMatchId": "87612e9f-35ed-4d22-b6cb-062fb264e223",
+  "origin": "Lossless PNG decoding of supplied original video; no pixel resizing or JPEG recompression. Originals retained outside repository.",
+  "timeBasis": "Source video PTS; visible GO first appears at24.863511s. Archive GO is a separate source clock; these offsets are approximate alignment, not replacements for archived timestamps.",
+  "purpose": "Guard honest distinctions among ordinary lowHP, ambiguous red/damage background, tiny orange sliver, and verified outlinedEMPTY. These crops do not invent any missing historical attack.",
+  "frames": [
+    {
+      "file": "red-over-art.png",
+      "sourcePtsSeconds": 70.708967,
+      "sinceVisibleGoSeconds": 45.845456,
+      "originalDimensions": [
+        816,
+        1808
+      ],
+      "cropBounds": {
+        "left": 380,
+        "top": 430,
+        "right": 680,
+        "bottom": 650
+      },
+      "sourceFrameSha256": "da7dd9fc5b20da5ad54a6b5da180fcee4640dac7d819c503654a4ca116217307",
+      "cropSha256": "fa2a456984565cc6e933f62979d1efd2f2fa783695f005a9d9dff3389dcd514c",
+      "byteCount": 59536
+    },
+    {
+      "file": "last-orange-sliver.png",
+      "sourcePtsSeconds": 72.565156,
+      "sinceVisibleGoSeconds": 47.701645,
+      "originalDimensions": [
+        816,
+        1808
+      ],
+      "cropBounds": {
+        "left": 380,
+        "top": 430,
+        "right": 680,
+        "bottom": 650
+      },
+      "sourceFrameSha256": "c2b437d4ef68418032c2e1b301168814f9a60c51995a2ff9ec23a08e16deda06",
+      "cropSha256": "856cf2db9917692b16a7e893d98ae250e57846d4f66503d119eed54ce02c79a4",
+      "byteCount": 66968
+    },
+    {
+      "file": "first-clear-empty.png",
+      "sourcePtsSeconds": 72.598656,
+      "sinceVisibleGoSeconds": 47.735145,
+      "originalDimensions": [
+        816,
+        1808
+      ],
+      "cropBounds": {
+        "left": 380,
+        "top": 430,
+        "right": 680,
+        "bottom": 650
+      },
+      "sourceFrameSha256": "65ec8f65feae93a9cb803171a732dd0fe98aacb2bdf200972b3d6eb84fd64387",
+      "cropSha256": "dbe954c1ae3bb315f5015a6db0a52e50981a8da704cabdd2efd1f6b507498926",
+      "byteCount": 66706
+    }
+  ]
+}

@@ -1,0 +1,1173 @@
+[
+{
+    "articleId": "33a8ad95-dd33-447f-896e-711a37e67193",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445610739,
+    "recordedAt": 1794445610761,
+    "sourceId": "CURRENT_TEAM_CONFIGURATION",
+    "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 1,
+        "speciesName": "Turtonator",
+        "speciesId": 776,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+            "Brutal Swing",
+            "Dragon Pulse"
+        ],
+        "ownedPokemon": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 1,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10799313109566
+},
+{
+    "articleId": "25f0448b-d81a-42fe-b852-623f2ddbb3ad",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445610739,
+    "recordedAt": 1794445610776,
+    "sourceId": "CURRENT_TEAM_CONFIGURATION",
+    "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 2,
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+            "Rock Tomb",
+            "Earth Power"
+        ],
+        "ownedPokemon": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 2,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10799313109566
+},
+{
+    "articleId": "3e5ad4c4-650e-48cc-8639-d4ab936840a9",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445610739,
+    "recordedAt": 1794445610779,
+    "sourceId": "CURRENT_TEAM_CONFIGURATION",
+    "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 3,
+        "speciesName": "Gourgeist (Average)",
+        "speciesId": 711,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+            "Seed Bomb",
+            "Shadow Ball"
+        ],
+        "ownedPokemon": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 3,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10799313109566
+},
+{
+    "articleId": "e7ed9314-bfa2-4da1-a840-f98d1536d0a4",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445637147,
+    "recordedAt": 1794445637543,
+    "sourceId": "COUNTDOWN_CROP_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/dcdf11ba528167e5bb2c46d5487f5ace8cdc66d2dc59cfa2c586de641c227e51.png",
+        "sha256": "dcdf11ba528167e5bb2c46d5487f5ace8cdc66d2dc59cfa2c586de641c227e51",
+        "byteCount": 100832,
+        "mediaType": "image/png",
+        "cropName": "CountdownGlyphCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 113,
+        "cropTop": 600,
+        "cropRight": 570,
+        "cropBottom": 920,
+        "overlayBounds": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 659,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10825626046183
+},
+{
+    "articleId": "83f93fea-b26a-4b58-8f7f-3f81f098e0a6",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445637147,
+    "recordedAt": 1794445637816,
+    "sourceId": "COUNTDOWN_GLYPH_WITNESS",
+    "payload": {
+        "kind": "countdown_glyph_witnessed",
+        "glyph": "GO",
+        "similarity": 0.7994165,
+        "frameIndex": 3,
+        "cropName": "CountdownGlyphCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 113,
+        "cropTop": 600,
+        "cropRight": 570,
+        "cropBottom": 920,
+        "basis": "COUNTDOWN_GLYPH_NEUTRAL_BRIGHT_GEOMETRY"
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 670,
+    "evidenceReferences": [
+        "e7ed9314-bfa2-4da1-a840-f98d1536d0a4"
+    ],
+    "monotonicTimeNanos": 10825626046183
+},
+{
+    "articleId": "52f10bab-6296-4681-990f-0c5e789920fe",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445637147,
+    "recordedAt": 1794445637818,
+    "sourceId": "BATTLE_INTERPRETER",
+    "payload": {
+        "kind": "match_started"
+    },
+    "predecessorIds": [
+        "83f93fea-b26a-4b58-8f7f-3f81f098e0a6"
+    ],
+    "confidence": null,
+    "sequenceNumber": null,
+    "evidenceReferences": null,
+    "monotonicTimeNanos": 10825626046183
+},
+{
+    "articleId": "1048f8af-99f6-4d6b-962b-b2678058c581",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445752240,
+    "recordedAt": 1794445752377,
+    "sourceId": "ANNOUNCEMENT_CROP_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/bf49831ec8fc4eef0b407830f2a9ef80ed5d00a6c9b00a4fb64d994cbdd70677.png",
+        "sha256": "bf49831ec8fc4eef0b407830f2a9ef80ed5d00a6c9b00a4fb64d994cbdd70677",
+        "byteCount": 27866,
+        "mediaType": "image/png",
+        "cropName": "AnnouncementCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 50,
+        "cropTop": 326,
+        "cropRight": 622,
+        "cropBottom": 375,
+        "overlayBounds": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 3808,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10940808600959
+},
+{
+    "articleId": "901b0da5-8527-49e5-a722-714932c116f0",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445752240,
+    "recordedAt": 1794445756356,
+    "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+    "payload": {
+        "kind": "raw_text",
+        "value": "Go, Camerupt!",
+        "ocr": {
+            "treatment": "RAW",
+            "rawText": "Go, Camerupt!",
+            "acceptedText": "Go, Camerupt!",
+            "words": [
+                {
+                    "text": "Go,",
+                    "line": 0,
+                    "bounds": {
+                        "left": 179.0,
+                        "top": 5.0,
+                        "right": 227.0,
+                        "bottom": 34.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.08836207,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "Camerupt!",
+                    "line": 0,
+                    "bounds": {
+                        "left": 238.0,
+                        "top": 6.0,
+                        "right": 390.0,
+                        "bottom": 37.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.10292869,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                }
+            ],
+            "sourceFrameWidth": 672,
+            "expectedMinimumHeightAt672": 20.16,
+            "profileSampleCount": 0
+        }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 3925,
+    "evidenceReferences": [
+        "1048f8af-99f6-4d6b-962b-b2678058c581"
+    ],
+    "monotonicTimeNanos": 10940808600959
+},
+{
+    "articleId": "ed91c71f-d064-46fe-b79a-eea83bcccf7d",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445752240,
+    "recordedAt": 1794445756414,
+    "sourceId": "ANNOUNCEMENT_WITNESS",
+    "payload": {
+        "kind": "raw_text",
+        "value": "Go, Camerupt!",
+        "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 3927,
+    "evidenceReferences": [
+        "1048f8af-99f6-4d6b-962b-b2678058c581",
+        "901b0da5-8527-49e5-a722-714932c116f0"
+    ],
+    "monotonicTimeNanos": 10940808600959
+},
+{
+    "articleId": "de74c04a-a00e-4c76-990e-16351748ef13",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445752240,
+    "recordedAt": 1794445756657,
+    "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+    "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "ocrText": "Go, Camerupt!",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+    },
+    "predecessorIds": [],
+    "confidence": 0.98,
+    "sequenceNumber": 3938,
+    "evidenceReferences": [
+        "ed91c71f-d064-46fe-b79a-eea83bcccf7d",
+        "33a8ad95-dd33-447f-896e-711a37e67193",
+        "25f0448b-d81a-42fe-b852-623f2ddbb3ad",
+        "3e5ad4c4-650e-48cc-8639-d4ab936840a9"
+    ],
+    "monotonicTimeNanos": 10940808600959
+},
+{
+    "articleId": "87d0b788-1d80-47bf-b7fe-fb4b734191b7",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445752240,
+    "recordedAt": 1794445756671,
+    "sourceId": "PLAYER_ACTIVE_IDENTITY_INFERENCE",
+    "payload": {
+        "kind": "player_active_identity_resolved",
+        "observedSpeciesName": "Camerupt",
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "teamSlot": 2,
+        "appearanceStartedAtNanos": 10940808600959,
+        "basis": "PLAYER_SPECIES_AND_UNIQUE_ROSTER_SLOT"
+    },
+    "predecessorIds": [
+        "de74c04a-a00e-4c76-990e-16351748ef13",
+        "25f0448b-d81a-42fe-b852-623f2ddbb3ad"
+    ],
+    "confidence": null,
+    "sequenceNumber": null,
+    "evidenceReferences": null,
+    "monotonicTimeNanos": 10940808600959
+},
+{
+    "articleId": "ccd93c0f-e11d-4a6d-9e15-f30b8fb9a6df",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445757789,
+    "recordedAt": 1794445758503,
+    "sourceId": "ANNOUNCEMENT_CROP_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/c26b07127cbfd1f83f834b91a7d0abfc332ce8b91bee2fd3231bc66f400d251b.png",
+        "sha256": "c26b07127cbfd1f83f834b91a7d0abfc332ce8b91bee2fd3231bc66f400d251b",
+        "byteCount": 28737,
+        "mediaType": "image/png",
+        "cropName": "AnnouncementCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 50,
+        "cropTop": 326,
+        "cropRight": 622,
+        "cropBottom": 375,
+        "overlayBounds": {
+            "left": 350.08887,
+            "top": -181.67667,
+            "right": 608.3111,
+            "bottom": 19.878326
+        }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 3999,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10946281704421
+},
+{
+    "articleId": "29328901-447b-4313-83eb-252c406679b5",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445757789,
+    "recordedAt": 1794445765199,
+    "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+    "payload": {
+        "kind": "raw_text",
+        "value": "Attack incoming!\n37",
+        "ocr": {
+            "treatment": "RAW",
+            "rawText": "Attack incoming!\n37",
+            "acceptedText": "Attack incoming!",
+            "words": [
+                {
+                    "text": "Attack",
+                    "line": 0,
+                    "bounds": {
+                        "left": 162.0,
+                        "top": 8.0,
+                        "right": 258.0,
+                        "bottom": 38.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.119791664,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "incoming!",
+                    "line": 0,
+                    "bounds": {
+                        "left": 269.0,
+                        "top": 8.0,
+                        "right": 407.0,
+                        "bottom": 38.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.11884058,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "37",
+                    "line": 1,
+                    "bounds": {
+                        "left": 547.0,
+                        "top": 4.0,
+                        "right": 569.0,
+                        "bottom": 16.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.21969697,
+                    "dangerRedFraction": 0.0,
+                    "decision": "HUD_SIZE_POSITION"
+                }
+            ],
+            "sourceFrameWidth": 672,
+            "expectedMinimumHeightAt672": 22.320002,
+            "profileSampleCount": 1
+        }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4208,
+    "evidenceReferences": [
+        "ccd93c0f-e11d-4a6d-9e15-f30b8fb9a6df"
+    ],
+    "monotonicTimeNanos": 10946281704421
+},
+{
+    "articleId": "704ce1d9-ec9c-42fb-99dc-d323047a61c0",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445757789,
+    "recordedAt": 1794445765390,
+    "sourceId": "ANNOUNCEMENT_WITNESS",
+    "payload": {
+        "kind": "raw_text",
+        "value": "Attack incoming!",
+        "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4212,
+    "evidenceReferences": [
+        "ccd93c0f-e11d-4a6d-9e15-f30b8fb9a6df",
+        "29328901-447b-4313-83eb-252c406679b5"
+    ],
+    "monotonicTimeNanos": 10946281704421
+},
+{
+    "articleId": "0633769c-209f-4595-94e4-d23e5ac9d0b9",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445757789,
+    "recordedAt": 1794445765497,
+    "sourceId": "ATTACK_INCOMING_WITNESS",
+    "payload": {
+        "kind": "attack_incoming"
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4213,
+    "evidenceReferences": [
+        "704ce1d9-ec9c-42fb-99dc-d323047a61c0"
+    ],
+    "monotonicTimeNanos": 10946281704421
+},
+{
+    "articleId": "6eb3b577-8ed7-47c8-a7a2-3c1c2648b811",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445768317,
+    "recordedAt": 1794445768696,
+    "sourceId": "PLAYER_ACTIVE_SPECIES_TEXT_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/b5e53eb8dca5a0df332782296237b752dcb1890e02193909f103476b38c242cf.png",
+        "sha256": "b5e53eb8dca5a0df332782296237b752dcb1890e02193909f103476b38c242cf",
+        "byteCount": 4103,
+        "mediaType": "image/png",
+        "cropName": "PlayerActiveSpeciesTextCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 22,
+        "cropTop": 98,
+        "cropRight": 178,
+        "cropBottom": 130,
+        "overlayBounds": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4326,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10956873848422
+},
+{
+    "articleId": "940065d7-f95a-4ebc-9b93-7181b1e3f8d4",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445768317,
+    "recordedAt": 1794445771222,
+    "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+    "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "ocrText": "Camerupt",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+    },
+    "predecessorIds": [],
+    "confidence": 0.98,
+    "sequenceNumber": 4382,
+    "evidenceReferences": [
+        "0633769c-209f-4595-94e4-d23e5ac9d0b9",
+        "6eb3b577-8ed7-47c8-a7a2-3c1c2648b811"
+    ],
+    "monotonicTimeNanos": 10956873848422
+},
+{
+    "articleId": "356c8f11-b912-4ea1-9fc0-545b1dbe7d30",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445777429,
+    "recordedAt": 1794445778419,
+    "sourceId": "QTE_PROGRESS_TEXT_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/f65cbc51c0c7f3a996e28ed336949c4db96c0462e6f2d36714708a2de145adf9.png",
+        "sha256": "f65cbc51c0c7f3a996e28ed336949c4db96c0462e6f2d36714708a2de145adf9",
+        "byteCount": 34357,
+        "mediaType": "image/png",
+        "cropName": "QteProgressTextCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 80,
+        "cropTop": 425,
+        "cropRight": 591,
+        "cropBottom": 508,
+        "overlayBounds": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4533,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10965995397268
+},
+{
+    "articleId": "c1ec7dd1-e085-448b-8cc2-0d719b93cd9f",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445777916,
+    "recordedAt": 1794445778936,
+    "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+    "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 790,
+        "barRight": 231,
+        "barBottom": 807,
+        "filledFraction": 0.7195767,
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "fillColor": null
+    },
+    "predecessorIds": [],
+    "confidence": 0.90586495,
+    "sequenceNumber": 4545,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10966473709884
+},
+{
+    "articleId": "583a2aa6-dc77-4eb0-bb8a-7c2ebde93e1d",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445778265,
+    "recordedAt": 1794445779066,
+    "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+    "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 791,
+        "barRight": 231,
+        "barBottom": 808,
+        "filledFraction": 0.7195767,
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "fillColor": null
+    },
+    "predecessorIds": [],
+    "confidence": 0.90586495,
+    "sequenceNumber": 4548,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10966831338499
+},
+{
+    "articleId": "87936339-bf17-4117-9448-d2d1eb858337",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445778265,
+    "recordedAt": 1794445779433,
+    "sourceId": "MATCH_OUTCOME_PROBE_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/763166d773ad862e18c3afffcafb97c60257e51b78388e8634873e48e4772628.png",
+        "sha256": "763166d773ad862e18c3afffcafb97c60257e51b78388e8634873e48e4772628",
+        "byteCount": 127871,
+        "mediaType": "image/png",
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858,
+        "overlayBounds": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4552,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10966831338499
+},
+{
+    "articleId": "1cbe7a17-cab0-43a0-8834-5ed33dac3a0a",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445779784,
+    "recordedAt": 1794445780271,
+    "sourceId": "ANNOUNCEMENT_CROP_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/fb9ded3dc5412515bb0fd48bc6550542278819e80d8289fdfeaedb5ad6cf5ffa.png",
+        "sha256": "fb9ded3dc5412515bb0fd48bc6550542278819e80d8289fdfeaedb5ad6cf5ffa",
+        "byteCount": 42277,
+        "mediaType": "image/png",
+        "cropName": "AnnouncementCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 50,
+        "cropTop": 326,
+        "cropRight": 622,
+        "cropBottom": 375,
+        "overlayBounds": {
+            "left": 350.08887,
+            "top": -181.67667,
+            "right": 608.3111,
+            "bottom": 19.878326
+        }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4570,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10968353071499
+},
+{
+    "articleId": "23a55fb7-4633-4f8d-bf40-16a59f379b57",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445780736,
+    "recordedAt": 1794445781279,
+    "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+    "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 966,
+        "barRight": 231,
+        "barBottom": 983,
+        "filledFraction": 0.7195767,
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "fillColor": null
+    },
+    "predecessorIds": [],
+    "confidence": 0.90586495,
+    "sequenceNumber": 4596,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10969278354268
+},
+{
+    "articleId": "c56eba17-3bc9-4ba7-9ddc-42eeeb6872de",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445780891,
+    "recordedAt": 1794445781421,
+    "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+    "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 918,
+        "barRight": 231,
+        "barBottom": 935,
+        "filledFraction": 0.7195767,
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "fillColor": null
+    },
+    "predecessorIds": [],
+    "confidence": 0.9403292,
+    "sequenceNumber": 4600,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10969457751730
+},
+{
+    "articleId": "589be96a-e716-42a6-bc1f-55847d780ab8",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445778265,
+    "recordedAt": 1794445781639,
+    "sourceId": "MATCH_OUTCOME_TEXT_WITNESS_LATENCY",
+    "payload": {
+        "kind": "raw_text",
+        "value": "cropId=87936339-bf17-4117-9448-d2d1eb858337 lane=PROBE priority=URGENT queueMs=570 captureToAdmissionMs=1913 nativeReadMs=1347 processingMs=1453 totalMs=3366 passes=2 pending=0 recentPending=0 recoveryPending=0 promotedProbe=false selection=RETAINED_FALLBACK probePending=0 overflowTotal=0 expiredTotal=0 nonblank=true",
+        "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4608,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10966831338499
+},
+{
+    "articleId": "a5ec92e7-b8c7-4463-945e-cfa70e34e28a",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445778265,
+    "recordedAt": 1794445781640,
+    "sourceId": "MATCH_OUTCOME_TEXT_WITNESS",
+    "payload": {
+        "kind": "raw_text",
+        "value": "No Protect Shields remaining!",
+        "ocr": {
+            "treatment": "RAW",
+            "rawText": "No Protect Shields remaining!",
+            "acceptedText": "No Protect Shields remaining!",
+            "words": [
+                {
+                    "text": "No",
+                    "line": 0,
+                    "bounds": {
+                        "left": 68.0,
+                        "top": 55.0,
+                        "right": 99.0,
+                        "bottom": 84.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.0,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "Protect",
+                    "line": 0,
+                    "bounds": {
+                        "left": 110.0,
+                        "top": 55.0,
+                        "right": 191.0,
+                        "bottom": 84.0
+                    },
+                    "violetFraction": 0.20349085,
+                    "tealFraction": 0.0,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "Shields",
+                    "line": 0,
+                    "bounds": {
+                        "left": 200.0,
+                        "top": 55.0,
+                        "right": 278.0,
+                        "bottom": 84.0
+                    },
+                    "violetFraction": 0.5106101,
+                    "tealFraction": 0.0,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "remaining!",
+                    "line": 0,
+                    "bounds": {
+                        "left": 288.0,
+                        "top": 55.0,
+                        "right": 404.0,
+                        "bottom": 84.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.02764566,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                }
+            ],
+            "sourceFrameWidth": null,
+            "expectedMinimumHeightAt672": null,
+            "profileSampleCount": 0
+        }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4609,
+    "evidenceReferences": [
+        "87936339-bf17-4117-9448-d2d1eb858337"
+    ],
+    "monotonicTimeNanos": 10966831338499
+},
+{
+    "articleId": "7ab6e1ec-2181-4046-8355-1a85d3648a90",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445778265,
+    "recordedAt": 1794445781671,
+    "sourceId": "MATCH_OUTCOME_TEXT_WITNESS",
+    "payload": {
+        "kind": "raw_text",
+        "value": "No Prote1 S'lds remainir:",
+        "ocr": {
+            "treatment": "WHITE_TEXT_210_PADDED",
+            "rawText": "No Prote1 S'lds remainir:",
+            "acceptedText": "No Prote1 S'lds remainir:",
+            "words": [
+                {
+                    "text": "No",
+                    "line": 0,
+                    "bounds": {
+                        "left": 69.0,
+                        "top": 57.0,
+                        "right": 100.0,
+                        "bottom": 80.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.0,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "Prote1",
+                    "line": 0,
+                    "bounds": {
+                        "left": 119.0,
+                        "top": 57.0,
+                        "right": 202.0,
+                        "bottom": 80.0
+                    },
+                    "violetFraction": 0.28706127,
+                    "tealFraction": 0.0,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "S'lds",
+                    "line": 0,
+                    "bounds": {
+                        "left": 201.0,
+                        "top": 57.0,
+                        "right": 277.0,
+                        "bottom": 80.0
+                    },
+                    "violetFraction": 0.47254005,
+                    "tealFraction": 0.0,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "remainir:",
+                    "line": 0,
+                    "bounds": {
+                        "left": 288.0,
+                        "top": 57.0,
+                        "right": 396.0,
+                        "bottom": 80.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.02294686,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                }
+            ],
+            "sourceFrameWidth": null,
+            "expectedMinimumHeightAt672": null,
+            "profileSampleCount": 0
+        }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4610,
+    "evidenceReferences": [
+        "87936339-bf17-4117-9448-d2d1eb858337"
+    ],
+    "monotonicTimeNanos": 10966831338499
+},
+{
+    "articleId": "f9f6127e-1f51-4f6a-b134-043ff1a4e09a",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445781066,
+    "recordedAt": 1794445781752,
+    "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+    "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 919,
+        "barRight": 231,
+        "barBottom": 936,
+        "filledFraction": 0.7195767,
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "fillColor": null
+    },
+    "predecessorIds": [],
+    "confidence": 0.90586495,
+    "sequenceNumber": 4612,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10969612884038
+},
+{
+    "articleId": "3bfba15e-7e90-4251-9ffb-67379fac957e",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445779784,
+    "recordedAt": 1794445784345,
+    "sourceId": "ANNOUNCEMENT_WITNESS_LATENCY",
+    "payload": {
+        "kind": "raw_text",
+        "value": "cropId=1cbe7a17-cab0-43a0-8834-5ed33dac3a0a priority=TRANSIENT queueMs=3983 captureToAdmissionMs=4101 nativeReadMs=394 processingMs=463 totalMs=4564 passes=1 replacedPendingTotal=183 selection=TEXT_KEYFRAME buffered=2 coalescedTotal=6 overflowTotal=0 expiredTotal=15 pending=1 nonblank=true",
+        "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4673,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10968353071499
+},
+{
+    "articleId": "e70bdd6b-0f65-4607-8a33-f5f4ba2f4b0c",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445779784,
+    "recordedAt": 1794445784380,
+    "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+    "payload": {
+        "kind": "raw_text",
+        "value": "Stunfisk used Mud Bomb!",
+        "ocr": {
+            "treatment": "RAW",
+            "rawText": "Stunfisk used Mud Bomb!",
+            "acceptedText": "Stunfisk used Mud Bomb!",
+            "words": [
+                {
+                    "text": "Stunfisk",
+                    "line": 0,
+                    "bounds": {
+                        "left": 97.0,
+                        "top": 8.0,
+                        "right": 215.0,
+                        "bottom": 33.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.09728814,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "used",
+                    "line": 0,
+                    "bounds": {
+                        "left": 226.0,
+                        "top": 8.0,
+                        "right": 293.0,
+                        "bottom": 33.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.0,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "Mud",
+                    "line": 0,
+                    "bounds": {
+                        "left": 305.0,
+                        "top": 8.0,
+                        "right": 369.0,
+                        "bottom": 33.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.00125,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "Bomb!",
+                    "line": 0,
+                    "bounds": {
+                        "left": 382.0,
+                        "top": 8.0,
+                        "right": 475.0,
+                        "bottom": 33.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.09247312,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                }
+            ],
+            "sourceFrameWidth": 672,
+            "expectedMinimumHeightAt672": 22.320002,
+            "profileSampleCount": 2
+        }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4674,
+    "evidenceReferences": [
+        "1cbe7a17-cab0-43a0-8834-5ed33dac3a0a"
+    ],
+    "monotonicTimeNanos": 10968353071499
+},
+{
+    "articleId": "11ef3c72-4871-49f6-9205-abf216f15cf7",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445779784,
+    "recordedAt": 1794445784450,
+    "sourceId": "ANNOUNCEMENT_WITNESS",
+    "payload": {
+        "kind": "raw_text",
+        "value": "Stunfisk used Mud Bomb!",
+        "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4677,
+    "evidenceReferences": [
+        "1cbe7a17-cab0-43a0-8834-5ed33dac3a0a",
+        "e70bdd6b-0f65-4607-8a33-f5f4ba2f4b0c"
+    ],
+    "monotonicTimeNanos": 10968353071499
+},
+{
+    "articleId": "ac929ce2-743a-451c-89a1-f5d38cd2a8cf",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445779784,
+    "recordedAt": 1794445784540,
+    "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+    "payload": {
+        "kind": "charge_move_used_announced"
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4678,
+    "evidenceReferences": [
+        "11ef3c72-4871-49f6-9205-abf216f15cf7"
+    ],
+    "monotonicTimeNanos": 10968353071499
+},
+{
+    "articleId": "49dd403a-fe20-459d-a176-c31f530ef4d5",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445787900,
+    "recordedAt": 1794445788258,
+    "sourceId": "MATCH_OUTCOME_CROP_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/b8ab90950773278da778f918de188608574fb966124aa99387ecaf2e8cdbcf0b.png",
+        "sha256": "b8ab90950773278da778f918de188608574fb966124aa99387ecaf2e8cdbcf0b",
+        "byteCount": 96619,
+        "mediaType": "image/png",
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858,
+        "overlayBounds": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4798,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10976468271730
+},
+{
+    "articleId": "4f4d73d9-2caa-4c60-9b2e-09ee7f22037d",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445787900,
+    "recordedAt": 1794445791424,
+    "sourceId": "MATCH_OUTCOME_TEXT_WITNESS",
+    "payload": {
+        "kind": "raw_text",
+        "value": "GOOD\nEFFORT!",
+        "ocr": {
+            "treatment": "RAW",
+            "rawText": "GOOD\nEFFORT!",
+            "acceptedText": "GOOD\nEFFORT!",
+            "words": [
+                {
+                    "text": "GOOD",
+                    "line": 0,
+                    "bounds": {
+                        "left": 103.0,
+                        "top": 22.0,
+                        "right": 369.0,
+                        "bottom": 86.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.121828005,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "EFFORT!",
+                    "line": 1,
+                    "bounds": {
+                        "left": 66.0,
+                        "top": 128.0,
+                        "right": 406.0,
+                        "bottom": 192.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.010983456,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                }
+            ],
+            "sourceFrameWidth": null,
+            "expectedMinimumHeightAt672": null,
+            "profileSampleCount": 0
+        }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4857,
+    "evidenceReferences": [
+        "49dd403a-fe20-459d-a176-c31f530ef4d5"
+    ],
+    "monotonicTimeNanos": 10976468271730
+},
+{
+    "articleId": "cd2f433e-0200-4f54-9dca-9a7b287a56a8",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445787900,
+    "recordedAt": 1794445791434,
+    "sourceId": "GOOD_EFFORT_WITNESS",
+    "payload": {
+        "kind": "raw_text",
+        "value": "GOOD\nEFFORT!",
+        "ocr": {
+            "treatment": "RAW",
+            "rawText": "GOOD\nEFFORT!",
+            "acceptedText": "GOOD\nEFFORT!",
+            "words": [
+                {
+                    "text": "GOOD",
+                    "line": 0,
+                    "bounds": {
+                        "left": 103.0,
+                        "top": 22.0,
+                        "right": 369.0,
+                        "bottom": 86.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.121828005,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "EFFORT!",
+                    "line": 1,
+                    "bounds": {
+                        "left": 66.0,
+                        "top": 128.0,
+                        "right": 406.0,
+                        "bottom": 192.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.010983456,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                }
+            ],
+            "sourceFrameWidth": null,
+            "expectedMinimumHeightAt672": null,
+            "profileSampleCount": 0
+        }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4858,
+    "evidenceReferences": [
+        "4f4d73d9-2caa-4c60-9b2e-09ee7f22037d"
+    ],
+    "monotonicTimeNanos": 10976468271730
+},
+{
+    "articleId": "0bcd6ef2-baa7-4f23-ac76-39b76d0bc23a",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445787900,
+    "recordedAt": 1794445791436,
+    "sourceId": "BATTLE_INTERPRETER",
+    "payload": {
+        "kind": "match_ended",
+        "result": "LOSS"
+    },
+    "predecessorIds": [
+        "cd2f433e-0200-4f54-9dca-9a7b287a56a8"
+    ],
+    "confidence": null,
+    "sequenceNumber": null,
+    "evidenceReferences": null,
+    "monotonicTimeNanos": 10976468271730
+}
+]

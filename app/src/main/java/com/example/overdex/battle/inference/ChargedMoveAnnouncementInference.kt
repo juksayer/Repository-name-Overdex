@@ -30,7 +30,9 @@ data class ChargedMoveAnnouncementDerivation(
  * is ambiguous; the original raw announcement stays available either way.
  */
 class ChargedMoveAnnouncementInference(
-    private val pokemonKnowledge: PokemonKnowledge
+    private val pokemonKnowledge: PokemonKnowledge,
+    private val onRebuild: ((String, Int) -> Unit)? = null,
+    private val faintHistoryCache: FaintHistoryCache? = null,
 ) {
     private val activeSpeciesHistory = ArrayDeque<RealityArticle>()
     private var knownSpeciesNames: Set<String>? = null
@@ -40,11 +42,13 @@ class ChargedMoveAnnouncementInference(
     private val pendingAnnouncements = ArrayDeque<RealityArticle>()
     private val speciesByReading = linkedMapOf<String, String?>()
     private val pokemonByName = mutableMapOf<String, Pokemon?>()
+    private val faintHistory = FaintedCombatants(onRebuild, faintHistoryCache)
 
     suspend fun accept(
         article: RealityArticle,
         rosterSideForSpecies: (String) -> ActivePokemonSide?
     ): ChargedMoveAnnouncementDerivation? {
+        faintHistory.observe(article)
         val updatesControls = article.payload is PlayerChargeButtonTouchWitnessed || article.payload is PlayerChargeMoveLabelRead ||
             article.payload is GetReadyWitnessed || article.payload is AttackIncoming || article.payload is ActivePokemonFaintedWitnessed
         val isAnnouncement = article.sourceId.id == ANNOUNCEMENT_SOURCE && article.payload is RawTestimony
@@ -217,7 +221,9 @@ class ChargedMoveAnnouncementInference(
                 }) continue
             if (controlEvidence.any { evidence ->
                     val faint = evidence.payload as? ActivePokemonFaintedWitnessed
-                    faint?.side == ActivePokemonSide.PLAYER && evidence.monotonicTimeNanos?.let { it in contactAt..at } == true
+                    faint?.side == ActivePokemonSide.PLAYER && evidence.monotonicTimeNanos?.let {
+                        it in contactAt..at && (!com.example.overdex.battle.inference.isRevisableVisualFaint(faint.basis) || faintHistory.supports(faint, it))
+                    } == true
                 }) continue
             val labelArticle = controlEvidence.filter {
                 (it.payload as? PlayerChargeMoveLabelRead)?.slot == touch.slot &&

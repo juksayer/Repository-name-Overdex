@@ -157,7 +157,7 @@ class FastMoveEnergyInferenceTest {
         engine.accept(species("species", "Sealeo"))
         engine.accept(identity("identity", "Sealeo", "Water Gun"))
         engine.accept(article("faint", com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed(
-            ActivePokemonSide.OPPONENT, "Sealeo", 364, "BALL_COUNT_DECREASE"
+            ActivePokemonSide.OPPONENT, "Sealeo", 364, "LEGACY_EXPLICIT_FAINT"
         ), 2_000_000_000L))
 
         assertTrue(engine.accept(use("new-use", monotonicNanos = 2_500_000_000L)).isEmpty())

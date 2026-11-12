@@ -43,6 +43,9 @@ object MatchArchiveArticleSelector {
             "QTE_TYPE_ICONS_CAPTURE" -> crop.cropName == "QteTypeIconsCrop"
             "OPPONENT_TRAINER_HAND_CAPTURE" -> crop.cropName == "OpponentTrainerHandCrop"
             "CHARGED_IMPACT_HP_CAPTURE" -> crop.cropName == "ChargedImpactHpCrop"
+            "FORCED_REPLACEMENT_MESSAGE_CAPTURE" -> crop.cropName == "ForcedReplacementMessageCrop"
+            "PLAYER_TERMINAL_VISUAL_CAPTURE" -> crop.cropName == "PlayerTerminalVisualCrop"
+            "OPPONENT_TERMINAL_VISUAL_CAPTURE" -> crop.cropName == "OpponentTerminalVisualCrop"
             else -> false
         }
     }

@@ -68,7 +68,12 @@ class MatchReplayModelTest {
             timed("one", canonicalHit("one"), 1_000_000_000L),
             timed("two", canonicalHit("two"), 1_420_000_000L),
         ))
-        assertEquals(2, MatchReplayModel(archive).sceneAt(1_440_000_000L).fastMoveActions.size)
+        val model = MatchReplayModel(archive)
+        val first = model.sceneAt(1_000_000_000L).fastMoveActions.single { "one" in it.sourceArticleIds }
+        val second = model.sceneAt(1_420_000_000L).fastMoveActions.single { "two" in it.sourceArticleIds }
+        assertEquals(1_000_000_000L, first.impactAtNanos)
+        assertEquals(1_420_000_000L, second.impactAtNanos)
+        assertEquals(1, model.sceneAt(1_440_000_000L).fastMoveActions.size)
     }
 
     @Test fun `cited delayed flash never replays as another attack`() {
@@ -79,7 +84,7 @@ class MatchReplayModelTest {
                 .copy(predecessorIds = listOf("tick", "flash")),
         ))
         val model = MatchReplayModel(archive)
-        assertEquals(1, model.sceneAt(1_200_000_000L).fastMoveActions.size)
+        assertEquals(1, model.sceneAt(1_000_000_000L).fastMoveActions.size)
         assertTrue(model.sceneAt(1_750_000_000L).fastMoveActions.isEmpty())
     }
 
@@ -88,7 +93,12 @@ class MatchReplayModelTest {
             timed("one", ArchivedActiveHpBarDamageTickMeasured("PLAYER", .8f, .7f, .1f), 1_000_000_000L),
             timed("two", ArchivedActiveHpBarDamageTickMeasured("PLAYER", .7f, .6f, .1f), 1_420_000_000L),
         ))
-        assertEquals(2, MatchReplayModel(archive).sceneAt(1_440_000_000L).fastMoveActions.size)
+        val model = MatchReplayModel(archive)
+        val first = model.sceneAt(1_000_000_000L).fastMoveActions.single { "one" in it.sourceArticleIds }
+        val second = model.sceneAt(1_420_000_000L).fastMoveActions.single { "two" in it.sourceArticleIds }
+        assertEquals(1_000_000_000L, first.impactAtNanos)
+        assertEquals(1_420_000_000L, second.impactAtNanos)
+        assertEquals(1, model.sceneAt(1_440_000_000L).fastMoveActions.size)
     }
 
     private fun canonicalHit(id: String) = ArchivedFastMoveUseObserved(
@@ -551,11 +561,12 @@ class MatchReplayModelTest {
         ))
         val model = MatchReplayModel(archive, fastMoveTypesByName = mapOf("INCINERATE" to PokemonType.FIRE, "ICESHARD" to PokemonType.ICE))
         assertTrue(model.sceneAt(999_999_999L).fastMoveActions.isEmpty())
-        val overlap = model.sceneAt(1_200_000_000L).fastMoveActions
+        val overlap = model.sceneAt(1_050_000_000L).fastMoveActions
         assertEquals(listOf("PLAYER", "OPPONENT"), overlap.map { it.side })
+        assertEquals(listOf(1_000_000_000L, 1_100_000_000L), overlap.map { it.impactAtNanos })
         assertTrue(overlap[0].progress > overlap[1].progress)
         assertTrue(model.sceneAt(1_600_000_000L).fastMoveActions.isEmpty())
-        assertEquals(overlap, model.sceneAt(1_200_000_000L).fastMoveActions)
+        assertEquals(overlap, model.sceneAt(1_050_000_000L).fastMoveActions)
     }
 
     @Test fun `energy derived without a witnessed impact does not prove an attack happened`() {
@@ -598,7 +609,7 @@ class MatchReplayModelTest {
         assertEquals("OPPONENT", action.side)
         assertEquals(null, action.moveName)
         assertEquals(null, action.type)
-        assertEquals(setOf("HP_BORDER_PULSE"), action.evidenceKinds)
+        assertEquals(setOf("HP_BORDER_PULSE", "NEUTRAL_PRESENTATION_ENDS_AT_IMPACT"), action.evidenceKinds)
     }
 
     @Test fun `replay renders the certain type when all possible fast moves share it`() {
@@ -663,11 +674,11 @@ class MatchReplayModelTest {
             )
         ))
 
-        val actions = MatchReplayModel(archive).sceneAt(1_200_000_000L).fastMoveActions
+        val actions = MatchReplayModel(archive).sceneAt(1_050_000_000L).fastMoveActions
 
         assertEquals(1, actions.size)
         assertEquals("PLAYER", actions.single().side)
-        assertEquals(setOf("HP_BORDER_PULSE", "RECIPIENT_VISUAL_ARTIFACT"), actions.single().evidenceKinds)
+        assertEquals(setOf("HP_BORDER_PULSE", "RECIPIENT_VISUAL_ARTIFACT", "NEUTRAL_PRESENTATION_ENDS_AT_IMPACT"), actions.single().evidenceKinds)
     }
 
     @Test fun `canonical fused use prevents replay from re-counting its raw witnesses`() {
@@ -699,11 +710,11 @@ class MatchReplayModelTest {
             )
         ))
 
-        val actions = MatchReplayModel(archive).sceneAt(1_200_000_000L).fastMoveActions
+        val actions = MatchReplayModel(archive).sceneAt(1_050_000_000L).fastMoveActions
 
         assertEquals(1, actions.size)
         assertEquals("OPPONENT", actions.single().side)
-        assertEquals(setOf("HP_BORDER_PULSE", "RECIPIENT_VISUAL_ARTIFACT"), actions.single().evidenceKinds)
+        assertEquals(setOf("HP_BORDER_PULSE", "RECIPIENT_VISUAL_ARTIFACT", "NEUTRAL_PRESENTATION_ENDS_AT_IMPACT"), actions.single().evidenceKinds)
     }
 
     @Test fun `canonical use does not hide a later uncovered damage tick`() {
@@ -734,11 +745,11 @@ class MatchReplayModelTest {
         ))
         val model = MatchReplayModel(archive)
 
-        assertEquals(1, model.sceneAt(1_100_000_000L).fastMoveActions.size)
-        assertEquals(1, model.sceneAt(1_600_000_000L).fastMoveActions.size)
+        assertEquals(1, model.sceneAt(1_000_000_000L).fastMoveActions.size)
+        assertEquals(1, model.sceneAt(1_500_000_000L).fastMoveActions.size)
         assertEquals(
-            setOf("HP_DAMAGE_TICK"),
-            model.sceneAt(1_600_000_000L).fastMoveActions.single().evidenceKinds
+            setOf("HP_DAMAGE_TICK", "NEUTRAL_PRESENTATION_ENDS_AT_IMPACT"),
+            model.sceneAt(1_500_000_000L).fastMoveActions.single().evidenceKinds
         )
     }
 

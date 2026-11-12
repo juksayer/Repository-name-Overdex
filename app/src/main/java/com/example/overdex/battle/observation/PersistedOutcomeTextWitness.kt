@@ -4,6 +4,11 @@ import android.util.Log
 import com.example.overdex.battle.artifact.FileCropArtifactStore
 import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.RawTestimony
+import com.example.overdex.battle.custody.MatchEnded
+import com.example.overdex.battle.custody.MatchOutcomeLabelWitnessed
+import com.example.overdex.battle.custody.ObservationRestartedByUser
+import com.example.overdex.battle.custody.ObservationSessionStoppedByUser
+import com.example.overdex.battle.custody.ScreenIgnoredByUser
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.battle.timeline.observer.ObservationSource
@@ -23,6 +28,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withContext
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.model.observation.OcrTextEvidence
+import com.example.overdex.model.BattleResult
 
 /** Reads near-KO and promising result pixels urgently, with routine fallback checks for concessions. */
 class PersistedOutcomeTextWitness internal constructor(
@@ -58,6 +64,14 @@ class PersistedOutcomeTextWitness internal constructor(
                 recentWake.close()
                 recoveryWake.close()
                 probeWake.close()
+            }
+            // Partial glyph confirmation belongs to the phrase witness. End
+            // reading only after its accepted evidence actually ends the Match,
+            // rather than duplicating that state machine in every OCR lane.
+            witnessScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                match.articles.collect { article ->
+                    if (article.payload is MatchEnded) witnessScope.cancel("Match result accepted")
+                }
             }
             witnessScope.launch(start = CoroutineStart.UNDISPATCHED) {
                 match.articles.filter { article ->
@@ -150,6 +164,15 @@ class PersistedOutcomeTextWitness internal constructor(
                         val article = sample ?: continue
                         val capturedAt = article.monotonicTimeNanos ?: continue
                         val completedAt = now()
+                        // The no-shields banner lives below the announcement crops on some
+                        // layouts. Reuse its existing OCR immediately, before custody publication.
+                        // Invalid/blank passes never advance the phase episode: these lanes may
+                        // complete out of source order. Raw result testimony remains unchanged.
+                        if (observerId.id == "MATCH_OUTCOME_TEXT_WITNESS") {
+                            readings.forEach { reading ->
+                                match.acceptedChargeCapturePreparation.offerOutcomePrompt(article, reading, completedAt)
+                            }
+                        }
                         val probeDetails = probeSelection?.let {
                             " selection=RETAINED_FALLBACK probePending=${it.pendingCount} " +
                                 "overflowTotal=${it.overflowTotal} expiredTotal=${it.expiredTotal}"
@@ -295,7 +318,8 @@ internal object MatchOutcomeTextResolver {
 class PersistedOutcomePhraseWitness(
     private val accepts: (String) -> Boolean,
     override val observerId: ObserverId,
-    override val name: String
+    override val name: String,
+    private val allowPartialOutcome: Boolean = false,
 ) : Observer {
     private var scope: CoroutineScope? = null
 
@@ -305,15 +329,100 @@ class PersistedOutcomePhraseWitness(
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch(start = CoroutineStart.UNDISPATCHED) {
                 var accepted = false
+                var paused = false
+                var attemptFrom = Long.MIN_VALUE
+                var lifecycleAt = Long.MIN_VALUE
+                val crops = LinkedHashMap<String, RealityArticle>()
+                var confirmation = PartialOutcomeConfirmation()
                 match.articles.collect { article ->
-                    if (accepted || article.sourceId.id != "MATCH_OUTCOME_TEXT_WITNESS") return@collect
-                    val text = (article.payload as? RawTestimony)?.data as? String ?: return@collect
-                    if (!accepts(text)) return@collect
+                    if (accepted) return@collect
+                    val at = article.monotonicTimeNanos ?: return@collect
+                    when (article.payload) {
+                        ObservationRestartedByUser -> {
+                            if (at > lifecycleAt) {
+                                lifecycleAt = at
+                                attemptFrom = at
+                                paused = false
+                                crops.clear()
+                                confirmation = PartialOutcomeConfirmation()
+                            }
+                            return@collect
+                        }
+                        ScreenIgnoredByUser, ObservationSessionStoppedByUser -> {
+                            if (at >= lifecycleAt) {
+                                lifecycleAt = at
+                                paused = true
+                                crops.clear()
+                                confirmation = PartialOutcomeConfirmation()
+                            }
+                            return@collect
+                        }
+                        else -> Unit
+                    }
+                    if (paused || at < attemptFrom) return@collect
+                    if (article.payload is MatchEnded) {
+                        accepted = true
+                        crops.clear()
+                        return@collect
+                    }
+                    if (allowPartialOutcome) {
+                        val crop = article.payload as? CropCaptured
+                        if (crop?.cropProvenance?.cropName == BattleCropContracts.matchOutcome.cropName) {
+                            crops[article.id.value] = article
+                            // Metadata only. Most OCR finishes while its crop
+                            // is here; older recovery reads can use the ledger.
+                            while (crops.size > 256) crops.remove(crops.keys.first())
+                            return@collect
+                        }
+                    }
+                    if (article.sourceId.id != "MATCH_OUTCOME_TEXT_WITNESS") return@collect
+                    val raw = article.payload as? RawTestimony ?: return@collect
+                    val text = raw.data as? String ?: return@collect
+                    if (!accepts(text)) {
+                        if (!allowPartialOutcome) return@collect
+                        val reading = raw.ocr ?: return@collect
+                        val references = article.evidenceReferences.orEmpty()
+                        if (references.isEmpty()) return@collect
+                        val cropArticle = (references.firstNotNullOfOrNull(crops::get)
+                            // Recovery retains old references beyond the small
+                            // cache. Resolve a cache miss from immutable metadata,
+                            // without loading PNGs or rescanning on normal reads.
+                            ?: match.realityTimeline.getArticles().firstOrNull {
+                                it.id.value in references &&
+                                    (it.payload as? CropCaptured)?.cropProvenance?.cropName ==
+                                    BattleCropContracts.matchOutcome.cropName
+                            })
+                            ?.takeIf { it.monotonicTimeNanos == at } ?: return@collect
+                        val crop = cropArticle.payload as? CropCaptured ?: return@collect
+                        val decision = PartialOutcomeTextResolver.resolve(reading, crop.cropProvenance)
+                        val support = confirmation.accept(decision, cropArticle.id.value, at, article.id.value)
+                            ?: return@collect
+                        val canonical = when (support.decision.phrase) {
+                            MatchOutcomePhrase.WIN -> "YOU WIN!"
+                            MatchOutcomePhrase.LOSS -> "GOOD EFFORT"
+                        }
+                        if (!accepts(canonical)) return@collect
+                        match.custody.submitTestimony(
+                            sourceId,
+                            MatchOutcomeLabelWitnessed(
+                                result = if (support.decision.phrase == MatchOutcomePhrase.WIN) BattleResult.WIN else BattleResult.LOSS,
+                                rawText = text,
+                                basis = support.decision.basis.name,
+                                ocr = reading,
+                                supportingFrameCount = support.rawArticleIds.size,
+                            ),
+                            article.perceivedAt, null, support.rawArticleIds, at,
+                        )
+                        accepted = true
+                        crops.clear()
+                        return@collect
+                    }
                     match.custody.submitTestimony(
-                        sourceId, RawTestimony(text), article.perceivedAt, null,
-                        listOf(article.id.value), article.monotonicTimeNanos ?: return@collect
+                        sourceId, RawTestimony(text, raw.ocr), article.perceivedAt, null,
+                        listOf(article.id.value), at
                     )
                     accepted = true
+                    crops.clear()
                 }
             }
         }

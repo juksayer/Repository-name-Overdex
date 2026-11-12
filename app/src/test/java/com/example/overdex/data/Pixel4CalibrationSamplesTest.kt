@@ -16,11 +16,12 @@ class Pixel4CalibrationSamplesTest {
 
     @Test fun `supplied native Pixel pack retains geometry hashes and coverage without gallery controls`() {
         val entries = Json.parseToJsonElement(catalog).jsonObject.getValue("entries").jsonArray
-        val labels = BundledCalibrationSampleCatalog.labels(catalog)
+            .map { it.jsonObject }.filter { it["deviceLabel"]?.jsonPrimitive?.content == "Google Pixel 4" }
+        val labels = BundledCalibrationSampleCatalog.labels(catalog).filterValues { it.deviceLabel == "Google Pixel 4" }
         assertEquals(34, entries.size) // 33 supplied, plus the extra gallery screenshot discovered in the folder.
         assertEquals(32, labels.size)
         assertFalse(labels.keys.any { "152222" in it || "153001" in it })
-        for (entry in entries.map { it.jsonObject }.filter { it["calibrationEligible"]?.jsonPrimitive?.content == "true" }) {
+        for (entry in entries.filter { it["calibrationEligible"]?.jsonPrimitive?.content == "true" }) {
             val name = entry.getValue("assetFile").jsonPrimitive.content
             val file = File(assets, "battle_samples/$name")
             val expectedHash = entry.getValue("assetSha256").jsonPrimitive.content
@@ -32,16 +33,18 @@ class Pixel4CalibrationSamplesTest {
             assertEquals(name, 2280, image.height)
             assertEquals("Google Pixel 4", labels.getValue(name).deviceLabel)
         }
-        val tags = entries.flatMap { it.jsonObject.getValue("tags").jsonArray.map { tag -> tag.jsonPrimitive.content } }.toSet()
+        val tags = entries.flatMap { it.getValue("tags").jsonArray.map { tag -> tag.jsonPrimitive.content } }.toSet()
         assertTrue(tags.containsAll(setOf("team_select", "versus", "go", "qte_progress", "shield_choice",
             "forced_replacement", "faint_animation", "empty_landscape", "badge", "win")))
     }
 
     @Test fun `Pixel pack is offered on Pixel geometry and excluded on Moondrop geometry`() {
-        val references = BundledCalibrationSampleCatalog.labels(catalog).map { (file, label) ->
-            val image = ImageIO.read(File(assets, "battle_samples/$file"))
-            CalibrationScreenshotReference("asset:$file", label.name, image.width, image.height, label.deviceLabel)
-        }
+        val references = BundledCalibrationSampleCatalog.labels(catalog)
+            .filterValues { it.deviceLabel == "Google Pixel 4" }
+            .map { (file, label) ->
+                val image = ImageIO.read(File(assets, "battle_samples/$file"))
+                CalibrationScreenshotReference("asset:$file", label.name, image.width, image.height, label.deviceLabel)
+            }
         assertEquals(32, CalibrationScreenshotLibrary.filter(references, CalibrationScreenshotFilter.ThisScreen, 1080, 2280).size)
         assertTrue(CalibrationScreenshotLibrary.filter(references, CalibrationScreenshotFilter.ThisScreen, 1080, 2400).isEmpty())
         assertEquals(references, CalibrationScreenshotLibrary.filter(references, CalibrationScreenshotFilter.Device("Google Pixel 4"), 1080, 2400))

@@ -242,8 +242,9 @@ internal class FastMoveAudioCandidateContext(
             is PlayerActiveIdentityResolved -> species(ActivePokemonSide.PLAYER, payload.speciesName,
                 payload.speciesId, payload.teamSlot, payload.appearanceStartedAtNanos, resolvedIdentity = true)
             is ActivePokemonTypesWitnessed -> state.types[payload.side] = Types(payload.types.toSet(), id)
-            is ActivePokemonFaintedWitnessed -> if (payload.speciesName == null || state.active[payload.side] == null ||
-                state.active[payload.side]?.let { base(it.name) == base(payload.speciesName) } == true) {
+            is ActivePokemonFaintedWitnessed -> if (!com.example.overdex.battle.inference.isRevisableVisualFaint(payload.basis) &&
+                (payload.speciesName == null || state.active[payload.side] == null ||
+                state.active[payload.side]?.let { base(it.name) == base(payload.speciesName) } == true)) {
                 clear(payload.side); state.pending[payload.side] = event.at to id
             }
             is SpeciesCheckMeasured -> if (payload.status == "OPENED" &&

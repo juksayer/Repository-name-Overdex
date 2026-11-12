@@ -29,6 +29,8 @@ data class FastMoveEnergyDerivation(
 class FastMoveEnergyInference(
     private val pokemonKnowledge: PokemonKnowledge,
     private val opponentFormReferences: PokemonFormKnowledge = PokemonFormKnowledge(pokemonKnowledge),
+    private val onRebuild: ((String, Int) -> Unit)? = null,
+    private val faintHistoryCache: FaintHistoryCache? = null,
 ) {
     private data class Identity(
         val article: RealityArticle,
@@ -39,7 +41,7 @@ class FastMoveEnergyInference(
 
     private var playerRosterConfirmedAt: Long? = null
     private val activeSpecies = EnumMap<ActivePokemonSide, String>(ActivePokemonSide::class.java)
-    private val fainted = FaintedCombatants()
+    private val fainted = FaintedCombatants(onRebuild, faintHistoryCache)
     private val identities = EnumMap<ActivePokemonSide, Identity>(ActivePokemonSide::class.java)
     private val pendingUses = EnumMap<ActivePokemonSide, MutableList<RealityArticle>>(ActivePokemonSide::class.java)
     private val attributedUseIds = mutableSetOf<String>()
@@ -51,7 +53,16 @@ class FastMoveEnergyInference(
     private val speciesHistory = EnumMap<ActivePokemonSide, java.util.TreeMap<Long, String>>(ActivePokemonSide::class.java)
 
     suspend fun accept(article: RealityArticle): List<FastMoveEnergyDerivation> {
-        fainted.observe(article)
+        val recoveredIdentities = fainted.observe(article)
+        timing.reconcileHpFaints(fainted.hpFaintTimes())
+        val recovered = recoveredIdentities.flatMap { acceptEvidence(it) }
+        val faint = article.payload as? ActivePokemonFaintedWitnessed
+        if (faint != null && !fainted.supports(faint, article.monotonicTimeNanos ?: Long.MIN_VALUE))
+            return recovered
+        return recovered + acceptEvidence(article)
+    }
+
+    private suspend fun acceptEvidence(article: RealityArticle): List<FastMoveEnergyDerivation> {
         timing.observe(article)
         when (val payload = article.payload) {
             is com.example.overdex.battle.custody.PlayerTeamRosterConfirmation -> {
@@ -78,7 +89,8 @@ class FastMoveEnergyInference(
                 val historicalSpecies = speciesHistory[payload.side]?.floorEntry(at)?.value
                 val closesHistorical = at < currentStart && historicalSpecies != null &&
                     (payload.speciesName == null || normalize(payload.speciesName) == normalize(historicalSpecies))
-                if (closesCurrent || closesHistorical) timing.fainted(payload.side, at)
+                if ((closesCurrent || closesHistorical) && !com.example.overdex.battle.inference.isRevisableVisualFaint(payload.basis))
+                    timing.fainted(payload.side, at)
                 if (closesCurrent) {
                     identities.remove(payload.side)
                     activeSpecies.remove(payload.side)
@@ -130,6 +142,9 @@ class FastMoveEnergyInference(
                         appearanceBoundaryRecorded = true
                     }
                     activeSpecies[payload.side] = payload.speciesName
+                    learnedIdentities[payload.side to normalize(payload.speciesName)]?.let {
+                        identities[payload.side] = it
+                    }
                     speciesHistory.getOrPut(payload.side) { java.util.TreeMap() }[
                         payload.appearanceStartedAtNanos ?: at] = payload.speciesName
                 }

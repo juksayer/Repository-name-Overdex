@@ -4,6 +4,7 @@ import com.example.overdex.battle.artifact.CropArtifactReference
 import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.InMemoryTestimonyCustody
 import com.example.overdex.battle.custody.MatchEnded
+import com.example.overdex.battle.custody.MatchOutcomeLabelWitnessed
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.reality.InMemoryRealityTimeline
@@ -14,6 +15,8 @@ import com.example.overdex.data.observation.OcrPriority
 import com.example.overdex.data.observation.OcrWorkScheduler
 import com.example.overdex.model.BattleResult
 import com.example.overdex.model.observation.OcrTextEvidence
+import com.example.overdex.model.observation.OcrBox
+import com.example.overdex.model.observation.OcrWordEvidence
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +36,116 @@ import java.util.concurrent.atomic.AtomicLong
 
 /** Exercises the real crop -> custody -> text -> phrase -> Match end path without native OCR. */
 class PersistedOutcomeTextWitnessTest {
+    @Test fun `validated no-shields prompt prepares before publication and leaves later result recognition intact`() = runBlocking {
+        val prompt = resultText("No Protect Shields remaining!", OcrBox(68f, 55f, 404f, 84f))
+        val malformed = resultText("No Prote1 S'lds remainir:", OcrBox(68f, 55f, 404f, 84f))
+        lateinit var fixture: Fixture
+        val reader = ControlledReader { article ->
+            if (article.label() == "no-shields") {
+                fixture.clock.addAndGet(3_366_000_000L)
+                listOf(prompt, malformed)
+            } else listOf(text("YOU WIN!"))
+        }
+        fixture = Fixture(reader)
+        val cues = CopyOnWriteArrayList<AcceptedChargeCaptureCue>()
+        fixture.match.acceptedChargeCapturePreparation.attach { cue ->
+            assertTrue("The handoff precedes outcome custody submissions", fixture.custody.getRecords().none {
+                it.sourceId.id.startsWith("MATCH_OUTCOME_TEXT_WITNESS")
+            })
+            cues += cue
+        }
+        try {
+            fixture.start()
+            val crop = fixture.capture("no-shields", fixture.at, provenance = resultProvenance,
+                source = BattleWitnessContracts.matchOutcomeCropCapture.witnessId)
+            val request = reader.request(OcrPriority.URGENT)
+            request.admit.complete(Unit)
+            request.finished.await()
+            await { fixture.timeline.getArticles().count { it.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS" } == 2 }
+            fixture.match.awaitAcceptedEvidencePublished()
+            assertEquals(listOf(AcceptedChargeCaptureCue(AcceptedChargeCaptureCueKind.ATTACK_INCOMING,
+                crop.id.value, fixture.at, fixture.clock.get(), crop.perceivedAt)), cues)
+            val raw = fixture.timeline.getArticles().filter { it.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS" }
+            assertEquals(listOf(RawTestimony(prompt.rawText, prompt), RawTestimony(malformed.rawText, malformed)),
+                raw.map { it.payload })
+            assertTrue(raw.all { it.evidenceReferences == listOf(crop.id.value) &&
+                it.monotonicTimeNanos == crop.monotonicTimeNanos && it.perceivedAt == crop.perceivedAt })
+            assertTrue(fixture.timeline.getArticles().none { it.payload is MatchEnded })
+
+            fixture.clock.addAndGet(2_000_000_000L)
+            val win = fixture.capture("later-win", fixture.clock.get(), wall = 54_321L)
+            reader.request(OcrPriority.URGENT, index = 1).admit.complete(Unit)
+            fixture.awaitEnd()
+            assertEquals(1, cues.size)
+            val end = fixture.timeline.getArticles().single { it.payload is MatchEnded }
+            assertEquals(win.monotonicTimeNanos, end.monotonicTimeNanos)
+            assertEquals(MatchEnded(BattleResult.WIN), end.payload)
+        } finally { fixture.close() }
+    }
+
+    @Test fun `unvalidated outcome text cannot prepare charges or consume a later valid prompt`() = runBlocking {
+        val invalid = listOf(text("No Protect Shields remaining!"), resultText("Get Ready!"),
+            resultText("NICE"), resultText("Use a Protect Shield?"), resultText("No Protect Shields"))
+        val prompt = resultText("No Protect Shields remaining!", OcrBox(68f, 55f, 404f, 84f))
+        val reader = ControlledReader { article ->
+            if (article.label() == "invalid") invalid else listOf(prompt)
+        }
+        val fixture = Fixture(reader)
+        val cues = CopyOnWriteArrayList<AcceptedChargeCaptureCue>()
+        fixture.match.acceptedChargeCapturePreparation.attach(cues::add)
+        try {
+            fixture.clock.addAndGet(1_000_000L)
+            fixture.start()
+            fixture.capture("invalid", fixture.at + 1_000_000L, provenance = resultProvenance,
+                source = BattleWitnessContracts.matchOutcomeCropCapture.witnessId)
+            reader.request(OcrPriority.URGENT).also { it.admit.complete(Unit); it.finished.await() }
+            await { fixture.timeline.getArticles().count { it.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS" } == invalid.size }
+            assertTrue(cues.isEmpty())
+            // An older valid capture remains usable after newer invalid/blank passes.
+            fixture.clock.addAndGet(10_000_000L)
+            val valid = fixture.capture("valid", fixture.at, provenance = resultProvenance,
+                source = BattleWitnessContracts.matchOutcomeCropCapture.witnessId)
+            reader.request(OcrPriority.URGENT, index = 1).also { it.admit.complete(Unit); it.finished.await() }
+            await { cues.isNotEmpty() }
+            assertEquals(listOf(valid.id.value), cues.map { it.cropArticleId })
+        } finally { fixture.close() }
+    }
+
+    @Test fun `late native no-shields completion cannot reopen capture after stop or match end`() = runBlocking {
+        for (endMatch in listOf(false, true)) {
+            val entered = CompletableDeferred<Unit>()
+            val release = CompletableDeferred<Unit>()
+            val reader = ControlledReader {
+                withContext(NonCancellable) {
+                    entered.complete(Unit)
+                    release.await()
+                    listOf(resultText("No Protect Shields remaining!", OcrBox(68f, 55f, 404f, 84f)))
+                }
+            }
+            val fixture = Fixture(reader)
+            val cues = CopyOnWriteArrayList<AcceptedChargeCaptureCue>()
+            fixture.match.acceptedChargeCapturePreparation.attach(cues::add)
+            try {
+                fixture.start()
+                fixture.capture("late-prompt", fixture.at, provenance = resultProvenance,
+                    source = BattleWitnessContracts.matchOutcomeCropCapture.witnessId)
+                val request = reader.request(OcrPriority.URGENT)
+                request.admit.complete(Unit)
+                withTimeout(5_000) { entered.await() }
+                if (endMatch) {
+                    fixture.custody.submitTestimony(SourceId("YOU_WIN_WITNESS"), RawTestimony("YOU WIN!"),
+                        54_321L, null, emptyList(), fixture.at + 1_000_000_000L)
+                    fixture.awaitEnd()
+                } else fixture.witness.stop()
+                release.complete(Unit)
+                withTimeout(5_000) { request.finished.await() }
+                fixture.match.awaitAcceptedEvidencePublished()
+                assertTrue(cues.isEmpty())
+                assertTrue(fixture.timeline.getArticles().none { it.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS" })
+            } finally { release.complete(Unit); fixture.close() }
+        }
+    }
+
     @Test fun `visually promising concession frame gets urgent OCR before blank scenery with its own source time`() = runBlocking {
         val reader = ControlledReader(inspector = { article ->
             if (article.label() == "concession-win") TransientTextProbe.Reading(.9f, true, 1L, null)
@@ -424,7 +537,125 @@ class PersistedOutcomeTextWitnessTest {
         } finally { fixture.close() }
     }
 
-    private class Fixture(reader: OutcomeCropReader) {
+    @Test fun `recorded partial result titles end the match without replacing the raw OCR`() = runBlocking {
+        listOf("OOD EFFOR" to BattleResult.LOSS, "oU WINy" to BattleResult.WIN).forEach { (value, result) ->
+            val reading = resultText(value)
+            val reader = ControlledReader { listOf(reading) }
+            val fixture = Fixture(reader, allowPartial = true, result = result)
+            try {
+                fixture.start()
+                val crop = fixture.capture("partial-result", fixture.at, wall = 54_321L,
+                    provenance = resultProvenance)
+                val turn = reader.request(OcrPriority.URGENT)
+                turn.admit.complete(Unit)
+                fixture.awaitEnd()
+                val articles = fixture.timeline.getArticles()
+                val raw = articles.single { it.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS" }
+                val label = articles.single { it.payload is MatchOutcomeLabelWitnessed }
+                val end = articles.single { it.payload is MatchEnded }
+                assertEquals(value, (raw.payload as RawTestimony).data)
+                val accepted = label.payload as MatchOutcomeLabelWitnessed
+                assertEquals(value, accepted.rawText)
+                assertEquals(reading, accepted.ocr)
+                assertEquals(1, accepted.supportingFrameCount)
+                assertEquals(result, accepted.result)
+                assertEquals(listOf(crop.id.value), raw.evidenceReferences)
+                assertEquals(listOf(raw.id.value), label.evidenceReferences)
+                assertEquals(listOf(label.id), end.predecessorIds)
+                listOf(raw, label, end).forEach {
+                    assertEquals(crop.perceivedAt, it.perceivedAt)
+                    assertEquals(crop.monotonicTimeNanos, it.monotonicTimeNanos)
+                }
+                await { reader.activeTurns.get() == 0 }
+                val requestCount = reader.requests.size
+                fixture.capture("after-partial-end", fixture.at + 1_000_000_000L,
+                    provenance = resultProvenance)
+                delay(100)
+                assertEquals(requestCount, reader.requests.size)
+            } finally { fixture.close() }
+        }
+    }
+
+    @Test fun `two treatments of one W need a second captured frame and retain both source references`() = runBlocking {
+        val reading = resultText("W", OcrBox(245f, 74f, 300f, 146f))
+        val reader = ControlledReader { listOf(reading, reading.copy(treatment = "WHITE_ISOLATED")) }
+        val fixture = Fixture(reader, allowPartial = true)
+        try {
+            fixture.start()
+            val first = fixture.capture("first-W", fixture.at, provenance = resultProvenance)
+            val firstTurn = reader.request(OcrPriority.URGENT)
+            firstTurn.admit.complete(Unit)
+            firstTurn.finished.await()
+            fixture.clock.addAndGet(500_000_000L)
+            val second = fixture.capture("second-W", fixture.clock.get(), wall = 54_321L,
+                provenance = resultProvenance)
+            reader.request(OcrPriority.URGENT, index = 1).admit.complete(Unit)
+            fixture.awaitEnd()
+            val articles = fixture.timeline.getArticles()
+            val label = articles.single { it.payload is MatchOutcomeLabelWitnessed }
+            val end = articles.single { it.payload is MatchEnded }
+            assertEquals(2, (label.payload as MatchOutcomeLabelWitnessed).supportingFrameCount)
+            assertEquals(second.monotonicTimeNanos, end.monotonicTimeNanos)
+            assertEquals(second.perceivedAt, end.perceivedAt)
+            val supports = articles.filter { it.id.value in label.evidenceReferences.orEmpty() }
+            assertEquals(2, supports.size)
+            assertEquals(setOf(first.id.value, second.id.value), supports.flatMap { it.evidenceReferences.orEmpty() }.toSet())
+        } finally { fixture.close() }
+    }
+
+    @Test fun `strong partial recovery survives newer unrelated readings and crop cache eviction`() = runBlocking {
+        val reader = ControlledReader { article ->
+            listOf(resultText(if (article.label() == "brief-loss") "OOD EFFOR" else "REWARD"))
+        }
+        val fixture = Fixture(reader, allowPartial = true, result = BattleResult.LOSS)
+        try {
+            fixture.clock.addAndGet(10_000_000_000L)
+            fixture.start()
+            val resultCrop = fixture.capture("brief-loss", fixture.at, wall = 54_321L,
+                provenance = resultProvenance)
+            val recovery = reader.request(OcrPriority.NORMAL)
+            repeat(260) { index ->
+                fixture.capture("newer-reward-$index", fixture.clock.addAndGet(100_000_000L),
+                    provenance = resultProvenance)
+            }
+            val recent = reader.request(OcrPriority.URGENT)
+            recent.admit.complete(Unit)
+            recent.finished.await()
+            recovery.admit.complete(Unit)
+            fixture.awaitEnd()
+            assertTrue(reader.reads.first().label().startsWith("newer-reward-"))
+            assertTrue(reader.reads.any { it.id == resultCrop.id })
+            val end = fixture.timeline.getArticles().single { it.payload is MatchEnded }
+            assertEquals(resultCrop.monotonicTimeNanos, end.monotonicTimeNanos)
+            assertEquals(resultCrop.perceivedAt, end.perceivedAt)
+            assertEquals(MatchEnded(BattleResult.LOSS), end.payload)
+        } finally { fixture.close() }
+    }
+
+    @Test fun `small FF in effectiveness text cannot end a match before the later result title`() = runBlocking {
+        val reader = ControlledReader { article ->
+            if (article.label() == "effectiveness") listOf(resultText("FF", OcrBox(245f, 74f, 270f, 96f)))
+            else listOf(resultText("OOD EFFOR"))
+        }
+        val fixture = Fixture(reader, allowPartial = true, result = BattleResult.LOSS)
+        try {
+            fixture.start()
+            fixture.capture("effectiveness", fixture.at, provenance = resultProvenance)
+            val firstTurn = reader.request(OcrPriority.URGENT)
+            firstTurn.admit.complete(Unit)
+            firstTurn.finished.await()
+            fixture.clock.addAndGet(500_000_000L)
+            val resultCrop = fixture.capture("loss", fixture.clock.get(), provenance = resultProvenance)
+            reader.request(OcrPriority.URGENT, index = 1).admit.complete(Unit)
+            fixture.awaitEnd()
+            val end = fixture.timeline.getArticles().single { it.payload is MatchEnded }
+            assertEquals(resultCrop.monotonicTimeNanos, end.monotonicTimeNanos)
+            assertEquals(MatchEnded(BattleResult.LOSS), end.payload)
+        } finally { fixture.close() }
+    }
+
+    private class Fixture(reader: OutcomeCropReader, allowPartial: Boolean = false,
+        result: BattleResult = BattleResult.WIN) {
         val custody = InMemoryTestimonyCustody()
         val timeline = InMemoryRealityTimeline()
         val match = Match("outcome-reader-test", custody = custody, realityTimeline = timeline,
@@ -435,18 +666,20 @@ class PersistedOutcomeTextWitnessTest {
         // enqueue barrier; admission permits, rather than sleeps, control reads.
         val witness = PersistedOutcomeTextWitness(reader, clock::get, dispatcher = Dispatchers.Unconfined)
         private val phrase = PersistedOutcomePhraseWitness(
-            { MatchOutcomeTextResolver.resolve(it) == MatchOutcomePhrase.WIN },
-            ObserverId("YOU_WIN_WITNESS", ObservationSource.SCREEN_CAPTURE), "You Win")
+            { MatchOutcomeTextResolver.resolve(it) == if (result == BattleResult.WIN) MatchOutcomePhrase.WIN else MatchOutcomePhrase.LOSS },
+            ObserverId(if (result == BattleResult.WIN) "YOU_WIN_WITNESS" else "GOOD_EFFORT_WITNESS",
+                ObservationSource.SCREEN_CAPTURE), "Result", allowPartialOutcome = allowPartial)
 
         fun start() { phrase.start(match); witness.start(match) }
 
         suspend fun capture(label: String, sourceTime: Long, wall: Long = 12_345L,
-            source: String = "MATCH_OUTCOME_CAPTURE"): RealityArticle {
+            source: String = "MATCH_OUTCOME_CAPTURE",
+            provenance: BattleCropProvenance = BattleCropProvenance(BattleCropContracts.matchOutcome.cropName,
+                1080, 2400, BattleCropBounds(100, 400, 900, 600))): RealityArticle {
             // Fake readers use the reference label, and never load a Bitmap or touch ML Kit.
             val record = custody.submitTestimony(SourceId(source), CropCaptured(
                 CropArtifactReference("artifacts/crops/$label.png", "a".repeat(64), 1),
-                BattleCropProvenance(BattleCropContracts.matchOutcome.cropName, 1080, 2400,
-                    BattleCropBounds(100, 400, 900, 600))), wall, null, emptyList(), sourceTime)
+                provenance), wall, null, emptyList(), sourceTime)
             match.awaitAcceptedEvidencePublished()
             return timeline.getArticles().single { it.sequenceNumber == record.sequenceNumber }
         }
@@ -499,6 +732,12 @@ class PersistedOutcomeTextWitnessTest {
             .substringAfterLast('/').removeSuffix(".png")
 
         private fun text(value: String) = OcrTextEvidence("ORIGINAL", value, value, emptyList(), 1080, null)
+
+        private val resultProvenance = BattleCropProvenance("MatchOutcomeCrop", 672, 1493,
+            BattleCropBounds(100, 641, 564, 858))
+
+        private fun resultText(value: String, bounds: OcrBox = OcrBox(52f, 74f, 445f, 146f)) =
+            OcrTextEvidence("RAW", value, value, listOf(OcrWordEvidence(value, 0, bounds)), null, null)
 
         private fun turn(read: suspend (RealityArticle) -> List<OcrTextEvidence>) = object : OutcomeCropReadingTurn {
             override var nativeReadNanos: Long = 0

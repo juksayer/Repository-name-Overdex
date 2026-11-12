@@ -1,5 +1,7 @@
 package com.example.overdex.ui.components
 
+import com.example.overdex.battle.BattleSpeciesDisplay
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -360,7 +362,7 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
             // for its picture, retaining the name for accessibility only.
             AsyncImage(
                 model = spriteRequest,
-                contentDescription = "${species.speciesName} sprite",
+                contentDescription = "${BattleSpeciesDisplay.name(species.speciesName)} sprite",
                 modifier = Modifier.size(36.dp).alpha(if (species.isFainted) 0.35f else 1f)
                     .semantics { stateDescription = if (species.isFainted) "Fainted" else "Not fainted" },
                 contentScale = ContentScale.Fit,

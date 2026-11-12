@@ -1,0 +1,91 @@
+{
+  "sourceVideo": "/home/sean/Desktop/Screen_recording_20261111_161531.mp4",
+  "nativeDimensions": [
+    816,
+    1808
+  ],
+  "resizedDimensions": [
+    672,
+    1493
+  ],
+  "resize": "Bilinear, forensic live-scale derivative; not a native calibration screenshot",
+  "items": [
+    {
+      "file": "64.827211.png",
+      "sourceVideoPtsSeconds": 64.827211,
+      "cropOnResizedFrame": [
+        360,
+        580,
+        270,
+        180
+      ],
+      "sha256": "e8a32799f7b99f33a8658107771c9bbf33b59d21fdfb839ef17568c81815c5aa"
+    },
+    {
+      "file": "64.892000.png",
+      "sourceVideoPtsSeconds": 64.892,
+      "cropOnResizedFrame": [
+        360,
+        580,
+        270,
+        180
+      ],
+      "sha256": "1e554b2836c8a62f3091db6709ed3130b85298c1b1975237479e7df21845c8b6"
+    },
+    {
+      "file": "65.069867.png",
+      "sourceVideoPtsSeconds": 65.069867,
+      "cropOnResizedFrame": [
+        360,
+        580,
+        270,
+        180
+      ],
+      "sha256": "8bce82da3c8c471f7777475622d9a47fc1a6fa2b299d5541777f990a145b4452"
+    },
+    {
+      "file": "65.210756.png",
+      "sourceVideoPtsSeconds": 65.210756,
+      "cropOnResizedFrame": [
+        360,
+        580,
+        270,
+        180
+      ],
+      "sha256": "68231fd1d70777a4c088643f500f817982734b8355cee02ee53bef07c832a11e"
+    },
+    {
+      "file": "65.252378.png",
+      "sourceVideoPtsSeconds": 65.252378,
+      "cropOnResizedFrame": [
+        360,
+        580,
+        270,
+        180
+      ],
+      "sha256": "3b4ce35db7d71f260f79ee195347da228626c2a0f7a981f41eea9ee4c8de9a35"
+    },
+    {
+      "file": "65.305467.png",
+      "sourceVideoPtsSeconds": 65.305467,
+      "cropOnResizedFrame": [
+        360,
+        580,
+        270,
+        180
+      ],
+      "sha256": "23286af4ee23e99c5b19cd70904b78de1cad17234f079a7d066d8c6a522a5817"
+    },
+    {
+      "file": "65.624456.png",
+      "sourceVideoPtsSeconds": 65.624456,
+      "cropOnResizedFrame": [
+        360,
+        580,
+        270,
+        180
+      ],
+      "sha256": "743d64170aede9f97f28ae514ec548a79d3cbc10cae86b8550a6a0bad189f456"
+    }
+  ]
+}

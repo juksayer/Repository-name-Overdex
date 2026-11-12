@@ -15,8 +15,10 @@ internal data class TerminalHpWatchResult(
  * Bounds terminal follow-up to a fresh, ordinarily located, side-owned bar.
  *
  * Only an actual RED sample at a small fraction arms the watch; a visibly EMPTY
- * sample can then be accepted once. Missing pixels never become zero. Checked
- * frame progress is separate from accepted measurement progress: a slow ordinary
+ * sample can then be accepted once within its fixed burst. A damage flash may
+ * hide the interior longer than ordinary seed freshness. Missing pixels never
+ * become zero or extend the burst. Checked frame progress is separate from
+ * accepted measurement progress: a slow ordinary
  * locator may seed a still-fresh bar while quick checks continue seeing nothing.
  * This class owns no images, clocks, battle inference, or frame queues.
  */
@@ -102,6 +104,11 @@ internal class TerminalHpWatchPolicy {
         states.forEach { (side, state) ->
             if (state.acceptedAt?.let { sourceAt < it } == true || state.boundaryAt?.let { sourceAt <= it } == true) return@forEach
             val anchor = freshAnchor(state, sourceAt) ?: return@forEach
+            // The ordinary locator must first place this appearance in the low
+            // HP range. Checking healthy bars here spends the narrow reader's
+            // budget before a finishing hit. Charged-impact acquisition has its
+            // own independent reader and can still observe a high-to-zero hit.
+            if (anchor.filledFraction > MAX_RED_FRACTION) return@forEach
             val sample = measure(side, anchor) ?: return@forEach
             if (!validMeasurement(sample.measurement, width, height) || !near(anchor, sample.measurement)) {
                 clearWatch(state)
@@ -136,13 +143,13 @@ internal class TerminalHpWatchPolicy {
         return results
     }
 
-    /** A null sampled frame may keep a fresh arm alive, never past either bound. */
+    /** A null sampled frame preserves a confirmed red arm, never past its fixed burst. */
     @Synchronized
     fun isArmed(side: ActivePokemonSide, sourceAt: Long): Boolean {
         val state = states.getValue(side)
         val start = state.burstStartedAt ?: return false
         val at = state.anchorAt ?: return false
-        return sourceAt - at in 0..MAX_ANCHOR_AGE_NANOS && sourceAt - start in 0 until MAX_BURST_NANOS
+        return sourceAt - at in 0..MAX_BURST_NANOS && sourceAt - start in 0 until MAX_BURST_NANOS
     }
 
     @Synchronized
@@ -191,7 +198,8 @@ internal class TerminalHpWatchPolicy {
         val anchor = state.anchor ?: return null
         val at = state.anchorAt ?: return null
         val burstAt = state.burstStartedAt
-        if (sourceAt - at !in 0..MAX_ANCHOR_AGE_NANOS ||
+        val anchorLifetime = if (burstAt == null) MAX_ANCHOR_AGE_NANOS else MAX_BURST_NANOS
+        if (sourceAt - at !in 0..anchorLifetime ||
             (burstAt != null && sourceAt - burstAt !in 0 until MAX_BURST_NANOS)
         ) {
             // Sampling expiry is not an ownership reset. Preserve the generation

@@ -278,7 +278,13 @@ private fun StoredProfile.toProfile(): MatchCalibrationProfile {
         outOfBattleMenuRegion = battleRegions.region("out_of_battle_menu", battleDefaults.outOfBattleMenuRegion),
         matchOutcomeRegion = battleRegions.region("match_outcome", battleDefaults.matchOutcomeRegion),
         opponentTrainerHandRegion = battleRegions.region("opponent_trainer_hand", battleDefaults.opponentTrainerHandRegion),
-        chargedImpactHpRegion = battleRegions.region("charged_impact_hp", battleDefaults.chargedImpactHpRegion)
+        chargedImpactHpRegion = battleRegions.region("charged_impact_hp", battleDefaults.chargedImpactHpRegion),
+        forcedReplacementMessageRegion = battleRegions.region("forced_replacement_message", battleDefaults.forcedReplacementMessageRegion),
+        playerTerminalVisualRegion = battleRegions.region("player_terminal_visual", battleDefaults.playerTerminalVisualRegion),
+        playerAppearanceRegion = battleRegions.region("player_appearance", battleDefaults.playerAppearanceRegion),
+        appearanceColorReferenceRegion = battleRegions.region("appearance_color_reference", battleDefaults.appearanceColorReferenceRegion),
+        appearanceBackgroundRegion = battleRegions.region("appearance_background", battleDefaults.appearanceBackgroundRegion),
+        opponentTerminalVisualRegion = battleRegions.region("opponent_terminal_visual", battleDefaults.opponentTerminalVisualRegion)
     )
     return MatchCalibrationProfile(
         id = id,
@@ -351,7 +357,13 @@ private fun BattleCalibration.toRegionMap(): Map<String, StoredRegion> = linkedM
     "out_of_battle_menu" to outOfBattleMenuRegion.stored(),
     "match_outcome" to matchOutcomeRegion.stored(),
     "opponent_trainer_hand" to opponentTrainerHandRegion.stored(),
-    "charged_impact_hp" to chargedImpactHpRegion.stored()
+    "charged_impact_hp" to chargedImpactHpRegion.stored(),
+    "forced_replacement_message" to forcedReplacementMessageRegion.stored(),
+    "player_terminal_visual" to playerTerminalVisualRegion.stored(),
+    "player_appearance" to playerAppearanceRegion.stored(),
+    "appearance_color_reference" to appearanceColorReferenceRegion.stored(),
+    "appearance_background" to appearanceBackgroundRegion.stored(),
+    "opponent_terminal_visual" to opponentTerminalVisualRegion.stored()
 )
 
 private fun TeamSelectCalibration.toRegionMap(): Map<String, StoredRegion> = linkedMapOf(

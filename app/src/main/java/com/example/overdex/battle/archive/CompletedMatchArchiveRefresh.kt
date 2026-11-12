@@ -8,6 +8,10 @@ import com.example.overdex.battle.reality.RealityArticle
 internal fun shouldRefreshCompletedMatchArchive(article: RealityArticle, completedMatchId: MatchId): Boolean {
     if (article.matchId != completedMatchId) return false
     return when (val payload = article.payload) {
+        // The bounded final batch may publish after result recognition has
+        // already taken its first archive snapshot. Preserve gaps as well as
+        // positive points; none is a faint conclusion.
+        is TerminalParticleObservations -> payload.ended || payload.samples.isNotEmpty()
         is RawTestimony -> article.sourceId.id in COMPLETED_MATCH_TEXT_SOURCES &&
             (payload.data as? String)?.isNotBlank() == true
         GetReadyWitnessed, AttackIncoming, ChargeMoveUsedAnnounced,

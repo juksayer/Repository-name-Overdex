@@ -1,0 +1,221 @@
+{
+  "schemaVersion": 1,
+  "matchId": "8c55c9c3-e7c2-40e7-80de-bd7cd529a6f6",
+  "mediaIncluded": false,
+  "articles": [
+    {
+      "articleId": "6d70c8d4-6187-4a8e-9741-728632d2d545",
+      "matchId": "8c55c9c3-e7c2-40e7-80de-bd7cd529a6f6",
+      "perceivedAt": 1794422767618,
+      "recordedAt": 1794422769549,
+      "sourceId": "FAST_MOVE_SOUND_WITNESS",
+      "payload": {
+        "kind": "fast_move_sound_measured",
+        "audible": true,
+        "onsetOffsetNanos": 770000000,
+        "soundDurationNanos": 430000000,
+        "spectralCentroidHz": 2203.1655,
+        "peakAmplitude": 0.17948177,
+        "attackingSide": null,
+        "soundOnsetMonotonicNanos": 35890876458215,
+        "cueAttackingSide": null,
+        "analysisVersion": "spectral-sequence-v3",
+        "referenceCandidates": [
+          {
+            "moveName": "Incinerate",
+            "referenceSha256": "8fc0651c96db42f43b3c248bf3c5acde5803f5f3be3f90adb689d47c5e0cc107",
+            "similarity": 0.9856337,
+            "changingSimilarity": 0.9360362,
+            "matchingOffsetNanos": 0,
+            "referenceOffsetNanos": 1344000000,
+            "matchedDurationNanos": 416000000
+          },
+          {
+            "moveName": "Rock Throw",
+            "referenceSha256": "2ed90158300b4500d31c9428f8f355c732d7b6a3843b713b9b77b535e6e2eef8",
+            "similarity": 0.9498436,
+            "changingSimilarity": 0.89167506,
+            "matchingOffsetNanos": 768000000,
+            "referenceOffsetNanos": 0,
+            "matchedDurationNanos": 416000000
+          },
+          {
+            "moveName": "Tackle",
+            "referenceSha256": "150459b9b6afde6d3e5877c2bbaf7840b2f463ef9239bdf512a04b9e7860738c",
+            "similarity": 0.8865133,
+            "changingSimilarity": 0.6021968,
+            "matchingOffsetNanos": 16000000,
+            "referenceOffsetNanos": 0,
+            "matchedDurationNanos": 416000000
+          }
+        ],
+        "referenceMatchAccepted": true,
+        "referenceSearchScopes": [
+          {
+            "side": "PLAYER",
+            "speciesName": "Turtonator",
+            "moveNames": [
+              "Incinerate"
+            ],
+            "contextArticleIds": [
+              "f1e45b6c-4771-408d-80a5-4c933d2752fc",
+              "c6e8406e-e6f8-41dd-b8dc-a4e7fcf69e03",
+              "5c44954f-a75f-4b61-9f28-05a47c241cac"
+            ]
+          },
+          {
+            "side": "OPPONENT",
+            "speciesName": "Carbink",
+            "moveNames": [
+              "Rock Throw",
+              "Tackle"
+            ],
+            "contextArticleIds": [
+              "8df76095-1302-4f0a-9e44-808476556fcc",
+              "20a6761a-208f-44ba-b396-31f179e78fd4",
+              "7b40263b-8e86-4849-9bd5-e20593e9bff5"
+            ]
+          }
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1225,
+      "evidenceReferences": [
+        "209041b9-11fb-4354-9f16-b0279fdd12a1"
+      ],
+      "monotonicTimeNanos": 35890106458215
+    },
+    {
+      "articleId": "5976cdf5-2ee8-4c5e-ba0e-707f423821c8",
+      "matchId": "8c55c9c3-e7c2-40e7-80de-bd7cd529a6f6",
+      "perceivedAt": 1794422768500,
+      "recordedAt": 1794422770243,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_ARTIFACT_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_artifact_measured",
+        "damagedSide": "PLAYER",
+        "changedPixelFraction": 0.8402778,
+        "meanColorDistance": 0.26615068,
+        "meanRed": 0.6395148,
+        "meanGreen": 0.5382997,
+        "meanBlue": 0.3695586,
+        "centroidX": 0.49664253,
+        "centroidY": 0.5080066,
+        "changedSampleCount": 484
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1246,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 35890951477061
+    },
+    {
+      "articleId": "b2e334b1-d92e-41e0-98e5-11ca7b82c74f",
+      "matchId": "8c55c9c3-e7c2-40e7-80de-bd7cd529a6f6",
+      "perceivedAt": 1794422786298,
+      "recordedAt": 1794422787447,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_ARTIFACT_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_artifact_measured",
+        "damagedSide": "PLAYER",
+        "changedPixelFraction": 0.6770833,
+        "meanColorDistance": 0.21713753,
+        "meanRed": 0.67998976,
+        "meanGreen": 0.5769031,
+        "meanBlue": 0.3871392,
+        "centroidX": 0.51655984,
+        "centroidY": 0.45908117,
+        "changedSampleCount": 390
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1635,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 35908777179524
+    },
+    {
+      "articleId": "62d55264-a48c-4bb9-9c11-b11fbaf7de4f",
+      "matchId": "8c55c9c3-e7c2-40e7-80de-bd7cd529a6f6",
+      "perceivedAt": 1794422785792,
+      "recordedAt": 1794422787544,
+      "sourceId": "FAST_MOVE_SOUND_WITNESS",
+      "payload": {
+        "kind": "fast_move_sound_measured",
+        "audible": true,
+        "onsetOffsetNanos": 330000000,
+        "soundDurationNanos": 770000000,
+        "spectralCentroidHz": 2030.8932,
+        "peakAmplitude": 0.16943872,
+        "attackingSide": null,
+        "soundOnsetMonotonicNanos": 35908611123524,
+        "cueAttackingSide": null,
+        "analysisVersion": "spectral-sequence-v3",
+        "referenceCandidates": [
+          {
+            "moveName": "Incinerate",
+            "referenceSha256": "8fc0651c96db42f43b3c248bf3c5acde5803f5f3be3f90adb689d47c5e0cc107",
+            "similarity": 0.97845834,
+            "changingSimilarity": 0.93121994,
+            "matchingOffsetNanos": 704000000,
+            "referenceOffsetNanos": 160000000,
+            "matchedDurationNanos": 416000000
+          },
+          {
+            "moveName": "Rock Throw",
+            "referenceSha256": "2ed90158300b4500d31c9428f8f355c732d7b6a3843b713b9b77b535e6e2eef8",
+            "similarity": 0.94282115,
+            "changingSimilarity": 0.85610557,
+            "matchingOffsetNanos": 320000000,
+            "referenceOffsetNanos": 0,
+            "matchedDurationNanos": 416000000
+          },
+          {
+            "moveName": "Tackle",
+            "referenceSha256": "150459b9b6afde6d3e5877c2bbaf7840b2f463ef9239bdf512a04b9e7860738c",
+            "similarity": 0.866266,
+            "changingSimilarity": 0.53325087,
+            "matchingOffsetNanos": 0,
+            "referenceOffsetNanos": 0,
+            "matchedDurationNanos": 416000000
+          }
+        ],
+        "referenceMatchAccepted": true,
+        "referenceSearchScopes": [
+          {
+            "side": "PLAYER",
+            "speciesName": "Turtonator",
+            "moveNames": [
+              "Incinerate"
+            ],
+            "contextArticleIds": [
+              "f1e45b6c-4771-408d-80a5-4c933d2752fc",
+              "c6e8406e-e6f8-41dd-b8dc-a4e7fcf69e03",
+              "5c44954f-a75f-4b61-9f28-05a47c241cac"
+            ]
+          },
+          {
+            "side": "OPPONENT",
+            "speciesName": "Carbink",
+            "moveNames": [
+              "Rock Throw",
+              "Tackle"
+            ],
+            "contextArticleIds": [
+              "8df76095-1302-4f0a-9e44-808476556fcc",
+              "20a6761a-208f-44ba-b396-31f179e78fd4",
+              "7b40263b-8e86-4849-9bd5-e20593e9bff5"
+            ]
+          }
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1640,
+      "evidenceReferences": [
+        "a9d14891-be9c-4a2d-9162-51badf7c8c30"
+      ],
+      "monotonicTimeNanos": 35908281123524
+    }
+  ]
+}

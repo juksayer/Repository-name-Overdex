@@ -101,6 +101,23 @@ class ActiveHpBarMeasurerTest {
     }
 
     @Test
+    fun `recorded ordinary and charged bar dimensions retain their observed proportions`() {
+        // Typical ordinary and centered bars in the Nov 11 Moondrop archive
+        // are 191..193 x 17..19; the false GREAT-frame box was 173 x 23.
+        for (width in 191..193) for (height in 17..19) {
+            for (anchorWidth in 191..193) for (anchorHeight in 17..19) {
+                assertTrue("Rejected real dimensions $width x $height against $anchorWidth x $anchorHeight",
+                    ActiveHpBarGeometry.matchesSize(width, height, anchorWidth, anchorHeight))
+            }
+        }
+        // Preserve the two uncommon edge choices against their recorded
+        // side's opening anchor as well, without declaring their fill correct.
+        assertTrue(ActiveHpBarGeometry.matchesSize(182, 19, 191, 18))
+        assertTrue(ActiveHpBarGeometry.matchesSize(194, 17, 192, 18))
+        assertTrue(!ActiveHpBarGeometry.matchesSize(173, 23, 192, 18))
+    }
+
+    @Test
     fun `measures active HP bar outline geometry and left-aligned fill`() {
         val width = 240
         val height = 120

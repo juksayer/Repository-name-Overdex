@@ -14,7 +14,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 
 /** Turns a preserved, single-purpose badge crop into a stable resource count. */
@@ -23,8 +22,8 @@ class PersistedOpponentBattleResourceWitness private constructor(
     private val cropName: String,
     private val resource: OpponentBattleResource,
     private val maximumCount: Int,
-    private val acceptsPixel: (Int) -> Boolean,
     private val playerShields: Boolean = false,
+    private val onCandidateRead: (Long) -> Unit = {},
     override val observerId: ObserverId,
     override val name: String
 ) : Observer {
@@ -35,44 +34,36 @@ class PersistedOpponentBattleResourceWitness private constructor(
         val sourceId = SourceId(observerId.id)
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
-                var candidate: Int? = null
-                var candidateArticle: com.example.overdex.battle.reality.RealityArticle? = null
-                var delivered: Int? = null
-                match.articles
-                    .filter { (it.payload as? CropCaptured)?.cropProvenance?.cropName == cropName }
-                    .collect { article ->
-                        val captured = article.payload as CropCaptured
-                        val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance)
-                            ?: return@collect
-                        val count = try {
-                            if (resource == OpponentBattleResource.POKE_BALLS) OpponentBattleResourceCounter.pokeBallCount(bitmap, captured.overlayBounds)
-                            else OpponentBattleResourceCounter.shieldCount(bitmap, captured.overlayBounds)
-                        } finally {
-                            bitmap.recycle()
-                        }
-                        if (count == null) { candidate = null; candidateArticle = null; return@collect }
-                        if (candidate != count) {
-                            candidate = count
-                            candidateArticle = article
-                            return@collect
-                        }
-                        // Repeated ball snapshots also prove that an intervening
-                        // species change was a switch, rather than a faint.
-                        // A fresh unchanged shield count completes a newly armed
-                        // assignment just as an unchanged ball count does.
-                        val observed = if (delivered != count) candidateArticle ?: article else article
-                        match.custody.submitTestimony(
-                            sourceId = sourceId,
-                            payload = if (playerShields) com.example.overdex.battle.custody.PlayerShieldCountMeasured(count, maximumCount)
-                                else OpponentBattleResourceCountMeasured(resource, count, maximumCount),
-                            timestamp = observed.perceivedAt,
-                            confidence = null,
-                            evidenceReferences = listOfNotNull(candidateArticle?.id?.value, article.id.value).distinct(),
-                            monotonicTimeNanos = observed.monotonicTimeNanos ?: return@collect
-                        )
-                        delivered = count
-                        candidateArticle = article
+                val confirmation = BattleResourceCountConfirmation()
+                match.articles.collect { article ->
+                    confirmation.observeLifecycle(article)
+                    val captured = article.payload as? CropCaptured ?: return@collect
+                    if (captured.cropProvenance.cropName != cropName) return@collect
+                    val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance)
+                        ?: return@collect
+                    val count = try {
+                        if (resource == OpponentBattleResource.POKE_BALLS) OpponentBattleResourceCounter.pokeBallCount(bitmap, captured.overlayBounds)
+                        else OpponentBattleResourceCounter.shieldCount(bitmap, captured.overlayBounds)
+                    } finally {
+                        bitmap.recycle()
                     }
+                    if (count != null) article.monotonicTimeNanos?.let(onCandidateRead)
+                    val confirmed = confirmation.observe(article, count) ?: return@collect
+                    // Repeated ball snapshots also prove that an intervening
+                    // species change was a switch, rather than a faint.
+                    // A fresh unchanged shield count completes a newly armed
+                    // assignment just as an unchanged ball count does.
+                    val observed = confirmed.observed
+                    match.custody.submitTestimony(
+                        sourceId = sourceId,
+                        payload = if (playerShields) com.example.overdex.battle.custody.PlayerShieldCountMeasured(confirmed.count, maximumCount)
+                            else OpponentBattleResourceCountMeasured(resource, confirmed.count, maximumCount),
+                        timestamp = observed.perceivedAt,
+                        confidence = null,
+                        evidenceReferences = confirmed.evidence.map { it.id.value },
+                        monotonicTimeNanos = observed.monotonicTimeNanos ?: return@collect
+                    )
+                }
             }
         }
     }
@@ -83,33 +74,33 @@ class PersistedOpponentBattleResourceWitness private constructor(
     }
 
     companion object {
-        fun pokeBalls(artifactStore: FileCropArtifactStore) = PersistedOpponentBattleResourceWitness(
+        fun pokeBalls(artifactStore: FileCropArtifactStore, onCandidateRead: (Long) -> Unit = {}) = PersistedOpponentBattleResourceWitness(
             artifactStore = artifactStore,
+            onCandidateRead = onCandidateRead,
             cropName = BattleCropContracts.opponentPokeBalls.cropName,
             resource = OpponentBattleResource.POKE_BALLS,
             maximumCount = 3,
-            acceptsPixel = OpponentBattleResourceCounter::isBrightPokeBallRed,
             observerId = ObserverId("OPPONENT_POKE_BALLS_WITNESS", ObservationSource.SCREEN_CAPTURE),
             name = "Opponent Poké Balls"
         )
 
-        fun playerShields(artifactStore: FileCropArtifactStore) = PersistedOpponentBattleResourceWitness(
+        fun playerShields(artifactStore: FileCropArtifactStore, onCandidateRead: (Long) -> Unit = {}) = PersistedOpponentBattleResourceWitness(
             artifactStore = artifactStore,
+            onCandidateRead = onCandidateRead,
             cropName = BattleCropContracts.playerShields.cropName,
             resource = OpponentBattleResource.SHIELDS,
             maximumCount = 2,
-            acceptsPixel = OpponentBattleResourceCounter::isShieldColor,
             playerShields = true,
             observerId = ObserverId("PLAYER_SHIELDS_WITNESS", ObservationSource.SCREEN_CAPTURE),
             name = "Player Shields"
         )
 
-        fun shields(artifactStore: FileCropArtifactStore) = PersistedOpponentBattleResourceWitness(
+        fun shields(artifactStore: FileCropArtifactStore, onCandidateRead: (Long) -> Unit = {}) = PersistedOpponentBattleResourceWitness(
             artifactStore = artifactStore,
+            onCandidateRead = onCandidateRead,
             cropName = BattleCropContracts.opponentShields.cropName,
             resource = OpponentBattleResource.SHIELDS,
             maximumCount = 2,
-            acceptsPixel = OpponentBattleResourceCounter::isShieldColor,
             observerId = ObserverId("OPPONENT_SHIELDS_WITNESS", ObservationSource.SCREEN_CAPTURE),
             name = "Opponent Shields"
         )
@@ -123,7 +114,8 @@ class PersistedPlayerPokeBallWitness(
         "PLAYER_POKE_BALLS_WITNESS",
         ObservationSource.SCREEN_CAPTURE
     ),
-    override val name: String = "Player Poké Balls"
+    override val name: String = "Player Poké Balls",
+    private val onCandidateRead: (Long) -> Unit = {},
 ) : Observer {
     private var scope: CoroutineScope? = null
 
@@ -132,41 +124,30 @@ class PersistedPlayerPokeBallWitness(
         val sourceId = SourceId(observerId.id)
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
-                var candidate: Int? = null
-                var candidateArticle: com.example.overdex.battle.reality.RealityArticle? = null
-                var delivered: Int? = null
-                match.articles
-                    .filter {
-                        (it.payload as? CropCaptured)?.cropProvenance?.cropName ==
-                            BattleCropContracts.playerPokeBalls.cropName
+                val confirmation = BattleResourceCountConfirmation()
+                match.articles.collect { article ->
+                    confirmation.observeLifecycle(article)
+                    val captured = article.payload as? CropCaptured ?: return@collect
+                    if (captured.cropProvenance.cropName != BattleCropContracts.playerPokeBalls.cropName) return@collect
+                    val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance)
+                        ?: return@collect
+                    val count = try {
+                        OpponentBattleResourceCounter.pokeBallCount(bitmap, captured.overlayBounds)
+                    } finally {
+                        bitmap.recycle()
                     }
-                    .collect { article ->
-                        val captured = article.payload as CropCaptured
-                        val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance)
-                            ?: return@collect
-                        val count = try {
-                            OpponentBattleResourceCounter.pokeBallCount(bitmap, captured.overlayBounds)
-                        } finally {
-                            bitmap.recycle()
-                        }
-                        if (count == null) { candidate = null; candidateArticle = null; return@collect }
-                        if (candidate != count) {
-                            candidate = count
-                            candidateArticle = article
-                            return@collect
-                        }
-                        val observed = if (delivered != count) candidateArticle ?: article else article
-                        match.custody.submitTestimony(
-                            sourceId = sourceId,
-                            payload = PlayerPokeBallCountMeasured(count),
-                            timestamp = observed.perceivedAt,
-                            confidence = null,
-                            evidenceReferences = listOfNotNull(candidateArticle?.id?.value, article.id.value).distinct(),
-                            monotonicTimeNanos = observed.monotonicTimeNanos ?: return@collect
-                        )
-                        delivered = count
-                        candidateArticle = article
-                    }
+                    if (count != null) article.monotonicTimeNanos?.let(onCandidateRead)
+                    val confirmed = confirmation.observe(article, count) ?: return@collect
+                    val observed = confirmed.observed
+                    match.custody.submitTestimony(
+                        sourceId = sourceId,
+                        payload = PlayerPokeBallCountMeasured(confirmed.count),
+                        timestamp = observed.perceivedAt,
+                        confidence = null,
+                        evidenceReferences = confirmed.evidence.map { it.id.value },
+                        monotonicTimeNanos = observed.monotonicTimeNanos ?: return@collect
+                    )
+                }
             }
         }
     }

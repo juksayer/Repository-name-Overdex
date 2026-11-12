@@ -1,0 +1,76 @@
+{
+  "sourceFile": "/home/sean/Desktop/Screen_recording_20261111_161531.mp4",
+  "transformation": "Pillow bilinear resize, then fixed source-coordinate crop; pixels not retouched",
+  "frames": [
+    {
+      "name": "seed.png",
+      "videoPtsSeconds": 58.773722222222226,
+      "sourceWidth": 816,
+      "sourceHeight": 1808,
+      "derivedWidth": 672,
+      "derivedHeight": 1493,
+      "crop": [
+        380,
+        650,
+        610,
+        730
+      ]
+    },
+    {
+      "name": "red.png",
+      "videoPtsSeconds": 59.00541111111111,
+      "sourceWidth": 816,
+      "sourceHeight": 1808,
+      "derivedWidth": 672,
+      "derivedHeight": 1493,
+      "crop": [
+        380,
+        650,
+        610,
+        730
+      ]
+    },
+    {
+      "name": "orange-tail.png",
+      "videoPtsSeconds": 59.518433333333334,
+      "sourceWidth": 816,
+      "sourceHeight": 1808,
+      "derivedWidth": 672,
+      "derivedHeight": 1493,
+      "crop": [
+        380,
+        650,
+        610,
+        730
+      ]
+    },
+    {
+      "name": "empty.png",
+      "videoPtsSeconds": 60.504888888888885,
+      "sourceWidth": 816,
+      "sourceHeight": 1808,
+      "derivedWidth": 672,
+      "derivedHeight": 1493,
+      "crop": [
+        380,
+        650,
+        610,
+        730
+      ]
+    },
+    {
+      "name": "vanished.png",
+      "videoPtsSeconds": 61.77911111111111,
+      "sourceWidth": 816,
+      "sourceHeight": 1808,
+      "derivedWidth": 672,
+      "derivedHeight": 1493,
+      "crop": [
+        380,
+        650,
+        610,
+        730
+      ]
+    }
+  ]
+}

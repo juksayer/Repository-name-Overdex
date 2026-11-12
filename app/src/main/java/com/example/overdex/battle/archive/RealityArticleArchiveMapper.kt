@@ -64,6 +64,14 @@ object RealityArticleArchiveMapper {
         val mId = article.matchId ?: throw IllegalArgumentException("RealityArticle ${article.id.value} has a null matchId and cannot be archived.")
 
         val archivedPayload: ArchivedTestimonyPayload = when (val p = article.payload) {
+            is com.example.overdex.battle.custody.TerminalParticleObservations ->
+                ArchivedTerminalParticleObservations(p.requestedRecipient.name, p.phaseAtNanos,
+                    p.sourceDeadlineNanos, p.samples, p.ended, p.totalSamples)
+            is com.example.overdex.battle.custody.ForcedReplacementPromptWitnessed ->
+                ArchivedForcedReplacementPromptWitnessed(p.rawText, p.basis, p.ocr)
+            is com.example.overdex.battle.custody.TerminalVisualSequenceCaptured ->
+                ArchivedTerminalVisualSequenceCaptured(p.side.name, p.trigger,
+                    p.sourceStartedAtNanos, p.sourceEndedAtNanos, p.frameCount)
             is com.example.overdex.battle.custody.PlayerChargeButtonTouchWitnessed -> ArchivedPlayerChargeButtonTouchWitnessed(
                 p.slot, p.x, p.y, p.displayWidth, p.displayHeight, p.rawText
             )
@@ -79,6 +87,9 @@ object RealityArticleArchiveMapper {
                     else -> throw IllegalArgumentException("Unsupported RawTestimony data type: ${data::class.java.name}")
                 }
             }
+            is com.example.overdex.battle.custody.MatchOutcomeLabelWitnessed -> ArchivedMatchOutcomeLabelWitnessed(
+                p.result.name, p.rawText, p.basis, p.ocr, p.supportingFrameCount
+            )
             is MatchRecordStarted -> ArchivedMatchRecordStarted
             is BattleOverlayOpened -> ArchivedBattleOverlayOpened(p.reason.name)
             is TeamSelectScanStartedByUser -> ArchivedTeamSelectScanStartedByUser

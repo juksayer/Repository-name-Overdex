@@ -1,5 +1,7 @@
 package com.example.overdex.ui.screens
 
+import com.example.overdex.battle.BattleSpeciesDisplay
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -267,7 +269,7 @@ fun CurrentBattleTeamScreen(
             "A: EDIT MEMBER MOVES · B: BACK",
         )
         CurrentTeamStep.MEMBER -> listOf(
-            originalMember?.speciesName?.uppercase() ?: "TEAM MEMBER",
+            originalMember?.speciesName?.let(BattleSpeciesDisplay::name)?.uppercase() ?: "TEAM MEMBER",
             "FAST ${selectedFastMove ?: "---"}",
             selectedChargedMoves.joinToString(" / "),
             "A: CHOOSE · B: CURRENT TEAM",
@@ -290,7 +292,7 @@ fun CurrentBattleTeamScreen(
             } else {
                 listOf(
                     if (editingMovesOnly) "SAVE MOVES" else "ADD TO TEAM",
-                    selectedSpecies?.name?.uppercase() ?: "UNKNOWN SPECIES",
+                    selectedSpecies?.name?.let(BattleSpeciesDisplay::name)?.uppercase() ?: "UNKNOWN SPECIES",
                     "FAST ${selectedFastMove ?: "---"}",
                     "CHARGED ${selectedChargedMoves.size}/2",
                 ) + selectedChargedMoves.map(String::uppercase)
@@ -303,7 +305,7 @@ fun CurrentBattleTeamScreen(
         showBattleOverlay = false,
         lcdLines = when {
             saving -> listOf("SAVING MOVES…", "Keeping this Pokémon and its battle history.")
-            loading -> listOf("READING MOVES…", originalMember?.speciesName.orEmpty())
+            loading -> listOf("READING MOVES…", originalMember?.speciesName?.let(BattleSpeciesDisplay::name).orEmpty())
             notice != null -> listOf(requireNotNull(notice)) + lcdLines
             else -> lcdLines
         },
@@ -331,7 +333,7 @@ fun CurrentBattleTeamScreen(
                     showLibrary = onTeamLibrary != null,
                 )
                 CurrentTeamStep.MEMBER -> Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(originalMember?.speciesName.orEmpty(), color = TerminalGreen, fontSize = 18.sp)
+                    Text(originalMember?.speciesName?.let(BattleSpeciesDisplay::name).orEmpty(), color = TerminalGreen, fontSize = 18.sp)
                     listOf("EDIT FAST MOVE", "EDIT CHARGED MOVES", "REPLACE POKÉMON").forEachIndexed { index, label ->
                         TerminalMenuOption(label, selected = nav.selectedIndex == index)
                     }
@@ -397,7 +399,7 @@ internal fun CurrentTeamOverview(
         team.members.forEachIndexed { index, member ->
             item {
                 TerminalMenuOption(
-                    label = "${member.slot}. ${member.speciesName}",
+                    label = "${member.slot}. ${BattleSpeciesDisplay.name(member.speciesName)}",
                     selected = selectedIndex == index,
                     status = member.fastMoveName
                 )

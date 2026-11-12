@@ -2,6 +2,9 @@ package com.example.overdex.battle.forecast
 
 import com.example.overdex.battle.custody.*
 import com.example.overdex.battle.inference.FastMoveUseEvidence
+import com.example.overdex.battle.inference.LiveVerifiedHpFaintHistory
+import com.example.overdex.battle.inference.TeamLossResolver
+import com.example.overdex.battle.inference.VerifiedHpFaintResolver
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.model.Move
 
@@ -31,7 +34,8 @@ data class OpponentEnergyEstimate(
  * partial recording began. Interruptions discard unfinished cycles. Stored energy survives
  * switches, is capped at 100, and is spent only for witnessed charged moves.
  */
-class OpponentEnergyForecast {
+class OpponentEnergyForecast(private val onRebuild: ((String, Int) -> Unit)? = null,
+    private val faintHistoryCache: com.example.overdex.battle.inference.FaintHistoryCache? = null) {
     private data class Event(val at: Long, val payload: TestimonyPayload)
     private val eventIds = mutableSetOf<String>()
     // Stable source-time order is maintained only when semantic evidence arrives.
@@ -39,6 +43,9 @@ class OpponentEnergyForecast {
     private val moves = mutableMapOf<String, List<Move>>()
     private val candidates = mutableMapOf<String, Set<String>>()
     private val identities = mutableMapOf<String, Pair<Long, FastMoveIdentified>>()
+    private val hpHistories = ActivePokemonSide.entries.associateWith { LiveVerifiedHpFaintHistory(it, onRebuild, faintHistoryCache) }.toMutableMap()
+    private val terminalHistories = ActivePokemonSide.entries.associateWith {
+        com.example.overdex.battle.inference.LiveTerminalChargedFaintHistory(it, onRebuild, faintHistoryCache) }.toMutableMap()
     private val battlefield = ForecastBattlefieldVisibility()
     private val selectedMoves = mutableMapOf<String, Move>()
     private var projection: Projection? = null
@@ -78,6 +85,12 @@ class OpponentEnergyForecast {
     @Synchronized fun observe(article: RealityArticle) {
         val at = article.monotonicTimeNanos ?: return
         val p = article.payload
+        hpHistories.values.forEach { history ->
+            val before = history.reconciliation.faints
+            history.accept(article)
+            if (before != history.reconciliation.faints) projection = null
+        }
+        terminalHistories.values.forEach { history -> if (history.accept(article)) projection = null }
         if (p is FastMoveIdentified && p.side == ActivePokemonSide.OPPONENT) {
             if (at >= (identities[key(p.speciesName)]?.first ?: Long.MIN_VALUE)) {
                 val id = key(p.speciesName)
@@ -109,6 +122,10 @@ class OpponentEnergyForecast {
         selectedMoves.clear(); projection = null
         projectionBuilds = 0L; eventsApplied = 0L
         battlefield.clear()
+        ActivePokemonSide.entries.forEach {
+            hpHistories[it] = LiveVerifiedHpFaintHistory(it, onRebuild, faintHistoryCache)
+            terminalHistories[it] = com.example.overdex.battle.inference.LiveTerminalChargedFaintHistory(it, onRebuild, faintHistoryCache)
+        }
     }
 
     private fun chosenMove(species: String): Move? = selectedMoves[key(species)]
@@ -171,6 +188,7 @@ class OpponentEnergyForecast {
         var lastEventAt = Long.MIN_VALUE
         val balances = mutableMapOf<String, Balance>()
         val seenUses = mutableSetOf<String>()
+        val seenFaints = mutableSetOf<Pair<ActivePokemonSide, String>>()
         val activeBySide = mutableMapOf<ActivePokemonSide, String>()
         var active: String? = null
         var start: Long? = null
@@ -211,10 +229,15 @@ class OpponentEnergyForecast {
         fun accept(event: Event) {
             val t = event.at
             val p = event.payload
+            if (p is ActivePokemonFaintedWitnessed && com.example.overdex.battle.inference.isRevisableVisualFaint(p.basis) &&
+                (hpHistories.getValue(p.side).reconciliation.faints.map { it.atNanos to it.owner.speciesName } +
+                    terminalHistories.getValue(p.side).resolutions.map { it.atNanos to it.owner.speciesName }).none {
+                    it.first == t && p.speciesName?.let(TeamLossResolver::speciesKey) == TeamLossResolver.speciesKey(it.second)
+                }) return
             advance(t)
             when (p) {
                 ObservationRestartedByUser -> {
-                    balances.clear(); activeBySide.clear(); seenUses.clear()
+                    balances.clear(); activeBySide.clear(); seenUses.clear(); seenFaints.clear()
                     active = null; start = null; running = false; ended = false; partial = true
                     earliestResume = t; begin(t)
                     partialCompletionAvailable = true
@@ -256,9 +279,12 @@ class OpponentEnergyForecast {
                     if (p.secondsRemaining != null) pause(t)
                 }
                 is ActivePokemonFaintedWitnessed -> {
-                    pause(t)
+                    val name = p.speciesName ?: activeBySide[p.side]
+                    if (name != null && !seenFaints.add(p.side to key(name))) return
+                    // A later count may corroborate an HP KO after a replacement
+                    // is active. It cannot pause that replacement a second time.
+                    if (name == null || activeBySide[p.side]?.let { key(it) != key(name) } != true) pause(t)
                     if (p.side == ActivePokemonSide.OPPONENT) {
-                        val name = p.speciesName ?: active
                         name?.let { balance(it).apply { energy = 0; fainted = true } }
                     }
                 }

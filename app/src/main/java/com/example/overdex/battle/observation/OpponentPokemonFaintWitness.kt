@@ -2,11 +2,10 @@ package com.example.overdex.battle.observation
 
 import com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed
 import com.example.overdex.battle.custody.ActivePokemonSide
-import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.BattleCryCandidatesMeasured
-import com.example.overdex.battle.custody.OpponentBattleResource
-import com.example.overdex.battle.custody.OpponentBattleResourceCountMeasured
 import com.example.overdex.battle.custody.SourceId
+import com.example.overdex.battle.inference.TeamLossResolver
+import com.example.overdex.battle.inference.VerifiedHpFaintResolver
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.battle.timeline.observer.ObservationSource
@@ -17,14 +16,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
- * Derives one side's faint from its own visible Poké Ball count.
- *
- * Pokémon GO removes a depleted HP bar with its combatant, so an empty-bar
- * confirmation would usually ask for a frame that cannot exist. A stable drop
- * in the side's Poké Ball count is the durable faint observation. The active
- * combatant immediately before that drop is the Pokémon that fainted. A recent
- * battle-cry candidate is cited when available, while the following species
- * identity naturally confirms which replacement entered the field.
+ * Publishes named losses resolved from source-time team or verified HP history. Count
+ * measurements already preserve unresolved losses; an entry alone is not a KO.
+ * Presentation re-evaluates that same history as later evidence arrives.
  */
 class PokemonFaintWitness(
     private val side: ActivePokemonSide = ActivePokemonSide.OPPONENT,
@@ -43,20 +37,21 @@ class PokemonFaintWitness(
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
                 match.articles.collect { article ->
-                    val faint = tracker.accept(article) ?: return@collect
-                    match.custody.submitTestimony(
-                        sourceId = sourceId,
-                        payload = ActivePokemonFaintedWitnessed(
-                            side = side,
-                            speciesName = faint.speciesName,
-                            speciesId = faint.speciesId,
-                            basis = faint.basis
-                        ),
-                        timestamp = article.perceivedAt,
-                        confidence = if (faint.cryCorroborated) 0.99f else 0.96f,
-                        evidenceReferences = faint.evidenceReferences,
-                        monotonicTimeNanos = article.monotonicTimeNanos ?: System.nanoTime()
-                    )
+                    tracker.acceptAll(article).forEach { faint ->
+                        match.custody.submitTestimony(
+                            sourceId = sourceId,
+                            payload = ActivePokemonFaintedWitnessed(
+                                side = side,
+                                speciesName = faint.speciesName,
+                                speciesId = faint.speciesId,
+                                basis = faint.basis
+                            ),
+                            timestamp = faint.sourceArticle.perceivedAt,
+                            confidence = if (faint.cryCorroborated) 0.99f else 0.96f,
+                            evidenceReferences = faint.evidenceReferences,
+                            monotonicTimeNanos = requireNotNull(faint.sourceArticle.monotonicTimeNanos)
+                        )
+                    }
                 }
             }
         }
@@ -69,106 +64,85 @@ class PokemonFaintWitness(
 }
 
 internal data class TeamFaintDecision(
-    val speciesName: String?,
+    val speciesName: String,
     val speciesId: Int?,
     val evidenceReferences: List<String>,
     val cryCorroborated: Boolean,
-    val basis: String
+    val basis: String,
+    /** The source count/empty frame's capture clock survives delayed recognition. */
+    val sourceArticle: RealityArticle,
 )
 
-/** Deterministic state machine kept separate so resource transitions are unit-testable. */
+/** Live adapter for the same source-time resolver used by completed Replay. */
 internal class TeamFaintTracker(private val side: ActivePokemonSide = ActivePokemonSide.OPPONENT) {
-    private data class ActiveCombatant(val name: String, val id: Int?, val appearanceArticleId: String, val atNanos: Long)
-    private data class BallCount(val count: Int, val articleId: String, val atNanos: Long)
-    private data class CryCandidate(val articleId: String, val atNanos: Long)
+    private val history = com.example.overdex.battle.inference.LiveTeamLossHistory(side)
+    private val deliveredOwners = mutableSetOf<Pair<String, String>>()
+    private val cries = linkedMapOf<String, RealityArticle>()
 
-    private var activeCombatant: ActiveCombatant? = null
-    private var combatantBeforeLatestEntry: ActiveCombatant? = null
-    private var previousBallCount: BallCount? = null
-    private var recentCry: CryCandidate? = null
-    private var lastFaintedAppearanceId: String? = null
+    val resolutions get() = history.resolutions
 
-    fun accept(article: RealityArticle): TeamFaintDecision? {
-        when (val payload = article.payload) {
-            is ActivePokemonSpeciesWitnessed -> if (payload.side == side) {
-                val current = activeCombatant
-                val at = article.monotonicTimeNanos ?: return null
-                if (current != null && at < current.atNanos) return null
-                if (current == null || !current.name.equals(payload.speciesName, ignoreCase = true)) {
-                    combatantBeforeLatestEntry = current?.takeUnless {
-                        it.appearanceArticleId == lastFaintedAppearanceId
-                    }
-                    activeCombatant = ActiveCombatant(payload.speciesName, payload.speciesId, article.id.value, at)
-                    lastFaintedAppearanceId = null
-                } else if (current.id == null && payload.speciesId != null) {
-                    activeCombatant = current.copy(id = payload.speciesId)
-                }
-            }
-            is BattleCryCandidatesMeasured -> if (payload.candidates.isNotEmpty() && payload.cueKind != "FAST_MOVE_IMPACT") {
-                recentCry = CryCandidate(
-                    articleId = article.id.value,
-                    atNanos = article.monotonicTimeNanos ?: Long.MIN_VALUE
-                )
-            }
-            is OpponentBattleResourceCountMeasured, is com.example.overdex.battle.custody.PlayerPokeBallCountMeasured -> {
-                val count = when (payload) {
-                    is OpponentBattleResourceCountMeasured -> payload.visibleCount.takeIf {
-                        side == ActivePokemonSide.OPPONENT && payload.resource == OpponentBattleResource.POKE_BALLS
-                    }
-                    is com.example.overdex.battle.custody.PlayerPokeBallCountMeasured -> payload.visibleCount.takeIf { side == ActivePokemonSide.PLAYER }
-                    else -> null
-                } ?: return null
-                val at = article.monotonicTimeNanos ?: return null
-                val earlier = previousBallCount
-                if (earlier != null && at <= earlier.atNanos) return null
-                // Team members cannot revive within a Match. A brighter later
-                // crop must not manufacture a second decrease/faint afterwards.
-                if (earlier != null && count > earlier.count) return null
-                val current = BallCount(count, article.id.value, at)
-                previousBallCount = current
-                if (earlier == null) return null
-                if (current.count >= earlier.count) {
-                    // Two agreeing resource crops have now shown that the latest
-                    // species change preserved the team count: it was a switch.
-                    // A delayed count from before the new entry cannot prove
-                    // the replacement kept the same number of survivors.
-                    if (at >= (activeCombatant?.atNanos ?: Long.MIN_VALUE)) combatantBeforeLatestEntry = null
-                    return null
-                }
+    fun accept(article: RealityArticle): TeamFaintDecision? = acceptAll(article).firstOrNull()
 
-                // OCR for the replacement can occasionally arrive while the
-                // two Poké Ball crops are still being processed. In that order,
-                // the Pokémon active before the replacement is the one that
-                // belongs to the observed count decrease.
-                val active = combatantBeforeLatestEntry ?: activeCombatant
-                combatantBeforeLatestEntry = null
-                if (active != null && active.appearanceArticleId == lastFaintedAppearanceId) return null
-                lastFaintedAppearanceId = active?.appearanceArticleId
-
-                val now = article.monotonicTimeNanos ?: Long.MAX_VALUE
-                val cry = recentCry?.takeIf { candidate ->
-                    candidate.atNanos != Long.MIN_VALUE &&
-                        now >= candidate.atNanos && now - candidate.atNanos <= CRY_CORROBORATION_WINDOW_NANOS
-                }
-                return TeamFaintDecision(
-                    speciesName = active?.name,
-                    speciesId = active?.id,
-                    evidenceReferences = listOfNotNull(
-                        active?.appearanceArticleId,
-                        earlier.articleId,
-                        current.articleId,
-                        cry?.articleId
-                    ).distinct(),
+    fun acceptAll(article: RealityArticle): List<TeamFaintDecision> {
+        (article.payload as? BattleCryCandidatesMeasured)?.takeIf {
+            it.candidates.isNotEmpty() && it.cueKind != "FAST_MOVE_IMPACT"
+        }?.let { cries[article.id.value] = article }
+        if (!history.accept(article)) return emptyList()
+        val countDecisions = history.resolutions.flatMap { loss ->
+            val source = history.source(loss.lossId) ?: return@flatMap emptyList()
+            val aggregate = loss.beforeCount - loss.afterCount > 1
+            loss.resolvedCandidates.mapNotNull { candidate ->
+                val owner = loss.lossId to TeamLossResolver.speciesKey(candidate.speciesName)
+                if (owner in deliveredOwners) return@mapNotNull null
+                // An aggregate confirms losses over an interval. A cry near its
+                // final count cannot date or corroborate every earlier departure.
+                val cry = if (aggregate) null else cries.values.filter { evidence ->
+                    val at = evidence.monotonicTimeNanos ?: return@filter false
+                    loss.sourceAtNanos - at in 0..CRY_CORROBORATION_WINDOW_NANOS &&
+                        (evidence.payload as BattleCryCandidatesMeasured).candidates.any {
+                            it.speciesId == candidate.speciesId
+                        }
+                }.maxByOrNull { it.monotonicTimeNanos!! }
+                deliveredOwners += owner
+                TeamFaintDecision(
+                    speciesName = candidate.speciesName,
+                    speciesId = candidate.speciesId,
+                    evidenceReferences = (loss.evidenceReferences + listOfNotNull(cry?.id?.value)).distinct(),
                     cryCorroborated = cry != null,
-                    basis = if (cry != null) {
-                        "${side.name}_POKE_BALL_COUNT_DECREASE_WITH_BATTLE_CRY"
-                    } else {
-                        "${side.name}_POKE_BALL_COUNT_DECREASE"
-                    }
+                    basis = "${side.name}_POKE_BALL_COUNT_DECREASE" + when {
+                        aggregate -> "_AGGREGATE"
+                        cry != null -> "_WITH_BATTLE_CRY"
+                        else -> ""
+                    },
+                    sourceArticle = source,
                 )
             }
         }
-        return null
+        val hpDecisions = history.hpReconciliation.faints.mapNotNull { loss ->
+            val key = TeamLossResolver.speciesKey(loss.owner.speciesName)
+            if (history.resolutions.any { count -> count.resolvedCandidates.any {
+                    TeamLossResolver.speciesKey(it.speciesName) == key } }) return@mapNotNull null
+            val source = history.source(loss.emptyArticleId) ?: return@mapNotNull null
+            if (!deliveredOwners.add(loss.emptyArticleId to key)) return@mapNotNull null
+            TeamFaintDecision(loss.owner.speciesName, loss.owner.speciesId,
+                loss.evidenceReferences, false, VerifiedHpFaintResolver.BASIS, source)
+        }
+        // A later independent count is still archived, and can publish its own
+        // corroborated conclusion. Consumers reconcile by actor, never event tally.
+        val terminalDecisions = history.terminalFaints.mapNotNull { loss ->
+            val key = TeamLossResolver.speciesKey(loss.owner.speciesName)
+            if (history.resolutions.any { count -> count.resolvedCandidates.any {
+                    TeamLossResolver.speciesKey(it.speciesName) == key } } ||
+                history.hpReconciliation.faints.any { TeamLossResolver.speciesKey(it.owner.speciesName) == key }) return@mapNotNull null
+            val source = history.source(loss.sourceArticleId) ?: return@mapNotNull null
+            val sample = (source.payload as? com.example.overdex.battle.custody.TerminalParticleObservations)
+                ?.samples?.singleOrNull { it.sourceAtNanos == loss.atNanos } ?: return@mapNotNull null
+            if (!deliveredOwners.add(loss.sourceArticleId to key)) return@mapNotNull null
+            TeamFaintDecision(loss.owner.speciesName, loss.owner.speciesId, loss.evidenceReferences, false,
+                com.example.overdex.battle.inference.TerminalChargedFaintResolver.BASIS,
+                source.copy(perceivedAt = sample.wallTimeMillis, monotonicTimeNanos = sample.sourceAtNanos))
+        }
+        return countDecisions + hpDecisions + terminalDecisions
     }
 
     private companion object {

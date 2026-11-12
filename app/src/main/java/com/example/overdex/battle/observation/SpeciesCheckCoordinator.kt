@@ -9,6 +9,9 @@ class SpeciesCheckCoordinator(
     private val report: (SpeciesCheckMeasured, List<String>) -> Unit
 ) {
     data class Window(val id: Long, val openedAt: Long, val triggerAt: Long, val reason: String, val triggerId: String?)
+    private data class AcceptedBadge(
+        val window: Window, val capturedAt: Long, val cropId: String, val species: String,
+    )
     private data class State(
         var window: Window? = null,
         var nextRecoveryAt: Long = 0,
@@ -20,6 +23,7 @@ class SpeciesCheckCoordinator(
         val recentWindows: LinkedHashMap<Long, Window> = linkedMapOf(),
         var latestAcceptedWindowOpenedAt: Long = Long.MIN_VALUE,
         var identityResolved: Boolean = false,
+        var acceptedBadge: AcceptedBadge? = null,
     )
     private val states = ActivePokemonSide.entries.associateWith { State() }
     private var serial = 0L
@@ -29,6 +33,17 @@ class SpeciesCheckCoordinator(
         if (stopped) return
         val state = states.getValue(side)
         if (reason == "RECOVERY" && state.identityResolved) return
+        if (reason == "ENTRY" && !triggerId.isNullOrBlank() && triggerAt >= 0L) {
+            val badge = state.acceptedBadge?.takeIf { triggerAt < it.capturedAt && it.capturedAt <= now() }
+            if (badge != null) {
+                // A native badge already captured after this delayed entry cue
+                // has completed its assignment. This is scheduling coverage,
+                // not another identity or permission to retire a newer check.
+                emit(side, badge.window.copy(triggerAt = triggerAt, reason = reason, triggerId = triggerId),
+                    "COVERED", badge.species, listOf(triggerId, badge.cropId).distinct())
+                return
+            }
+        }
         reportMissedTarget(side, state)
         if (state.window != null) {
             // A lifecycle cue supersedes an unrelated recovery/countdown check.
@@ -72,6 +87,7 @@ class SpeciesCheckCoordinator(
 
     /** Two agreeing, distinct source frames; raw contradictory reads remain separate testimony. */
     @Synchronized fun read(side: ActivePokemonSide, windowId: Long, species: String?, cropId: String): List<String>? {
+        if (stopped) return null
         val state = states.getValue(side)
         reportMissedTarget(side, state)
         val window = state.window?.takeIf { it.id == windowId } ?: return null
@@ -100,12 +116,14 @@ class SpeciesCheckCoordinator(
         windowId: Long,
         species: String,
         cropId: String,
-        capturedAtMonotonicTimeNanos: Long = now()
+        capturedAtMonotonicTimeNanos: Long? = null
     ): List<String>? {
+        if (stopped) return null
         val state = states.getValue(side)
         val window = state.recentWindows[windowId] ?: return null
-        if (capturedAtMonotonicTimeNanos < window.openedAt ||
-            capturedAtMonotonicTimeNanos - window.openedAt > MAX_WINDOW_NANOS ||
+        val capturedAt = capturedAtMonotonicTimeNanos ?: now()
+        if (capturedAt < window.openedAt ||
+            capturedAt - window.openedAt > MAX_WINDOW_NANOS ||
             window.openedAt < state.latestAcceptedWindowOpenedAt
         ) return null
         val refs = listOfNotNull(window.triggerId) + cropId
@@ -120,6 +138,13 @@ class SpeciesCheckCoordinator(
         state.candidate = species
         state.reads.clear()
         state.reads += cropId
+        // Legacy callers may use completion time for eligibility, but only an
+        // explicit source-frame clock can cover another delayed entry request.
+        if (capturedAtMonotonicTimeNanos != null && capturedAt in 0L..now() &&
+            cropId.isNotBlank() && species.isNotBlank() &&
+            capturedAt > (state.acceptedBadge?.capturedAt ?: Long.MIN_VALUE)) {
+            state.acceptedBadge = AcceptedBadge(window, capturedAt, cropId, species)
+        }
         emit(side, window, "CONFIRMED", species, refs)
         return refs
     }
@@ -173,6 +198,7 @@ class SpeciesCheckCoordinator(
             state.recentWindows.clear()
             state.latestAcceptedWindowOpenedAt = Long.MIN_VALUE
             state.identityResolved = false
+            state.acceptedBadge = null
         }
     }
 
@@ -181,6 +207,7 @@ class SpeciesCheckCoordinator(
         states.forEach { (side, state) ->
             state.window?.let { emit(side, it, "STOPPED", null, listOfNotNull(it.triggerId)) }
             state.window = null
+            state.acceptedBadge = null
         }
     }
     private fun reportMissedTarget(side: ActivePokemonSide, state: State) {

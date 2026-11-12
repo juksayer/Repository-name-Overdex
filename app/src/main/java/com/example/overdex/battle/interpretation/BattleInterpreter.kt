@@ -3,6 +3,7 @@ package com.example.overdex.battle.interpretation
 import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.MatchStarted
+import com.example.overdex.battle.custody.MatchOutcomeLabelWitnessed
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.observation.BattleWitnessContracts
@@ -89,8 +90,23 @@ class BattleInterpreter(
      *         otherwise, null.
      */
     suspend fun interpret(article: RealityArticle): BattleEvent? {
-        val payload = article.payload as? RawTestimony ?: return null
         val sourceId = article.sourceId.id
+        val label = article.payload as? MatchOutcomeLabelWitnessed
+        if (label != null) {
+            val expected = when (sourceId) {
+                "YOU_WIN_WITNESS" -> BattleResult.WIN
+                "GOOD_EFFORT_WITNESS" -> BattleResult.LOSS
+                else -> return null
+            }
+            if (label.result != expected) return null
+            return BattleEvent(
+                timestamp = article.perceivedAt,
+                type = BattleEventType.BATTLE_ENDED,
+                result = label.result,
+                sourceArticleId = article.id,
+            )
+        }
+        val payload = article.payload as? RawTestimony ?: return null
 
         return when {
 

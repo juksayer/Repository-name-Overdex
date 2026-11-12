@@ -108,6 +108,9 @@ internal class PlayerActiveIdentityInference {
                 return listOf(resolved)
             }
             is ActivePokemonFaintedWitnessed -> if (p.side == ActivePokemonSide.PLAYER) {
+                // Revisable HP evidence cannot permanently retire a roster slot
+                // or decide which of two same-species team members remains.
+                if (com.example.overdex.battle.inference.isRevisableVisualFaint(p.basis)) return emptyList()
                 val incoming = appearanceAt(at) ?: return emptyList()
                 val outgoing = appearances.lowerEntry(incoming.start)?.value
                 // Resource counts can arrive just after the incoming entry. A

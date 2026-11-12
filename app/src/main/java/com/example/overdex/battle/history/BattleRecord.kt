@@ -60,7 +60,9 @@ data class BattleRecordQuery(
  */
 object BattleRecordProjector {
     fun project(archive: MatchArchive): BattleRecord {
-        val articles = archive.articles.distinctBy { it.articleId }
+        val countProjection = com.example.overdex.battle.replay.ReplayTeamLossProjection(archive)
+        val articles = com.example.overdex.battle.replay.ReplayVerifiedHpFaintProjection(archive,
+            countProjection.articles).articles.distinctBy { it.articleId }
             .filter { it.monotonicTimeNanos != null }
             .sortedWith(compareBy({ it.monotonicTimeNanos }, { it.sequenceNumber ?: 0L }))
         val start = articles.firstOrNull { it.payload is ArchivedMatchStarted }?.monotonicTimeNanos
@@ -143,9 +145,16 @@ object BattleRecordProjector {
                     val species = payload.speciesName ?: active?.first ?: return@forEach
                     if (!fainted.add("${payload.side}:${key(species)}")) return@forEach
                     if (payload.side == "PLAYER") {
-                        events += event(article, BattleMetricKind.FAINT, species, supporting = listOfNotNull(active?.second), basis = payload.basis)
-                        playerFainted = true
-                        lastPlayerHit = null
+                        val activeOwner = active?.takeIf { key(it.first) == key(species) }
+                        events += event(article, BattleMetricKind.FAINT, species,
+                            supporting = listOfNotNull(activeOwner?.second), basis = payload.basis)
+                        // A delayed or aggregate count can identify an earlier teammate's loss
+                        // after the replacement entered. It must not silence that living actor
+                        // or erase its independently witnessed latest hit.
+                        if (activeOwner != null) {
+                            playerFainted = true
+                            lastPlayerHit = null
+                        }
                     } else if (payload.side == "OPPONENT") {
                         val hit = lastPlayerHit?.takeIf {
                             at - it.atNanos in 0..3_000_000_000L && it.opponentSpecies?.let(::key) == key(species) &&

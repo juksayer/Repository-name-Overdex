@@ -147,7 +147,13 @@ internal object ActiveHpBarGeometry {
     fun matchesSize(width: Int, height: Int, anchorWidth: Int, anchorHeight: Int): Boolean =
         anchorWidth > 0 && anchorHeight > 0 &&
             width.toFloat() / anchorWidth in 0.90f..1.10f &&
-            height.toFloat() / anchorHeight in 0.65f..1.50f
+            height.toFloat() / anchorHeight in 0.65f..1.50f &&
+            // Independent width/height tolerances admitted a 173 x 23 QTE
+            // lookalike against the established 192 x 18 bar. A real bar may
+            // move and its pulsing edges vary by a few pixels, but it does not
+            // become both narrower and substantially thicker. Keep this check
+            // relative to the observed anchor, independent of screen position.
+            width.toDouble() * anchorHeight / (height.toDouble() * anchorWidth) in 0.80..1.25
 }
 
 /**
@@ -492,6 +498,24 @@ internal object ActiveHpBarMeasurer {
         val filledWidth = lastFilledIndex - firstFilledIndex + 1
         if (filledWidth < minimumFilledWidth) return null
 
+        // Losing the fill's colour under a bright attack effect is not its
+        // endpoint. A partial bar must meet a short visible run of depleted
+        // interior or orange damage trail. Only inspect the local transition;
+        // never bridge the obscured pixels or infer the missing HP amount.
+        val tailWidth = filledColumns.size - lastFilledIndex - 1
+        if (tailWidth > allowedGap) {
+            val requiredTailRun = minOf(4, tailWidth)
+            val searchEnd = minOf(filledColumns.size, lastFilledIndex + 1 + allowedGap + requiredTailRun)
+            val supportedTail = longestRun(lastFilledIndex + 1, searchEnd) { index ->
+                var rows = 0
+                for (y in innerTop until innerBottom) {
+                    if (pixelAt(innerLeft + index, y) and 34 != 0) rows++
+                }
+                rows >= requiredFilledRows
+            }
+            if (supportedTail < requiredTailRun) return null
+        }
+
         val fraction = ((lastFilledIndex + 1).toFloat() / filledColumns.size).coerceIn(0f, 1f)
         // A short, overwhelmingly green fragment contradicts a low-HP endpoint.
         // Keep a broad margin below the green/yellow transition and require
@@ -557,9 +581,10 @@ internal object ActiveHpBarMeasurer {
                     val green = g >= 145 && g - r >= 55 && g - b >= 15
                     val yellow = r >= 145 && g >= 145 && b <= 135 && abs(r - g) <= 55
                     val red = r >= 145 && g <= 130 && b <= 145 && r - g >= 65
+                    val depletedInterior = maxOf(r, g, b) <= 165
                     val mask = (if (neutral) 1 else 0) or (if (orange) 2 else 0) or (if (blueOutline) 8 else 0) or
                         (if ((green || yellow || red) && !orange) 4 else 0) or
-                        (if (green && !orange) 16 else 0)
+                        (if (green && !orange) 16 else 0) or (if (depletedInterior) 32 else 0)
                     flags[i] = mask.toByte()
                     rowColorMask = rowColorMask or mask
                 }

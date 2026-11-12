@@ -260,7 +260,13 @@ fun MatchCalibrationScreen(
             CalibrationRegion.TRAINER_INACTIVE_POKEMON,
             CalibrationRegion.MATCH_OUTCOME,
             CalibrationRegion.OPPONENT_TRAINER_HAND,
-            CalibrationRegion.CHARGED_IMPACT_HP
+            CalibrationRegion.CHARGED_IMPACT_HP,
+            CalibrationRegion.FORCED_REPLACEMENT_MESSAGE,
+            CalibrationRegion.PLAYER_TERMINAL_VISUAL,
+            CalibrationRegion.OPPONENT_TERMINAL_VISUAL,
+            CalibrationRegion.PLAYER_APPEARANCE,
+            CalibrationRegion.APPEARANCE_COLOR_REFERENCE,
+            CalibrationRegion.APPEARANCE_BACKGROUND
         )
     }
 
@@ -296,6 +302,12 @@ fun MatchCalibrationScreen(
             CalibrationRegion.EXIT_ICON -> "Exit Icon"
             CalibrationRegion.OPPONENT_TRAINER_HAND -> "Opponent Hand / Poké Ball"
             CalibrationRegion.CHARGED_IMPACT_HP -> "Charged Impact HP"
+            CalibrationRegion.FORCED_REPLACEMENT_MESSAGE -> "Forced Replacement Message"
+            CalibrationRegion.PLAYER_TERMINAL_VISUAL -> "Player Terminal Sequence"
+            CalibrationRegion.PLAYER_APPEARANCE -> "Player Appearance"
+            CalibrationRegion.APPEARANCE_COLOR_REFERENCE -> "Appearance Color Reference"
+            CalibrationRegion.APPEARANCE_BACKGROUND -> "Appearance Background"
+            CalibrationRegion.OPPONENT_TERMINAL_VISUAL -> "Opponent Terminal Sequence"
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> "Trainer Charge-Move Controls"
             CalibrationRegion.TRAINER_INACTIVE_POKEMON -> "Inactive Cards: Upper / Lower"
             CalibrationRegion.MATCH_OUTCOME -> "Match Outcome"
@@ -345,6 +357,12 @@ fun MatchCalibrationScreen(
         CalibrationRegion.EXIT_ICON -> calibration.exitIconRegion
         CalibrationRegion.OPPONENT_TRAINER_HAND -> calibration.opponentTrainerHandRegion
         CalibrationRegion.CHARGED_IMPACT_HP -> calibration.chargedImpactHpRegion
+        CalibrationRegion.FORCED_REPLACEMENT_MESSAGE -> calibration.forcedReplacementMessageRegion
+        CalibrationRegion.PLAYER_TERMINAL_VISUAL -> calibration.playerTerminalVisualRegion
+        CalibrationRegion.PLAYER_APPEARANCE -> calibration.playerAppearanceRegion
+        CalibrationRegion.APPEARANCE_COLOR_REFERENCE -> calibration.appearanceColorReferenceRegion
+        CalibrationRegion.APPEARANCE_BACKGROUND -> calibration.appearanceBackgroundRegion
+        CalibrationRegion.OPPONENT_TERMINAL_VISUAL -> calibration.opponentTerminalVisualRegion
         CalibrationRegion.POINTER_COORDINATES -> calibration.pointerCoordinatesRegion
         CalibrationRegion.DECISION_TIMER -> calibration.decisionTimerRegion
         CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_LEFT -> calibration.playerChargeMoveNameLeftRegion
@@ -426,6 +444,12 @@ fun MatchCalibrationScreen(
             CalibrationRegion.EXIT_ICON -> calibration.copy(exitIconRegion = updated)
             CalibrationRegion.OPPONENT_TRAINER_HAND -> calibration.copy(opponentTrainerHandRegion = updated)
             CalibrationRegion.CHARGED_IMPACT_HP -> calibration.copy(chargedImpactHpRegion = updated)
+            CalibrationRegion.FORCED_REPLACEMENT_MESSAGE -> calibration.copy(forcedReplacementMessageRegion = updated)
+            CalibrationRegion.PLAYER_TERMINAL_VISUAL -> calibration.copy(playerTerminalVisualRegion = updated)
+            CalibrationRegion.PLAYER_APPEARANCE -> calibration.copy(playerAppearanceRegion = updated)
+            CalibrationRegion.APPEARANCE_COLOR_REFERENCE -> calibration.copy(appearanceColorReferenceRegion = updated)
+            CalibrationRegion.APPEARANCE_BACKGROUND -> calibration.copy(appearanceBackgroundRegion = updated)
+            CalibrationRegion.OPPONENT_TERMINAL_VISUAL -> calibration.copy(opponentTerminalVisualRegion = updated)
             CalibrationRegion.POINTER_COORDINATES -> calibration.copy(pointerCoordinatesRegion = updated)
             CalibrationRegion.DECISION_TIMER -> calibration.copy(decisionTimerRegion = updated)
             CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_LEFT -> calibration.copy(playerChargeMoveNameLeftRegion = updated)
@@ -1028,11 +1052,13 @@ internal fun loadCalibrationSamples(
         }
     }.getOrDefault(emptyMap())
     val bundledLibrary = context.assets.list("battle_samples").orEmpty().sorted()
-        .filter { it.substringAfterLast('.', "").lowercase() in setOf("png", "jpg", "jpeg", "webp") }
+        // Retained historical fixtures are not current calibration references.
+        // A missing or invalid catalog admits no bundled images.
+        .filter { it in bundledLabels }
         .map { name ->
-            val label = bundledLabels[name]
-            CalibrationSample(name, CalibrationScreenshotReference("asset:$name", label?.name ?: name, 0, 0,
-                label?.deviceLabel), "BUNDLED REFERENCE")
+            val label = bundledLabels.getValue(name)
+            CalibrationSample(name, CalibrationScreenshotReference("asset:$name", label.name, 0, 0,
+                label.deviceLabel), "BUNDLED REFERENCE")
         }
     // Keep device-specific reference packs reachable even when a custom folder is selected.
     val samples = listOfNotNull(captured) + userLibrary + bundledLibrary

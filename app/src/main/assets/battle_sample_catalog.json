@@ -1,9 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDirectory": "pixel4calibrationscreenshots",
-  "sourceDevice": "Google Pixel 4",
-  "physicalWidth": 1080,
-  "physicalHeight": 2280,
+  "description": "Approved calibration references for distinct device layouts. Unlisted retained assets are not offered for calibration.",
   "encoding": {
     "format": "JPEG",
     "quality": 94,
@@ -12,10 +9,40 @@
     "cropped": false,
     "systemBarsPreserved": true
   },
-  "caveats": [
-    "Screenshots were captured from recorded playback; filenames are screenshot creation times, not event timestamps.",
-    "Pointer Location is visible. Regions covered by its diagnostics are not clean recognition examples.",
-    "Source PNGs remain unchanged in the supplied desktop folder."
+  "collections": [
+    {
+      "id": "pixel4-2026-11-08",
+      "deviceLabel": "Google Pixel 4",
+      "sourceDirectory": "pixel4calibrationscreenshots",
+      "sourceDevice": "Google Pixel 4",
+      "physicalWidth": 1080,
+      "physicalHeight": 2280,
+      "caveats": [
+        "Screenshots were captured from recorded playback; filenames are screenshot creation times, not event timestamps.",
+        "Pointer Location is visible. Regions covered by its diagnostics are not clean recognition examples.",
+        "Source PNGs remain unchanged in the supplied desktop folder."
+      ]
+    },
+    {
+      "id": "moondrop-2026-11-10",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "sourceDirectory": "calibration screenshots",
+      "sourceDevice": "Moondrop, identified by the user",
+      "physicalWidth": 1080,
+      "physicalHeight": 2400,
+      "reviewDate": "2026-11-10",
+      "sourceImages": 67,
+      "coreImages": 21,
+      "qteReferenceImages": 36,
+      "caveats": [
+        "The original PNGs remain unchanged in the supplied folder; bundled JPEGs retain native geometry.",
+        "Image names describe reviewed scene content, not event timestamps or independent matches.",
+        "All 18 QTE types are represented in the external reference collection; only three motion-envelope examples are bundled.",
+        "NICE, GREAT and EXCELLENT text examples are absent; type bubbles do not establish grade coverage.",
+        "Centered charged-impact recipients identified in this collection are player Pokemon.",
+        "The empty opponent outline does not establish a faint cause or a final KO by itself."
+      ]
+    }
   ],
   "entries": [
     {
@@ -612,6 +639,404 @@
       ],
       "assetSha256": "69f2a8fe577dc007044b02bb05707fee95351cd3afa26a7fc10b131b28012606",
       "assetBytes": 488671
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "Announcement.png",
+      "sourceSha256": "e3ceaa4e458fad075ae6eb3537fb2def6895dbfa75beb050642db93e0440e1c5",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-01-announcement.jpg",
+      "name": "Moondrop · Charged announcement and high player HP · 01",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "announcement",
+        "charged_impact_hp",
+        "player_recipient"
+      ],
+      "assetSha256": "c09d1fa2e9af9a3758be1bbe4e82e06f078b6d7982c82f31cca4f5ef212b4f51",
+      "assetBytes": 561303,
+      "reviewNotes": "Player Turtonator receiving Ice Punch. Clear used-move toast and high centered HP geometry; remaining fill is low with damage trail. Not an opponent entrance or fast-effectiveness example."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "ChargeMoveReadyWhiteBorder.png",
+      "sourceSha256": "984c8a5ff55081ab1a09271ef9cff8b616a95b422c3788f286bfa4cf6e66a807",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-02-chargemovereadywhiteborder.jpg",
+      "name": "Moondrop · Ready charged controls and badges · 02",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "charged_controls",
+        "ready_border",
+        "team_badges",
+        "inactive_cards"
+      ],
+      "assetSha256": "b6f0a5ea747e08bf4ab969792c50a5201b30f0f732c65fd32edb4997bd269baa",
+      "assetBytes": 560377,
+      "reviewNotes": "Expanded ready left/right controls; complete normal badges, inactive cards and exit. Player HP is red. Left button extra ready rim extends beyond nonready size."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "ChooseYourParty.png",
+      "sourceSha256": "f411e346d9c2edbae0ad1cf9e577b6bc4e5a298c269fea70166b5a400f773eaa",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-03-chooseyourparty.jpg",
+      "name": "Moondrop · Choose Your Party · 03",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "team_select",
+        "league",
+        "team_names"
+      ],
+      "assetSha256": "dc3060f70348d8a3fbb82ad9fec301442a4faa8594ab3fe0369cf21c4ec20038",
+      "assetBytes": 407303,
+      "reviewNotes": "Great League title/CP restriction, three selected cards, all three names and Use This Party visible. Camerupt is visibly Shadow in this Moondrop/main-account set."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "CountdownGlyph3.png",
+      "sourceSha256": "f846c595118f322649456b74c9662200296856ea119e5bb2c24c27fd1f0e1a8d",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-04-countdownglyph3.jpg",
+      "name": "Moondrop · Countdown 3 and entry · 04",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "countdown",
+        "entry"
+      ],
+      "assetSha256": "8288b15d6275944e6270ba9942c07c2c9a27bbe3c4ab510ff1d45d6f7b5fd18b",
+      "assetBytes": 410092,
+      "reviewNotes": "Clear opening 3 with player Go Turtonator toast. Initial send-out camera hides small inactive cards; combine with GO for their initial shading."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "CountdownGlyphGO.png",
+      "sourceSha256": "55781cc0d127f7845cc048c3618b10aaab39bc5dd99219fc6eaf5ff6ded792ec",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-05-countdownglyphgo.jpg",
+      "name": "Moondrop · GO and opening battlefield · 05",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "go",
+        "match_start"
+      ],
+      "assetSha256": "15f6ad22eed713c39ba89e085a946cd2ab90f5853f64b9e94725ec52f146b83a",
+      "assetBytes": 488381,
+      "reviewNotes": "Complete wide GO glyph. Transitioning/faded badges and shaded controls/cards are not positive normal-badge OCR examples."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "GBLrecord.png",
+      "sourceSha256": "6f50e6574ae2115d663b51e9774a98d2724a5793ca5addfd6aa35e33459aaca5",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-06-gblrecord.jpg",
+      "name": "Moondrop · Battle and Party tabs after battle · 06",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "post_match",
+        "battle_party_tabs",
+        "out_of_battle_menu"
+      ],
+      "assetSha256": "f2322b3f4c719d47e2317e12e0e4d0cf422365ca533640a418a55668cc735a94",
+      "assetBytes": 411220,
+      "reviewNotes": "BATTLE and PARTY tabs visible together plus surrounding GO Battle League menu. Positive post-match support surface."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "GOOD_EFFORT.png",
+      "sourceSha256": "c7230b7ec46c9ae7304ce24cab3ab2fbc72b6ab40321c8b1a87ee45ae7c2ff17",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-07-good-effort.jpg",
+      "name": "Moondrop · Good Effort result · 07",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "result",
+        "effort"
+      ],
+      "assetSha256": "2f8f9f55c8c4163c3a878a67ad7a36b43d652f3c0f95b39b53c3b1e2fb308034",
+      "assetBytes": 523805,
+      "reviewNotes": "Complete two-line GOOD EFFORT text. Loss layout differs from single-line YOU WIN; keep both."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "HPbarCenter2.png",
+      "sourceSha256": "0c9fb25d88f2194a47c087e94e60a94d62593fa3317f56b473a0511bc86e077f",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-08-hpbarcenter2.jpg",
+      "name": "Moondrop · Centered player HP during Aqua Tail impact · 08",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "charged_impact_hp",
+        "player_recipient",
+        "damage_effects"
+      ],
+      "assetSha256": "d50aa62316e31eec0a751294386cb2fa9557caecb7544a2cfad192b56acba673",
+      "assetBytes": 546277,
+      "reviewNotes": "Player Clefable receiving Aqua Tail. Centered bar has tiny red fill plus orange damage afterimage; tinted outline and particles. Distinguish red fill from orange trail."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "HPbarCenter3.png",
+      "sourceSha256": "2b6384428a5d7cced65d61c25a4cca68fb03cf992bceeb1c7a891e2dddd9b4b4",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-09-hpbarcenter3.jpg",
+      "name": "Moondrop · Centered player HP after Aqua Tail · 09",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "charged_impact_hp",
+        "player_recipient",
+        "green_hp"
+      ],
+      "assetSha256": "35fe089a8aca75b21bc6149f5c414c11ab9bb9b1f953eb87251c44f4da7f3fbd",
+      "assetBytes": 492204,
+      "reviewNotes": "Same player Clefable/attacker/move context as HPbarCenter2, with green fill/orange trail and clearer outline. Filenames do not prove ordering/timing of these images."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "HPbarCenter4.png",
+      "sourceSha256": "f877e0a496b7cb09a59ee85687245f759a096487b37124efd9d242df6a864bb4",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-10-hpbarcenter4.jpg",
+      "name": "Moondrop · Centered player HP during Thunderbolt · 10",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "charged_impact_hp",
+        "player_recipient",
+        "low_fill",
+        "damage_effects"
+      ],
+      "assetSha256": "05ad2c09cf13c75486d41845916912b72bf1463082ae03714ce907b3d12494b8",
+      "assetBytes": 497246,
+      "reviewNotes": "Player Ponyta receiving Thunderbolt; higher centered bar and tiny orange/red-looking fill. Strong attack flash obscures much of sprite/cards, not the full bar."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "OpponentFaintHPbar.png",
+      "sourceSha256": "def3a17394b88f7c9cfe2b01fbf8ef125dbcf75a5877189c104c5db087c2b7e0",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-11-opponentfainthpbar.jpg",
+      "name": "Moondrop · Empty opponent outline and centered charged control · 11",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "empty_hp",
+        "departure_candidate",
+        "one_charged_move"
+      ],
+      "assetSha256": "de0dca1921558962655200ba810f5338b6b8c66e595575d86cd9f5cffc24f06b",
+      "assetBytes": 540415,
+      "reviewNotes": "Opponent complete visibly empty HP outline, departure particles and empty field; closed/ball-holding hand. Also lone centered Flame Wheel ready control and label. Still alone does not establish cause or final-KO status."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "PlayerLowHPposition.png",
+      "sourceSha256": "dedfeffeeca434ad7e20bf9b42ebef944a0da50c2b5854a27572653ab2fb43b9",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-12-playerlowhpposition.jpg",
+      "name": "Moondrop · Lower player HP position with green fill · 12",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "ordinary_hp",
+        "lower_camera",
+        "green_hp",
+        "two_charged_moves"
+      ],
+      "assetSha256": "f443a8c67af4707d3ccfd9b334151c5b99cf12ed37df1e01c414208df9916d34",
+      "assetBytes": 575458,
+      "reviewNotes": "Low vertical player-bar position, not low remaining HP: player fill stays green about60%. Charged controls ready with NOT VERY EFFECTIVE only below Lunge, not above HP."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "ProtectShieldTimer.png",
+      "sourceSha256": "6097d007bcb96416fc6178111e3af604c7ebd06dfe59e931d63d722ffac6940a",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-13-protectshieldtimer.jpg",
+      "name": "Moondrop · Shield choice and decision timer · 13",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "shield_choice",
+        "decision_timer",
+        "resources"
+      ],
+      "assetSha256": "65f7e70a594f3861eb980699ba1f99913981029f3d193d8e47b48aa2db91eeb1",
+      "assetBytes": 497471,
+      "reviewNotes": "Incoming attack, one shield and nonzero decision dial4 visible. Opponent red ordinary bar, player green bar. Badges deliberately absent in this phase."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "SwitchInaNewPokemon.png",
+      "sourceSha256": "7e477f180d5fd9e2e7da3b14d19cda04feb0ab0d26bf98fb3a820ef1b8f98c26",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-14-switchinanewpokemon.jpg",
+      "name": "Moondrop · Forced replacement choice · 14",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "forced_replacement",
+        "decision_timer"
+      ],
+      "assetSha256": "136c96fff478253bef89ec313a765f4393bb8721dd6f07619f6acf02f1148d45",
+      "assetBytes": 515783,
+      "reviewNotes": "Replacement dialog after player faint, timer4 visible and two alternative cards. These bottom dialog cards are not the two small stacked normal inactive cards or a cooldown dial example."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "TeamInfoExitHpInactiveChargeMoves.png",
+      "sourceSha256": "681ebcaa0cdffb588c2d33064b686f3eebb22c550ad01003fb431ee7ef306984",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-15-teaminfoexithpinactivechargemoves.jpg",
+      "name": "Moondrop · Normal battle badges, exit, HP and controls · 15",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "team_badges",
+        "exit_control",
+        "ordinary_hp",
+        "inactive_cards",
+        "charged_controls"
+      ],
+      "assetSha256": "2651e80a636ff6382dc7a7bd472315ac1c78ab073e4339dd28992e4ce04cc5d2",
+      "assetBytes": 536476,
+      "reviewNotes": "Main clean normal-field baseline. Complete two badges/types/balls/shields, green bars, exit, two stacked inactive cards and left/right depleted controls. Long labels and left matchup text visible."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "VSscreen.png",
+      "sourceSha256": "7e895ef7fa3f359ce0fe434bdd4c5a7c07936c9a99ddbfac1ed11b48495dd5e2",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-16-vsscreen.jpg",
+      "name": "Moondrop · VS screen · 16",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "versus"
+      ],
+      "assetSha256": "34f4650d0faeab6c98df9200f40b302c93e3d6f42dd62931898523fe9a8ea186",
+      "assetBytes": 608363,
+      "reviewNotes": "Actual centered VS disc between trainer portraits. Do not calibrate VS against portrait or league-menu imagery."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "YouWin.png",
+      "sourceSha256": "b2175a647bd836f70769747927b3bc9443ef0d5b4971bcc60a4e83a7198ad3f1",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-17-youwin.jpg",
+      "name": "Moondrop · You Win and continue checkmark · 17",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "result",
+        "win",
+        "continue"
+      ],
+      "assetSha256": "bb07adcc67a957d2b406464d7ff67e46245bdfda5e24d032a6bd1e36de5f9f33",
+      "assetBytes": 530070,
+      "reviewNotes": "Complete YOU WIN text and checkmark already visible. Geometrically equivalent result text to YouWinAndCheckmark, despite filename omission."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "FairyQTE2.png",
+      "sourceSha256": "5f636df84c98e0d38b22522547e7302fa5588d715accc14912447637460163e3",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-18-fairyqte2.jpg",
+      "name": "Moondrop · Fairy QTE bubble sizes · 18",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "qte_type_icons",
+        "fairy",
+        "grade_text_absent"
+      ],
+      "assetSha256": "af808d0aac9b64cb4311e3ea5ad98b1dee0182c2f0282081bedfa2156e157a69",
+      "assetBytes": 510365,
+      "reviewNotes": "Four foreground discs plus one tiny fairy target over forehead; empty white rings excluded."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "PsychicQTE2.png",
+      "sourceSha256": "f8c1a533f432f56ecfc1c6f0414e77a96c0ccc66eb1cd5c2d5759c3771ace211",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-19-psychicqte2.jpg",
+      "name": "Moondrop · Psychic QTE broad bubble envelope · 19",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "qte_type_icons",
+        "psychic",
+        "grade_text_absent"
+      ],
+      "assetSha256": "175f498e5c1a25e7c82bfe631bb55c462ea5eeb5944bb78a2271c625cda00c2b",
+      "assetBytes": 534126,
+      "reviewNotes": "Eight spiral discs including source-edge partials. Broad full-screen motion envelope."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "WaterQTE2.png",
+      "sourceSha256": "ddbc2877c25e8a503d49b8a919fffd8474c85f56b9e088f6dd4b286bf8f80654",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-20-waterqte2.jpg",
+      "name": "Moondrop · Water QTE horizontal bubble envelope · 20",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "qte_type_icons",
+        "water",
+        "grade_text_absent"
+      ],
+      "assetSha256": "f8d0b6053294cc812be37dbdda6c4088796bf02975d9c21e8822dd7fc83d828e",
+      "assetBytes": 513963,
+      "reviewNotes": "Five large droplet discs across middle; left disc clipped, streak effects cross targets."
+    },
+    {
+      "collectionId": "moondrop-2026-11-10",
+      "sourceFile": "supereffectivetext.png",
+      "sourceSha256": "bbc0c5d22fc4bc1c174db4ca17cae411c2bc30170290b888e8379bd79d95b57b",
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "calibrationEligible": true,
+      "assetFile": "moondrop-20261110-21-supereffectivetext.jpg",
+      "name": "Moondrop · Opponent HP effectiveness text · 21",
+      "deviceLabel": "MOONDROP MD-PH-001",
+      "tags": [
+        "ordinary_hp",
+        "hp_effectiveness_text",
+        "opponent_hp_effectiveness"
+      ],
+      "assetSha256": "bec01c31b7e0355b4bb1394f686c2a69ce024c12d9e827f2d3a41f545da9498c",
+      "assetBytes": 552023,
+      "reviewNotes": "Ordinary battlefield with SUPER EFFECTIVE! above the opponent Sneasel HP bar; yellow remaining fill and a small orange damage trail. Team badges, both HP bars, inactive cards and charged controls are visible. The still establishes text placement, not the source attack, timing or cause."
     }
   ]
 }

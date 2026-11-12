@@ -7,6 +7,7 @@ import com.example.overdex.battle.archive.MatchArchiveArticleSelector
 import com.example.overdex.battle.archive.MatchArchiveExportMode
 import com.example.overdex.battle.archive.MatchArchiveSource
 import com.example.overdex.battle.custody.ActiveHpBarMeasured
+import com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
 import com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ChargedMoveEnergySpent
@@ -47,6 +48,41 @@ import org.junit.Test
 
 /** Exercises the independent terminal reader with actual Bitmaps and the ordinary evidence pipeline. */
 class LiveTerminalHpBarWitnessDeviceTest {
+    @Test fun onePixelVerifiedEmptyFrameCompletesDamageWithoutAnotherEmptyFrame() = runBlocking {
+        val fixture = PipelineFixture(observeDamage = true)
+        try {
+            fixture.start()
+            fixture.deliver(0, Bar.LOW_RED, Bar.LOW_RED)
+            fixture.deliver(1, Bar.LOW_RED, Bar.LOW_RED)
+            fixture.deliver(2, Bar.LOW_RED, Bar.LOW_RED)
+            fixture.deliver(3, Bar.MISSING, Bar.EMPTY)
+            fixture.deliver(4, Bar.MISSING, Bar.MISSING)
+            val tick = try {
+                withTimeout(5_000) {
+                    while (fixture.timeline.getArticles().none { it.payload is ActiveHpBarDamageTickMeasured }) delay(10)
+                    fixture.timeline.getArticles().single { it.payload is ActiveHpBarDamageTickMeasured }
+                }
+            } catch (failure: Exception) {
+                throw AssertionError("Terminal damage not published: ${fixture.hpArticles()}; latest=${fixture.latestOpponentSample()}", failure)
+            }
+            val damage = tick.payload as ActiveHpBarDamageTickMeasured
+            assertEquals(ActivePokemonSide.OPPONENT, damage.damagedSide)
+            assertTrue(damage.beforeFraction > 0f && damage.beforeFraction <= .20f)
+            assertEquals(0f, damage.afterFraction, 0f)
+            assertEquals(fixture.sourceAt(3), tick.monotonicTimeNanos)
+            assertEquals(fixture.wallAt(3), tick.perceivedAt)
+            fixture.drain()
+            assertEquals(1, fixture.timeline.getArticles().count { it.payload is ActiveHpBarDamageTickMeasured })
+            assertEquals(1, fixture.hpArticles().count {
+                val hp = it.payload as ActiveHpBarMeasured
+                hp.filledFraction == 0f && hp.fillColor == "EMPTY"
+            })
+            assertTrue(fixture.timeline.getArticles().none { it.payload is ActivePokemonFaintedWitnessed })
+        } finally {
+            fixture.close()
+        }
+    }
+
     @Test fun independentReaderCapturesOneEmptyFrameWhileTheOrdinaryLocatorIsBlocked() = runBlocking {
         val blockNextLocatorClock = AtomicBoolean(false)
         val locatorEntered = CountDownLatch(1)
@@ -207,7 +243,9 @@ class LiveTerminalHpBarWitnessDeviceTest {
         }
     }
 
-    private class PipelineFixture(elapsedTimeNanos: () -> Long = System::nanoTime) {
+    private class PipelineFixture(
+        elapsedTimeNanos: () -> Long = System::nanoTime, private val observeDamage: Boolean = false,
+    ) {
         val timeline = InMemoryRealityTimeline()
         val input = MulticastInput()
         private val enabled = AtomicBoolean(true)
@@ -218,16 +256,25 @@ class LiveTerminalHpBarWitnessDeviceTest {
                 override suspend fun getPokemonById(id: Int): Pokemon? = null
                 override suspend fun getAllSpeciesNames() = emptySet<String>()
             })
+        private val playerHub = LiveActiveHpBarFrameHub()
+        private val opponentHub = LiveActiveHpBarFrameHub()
+        private val damageWitness = LiveActiveHpBarDamageTickWitness.opponent(opponentHub)
         private val witness = LiveActiveHpBarWitness(input,
             LiveBattlefieldHpTracker(BattleCalibration(
                 trainerHpRegion = AnchorRegion(0f, .10f, .5f, .50f),
                 opponentHpRegion = AnchorRegion(.5f, .10f, .5f, .50f),
             ), elapsedTimeNanos = elapsedTimeNanos), enabled::get,
-            LiveActiveHpBarFrameHub(), LiveActiveHpBarFrameHub())
+            playerHub, opponentHub)
         private val sourceBase = System.nanoTime() - 2_000_000_000L
         private val bitmaps = mutableListOf<Bitmap>()
 
         suspend fun start() {
+            if (observeDamage) {
+                damageWitness.start(match)
+                withTimeout(5_000) {
+                    while (timeline.getArticles().none { it.sourceId.id == damageWitness.observerId.id }) delay(10)
+                }
+            }
             witness.start(match)
             input.awaitBothCollectors()
         }
@@ -244,8 +291,12 @@ class LiveTerminalHpBarWitnessDeviceTest {
         }
         suspend fun drain() = withTimeout(5_000) { match.awaitAcceptedEvidencePublished() }
         fun hpArticles() = timeline.getArticles().filter { it.payload is ActiveHpBarMeasured }
+        fun latestOpponentSample(): String = opponentHub.latestSample()?.let {
+            "${it.measurement}, color=${it.fillColor}, allowed=${it.fastMoveEvidenceAllowed}, at=${it.capturedAtMonotonicTimeNanos}"
+        } ?: "none"
         suspend fun close() {
             witness.stop()
+            if (observeDamage) damageWitness.stop()
             try { drain() } finally {
                 match.release()
                 bitmaps.forEach { it.recycle() }
@@ -296,7 +347,7 @@ class LiveTerminalHpBarWitnessDeviceTest {
         }
     }
 
-    private enum class Bar { GREEN, RED, EMPTY, MISSING }
+    private enum class Bar { GREEN, RED, LOW_RED, EMPTY, MISSING }
 
     private companion object {
         const val WIDTH = 700
@@ -320,9 +371,10 @@ class LiveTerminalHpBarWitnessDeviceTest {
                 val fillWidth = when (state) {
                     Bar.GREEN -> 160
                     Bar.RED -> 46
+                    Bar.LOW_RED -> 28
                     Bar.EMPTY, Bar.MISSING -> 0
                 }
-                val fillColor = if (state == Bar.RED) 0xffee3540.toInt() else 0xff1effbc.toInt()
+                val fillColor = if (state == Bar.RED || state == Bar.LOW_RED) 0xffee3540.toInt() else 0xff1effbc.toInt()
                 for (x in left + 3 until left + fillWidth) {
                     for (y in BAR_TOP + 5 until BAR_TOP + 18) pixels[y * WIDTH + x] = fillColor
                 }

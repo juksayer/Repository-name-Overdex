@@ -1,0 +1,20 @@
+{
+  "sourceArchiveName": "2026-11-11_12-44-58_8c55c9c3-e7c2-40e7-80de-bd7cd529a6f6.odxmatch.zip",
+  "sourceArchiveSha256": "3d9acb465204b5d981a2df21bea56373fdf1de104c28abd44c30292ab24b55d4",
+  "sourceMatchId": "8c55c9c3-e7c2-40e7-80de-bd7cd529a6f6",
+  "sourceArticleCount": 2642,
+  "fixtureArticleCount": 682,
+  "fixtureSha256": "685ccdbdc09e07c151f17c623fb89993373331de3ee28f802d542597d59b2588",
+  "preservation": "Every retained article is unchanged from the source timeline, including article IDs, source and publication timestamps, source IDs, predecessors and evidence references. Original delivery order is retained. Only the envelope mediaIncluded is false. No audio, images or other artifact bytes are included. Some retained references point to omitted capture articles.",
+  "selection": "Raw species and positive/unknown HP history, team ball counts, existing faint conclusions, configured/resolved player identities, accepted Fast Move evidence, charged-move gates, ANNOUNCEMENT_WITNESS raw text and result. Full HP history is retained so Replay damage recovery sees the original sequence.",
+  "expectedSourceSupportedLosses": {
+    "PLAYER": [
+      "Turtonator",
+      "Camerupt"
+    ],
+    "OPPONENT": [
+      "Gourgeist"
+    ]
+  },
+  "limitations": "This fixture preserves the wrong archived Gourgeist and Carbink faint articles as contradictory derived evidence; they are not used as raw resolver inputs. Final player Gourgeist faint is visible in separately reviewed gameplay but has no archived zero team count, so this resolver must not invent it."
+}

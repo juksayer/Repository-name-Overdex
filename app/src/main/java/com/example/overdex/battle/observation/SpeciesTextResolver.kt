@@ -72,7 +72,7 @@ object SpeciesTextResolver {
                 }
             ) return@mapNotNull null
             val allowedEdits = SpeciesOcrTypography.allowedCost(normalizedName.length)
-            val distance = closestWindowDistance(normalizedText, normalizedName)
+            val distance = closestWindowDistance(normalizedText, normalizedName, allowedEdits)
             original.takeIf { distance <= allowedEdits }?.let { it to distance }
         }
         val bestDistance = candidates.minOfOrNull { it.second } ?: return SpeciesTextMatch()
@@ -101,12 +101,22 @@ object SpeciesTextResolver {
         })
     }
 
-    private fun closestWindowDistance(text: String, candidate: String): Int {
-        if (text.length < candidate.length) return SpeciesOcrTypography.weightedDistance(text, candidate)
-        return (candidate.length - 2..candidate.length + 2)
-            .filter { it > 0 && it <= text.length }
-            .flatMap { width -> (0..text.length - width).map { start -> text.substring(start, start + width) } }
-            .minOf { window -> SpeciesOcrTypography.weightedDistance(window, candidate) }
+    internal fun closestWindowDistance(text: String, candidate: String, maxCost: Int): Int {
+        if (text.length < candidate.length)
+            return SpeciesOcrTypography.boundedWeightedDistance(text, candidate, maxCost)
+        var best = maxCost + 1
+        // A length difference alone costs three per character. Windows outside
+        // this band cannot meet the existing threshold; no fuzzy rule changes.
+        val lengthSlack = minOf(2, maxCost / 3)
+        for (width in maxOf(1, candidate.length - lengthSlack)..minOf(text.length, candidate.length + lengthSlack)) {
+            for (start in 0..text.length - width) {
+                val distance = SpeciesOcrTypography.boundedWeightedDistance(
+                    text.substring(start, start + width), candidate, minOf(maxCost, best - 1))
+                if (distance < best) best = distance
+                if (best == 0) return 0
+            }
+        }
+        return best
     }
 
     private fun normalize(value: String): String =

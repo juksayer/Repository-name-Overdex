@@ -37,6 +37,20 @@ data class RawTestimony(
     val ocr: com.example.overdex.model.observation.OcrTextEvidence? = null,
 ) : TestimonyPayload
 
+/** Accepted result-label interpretation; the original OCR remains unchanged and independently cited. */
+data class MatchOutcomeLabelWitnessed(
+    val result: BattleResult,
+    val rawText: String,
+    val basis: String,
+    val ocr: com.example.overdex.model.observation.OcrTextEvidence,
+    val supportingFrameCount: Int,
+) : TestimonyPayload {
+    init {
+        require(result == BattleResult.WIN || result == BattleResult.LOSS)
+        require(supportingFrameCount >= 1)
+    }
+}
+
 /**
  * Droidball began preserving the record for a possible battle. This precedes
  * GO, which independently establishes the live battle and its match clock.
@@ -191,6 +205,29 @@ data class ActivePokemonFaintedWitnessed(
     val speciesId: Int? = null,
     val basis: String = "OPPONENT_POKE_BALL_COUNT_DECREASE"
 ) : TestimonyPayload
+
+/** Literal forced-replacement text; this observation alone does not identify a fainted Pokémon. */
+data class ForcedReplacementPromptWitnessed(
+    val rawText: String,
+    val basis: String,
+    val ocr: com.example.overdex.model.observation.OcrTextEvidence,
+) : TestimonyPayload
+
+/** A bounded raw visual sequence. It asserts neither disappearance, shrink, nor knockout. */
+data class TerminalVisualSequenceCaptured(
+    val side: ActivePokemonSide,
+    val trigger: String,
+    val sourceStartedAtNanos: Long,
+    val sourceEndedAtNanos: Long,
+    val frameCount: Int,
+) : TestimonyPayload {
+    init {
+        require(sourceStartedAtNanos >= 0 && sourceEndedAtNanos >= sourceStartedAtNanos)
+        // Ordinary windows retain at most30 attempts; the longer QTE budget
+        // permits34 at250ms cadence without extending its source deadline.
+        require(frameCount in 1..34)
+    }
+}
 
 /** The pre-GO Pokémon GO Team Select surface was accepted from independent league signals. */
 data object TeamSelectPartyWitnessed : TestimonyPayload

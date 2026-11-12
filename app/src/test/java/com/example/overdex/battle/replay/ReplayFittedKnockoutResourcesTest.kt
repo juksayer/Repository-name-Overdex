@@ -45,10 +45,10 @@ class ReplayFittedKnockoutResourcesTest {
     }
 
     @Test fun `an unproven departure cannot move its later count earlier`() {
-        for (variant in listOf("uncited", "unchanged-after-entry", "other-side", "multi-loss")) {
+        for (variant in listOf("missing-survival", "unchanged-after-entry", "other-side", "multi-loss")) {
             val base = archive("OPPONENT")
             val articles = when (variant) {
-                "uncited" -> base.articles.map { if (it.articleId == "faint") it.copy(evidenceReferences = emptyList()) else it }
+                "missing-survival" -> base.articles.filterNot { it.articleId == "alive" }
                 "unchanged-after-entry" -> base.articles + event("switch-proof", balls("OPPONENT", 3), 11 * SECOND)
                 "other-side" -> base.articles.map {
                     if (it.articleId == "after") it.copy(payload = balls("PLAYER", 2)) else it
@@ -101,6 +101,7 @@ class ReplayFittedKnockoutResourcesTest {
             else ArchivedOpponentBattleResourceCountMeasured("SHIELDS", 2, 2), 5 * SECOND),
         event("entry", ArchivedActivePokemonSpeciesWitnessed(side, "Lucario", 448), 10 * SECOND),
         event("after", balls(side, 2), 14 * SECOND),
+        event("alive", ArchivedActiveHpBarMeasured(side, 0, 0, 200, 15, .5f), 15 * SECOND),
         event("faint", ArchivedActivePokemonFaintedWitnessed(side, "Obstagoon", 862,
             "${side}_POKE_BALL_COUNT_DECREASE"), 14 * SECOND).copy(evidenceReferences = listOf("lead", "before", "after")),
     ))

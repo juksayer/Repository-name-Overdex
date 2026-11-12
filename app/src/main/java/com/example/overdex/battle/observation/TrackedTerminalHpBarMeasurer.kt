@@ -24,7 +24,7 @@ internal object TrackedTerminalHpBarMeasurer {
     fun measure(
         bitmap: Bitmap, anchor: ActiveHpBarMeasurement, territory: BattleCropBounds? = null,
     ): TrackedTerminalHpBarSample? {
-        val bounds = searchBounds(bitmap.width, bitmap.height, anchor, territory) ?: return null
+        val bounds = pixelBounds(bitmap.width, bitmap.height, anchor, territory) ?: return null
         val pixels = IntArray(bounds.width * bounds.height)
         bitmap.getPixels(pixels, 0, bounds.width, bounds.left, bounds.top, bounds.width, bounds.height)
         return measureRegion(bounds, anchor, pixels)
@@ -44,7 +44,7 @@ internal object TrackedTerminalHpBarMeasurer {
         territory: BattleCropBounds?,
         pixelAt: (x: Int, y: Int) -> Int,
     ): TrackedTerminalHpBarSample? {
-        val bounds = searchBounds(width, height, anchor, territory) ?: return null
+        val bounds = pixelBounds(width, height, anchor, territory) ?: return null
         val pixels = IntArray(bounds.width * bounds.height)
         for (y in bounds.top until bounds.bottom) for (x in bounds.left until bounds.right) {
             pixels[(y - bounds.top) * bounds.width + x - bounds.left] = pixelAt(x, y)
@@ -68,7 +68,14 @@ internal object TrackedTerminalHpBarMeasurer {
         val height get() = bottom - top
     }
 
-    private fun searchBounds(
+    /** The visibility mask and the pixel reader must cover precisely the same region. */
+    internal fun searchBounds(
+        width: Int, height: Int, anchor: ActiveHpBarMeasurement, territory: BattleCropBounds? = null,
+    ): BattleCropBounds? = pixelBounds(width, height, anchor, territory)?.let {
+        BattleCropBounds(it.left, it.top, it.right, it.bottom)
+    }
+
+    private fun pixelBounds(
         width: Int, height: Int, anchor: ActiveHpBarMeasurement, territory: BattleCropBounds?,
     ): Bounds? {
         val barHeight = anchor.bottom - anchor.top
@@ -88,7 +95,10 @@ internal object TrackedTerminalHpBarMeasurer {
         )
     }
 
-    private fun verticalMargin(height: Int) = (height / 2).coerceIn(3, 12)
+    // The empty outline drops by about one bar height as the defeated sprite
+    // shrinks. Retain a small local search through that movement; a large charge
+    // camera relocation still needs independent acquisition and ownership.
+    private fun verticalMargin(height: Int) = height.coerceIn(3, 16)
 
     private fun measureRegion(
         bounds: Bounds,

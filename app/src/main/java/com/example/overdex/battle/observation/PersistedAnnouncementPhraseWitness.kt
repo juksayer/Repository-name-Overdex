@@ -79,14 +79,24 @@ internal val ANNOUNCEMENT_PHASE_TEXT_SOURCES = setOf("ANNOUNCEMENT_WITNESS", "QT
 internal class AnnouncementPhraseEpisodes(private val matches: (String) -> Boolean) {
     private val lastBySource = mutableMapOf<String, Pair<Long, Boolean>>()
     private var lastEmittedAt: Long? = null
+    private var visibilityRetiredThrough = Long.MIN_VALUE
+
+    /** A source-time phase completion retires visibility, not the historical observation. */
+    fun retireVisibilityThrough(at: Long) {
+        if (at < 0L || at <= visibilityRetiredThrough) return
+        visibilityRetiredThrough = at
+    }
 
     fun accept(source: String, text: String, at: Long): Boolean {
         val previous = lastBySource[source]
         if (previous != null && at <= previous.first) return false
         val alreadyVisible = lastBySource.values.any { (time, visible) ->
-            visible && at - time in 0..6_000_000_000L
+            visible && at - time in 0..6_000_000_000L &&
+                (time > visibilityRetiredThrough || at <= visibilityRetiredThrough)
         }
         val seen = matches(text)
+        // A delayed opening may still be published, but cannot leave a completed
+        // phase visible and suppress the next warning. Retain source-order dedup.
         lastBySource[source] = at to seen
         if (!seen || alreadyVisible || lastEmittedAt?.let { at <= it } == true) return false
         lastEmittedAt = at

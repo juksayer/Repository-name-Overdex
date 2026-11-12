@@ -1,0 +1,326 @@
+{
+  "sourceMatchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+  "sourceArchive": "/home/sean/overdex-device-backups/2026-11-11-moondrop-1903-review/2026-11-11_19-06-50_e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7.odxmatch.zip",
+  "sourceArchiveSha256": "1b9d037604481e5ff7d543005c6b6203d26962be0f23bc195c0a77f43c9e9585",
+  "sourceTimelineSha256": "ea9490baf42f33737ca2418b75910143522fc4db82ef0bcd4e1e79d51944f7ce",
+  "articlesFile": "articles.json",
+  "articlesSha256": "860277e88872d6fee69fb70163fba34e9d95c013a9a5a6da8b25bc7aa3222fdb",
+  "articleCount": 39,
+  "articleSelection": "Selected exact source Articles plus complete transitive evidenceReferences/predecessorIds closure, preserving original archive order. Each object is a literal JSON substring; only the array wrapper is new.",
+  "articleRoles": {
+    "matchStart": "52f10bab-6296-4681-990f-0c5e789920fe",
+    "precedingCharge": "fc1c176d-295a-48b6-94e2-97e7c9ef7f52",
+    "precedingPlayerWindowOpened": "a80974ec-449d-426a-b5da-bf708e182d98",
+    "precedingOpponentWindowOpened": "82e3660c-a827-4c58-b06b-13392a0b8fb5",
+    "precedingPlayerWindowExpired": "c665bc61-5da2-4f72-8450-f53c480c96fa",
+    "precedingOpponentWindowExpired": "b25a0f46-02ab-49c1-a1b2-4c332453016d",
+    "playerCoveringBadgeCrop": "d2138c71-3adc-48c2-996c-85b3e9b47dca",
+    "playerCoveringBadgeLatency": "e64419aa-bc40-43b3-b126-3b09342f00a4",
+    "playerCoveredWindowConfirmed": "e1f139a2-df11-4ef7-99c9-1aacdd0a93f8",
+    "opponentCoveringBadgeCrop": "5db7df55-71ff-41df-819d-8546d560aba2",
+    "opponentCoveringBadgeLatency": "2106b976-568f-4684-8e8a-040b23064198",
+    "opponentCoveredWindowConfirmed": "96416537-06c4-4830-b27e-4dea3a8fc49f",
+    "delayedEntryCrop": "3e55d1a5-7355-4e6c-80bb-ffb6a8e7d6f2",
+    "delayedEntryRawOcr": "ea399d96-a677-4956-83aa-f12913b3ef45",
+    "delayedEntryAccepted": "76c58c93-4ac6-4fab-805f-675e335f47e5",
+    "delayedEntryLatency": "00da97f6-7f79-4141-af52-d3a1279fa1d1",
+    "redundantPlayerWindowOpened": "6c30409e-2389-43be-bcfb-964de6383c1e",
+    "redundantOpponentWindowOpened": "054efed1-8788-4abe-b07c-04825ddd33a6",
+    "redundantPlayerBadgeCrop": "20fee2fd-7c9b-4de5-ac22-557958cb42ee",
+    "redundantPlayerBadgeLatency": "c97648bd-946e-4938-a010-5584f8e48840",
+    "redundantPlayerWindowConfirmed": "d49df11d-f593-46fe-92a5-9e5b46658750",
+    "redundantPlayerTypedIdentity": "d25593bd-5372-45d5-bff2-886470271a95",
+    "redundantOpponentBadgeCrop": "c7864bdb-0d6e-4d2d-a1f0-b332a2af96b5",
+    "redundantOpponentBadgeLatency": "3b42bc64-b901-4a86-8840-ac89aabc2a59",
+    "redundantOpponentWindowConfirmed": "a4fa6661-57fc-43f8-bcff-785238637d2c",
+    "redundantOpponentTypedIdentity": "e7fc2ec6-a850-4541-ad3c-51b743a54066",
+    "finalChargeAnnouncementCrop": "1cbe7a17-cab0-43a0-8834-5ed33dac3a0a",
+    "finalChargeAnnouncementRawOcr": "e70bdd6b-0f65-4607-8a33-f5f4ba2f4b0c",
+    "finalChargeAnnouncementAccepted": "11ef3c72-4871-49f6-9205-abf216f15cf7",
+    "finalChargeUsedTyped": "ac929ce2-743a-451c-89a1-f5d38cd2a8cf",
+    "finalChargeAnnouncementLatency": "3bfba15e-7e90-4251-9ffb-67379fac957e",
+    "finalChargePlayerWindowOpened": "b71fbb71-e24f-4250-a1ba-64c570d81d43",
+    "finalChargeOpponentWindowOpened": "d139db39-b752-48fd-8c49-93a125e195e9"
+  },
+  "articleObjectSha256": {
+    "e7ed9314-bfa2-4da1-a840-f98d1536d0a4": "4d0963aaa13db83f68babbf0a92977de5acf32fcc6b87829a02bfb8c3aaa9177",
+    "83f93fea-b26a-4b58-8f7f-3f81f098e0a6": "dd684f96d0b6c4b95330a5862c8a384cbbd43593a5c440f9bc69895104995647",
+    "52f10bab-6296-4681-990f-0c5e789920fe": "03338a5fa6450c5b0a1e6af977ea3bee07a4097a446f6132448df7827f09d7e5",
+    "0e91641a-627c-4999-a79f-1922304eec92": "90435d2c1cca063c7e485e91d56c2cdf708f4b988ea3a4beefd1313fa4e749f3",
+    "e0875c4d-9b98-4938-b8e1-59ffedda5d4f": "345ba66ee3bb0f1d761eb0ac7972511675b928e65367daaca23774d022dfc623",
+    "3e55d1a5-7355-4e6c-80bb-ffb6a8e7d6f2": "d6e5182a7eee6aa34967bdcccf91a90b5951ca262fe8359b8d02b38de677b54a",
+    "72847208-7848-4c1b-a5eb-a32667ff22c0": "99fd36c5229dbe1977a17ff38b9b8ba70a3fc0d92c6513cc211326f80f1fc327",
+    "e3307e20-79b7-4f8f-a1a3-4d34c20e8bd7": "942aeef1c65c47a7f9908491434cc2323efbb75c79704e08f0ff90e373c70c9d",
+    "fc1c176d-295a-48b6-94e2-97e7c9ef7f52": "86831e5f77a05e70a706fbc49eaad58bf5a9c2235bbdf4e34a9fccd8af27702c",
+    "a80974ec-449d-426a-b5da-bf708e182d98": "5c5107ba96d42d166e183c890cab7087c6d3fd7d2479ebabe6cb84711b47c986",
+    "82e3660c-a827-4c58-b06b-13392a0b8fb5": "0146eb2ebe18b115868d5940d4fd8e75ed49ae9c5e633ccd2d3997616a41a6b6",
+    "d2138c71-3adc-48c2-996c-85b3e9b47dca": "1baf97cd96758e1851b8e216d260848bf05338d65538f1d2770ef2fe33628581",
+    "c665bc61-5da2-4f72-8450-f53c480c96fa": "794dccd1ee8534e14f3e147fe6ee256f9981cee8822795baf3472273573183fd",
+    "b25a0f46-02ab-49c1-a1b2-4c332453016d": "bdbeb6625eec8fe98d5d174556753ca6d59b8647d5850d143c5dbcb91a566748",
+    "5db7df55-71ff-41df-819d-8546d560aba2": "6f88f7f72613f762866ec5aa3a84b932e5909ecd7f6fc51eaaba30b39dc4c6d8",
+    "e64419aa-bc40-43b3-b126-3b09342f00a4": "aeccd4f82945a250accaf63dbf6b4863045c9de714dd06c512693038743a816f",
+    "e1f139a2-df11-4ef7-99c9-1aacdd0a93f8": "9610171e088dbc7dfd4df9dbb6a4f86525dfab68fb761a90b2e677fbdfc0e6f0",
+    "2106b976-568f-4684-8e8a-040b23064198": "a88a8b590706108c0afe0369108a41838b5646cb73308941b8bbe515b0405139",
+    "96416537-06c4-4830-b27e-4dea3a8fc49f": "b9997a5f90278c9626141e481e1ca84effc3280d03cd65076a6a44e3af5ee49b",
+    "00da97f6-7f79-4141-af52-d3a1279fa1d1": "8cf3c00371d4990e1bc2a3322ccda770f0d092adb420ccb3b49e4174edb23003",
+    "ea399d96-a677-4956-83aa-f12913b3ef45": "73875f7ae213752052f972011410e1fbd72be9f83dc27f9949e5b50148cddd79",
+    "76c58c93-4ac6-4fab-805f-675e335f47e5": "9df830cca2a651cd14f3336b7b6313c1cff44266322b6525f9996431990fceed",
+    "1cbe7a17-cab0-43a0-8834-5ed33dac3a0a": "c28cf66fbb46231d601e7f172808e0f8aa13995f9f2b442852bc3893b5acc02d",
+    "6c30409e-2389-43be-bcfb-964de6383c1e": "2d72a4d9df0744f9d2122f53194858d8eedbd8e053432e371e8651ae4b760cf2",
+    "054efed1-8788-4abe-b07c-04825ddd33a6": "e1676e84f204cabba5c6a1e4b86976d57f4eedbf3db4c956873ae3aa8e6adfdd",
+    "c7864bdb-0d6e-4d2d-a1f0-b332a2af96b5": "d218079939cce02cecc8db4909525e61f4d398bc52aee1a17a20017f5be1b634",
+    "20fee2fd-7c9b-4de5-ac22-557958cb42ee": "224ddc5d62aa4ed7a86c0c0a58ee75d15b0b3e73ac1076ef1bda69f01a994a62",
+    "3b42bc64-b901-4a86-8840-ac89aabc2a59": "155e3c76624a6f2c7c48ebf59085fdb11b52c45eb6b52c0fb4ddd1b5a8ff470e",
+    "a4fa6661-57fc-43f8-bcff-785238637d2c": "a696e34bcf18d506f54e0e8db2b31a573c77cd3854c629afa609f492a5ef9a52",
+    "e7fc2ec6-a850-4541-ad3c-51b743a54066": "865b58dc45f950014014cc80c9c31d8e1a9233e093c344e19fae9a218ea2dd71",
+    "c97648bd-946e-4938-a010-5584f8e48840": "70e8ebacda9b05358c61a13ad0b33010971ede1cc8d3ef907bc9f66e471ea768",
+    "d49df11d-f593-46fe-92a5-9e5b46658750": "519756f4fa049a3815790dd1f7ccc03d6b5f90cb7e7a8a08d36837d1b3f2141f",
+    "d25593bd-5372-45d5-bff2-886470271a95": "29c28d879559ac466d471d2b0f1abffafcdb12967f58d2f372161374343f5ea3",
+    "3bfba15e-7e90-4251-9ffb-67379fac957e": "847bfb7583fd48033fd24039752ac6e437b9992a09ed841ba9647c55f2b2040a",
+    "e70bdd6b-0f65-4607-8a33-f5f4ba2f4b0c": "824f63a3bd8b1444e9aca0b73445d495c3403233d0b53b34fa7a9e5112e3eb87",
+    "11ef3c72-4871-49f6-9205-abf216f15cf7": "392778b698206e57906270504e7291d142025461ad3d1b2b73f0cc82f18e4932",
+    "ac929ce2-743a-451c-89a1-f5d38cd2a8cf": "57b2befd7433fa043dd5c6ffde885debf717cf91774e347b7b1c24483ea1695b",
+    "b71fbb71-e24f-4250-a1ba-64c570d81d43": "10d0d80246886eb2e8093d54d3051cc87fda3aee6a81da47838bbf336ac3b982",
+    "d139db39-b752-48fd-8c49-93a125e195e9": "31ffd31b8ffec564aaeeca31121ccee68683f0c2c42c8cc6b399aac95f651d77"
+  },
+  "roleTiming": {
+    "matchStart": {
+      "articleId": "52f10bab-6296-4681-990f-0c5e789920fe",
+      "monotonicTimeNanos": 10825626046183,
+      "relativeToMatchStartNanos": 0,
+      "perceivedAt": 1794445637147,
+      "recordedAt": 1794445637818
+    },
+    "precedingCharge": {
+      "articleId": "fc1c176d-295a-48b6-94e2-97e7c9ef7f52",
+      "monotonicTimeNanos": 10952198117960,
+      "relativeToMatchStartNanos": 126572071777,
+      "perceivedAt": 1794445763637,
+      "recordedAt": 1794445772907
+    },
+    "precedingPlayerWindowOpened": {
+      "articleId": "a80974ec-449d-426a-b5da-bf708e182d98",
+      "monotonicTimeNanos": 10961538564114,
+      "relativeToMatchStartNanos": 135912517931,
+      "perceivedAt": 1794445772964,
+      "recordedAt": 1794445773091
+    },
+    "precedingOpponentWindowOpened": {
+      "articleId": "82e3660c-a827-4c58-b06b-13392a0b8fb5",
+      "monotonicTimeNanos": 10961538721653,
+      "relativeToMatchStartNanos": 135912675470,
+      "perceivedAt": 1794445772964,
+      "recordedAt": 1794445773119
+    },
+    "precedingPlayerWindowExpired": {
+      "articleId": "c665bc61-5da2-4f72-8450-f53c480c96fa",
+      "monotonicTimeNanos": 10964654283114,
+      "relativeToMatchStartNanos": 139028236931,
+      "perceivedAt": 1794445776080,
+      "recordedAt": 1794445776532
+    },
+    "precedingOpponentWindowExpired": {
+      "articleId": "b25a0f46-02ab-49c1-a1b2-4c332453016d",
+      "monotonicTimeNanos": 10964654482268,
+      "relativeToMatchStartNanos": 139028436085,
+      "perceivedAt": 1794445776080,
+      "recordedAt": 1794445776553
+    },
+    "playerCoveringBadgeCrop": {
+      "articleId": "d2138c71-3adc-48c2-996c-85b3e9b47dca",
+      "monotonicTimeNanos": 10963634717653,
+      "relativeToMatchStartNanos": 138008671470,
+      "perceivedAt": 1794445775090,
+      "recordedAt": 1794445775261
+    },
+    "playerCoveringBadgeLatency": {
+      "articleId": "e64419aa-bc40-43b3-b126-3b09342f00a4",
+      "monotonicTimeNanos": 10963634717653,
+      "relativeToMatchStartNanos": 138008671470,
+      "perceivedAt": 1794445775090,
+      "recordedAt": 1794445777180
+    },
+    "playerCoveredWindowConfirmed": {
+      "articleId": "e1f139a2-df11-4ef7-99c9-1aacdd0a93f8",
+      "monotonicTimeNanos": 10965553012037,
+      "relativeToMatchStartNanos": 139926965854,
+      "perceivedAt": 1794445776979,
+      "recordedAt": 1794445777204
+    },
+    "opponentCoveringBadgeCrop": {
+      "articleId": "5db7df55-71ff-41df-819d-8546d560aba2",
+      "monotonicTimeNanos": 10964389148422,
+      "relativeToMatchStartNanos": 138763102239,
+      "perceivedAt": 1794445775868,
+      "recordedAt": 1794445776683
+    },
+    "opponentCoveringBadgeLatency": {
+      "articleId": "2106b976-568f-4684-8e8a-040b23064198",
+      "monotonicTimeNanos": 10964389148422,
+      "relativeToMatchStartNanos": 138763102239,
+      "perceivedAt": 1794445775868,
+      "recordedAt": 1794445778871
+    },
+    "opponentCoveredWindowConfirmed": {
+      "articleId": "96416537-06c4-4830-b27e-4dea3a8fc49f",
+      "monotonicTimeNanos": 10966680191191,
+      "relativeToMatchStartNanos": 141054145008,
+      "perceivedAt": 1794445778106,
+      "recordedAt": 1794445778882
+    },
+    "delayedEntryCrop": {
+      "articleId": "3e55d1a5-7355-4e6c-80bb-ffb6a8e7d6f2",
+      "monotonicTimeNanos": 10957207818575,
+      "relativeToMatchStartNanos": 131581772392,
+      "perceivedAt": 1794445768659,
+      "recordedAt": 1794445768979
+    },
+    "delayedEntryRawOcr": {
+      "articleId": "ea399d96-a677-4956-83aa-f12913b3ef45",
+      "monotonicTimeNanos": 10957207818575,
+      "relativeToMatchStartNanos": 131581772392,
+      "perceivedAt": 1794445768659,
+      "recordedAt": 1794445779889
+    },
+    "delayedEntryAccepted": {
+      "articleId": "76c58c93-4ac6-4fab-805f-675e335f47e5",
+      "monotonicTimeNanos": 10957207818575,
+      "relativeToMatchStartNanos": 131581772392,
+      "perceivedAt": 1794445768659,
+      "recordedAt": 1794445780186
+    },
+    "delayedEntryLatency": {
+      "articleId": "00da97f6-7f79-4141-af52-d3a1279fa1d1",
+      "monotonicTimeNanos": 10957207818575,
+      "relativeToMatchStartNanos": 131581772392,
+      "perceivedAt": 1794445768659,
+      "recordedAt": 1794445779868
+    },
+    "redundantPlayerWindowOpened": {
+      "articleId": "6c30409e-2389-43be-bcfb-964de6383c1e",
+      "monotonicTimeNanos": 10968760645038,
+      "relativeToMatchStartNanos": 143134598855,
+      "perceivedAt": 1794445780186,
+      "recordedAt": 1794445780368
+    },
+    "redundantOpponentWindowOpened": {
+      "articleId": "054efed1-8788-4abe-b07c-04825ddd33a6",
+      "monotonicTimeNanos": 10968760758807,
+      "relativeToMatchStartNanos": 143134712624,
+      "perceivedAt": 1794445780187,
+      "recordedAt": 1794445780372
+    },
+    "redundantPlayerBadgeCrop": {
+      "articleId": "20fee2fd-7c9b-4de5-ac22-557958cb42ee",
+      "monotonicTimeNanos": 10970882825653,
+      "relativeToMatchStartNanos": 145256779470,
+      "perceivedAt": 1794445782320,
+      "recordedAt": 1794445782378
+    },
+    "redundantPlayerBadgeLatency": {
+      "articleId": "c97648bd-946e-4938-a010-5584f8e48840",
+      "monotonicTimeNanos": 10970882825653,
+      "relativeToMatchStartNanos": 145256779470,
+      "perceivedAt": 1794445782320,
+      "recordedAt": 1794445783472
+    },
+    "redundantPlayerWindowConfirmed": {
+      "articleId": "d49df11d-f593-46fe-92a5-9e5b46658750",
+      "monotonicTimeNanos": 10971942014269,
+      "relativeToMatchStartNanos": 146315968086,
+      "perceivedAt": 1794445783368,
+      "recordedAt": 1794445783569
+    },
+    "redundantPlayerTypedIdentity": {
+      "articleId": "d25593bd-5372-45d5-bff2-886470271a95",
+      "monotonicTimeNanos": 10970882825653,
+      "relativeToMatchStartNanos": 145256779470,
+      "perceivedAt": 1794445782320,
+      "recordedAt": 1794445783685
+    },
+    "redundantOpponentBadgeCrop": {
+      "articleId": "c7864bdb-0d6e-4d2d-a1f0-b332a2af96b5",
+      "monotonicTimeNanos": 10969278354268,
+      "relativeToMatchStartNanos": 143652308085,
+      "perceivedAt": 1794445780736,
+      "recordedAt": 1794445781492
+    },
+    "redundantOpponentBadgeLatency": {
+      "articleId": "3b42bc64-b901-4a86-8840-ac89aabc2a59",
+      "monotonicTimeNanos": 10969278354268,
+      "relativeToMatchStartNanos": 143652308085,
+      "perceivedAt": 1794445780736,
+      "recordedAt": 1794445782567
+    },
+    "redundantOpponentWindowConfirmed": {
+      "articleId": "a4fa6661-57fc-43f8-bcff-785238637d2c",
+      "monotonicTimeNanos": 10971146465884,
+      "relativeToMatchStartNanos": 145520419701,
+      "perceivedAt": 1794445782572,
+      "recordedAt": 1794445782597
+    },
+    "redundantOpponentTypedIdentity": {
+      "articleId": "e7fc2ec6-a850-4541-ad3c-51b743a54066",
+      "monotonicTimeNanos": 10969278354268,
+      "relativeToMatchStartNanos": 143652308085,
+      "perceivedAt": 1794445780736,
+      "recordedAt": 1794445782631
+    },
+    "finalChargeAnnouncementCrop": {
+      "articleId": "1cbe7a17-cab0-43a0-8834-5ed33dac3a0a",
+      "monotonicTimeNanos": 10968353071499,
+      "relativeToMatchStartNanos": 142727025316,
+      "perceivedAt": 1794445779784,
+      "recordedAt": 1794445780271
+    },
+    "finalChargeAnnouncementRawOcr": {
+      "articleId": "e70bdd6b-0f65-4607-8a33-f5f4ba2f4b0c",
+      "monotonicTimeNanos": 10968353071499,
+      "relativeToMatchStartNanos": 142727025316,
+      "perceivedAt": 1794445779784,
+      "recordedAt": 1794445784380
+    },
+    "finalChargeAnnouncementAccepted": {
+      "articleId": "11ef3c72-4871-49f6-9205-abf216f15cf7",
+      "monotonicTimeNanos": 10968353071499,
+      "relativeToMatchStartNanos": 142727025316,
+      "perceivedAt": 1794445779784,
+      "recordedAt": 1794445784450
+    },
+    "finalChargeUsedTyped": {
+      "articleId": "ac929ce2-743a-451c-89a1-f5d38cd2a8cf",
+      "monotonicTimeNanos": 10968353071499,
+      "relativeToMatchStartNanos": 142727025316,
+      "perceivedAt": 1794445779784,
+      "recordedAt": 1794445784540
+    },
+    "finalChargeAnnouncementLatency": {
+      "articleId": "3bfba15e-7e90-4251-9ffb-67379fac957e",
+      "monotonicTimeNanos": 10968353071499,
+      "relativeToMatchStartNanos": 142727025316,
+      "perceivedAt": 1794445779784,
+      "recordedAt": 1794445784345
+    },
+    "finalChargePlayerWindowOpened": {
+      "articleId": "b71fbb71-e24f-4250-a1ba-64c570d81d43",
+      "monotonicTimeNanos": 10973114609269,
+      "relativeToMatchStartNanos": 147488563086,
+      "perceivedAt": 1794445784540,
+      "recordedAt": 1794445784554
+    },
+    "finalChargeOpponentWindowOpened": {
+      "articleId": "d139db39-b752-48fd-8c49-93a125e195e9",
+      "monotonicTimeNanos": 10973114685653,
+      "relativeToMatchStartNanos": 147488639470,
+      "perceivedAt": 1794445784540,
+      "recordedAt": 1794445784580
+    }
+  },
+  "mediaCopied": false,
+  "limitations": [
+    "No device speedup or missing terminal HP is demonstrated by this fixture.",
+    "Native queue service starts/completions are inferred from retained source clocks and millisecond duration diagnostics; coordinator diagnostic clocks are processing times, not image capture times.",
+    "New later CHARGE cues remain independently eligible; a newer unresolved appearance must not be retired by an older badge result.",
+    "Repeated species OCR is signature-deduplicated in this archive; CONFIRMED measurements retain exact cited badge crops and resolved names even where no duplicate raw/typed species Article was emitted."
+  ]
+}

@@ -115,6 +115,9 @@ import com.example.overdex.ui.screens.SharedTimelineScreen
 import com.example.overdex.ui.screens.SpecimenDetailScreen
 import com.example.overdex.ui.screens.TrainerProfileScreen
 import com.example.overdex.ui.screens.observatory.MatchSummaryRoute
+import com.example.overdex.ui.screens.observatory.MatchComparisonRoute
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import com.example.overdex.ui.theme.OverdexTheme
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
@@ -511,9 +514,9 @@ fun PokedexApp(
     var explorerOpen by remember { mutableStateOf(false) }
     com.example.overdex.ui.navigation.MatchSummaryReturnEffect(
         pending = viewModel.pendingMatchSummary,
-        onOpenSummary = {
+        onOpenSummary = { ids ->
             viewModel.markBooted()
-            navController.navigate("timeline_viewer") {
+            navController.navigate("match_comparison?batch=${Uri.encode(Json.encodeToString(ids))}") {
                 popUpTo("main_menu") { inclusive = false }
                 launchSingleTop = true
             }
@@ -1569,11 +1572,14 @@ fun PokedexApp(
                 }
             }
             // Keep the existing destination ID for Android-restored latest-summary stacks.
-            listOf("timeline_viewer", "match_summary?archiveUri={archiveUri}").forEach { summaryRoute ->
+            listOf("timeline_viewer", "match_summary?archiveUri={archiveUri}&matchId={matchId}").forEach { summaryRoute ->
                 composable(summaryRoute, arguments = listOf(
-                    navArgument("archiveUri") { type = NavType.StringType; nullable = true; defaultValue = null }
+                    navArgument("archiveUri") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("matchId") { type = NavType.StringType; nullable = true; defaultValue = null }
                 )) { entry ->
                     val selectedArchiveUri = entry.arguments?.getString("archiveUri")?.let(Uri::parse)
+                    val selectedMatchId = entry.arguments?.getString("matchId")
+                    val lastBatch by viewModel.lastMatchSummaryBatch.collectAsState()
                     var matchLcdContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
                     val archiveSource by viewModel.latestMatchArchiveSource.collectAsState()
                     var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -1601,7 +1607,18 @@ fun PokedexApp(
                         onA = { aHandler?.invoke() },
                         onB = { bHandler?.invoke() ?: navController.debugPopBackStack() }
                     ) {
-                        MatchSummaryRoute(
+                        if (summaryRoute == "timeline_viewer" && lastBatch.size > 1) {
+                            MatchComparisonRoute(
+                                matchIds = lastBatch,
+                                loadMatch = viewModel::loadMatchSummary,
+                                onOpenMatch = { id -> navController.navigate("match_summary?matchId=${Uri.encode(id)}") },
+                                onBack = { navController.debugPopBackStack() },
+                                onUp = { upHandler = it }, onDown = { downHandler = it },
+                                onLeft = { leftHandler = it }, onRight = { rightHandler = it },
+                                onA = { aHandler = it }, onB = { bHandler = it },
+                                onLcdContentUpdate = { matchLcdContent = it },
+                            )
+                        } else MatchSummaryRoute(
                             source = archiveSource,
                             directory = archiveDirectoryManager,
                             onLcdContentUpdate = { matchLcdContent = it },
@@ -1613,6 +1630,8 @@ fun PokedexApp(
                                 }
                             },
                             selectedArchiveUri = selectedArchiveUri,
+                            selectedMatchId = selectedMatchId ?: lastBatch.singleOrNull().takeIf { summaryRoute == "timeline_viewer" },
+                            loadSelectedMatch = viewModel::loadMatchSummary,
                             onInspect = { archive, uri ->
                                 openedArchiveUri.value = uri
                                 openedArchive.value = archive
@@ -1625,6 +1644,41 @@ fun PokedexApp(
                             onB = { bHandler = it }
                         )
                     }
+                }
+            }
+            composable("match_comparison?batch={batch}", arguments = listOf(
+                navArgument("batch") { type = NavType.StringType; defaultValue = "[]" }
+            )) { entry ->
+                val ids = remember(entry) {
+                    runCatching { Json.decodeFromString<List<String>>(entry.arguments?.getString("batch") ?: "[]") }
+                        .getOrDefault(emptyList()).distinct()
+                }
+                var lcd by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
+                var up by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var down by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var left by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var right by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var a by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var b by remember { mutableStateOf<(() -> Unit)?>(null) }
+                ODXFiShell(
+                    lcdContent = lcd, showBattleOverlay = false, viewModel = viewModel,
+                    filterSettings = filterSettings, onFilterSettingsChange = { filterSettings = it },
+                    onLaunchProbe = launchAccessibilityProbe,
+                    onLaunchObservatory = { navController.navigate("timeline_viewer") },
+                    onLaunchMatchCalibration = { navController.navigate("match_calibration") },
+                    deploymentState = deploymentState, frameCount = frameCount,
+                    onUp = { up?.invoke() }, onDown = { down?.invoke() },
+                    onLeft = { left?.invoke() }, onRight = { right?.invoke() },
+                    onA = { a?.invoke() }, onB = { b?.invoke() ?: navController.debugPopBackStack() },
+                ) {
+                    MatchComparisonRoute(
+                        matchIds = ids, loadMatch = viewModel::loadMatchSummary,
+                        onOpenMatch = { id -> navController.navigate("match_summary?matchId=${Uri.encode(id)}") },
+                        onBack = { navController.debugPopBackStack() },
+                        onUp = { up = it }, onDown = { down = it },
+                        onLeft = { left = it }, onRight = { right = it },
+                        onA = { a = it }, onB = { b = it }, onLcdContentUpdate = { lcd = it },
+                    )
                 }
             }
             composable("match_archive_directory") {

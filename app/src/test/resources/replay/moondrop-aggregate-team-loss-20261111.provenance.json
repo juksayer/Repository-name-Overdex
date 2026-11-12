@@ -1,0 +1,15 @@
+{
+  "sourceArchive": "2026-11-11_19-06-50_e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7.odxmatch.zip",
+  "sourceArchiveSha256": "1b9d037604481e5ff7d543005c6b6203d26962be0f23bc195c0a77f43c9e9585",
+  "sourceTimelineSha256": "ea9490baf42f33737ca2418b75910143522fc4db82ef0bcd4e1e79d51944f7ce",
+  "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+  "selection": "Complete original timeline.json, byte-for-byte after decompression. All 3492 original Articles retained with original timestamps, source identities, evidence references and payloads. Artifact files are not included. No derived faint Articles are inserted into this fixture.",
+  "articleCount": 3492,
+  "fixtureSha256": "75f2cec4fa40ddda77fe1fef28b842e79fb46aa3a13eeddc1b3934b3305b00c9",
+  "video": "/home/sean/Desktop/Screen_recording_20261111_190345.mp4",
+  "visiblePlayerFaints": "Second match: Turtonator and Gourgeist before count one; final Camerupt faint visible in video but not independently established by the archive, so it must remain unresolved in this regression. Opponent Stunfisk and Pelipper switch alive.",
+  "sourceCountIds": [
+    "8850bcda-f463-492e-9ef7-9d27bc0fae8b",
+    "cd67d8f0-e95c-4185-8d76-fd46c23519a2"
+  ]
+}

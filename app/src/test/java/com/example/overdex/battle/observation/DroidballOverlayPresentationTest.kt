@@ -40,7 +40,7 @@ class DroidballOverlayPresentationTest {
         assertFalse(p.chargeTextProtected.value)
     }
 
-    @Test fun `starting midbattle keeps every automatic panel hidden until Droidball is tapped`() {
+    @Test fun `battle layout hints without an accepted Match Start keep an unopened panel hidden`() {
         DroidballOverlayPresentation.showTeamSelectScan()
         assertFalse(DroidballOverlayPresentation.panelAllowed.value)
         assertFalse(DroidballOverlayPresentation.expanded.value)
@@ -61,6 +61,85 @@ class DroidballOverlayPresentationTest {
         assertTrue(DroidballOverlayPresentation.panelAllowed.value)
         assertTrue(DroidballOverlayPresentation.expanded.value)
         assertEquals(DroidballOverlayMode.RESULT, DroidballOverlayPresentation.mode.value)
+    }
+
+    @Test fun `accepted Match Start opens a forgotten Droidball with or without an earlier native badge`() {
+        for (badgeSeen in listOf(false, true)) {
+            val p = DroidballOverlayPresentation
+            p.reset()
+            p.showTeamSelectScan()
+            p.showBattleHud()
+            if (badgeSeen) p.recordBattleBadgePresent()
+            assertFalse(p.panelAllowed.value)
+            assertFalse(p.expanded.value)
+
+            p.showStartedMatch("match-a")
+            p.showSessionPhase(DroidballSessionPhase.BATTLE_ACTIVE)
+            assertTrue(p.panelAllowed.value)
+            assertTrue(p.expanded.value)
+            assertEquals(DroidballOverlayMode.BATTLE_HUD, p.mode.value)
+            assertEquals(badgeSeen, p.battleBadgeSeen.value)
+            assertEquals(if (badgeSeen) DroidballOverlayMode.BATTLE_HUD else DroidballOverlayMode.BATTLE_READY,
+                battleOverlayDisplayMode(p.mode.value, p.battleBadgeSeen.value))
+
+            p.recordBattleBadgePresent()
+            p.showBattleHud()
+            assertTrue(p.expanded.value)
+            assertEquals(DroidballOverlayMode.BATTLE_HUD, battleOverlayDisplayMode(p.mode.value, p.battleBadgeSeen.value))
+        }
+    }
+
+    @Test fun `Match Start also opens a manually collapsed prebattle display`() {
+        val p = DroidballOverlayPresentation
+        p.showBattleHud(userRequested = true)
+        p.toggleExpanded()
+        assertFalse(p.expanded.value)
+        p.showStartedMatch("match-a")
+        assertTrue(p.expanded.value)
+        p.showSessionPhase(DroidballSessionPhase.BATTLE_ACTIVE)
+        assertTrue(p.expanded.value)
+    }
+
+    @Test fun `manual collapse after Match Start survives duplicate start and automatic battle updates`() {
+        for (badgeSeen in listOf(false, true)) {
+            val p = DroidballOverlayPresentation
+            p.reset()
+            if (badgeSeen) p.recordBattleBadgePresent()
+            p.showStartedMatch("match-a")
+            p.toggleExpanded()
+            assertFalse(p.expanded.value)
+            p.showStartedMatch("match-a")
+            p.showSessionPhase(DroidballSessionPhase.BATTLE_ACTIVE)
+            p.recordBattleBadgePresent()
+            p.showBattleHud()
+            p.showAcceptedTeamSelect()
+            assertFalse(p.expanded.value)
+            assertEquals(DroidballOverlayMode.BATTLE_HUD, p.mode.value)
+            p.showSessionPhase(DroidballSessionPhase.RESULT)
+            assertFalse(p.expanded.value)
+
+            p.toggleExpanded()
+            assertTrue(p.expanded.value)
+        }
+    }
+
+    @Test fun `a new Match can open again while old start delivery cannot override navigation`() {
+        val p = DroidballOverlayPresentation
+        p.showStartedMatch("match-a")
+        p.toggleExpanded()
+        p.showNavigationIdle()
+        p.showStartedMatch("match-a")
+        assertEquals(DroidballOverlayMode.PRE_BATTLE, p.mode.value)
+        assertFalse(p.expanded.value)
+        p.showStartedMatch("match-b")
+        assertEquals(DroidballOverlayMode.BATTLE_HUD, p.mode.value)
+        assertTrue(p.expanded.value)
+
+        p.reset()
+        p.showBattleHud()
+        p.showSessionPhase(DroidballSessionPhase.BATTLE_ACTIVE)
+        assertFalse(p.panelAllowed.value)
+        assertFalse(p.expanded.value)
     }
 
     @Test fun `accepted Team Select reveals setup but clears the menu while awaiting battle badges`() {

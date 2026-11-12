@@ -1,0 +1,1093 @@
+[
+{
+    "articleId": "e7ed9314-bfa2-4da1-a840-f98d1536d0a4",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445637147,
+    "recordedAt": 1794445637543,
+    "sourceId": "COUNTDOWN_CROP_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/dcdf11ba528167e5bb2c46d5487f5ace8cdc66d2dc59cfa2c586de641c227e51.png",
+        "sha256": "dcdf11ba528167e5bb2c46d5487f5ace8cdc66d2dc59cfa2c586de641c227e51",
+        "byteCount": 100832,
+        "mediaType": "image/png",
+        "cropName": "CountdownGlyphCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 113,
+        "cropTop": 600,
+        "cropRight": 570,
+        "cropBottom": 920,
+        "overlayBounds": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 659,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10825626046183
+},
+{
+    "articleId": "83f93fea-b26a-4b58-8f7f-3f81f098e0a6",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445637147,
+    "recordedAt": 1794445637816,
+    "sourceId": "COUNTDOWN_GLYPH_WITNESS",
+    "payload": {
+        "kind": "countdown_glyph_witnessed",
+        "glyph": "GO",
+        "similarity": 0.7994165,
+        "frameIndex": 3,
+        "cropName": "CountdownGlyphCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 113,
+        "cropTop": 600,
+        "cropRight": 570,
+        "cropBottom": 920,
+        "basis": "COUNTDOWN_GLYPH_NEUTRAL_BRIGHT_GEOMETRY"
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 670,
+    "evidenceReferences": [
+        "e7ed9314-bfa2-4da1-a840-f98d1536d0a4"
+    ],
+    "monotonicTimeNanos": 10825626046183
+},
+{
+    "articleId": "52f10bab-6296-4681-990f-0c5e789920fe",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445637147,
+    "recordedAt": 1794445637818,
+    "sourceId": "BATTLE_INTERPRETER",
+    "payload": {
+        "kind": "match_started"
+    },
+    "predecessorIds": [
+        "83f93fea-b26a-4b58-8f7f-3f81f098e0a6"
+    ],
+    "confidence": null,
+    "sequenceNumber": null,
+    "evidenceReferences": null,
+    "monotonicTimeNanos": 10825626046183
+},
+{
+    "articleId": "0e91641a-627c-4999-a79f-1922304eec92",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445763637,
+    "recordedAt": 1794445763906,
+    "sourceId": "ANNOUNCEMENT_CROP_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/b687d29b9919a4109d6ae7b7fb72538bd30c607334ebdd851346b92b7fac4ec8.png",
+        "sha256": "b687d29b9919a4109d6ae7b7fb72538bd30c607334ebdd851346b92b7fac4ec8",
+        "byteCount": 26533,
+        "mediaType": "image/png",
+        "cropName": "AnnouncementCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 50,
+        "cropTop": 326,
+        "cropRight": 622,
+        "cropBottom": 375,
+        "overlayBounds": {
+            "left": 350.08887,
+            "top": -181.67667,
+            "right": 608.3111,
+            "bottom": 19.878326
+        }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4177,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10952198117960
+},
+{
+    "articleId": "e0875c4d-9b98-4938-b8e1-59ffedda5d4f",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445768317,
+    "recordedAt": 1794445768594,
+    "sourceId": "OPPONENT_ACTIVE_SPECIES_TEXT_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/d4f7d18f15e074ce2fea862122181ed135a03e436ac5dc42308a1a62d0992a71.png",
+        "sha256": "d4f7d18f15e074ce2fea862122181ed135a03e436ac5dc42308a1a62d0992a71",
+        "byteCount": 3297,
+        "mediaType": "image/png",
+        "cropName": "OpponentActiveSpeciesTextCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 496,
+        "cropTop": 96,
+        "cropRight": 653,
+        "cropBottom": 128,
+        "overlayBounds": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4321,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10956873848422
+},
+{
+    "articleId": "3e55d1a5-7355-4e6c-80bb-ffb6a8e7d6f2",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445768659,
+    "recordedAt": 1794445768979,
+    "sourceId": "ANNOUNCEMENT_CROP_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/c29c62e56a184afebfb48eb69f8ee0bb046a878b9080970c8ca9aec59304075b.png",
+        "sha256": "c29c62e56a184afebfb48eb69f8ee0bb046a878b9080970c8ca9aec59304075b",
+        "byteCount": 26295,
+        "mediaType": "image/png",
+        "cropName": "AnnouncementCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 50,
+        "cropTop": 326,
+        "cropRight": 622,
+        "cropBottom": 375,
+        "overlayBounds": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4331,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10957207818575
+},
+{
+    "articleId": "72847208-7848-4c1b-a5eb-a32667ff22c0",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445763637,
+    "recordedAt": 1794445772489,
+    "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+    "payload": {
+        "kind": "raw_text",
+        "value": "Pelipper used Weather Bal!\n=61",
+        "ocr": {
+            "treatment": "RAW",
+            "rawText": "Pelipper used Weather Bal!\n=61",
+            "acceptedText": "Pelipper used Weather Bal!",
+            "words": [
+                {
+                    "text": "Pelipper",
+                    "line": 0,
+                    "bounds": {
+                        "left": 84.0,
+                        "top": 8.0,
+                        "right": 202.0,
+                        "bottom": 38.0
+                    },
+                    "violetFraction": 0.7686441,
+                    "tealFraction": 0.0,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "used",
+                    "line": 0,
+                    "bounds": {
+                        "left": 212.0,
+                        "top": 8.0,
+                        "right": 279.0,
+                        "bottom": 38.0
+                    },
+                    "violetFraction": 0.799005,
+                    "tealFraction": 0.0,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "Weather",
+                    "line": 0,
+                    "bounds": {
+                        "left": 290.0,
+                        "top": 8.0,
+                        "right": 419.0,
+                        "bottom": 38.0
+                    },
+                    "violetFraction": 0.79147285,
+                    "tealFraction": 0.0,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "Bal!",
+                    "line": 0,
+                    "bounds": {
+                        "left": 430.0,
+                        "top": 8.0,
+                        "right": 489.0,
+                        "bottom": 38.0
+                    },
+                    "violetFraction": 0.73107344,
+                    "tealFraction": 0.0,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "=61",
+                    "line": 1,
+                    "bounds": {
+                        "left": 548.0,
+                        "top": 3.0,
+                        "right": 566.0,
+                        "bottom": 13.0
+                    },
+                    "violetFraction": 0.75,
+                    "tealFraction": 0.18333334,
+                    "dangerRedFraction": 0.0,
+                    "decision": "HUD_SIZE_POSITION"
+                }
+            ],
+            "sourceFrameWidth": 672,
+            "expectedMinimumHeightAt672": 22.320002,
+            "profileSampleCount": 1
+        }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4400,
+    "evidenceReferences": [
+        "0e91641a-627c-4999-a79f-1922304eec92"
+    ],
+    "monotonicTimeNanos": 10952198117960
+},
+{
+    "articleId": "e3307e20-79b7-4f8f-a1a3-4d34c20e8bd7",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445763637,
+    "recordedAt": 1794445772812,
+    "sourceId": "ANNOUNCEMENT_WITNESS",
+    "payload": {
+        "kind": "raw_text",
+        "value": "Pelipper used Weather Bal!",
+        "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4404,
+    "evidenceReferences": [
+        "0e91641a-627c-4999-a79f-1922304eec92",
+        "72847208-7848-4c1b-a5eb-a32667ff22c0"
+    ],
+    "monotonicTimeNanos": 10952198117960
+},
+{
+    "articleId": "fc1c176d-295a-48b6-94e2-97e7c9ef7f52",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445763637,
+    "recordedAt": 1794445772907,
+    "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+    "payload": {
+        "kind": "charge_move_used_announced"
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4408,
+    "evidenceReferences": [
+        "e3307e20-79b7-4f8f-a1a3-4d34c20e8bd7"
+    ],
+    "monotonicTimeNanos": 10952198117960
+},
+{
+    "articleId": "a80974ec-449d-426a-b5da-bf708e182d98",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445772964,
+    "recordedAt": 1794445773091,
+    "sourceId": "SPECIES_CHECK_COORDINATOR",
+    "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 49,
+        "status": "OPENED",
+        "reason": "CHARGE",
+        "triggerMonotonicNanos": 10952198117960,
+        "elapsedNanos": 9340422693,
+        "targetNanos": 1500000000,
+        "speciesName": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4414,
+    "evidenceReferences": [
+        "fc1c176d-295a-48b6-94e2-97e7c9ef7f52"
+    ],
+    "monotonicTimeNanos": 10961538564114
+},
+{
+    "articleId": "82e3660c-a827-4c58-b06b-13392a0b8fb5",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445772964,
+    "recordedAt": 1794445773119,
+    "sourceId": "SPECIES_CHECK_COORDINATOR",
+    "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 50,
+        "status": "OPENED",
+        "reason": "CHARGE",
+        "triggerMonotonicNanos": 10952198117960,
+        "elapsedNanos": 9340593770,
+        "targetNanos": 1500000000,
+        "speciesName": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4415,
+    "evidenceReferences": [
+        "fc1c176d-295a-48b6-94e2-97e7c9ef7f52"
+    ],
+    "monotonicTimeNanos": 10961538721653
+},
+{
+    "articleId": "d2138c71-3adc-48c2-996c-85b3e9b47dca",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445775090,
+    "recordedAt": 1794445775261,
+    "sourceId": "PLAYER_ACTIVE_SPECIES_TEXT_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/92c6e31c18f6072c117eeaafee46ae56bd8951796115ac9f96462d3d2707d87a.png",
+        "sha256": "92c6e31c18f6072c117eeaafee46ae56bd8951796115ac9f96462d3d2707d87a",
+        "byteCount": 4301,
+        "mediaType": "image/png",
+        "cropName": "PlayerActiveSpeciesTextCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 22,
+        "cropTop": 98,
+        "cropRight": 178,
+        "cropBottom": 130,
+        "overlayBounds": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4474,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10963634717653
+},
+{
+    "articleId": "c665bc61-5da2-4f72-8450-f53c480c96fa",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445776080,
+    "recordedAt": 1794445776532,
+    "sourceId": "SPECIES_CHECK_COORDINATOR",
+    "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 49,
+        "status": "EXPIRED",
+        "reason": "CHARGE",
+        "triggerMonotonicNanos": 10952198117960,
+        "elapsedNanos": 12456099616,
+        "targetNanos": 1500000000,
+        "speciesName": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4501,
+    "evidenceReferences": [
+        "fc1c176d-295a-48b6-94e2-97e7c9ef7f52"
+    ],
+    "monotonicTimeNanos": 10964654283114
+},
+{
+    "articleId": "b25a0f46-02ab-49c1-a1b2-4c332453016d",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445776080,
+    "recordedAt": 1794445776553,
+    "sourceId": "SPECIES_CHECK_COORDINATOR",
+    "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 50,
+        "status": "EXPIRED",
+        "reason": "CHARGE",
+        "triggerMonotonicNanos": 10952198117960,
+        "elapsedNanos": 12456350154,
+        "targetNanos": 1500000000,
+        "speciesName": "Stunfisk"
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4503,
+    "evidenceReferences": [
+        "fc1c176d-295a-48b6-94e2-97e7c9ef7f52",
+        "e0875c4d-9b98-4938-b8e1-59ffedda5d4f"
+    ],
+    "monotonicTimeNanos": 10964654482268
+},
+{
+    "articleId": "5db7df55-71ff-41df-819d-8546d560aba2",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445775868,
+    "recordedAt": 1794445776683,
+    "sourceId": "OPPONENT_ACTIVE_SPECIES_TEXT_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/e1a25a3807196d570cb5582d2329aa474e278ad9bf4f5cd73d7263c2ff2bfe85.png",
+        "sha256": "e1a25a3807196d570cb5582d2329aa474e278ad9bf4f5cd73d7263c2ff2bfe85",
+        "byteCount": 3915,
+        "mediaType": "image/png",
+        "cropName": "OpponentActiveSpeciesTextCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 496,
+        "cropTop": 96,
+        "cropRight": 653,
+        "cropBottom": 128,
+        "overlayBounds": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4507,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10964389148422
+},
+{
+    "articleId": "e64419aa-bc40-43b3-b126-3b09342f00a4",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445775090,
+    "recordedAt": 1794445777180,
+    "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_LATENCY",
+    "payload": {
+        "kind": "raw_text",
+        "value": "side=PLAYER queueMs=1871 captureToAdmissionMs=792 nativeReadMs=886 processingMs=1125 totalMs=1917 passes=1 replacedCrops=1",
+        "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4519,
+    "evidenceReferences": [
+        "d2138c71-3adc-48c2-996c-85b3e9b47dca"
+    ],
+    "monotonicTimeNanos": 10963634717653
+},
+{
+    "articleId": "e1f139a2-df11-4ef7-99c9-1aacdd0a93f8",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445776979,
+    "recordedAt": 1794445777204,
+    "sourceId": "SPECIES_CHECK_COORDINATOR",
+    "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 49,
+        "status": "CONFIRMED",
+        "reason": "CHARGE",
+        "triggerMonotonicNanos": 10952198117960,
+        "elapsedNanos": 13354832001,
+        "targetNanos": 1500000000,
+        "speciesName": "Camerupt"
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4520,
+    "evidenceReferences": [
+        "fc1c176d-295a-48b6-94e2-97e7c9ef7f52",
+        "d2138c71-3adc-48c2-996c-85b3e9b47dca"
+    ],
+    "monotonicTimeNanos": 10965553012037
+},
+{
+    "articleId": "2106b976-568f-4684-8e8a-040b23064198",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445775868,
+    "recordedAt": 1794445778871,
+    "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE_LATENCY",
+    "payload": {
+        "kind": "raw_text",
+        "value": "side=OPPONENT queueMs=3350 captureToAdmissionMs=1593 nativeReadMs=606 processingMs=696 totalMs=2290 passes=1 replacedCrops=1",
+        "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4540,
+    "evidenceReferences": [
+        "5db7df55-71ff-41df-819d-8546d560aba2"
+    ],
+    "monotonicTimeNanos": 10964389148422
+},
+{
+    "articleId": "96416537-06c4-4830-b27e-4dea3a8fc49f",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445778106,
+    "recordedAt": 1794445778882,
+    "sourceId": "SPECIES_CHECK_COORDINATOR",
+    "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 50,
+        "status": "CONFIRMED",
+        "reason": "CHARGE",
+        "triggerMonotonicNanos": 10952198117960,
+        "elapsedNanos": 14482044001,
+        "targetNanos": 1500000000,
+        "speciesName": "Stunfisk"
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4541,
+    "evidenceReferences": [
+        "fc1c176d-295a-48b6-94e2-97e7c9ef7f52",
+        "5db7df55-71ff-41df-819d-8546d560aba2"
+    ],
+    "monotonicTimeNanos": 10966680191191
+},
+{
+    "articleId": "00da97f6-7f79-4141-af52-d3a1279fa1d1",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445768659,
+    "recordedAt": 1794445779868,
+    "sourceId": "ANNOUNCEMENT_WITNESS_LATENCY",
+    "payload": {
+        "kind": "raw_text",
+        "value": "cropId=3e55d1a5-7355-4e6c-80bb-ffb6a8e7d6f2 priority=TRANSIENT queueMs=5893 captureToAdmissionMs=9958 nativeReadMs=710 processingMs=736 totalMs=10694 passes=1 replacedPendingTotal=178 selection=TEXT_KEYFRAME buffered=2 coalescedTotal=6 overflowTotal=0 expiredTotal=14 pending=1 nonblank=true",
+        "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4558,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10957207818575
+},
+{
+    "articleId": "ea399d96-a677-4956-83aa-f12913b3ef45",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445768659,
+    "recordedAt": 1794445779889,
+    "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+    "payload": {
+        "kind": "raw_text",
+        "value": "Go, Stunfisk!",
+        "ocr": {
+            "treatment": "RAW",
+            "rawText": "Go, Stunfisk!",
+            "acceptedText": "Go, Stunfisk!",
+            "words": [
+                {
+                    "text": "Go,",
+                    "line": 0,
+                    "bounds": {
+                        "left": 193.0,
+                        "top": 8.0,
+                        "right": 240.0,
+                        "bottom": 36.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.1056231,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "Stunfisk!",
+                    "line": 0,
+                    "bounds": {
+                        "left": 252.0,
+                        "top": 8.0,
+                        "right": 377.0,
+                        "bottom": 36.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.119428575,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                }
+            ],
+            "sourceFrameWidth": 672,
+            "expectedMinimumHeightAt672": 22.320002,
+            "profileSampleCount": 1
+        }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4559,
+    "evidenceReferences": [
+        "3e55d1a5-7355-4e6c-80bb-ffb6a8e7d6f2"
+    ],
+    "monotonicTimeNanos": 10957207818575
+},
+{
+    "articleId": "76c58c93-4ac6-4fab-805f-675e335f47e5",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445768659,
+    "recordedAt": 1794445780186,
+    "sourceId": "ANNOUNCEMENT_WITNESS",
+    "payload": {
+        "kind": "raw_text",
+        "value": "Go, Stunfisk!",
+        "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4569,
+    "evidenceReferences": [
+        "3e55d1a5-7355-4e6c-80bb-ffb6a8e7d6f2",
+        "ea399d96-a677-4956-83aa-f12913b3ef45"
+    ],
+    "monotonicTimeNanos": 10957207818575
+},
+{
+    "articleId": "1cbe7a17-cab0-43a0-8834-5ed33dac3a0a",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445779784,
+    "recordedAt": 1794445780271,
+    "sourceId": "ANNOUNCEMENT_CROP_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/fb9ded3dc5412515bb0fd48bc6550542278819e80d8289fdfeaedb5ad6cf5ffa.png",
+        "sha256": "fb9ded3dc5412515bb0fd48bc6550542278819e80d8289fdfeaedb5ad6cf5ffa",
+        "byteCount": 42277,
+        "mediaType": "image/png",
+        "cropName": "AnnouncementCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 50,
+        "cropTop": 326,
+        "cropRight": 622,
+        "cropBottom": 375,
+        "overlayBounds": {
+            "left": 350.08887,
+            "top": -181.67667,
+            "right": 608.3111,
+            "bottom": 19.878326
+        }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4570,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10968353071499
+},
+{
+    "articleId": "6c30409e-2389-43be-bcfb-964de6383c1e",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445780186,
+    "recordedAt": 1794445780368,
+    "sourceId": "SPECIES_CHECK_COORDINATOR",
+    "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 51,
+        "status": "OPENED",
+        "reason": "ENTRY",
+        "triggerMonotonicNanos": 10957207818575,
+        "elapsedNanos": 11552776309,
+        "targetNanos": 1500000000,
+        "speciesName": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4575,
+    "evidenceReferences": [
+        "76c58c93-4ac6-4fab-805f-675e335f47e5"
+    ],
+    "monotonicTimeNanos": 10968760645038
+},
+{
+    "articleId": "054efed1-8788-4abe-b07c-04825ddd33a6",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445780187,
+    "recordedAt": 1794445780372,
+    "sourceId": "SPECIES_CHECK_COORDINATOR",
+    "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 52,
+        "status": "OPENED",
+        "reason": "ENTRY",
+        "triggerMonotonicNanos": 10957207818575,
+        "elapsedNanos": 11552928232,
+        "targetNanos": 1500000000,
+        "speciesName": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4576,
+    "evidenceReferences": [
+        "76c58c93-4ac6-4fab-805f-675e335f47e5"
+    ],
+    "monotonicTimeNanos": 10968760758807
+},
+{
+    "articleId": "c7864bdb-0d6e-4d2d-a1f0-b332a2af96b5",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445780736,
+    "recordedAt": 1794445781492,
+    "sourceId": "OPPONENT_ACTIVE_SPECIES_TEXT_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/3b21726a10da2be4433db76b5e9b82adb194d023c60d96435189eba95756660a.png",
+        "sha256": "3b21726a10da2be4433db76b5e9b82adb194d023c60d96435189eba95756660a",
+        "byteCount": 3520,
+        "mediaType": "image/png",
+        "cropName": "OpponentActiveSpeciesTextCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 496,
+        "cropTop": 96,
+        "cropRight": 653,
+        "cropBottom": 128,
+        "overlayBounds": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4601,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10969278354268
+},
+{
+    "articleId": "20fee2fd-7c9b-4de5-ac22-557958cb42ee",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445782320,
+    "recordedAt": 1794445782378,
+    "sourceId": "PLAYER_ACTIVE_SPECIES_TEXT_CAPTURE",
+    "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/cf2f825637ec3998ab789004a3dae1ec2c3759c0fff2632e1c15f98346e0211c.png",
+        "sha256": "cf2f825637ec3998ab789004a3dae1ec2c3759c0fff2632e1c15f98346e0211c",
+        "byteCount": 3903,
+        "mediaType": "image/png",
+        "cropName": "PlayerActiveSpeciesTextCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 22,
+        "cropTop": 98,
+        "cropRight": 178,
+        "cropBottom": 130,
+        "overlayBounds": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4627,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10970882825653
+},
+{
+    "articleId": "3b42bc64-b901-4a86-8840-ac89aabc2a59",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445780736,
+    "recordedAt": 1794445782567,
+    "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE_LATENCY",
+    "payload": {
+        "kind": "raw_text",
+        "value": "side=OPPONENT queueMs=1139 captureToAdmissionMs=920 nativeReadMs=776 processingMs=941 totalMs=1861 passes=1 replacedCrops=1",
+        "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4630,
+    "evidenceReferences": [
+        "c7864bdb-0d6e-4d2d-a1f0-b332a2af96b5"
+    ],
+    "monotonicTimeNanos": 10969278354268
+},
+{
+    "articleId": "a4fa6661-57fc-43f8-bcff-785238637d2c",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445782572,
+    "recordedAt": 1794445782597,
+    "sourceId": "SPECIES_CHECK_COORDINATOR",
+    "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 52,
+        "status": "CONFIRMED",
+        "reason": "ENTRY",
+        "triggerMonotonicNanos": 10957207818575,
+        "elapsedNanos": 13938591924,
+        "targetNanos": 1500000000,
+        "speciesName": "Stunfisk"
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4631,
+    "evidenceReferences": [
+        "76c58c93-4ac6-4fab-805f-675e335f47e5",
+        "c7864bdb-0d6e-4d2d-a1f0-b332a2af96b5"
+    ],
+    "monotonicTimeNanos": 10971146465884
+},
+{
+    "articleId": "e7fc2ec6-a850-4541-ad3c-51b743a54066",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445780736,
+    "recordedAt": 1794445782631,
+    "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+    "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Stunfisk",
+        "speciesId": 618,
+        "ocrText": "Stunfisk",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+    },
+    "predecessorIds": [],
+    "confidence": 0.98,
+    "sequenceNumber": 4632,
+    "evidenceReferences": [
+        "76c58c93-4ac6-4fab-805f-675e335f47e5",
+        "c7864bdb-0d6e-4d2d-a1f0-b332a2af96b5"
+    ],
+    "monotonicTimeNanos": 10969278354268
+},
+{
+    "articleId": "c97648bd-946e-4938-a010-5584f8e48840",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445782320,
+    "recordedAt": 1794445783472,
+    "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_LATENCY",
+    "payload": {
+        "kind": "raw_text",
+        "value": "side=PLAYER queueMs=2365 captureToAdmissionMs=545 nativeReadMs=356 processingMs=494 totalMs=1040 passes=1 replacedCrops=1",
+        "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4651,
+    "evidenceReferences": [
+        "20fee2fd-7c9b-4de5-ac22-557958cb42ee"
+    ],
+    "monotonicTimeNanos": 10970882825653
+},
+{
+    "articleId": "d49df11d-f593-46fe-92a5-9e5b46658750",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445783368,
+    "recordedAt": 1794445783569,
+    "sourceId": "SPECIES_CHECK_COORDINATOR",
+    "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 51,
+        "status": "CONFIRMED",
+        "reason": "ENTRY",
+        "triggerMonotonicNanos": 10957207818575,
+        "elapsedNanos": 14734139078,
+        "targetNanos": 1500000000,
+        "speciesName": "Camerupt"
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4653,
+    "evidenceReferences": [
+        "76c58c93-4ac6-4fab-805f-675e335f47e5",
+        "20fee2fd-7c9b-4de5-ac22-557958cb42ee"
+    ],
+    "monotonicTimeNanos": 10971942014269
+},
+{
+    "articleId": "d25593bd-5372-45d5-bff2-886470271a95",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445782320,
+    "recordedAt": 1794445783685,
+    "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+    "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "ocrText": "Camerupt",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+    },
+    "predecessorIds": [],
+    "confidence": 0.98,
+    "sequenceNumber": 4654,
+    "evidenceReferences": [
+        "76c58c93-4ac6-4fab-805f-675e335f47e5",
+        "20fee2fd-7c9b-4de5-ac22-557958cb42ee"
+    ],
+    "monotonicTimeNanos": 10970882825653
+},
+{
+    "articleId": "3bfba15e-7e90-4251-9ffb-67379fac957e",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445779784,
+    "recordedAt": 1794445784345,
+    "sourceId": "ANNOUNCEMENT_WITNESS_LATENCY",
+    "payload": {
+        "kind": "raw_text",
+        "value": "cropId=1cbe7a17-cab0-43a0-8834-5ed33dac3a0a priority=TRANSIENT queueMs=3983 captureToAdmissionMs=4101 nativeReadMs=394 processingMs=463 totalMs=4564 passes=1 replacedPendingTotal=183 selection=TEXT_KEYFRAME buffered=2 coalescedTotal=6 overflowTotal=0 expiredTotal=15 pending=1 nonblank=true",
+        "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4673,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 10968353071499
+},
+{
+    "articleId": "e70bdd6b-0f65-4607-8a33-f5f4ba2f4b0c",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445779784,
+    "recordedAt": 1794445784380,
+    "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+    "payload": {
+        "kind": "raw_text",
+        "value": "Stunfisk used Mud Bomb!",
+        "ocr": {
+            "treatment": "RAW",
+            "rawText": "Stunfisk used Mud Bomb!",
+            "acceptedText": "Stunfisk used Mud Bomb!",
+            "words": [
+                {
+                    "text": "Stunfisk",
+                    "line": 0,
+                    "bounds": {
+                        "left": 97.0,
+                        "top": 8.0,
+                        "right": 215.0,
+                        "bottom": 33.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.09728814,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "used",
+                    "line": 0,
+                    "bounds": {
+                        "left": 226.0,
+                        "top": 8.0,
+                        "right": 293.0,
+                        "bottom": 33.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.0,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "Mud",
+                    "line": 0,
+                    "bounds": {
+                        "left": 305.0,
+                        "top": 8.0,
+                        "right": 369.0,
+                        "bottom": 33.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.00125,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                },
+                {
+                    "text": "Bomb!",
+                    "line": 0,
+                    "bounds": {
+                        "left": 382.0,
+                        "top": 8.0,
+                        "right": 475.0,
+                        "bottom": 33.0
+                    },
+                    "violetFraction": 0.0,
+                    "tealFraction": 0.09247312,
+                    "dangerRedFraction": 0.0,
+                    "decision": "RETAINED"
+                }
+            ],
+            "sourceFrameWidth": 672,
+            "expectedMinimumHeightAt672": 22.320002,
+            "profileSampleCount": 2
+        }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4674,
+    "evidenceReferences": [
+        "1cbe7a17-cab0-43a0-8834-5ed33dac3a0a"
+    ],
+    "monotonicTimeNanos": 10968353071499
+},
+{
+    "articleId": "11ef3c72-4871-49f6-9205-abf216f15cf7",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445779784,
+    "recordedAt": 1794445784450,
+    "sourceId": "ANNOUNCEMENT_WITNESS",
+    "payload": {
+        "kind": "raw_text",
+        "value": "Stunfisk used Mud Bomb!",
+        "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4677,
+    "evidenceReferences": [
+        "1cbe7a17-cab0-43a0-8834-5ed33dac3a0a",
+        "e70bdd6b-0f65-4607-8a33-f5f4ba2f4b0c"
+    ],
+    "monotonicTimeNanos": 10968353071499
+},
+{
+    "articleId": "ac929ce2-743a-451c-89a1-f5d38cd2a8cf",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445779784,
+    "recordedAt": 1794445784540,
+    "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+    "payload": {
+        "kind": "charge_move_used_announced"
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4678,
+    "evidenceReferences": [
+        "11ef3c72-4871-49f6-9205-abf216f15cf7"
+    ],
+    "monotonicTimeNanos": 10968353071499
+},
+{
+    "articleId": "b71fbb71-e24f-4250-a1ba-64c570d81d43",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445784540,
+    "recordedAt": 1794445784554,
+    "sourceId": "SPECIES_CHECK_COORDINATOR",
+    "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 53,
+        "status": "OPENED",
+        "reason": "CHARGE",
+        "triggerMonotonicNanos": 10968353071499,
+        "elapsedNanos": 4761514693,
+        "targetNanos": 1500000000,
+        "speciesName": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4680,
+    "evidenceReferences": [
+        "ac929ce2-743a-451c-89a1-f5d38cd2a8cf"
+    ],
+    "monotonicTimeNanos": 10973114609269
+},
+{
+    "articleId": "d139db39-b752-48fd-8c49-93a125e195e9",
+    "matchId": "e6fa7745-8827-4fd0-a4ec-659d1bbf7ad7",
+    "perceivedAt": 1794445784540,
+    "recordedAt": 1794445784580,
+    "sourceId": "SPECIES_CHECK_COORDINATOR",
+    "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 54,
+        "status": "OPENED",
+        "reason": "CHARGE",
+        "triggerMonotonicNanos": 10968353071499,
+        "elapsedNanos": 4761606693,
+        "targetNanos": 1500000000,
+        "speciesName": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4681,
+    "evidenceReferences": [
+        "ac929ce2-743a-451c-89a1-f5d38cd2a8cf"
+    ],
+    "monotonicTimeNanos": 10973114685653
+}
+]

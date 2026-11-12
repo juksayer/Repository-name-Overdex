@@ -46,18 +46,18 @@ class ReplayLateResourceKnockoutTest {
             assertEquals("Obstagoon", before.speciesName)
             assertTrue(before.isFainted)
             assertEquals(14 * SECOND, before.faintedAtNanos)
-            assertEquals(setOf("faint", "replacement", "first", "before", "after"),
-                before.knockoutSourceArticleIds.toSet())
+            assertTrue(before.knockoutSourceArticleIds.containsAll(listOf("replacement", "first", "before", "after", "alive")))
+            assertEquals(ReplayTeamLossProjection.BASIS, before.knockoutBasis)
             assertEquals("Lucario", combatant(model, side, 10_000).speciesName)
             assertFalse(combatant(model, side, 14_000).isFainted)
             assertEquals(original, MatchArchiveSerializer.serialize(archive))
         }
     }
 
-    @Test fun `name alone and uncited surrounding counts do not extend the late window`() {
+    @Test fun `independent source evidence resolves regardless of the legacy faint citations`() {
         val original = archive("OPPONENT")
         for (references in listOf(emptyList(), listOf("first"), listOf("before", "after"))) {
-            assertNoOutgoingKo(replace(original, "faint") { it.copy(evidenceReferences = references) })
+            assertTrue(combatant(MatchReplayModel(replace(original, "faint") { it.copy(evidenceReferences = references) }), "OPPONENT", 9_950).isFainted)
         }
     }
 
@@ -81,11 +81,10 @@ class ReplayLateResourceKnockoutTest {
         }
     }
 
-    @Test fun `wrong match invalid maximum and a different faint source time are rejected`() {
+    @Test fun `wrong match and invalid maximum counts cannot corroborate a faint`() {
         for (mutate in listOf<(ArchivedRealityArticle) -> ArchivedRealityArticle>(
             { it.copy(matchId = "another") },
             { it.copy(payload = ArchivedOpponentBattleResourceCountMeasured("POKE_BALLS", 2, 2)) },
-            { it.copy(monotonicTimeNanos = 13 * SECOND) },
         )) assertNoOutgoingKo(replace(archive("OPPONENT"), "after", mutate))
     }
 
@@ -95,13 +94,14 @@ class ReplayLateResourceKnockoutTest {
         assertNoOutgoingKo(original.copy(articles = original.articles + stable))
     }
 
-    @Test fun `a cited identity from an older same-species appearance cannot knock out the returning actor`() {
+    @Test fun `raw source history selects the returning appearance regardless of old identity citations`() {
         val original = archive("PLAYER")
         val returned = original.copy(articles = original.articles.map {
             when (it.articleId) {
                 "replacement" -> it.copy(monotonicTimeNanos = 20 * SECOND)
                 "before" -> it.copy(monotonicTimeNanos = 15 * SECOND)
                 "after", "faint" -> it.copy(monotonicTimeNanos = 25 * SECOND)
+                "alive" -> it.copy(monotonicTimeNanos = 26 * SECOND)
                 else -> it
             }
         } + listOf(
@@ -109,10 +109,9 @@ class ReplayLateResourceKnockoutTest {
             event("return", ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Obstagoon", 862), 10_000),
         ))
         val model = MatchReplayModel(returned)
-        assertFalse(combatant(model, "PLAYER", 19_950).isFainted)
+        assertTrue(combatant(model, "PLAYER", 19_950).isFainted)
         assertFalse(combatant(model, "PLAYER", 4_950).isFainted)
-        // Replacing the old identity link with the actual returning identity
-        // establishes that appearance only, never its first visit.
+        // Old derived citations do not change the independent resolution.
         val linked = MatchReplayModel(replace(returned, "faint") {
             it.copy(evidenceReferences = listOf("return", "before", "after"))
         })
@@ -120,13 +119,14 @@ class ReplayLateResourceKnockoutTest {
         assertFalse(combatant(linked, "PLAYER", 4_950).isFainted)
     }
 
-    @Test fun `a faint of the current returning species retains its actual latest appearance`() {
+    @Test fun `positive HP on the returning species excludes it from the intervening team loss`() {
         val original = archive("PLAYER")
         val model = MatchReplayModel(original.copy(articles = original.articles +
             event("return", ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Obstagoon", 862), 13_000)))
         assertFalse(combatant(model, "PLAYER", 9_950).isFainted)
         assertFalse(combatant(model, "PLAYER", 13_500).isFainted)
-        assertTrue(combatant(model, "PLAYER", 14_500).isFainted)
+        assertFalse(combatant(model, "PLAYER", 14_500).isFainted)
+        assertTrue(combatant(model, "PLAYER", 12_950).isFainted)
     }
 
     @Test fun `direct predecessor custody links also corroborate the delayed counter faint`() {
@@ -149,6 +149,7 @@ class ReplayLateResourceKnockoutTest {
         event("before", balls(side, 3), 5_000),
         event("replacement", ArchivedActivePokemonSpeciesWitnessed(side, "Lucario", 448), 10_000),
         event("after", balls(side, 2), 14_000),
+        event("alive", ArchivedActiveHpBarMeasured(side, 0, 0, 200, 15, .5f), 15_000),
         event("faint", ArchivedActivePokemonFaintedWitnessed(side, "Obstagoon", 862,
             "${side}_POKE_BALL_COUNT_DECREASE"), 14_000).copy(evidenceReferences = listOf("first", "before", "after")),
     ))

@@ -21,9 +21,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.overdex.battle.BattleSpeciesDisplay
 import com.example.overdex.battle.team.FieldTeamEditor
 import com.example.overdex.battle.team.SavedBattleTeam
 import com.example.overdex.model.OwnedPokemon
+import com.example.overdex.model.PokemonSize
 
 private val FieldTeamInk = Color(0xFF315E63)
 
@@ -43,6 +45,7 @@ fun FieldTeamEditorOverlay(
     var query by remember { mutableStateOf("") }
     var legacyCardToConfirm by remember(slot) { mutableStateOf<String?>(null) }
     val member = team.slots[slot]
+    val memberDisplayName = (member.pokemon?.name ?: member.scannedName)?.let(BattleSpeciesDisplay::name)
     val ink = FieldTeamInk
     Column(Modifier.width(width).heightIn(max = 470.dp)
         .background(FieldMenuPaper, RoundedCornerShape(12.dp)).padding(12.dp),
@@ -63,7 +66,7 @@ fun FieldTeamEditorOverlay(
                             editor.useSavedTeam(saved.team); picker = null
                         }.padding(vertical = 10.dp)) {
                             Text(saved.name, color = ink, fontWeight = FontWeight.Bold)
-                            Text(saved.team.members.joinToString(" · ") { it.speciesName }, color = ink, fontSize = 11.sp)
+                            Text(saved.team.members.joinToString(" · ") { BattleSpeciesDisplay.name(it.speciesName) }, color = ink, fontSize = 11.sp)
                             Text("USE THIS TEAM", color = ink, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
@@ -82,14 +85,14 @@ fun FieldTeamEditorOverlay(
             }
             "cards" -> {
                 FieldTeamAction("‹ BACK") { picker = null; legacyCardToConfirm = null }
-                Text("Choose the card for ${member.pokemon?.name ?: member.scannedName ?: "this Pokémon"}.",
+                Text("Choose the card for ${memberDisplayName ?: "this Pokémon"}.",
                     color = ink, fontSize = 12.sp)
                 LazyColumn(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(member.ownedCandidates, key = { it.id }) { card ->
                         Column(Modifier.fillMaxWidth().background(Color(0xFFE1F1E8), RoundedCornerShape(6.dp)).padding(8.dp)) {
                             FieldOwnedCardDescription(card)
                             if (legacyCardToConfirm == card.id) {
-                                Text("Confirm this is ${member.pokemon?.name ?: member.scannedName ?: "the scanned Pokémon"}?",
+                                Text("Confirm this is ${memberDisplayName ?: "the scanned Pokémon"}?",
                                     color = ink, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 Text("This older card has no confirmed form.", color = ink, fontSize = 11.sp)
                                 FieldTeamAction("YES, USE THIS CARD", !team.loading, Modifier.fillMaxWidth()) {
@@ -120,12 +123,12 @@ fun FieldTeamEditorOverlay(
                                 .background(if (slot == index) Color(0xFFC2E7DB) else Color.Transparent,
                                     RoundedCornerShape(6.dp)).clickable { slot = index }.padding(6.dp)) {
                                 Text("${index + 1}${if (item.ready) " ✓" else ""}", color = ink, fontWeight = FontWeight.Bold)
-                                Text(item.pokemon?.name ?: item.scannedName ?: "Choose", color = ink, fontSize = 11.sp)
+                                Text((item.pokemon?.name ?: item.scannedName)?.let(BattleSpeciesDisplay::name) ?: "Choose", color = ink, fontSize = 11.sp)
                             }
                         }
                     }
                     Text(if (slot == 0) "Slot 1 enters first" else "Slot ${slot + 1}", color = ink, fontSize = 11.sp)
-                    FieldTeamAction("${member.pokemon?.name ?: member.scannedName ?: "CHOOSE SPECIES"}  ›", !team.loading,
+                    FieldTeamAction("${memberDisplayName ?: "CHOOSE SPECIES"}  ›", !team.loading,
                         Modifier.fillMaxWidth()) {
                         query = ""; picker = "species"
                     }
@@ -207,7 +210,10 @@ fun FieldTeamEditorOverlay(
 @Composable
 private fun FieldOwnedCardDescription(card: OwnedPokemon) {
     Text(card.displayName?.takeIf(String::isNotBlank) ?: "Unnamed card", color = FieldTeamInk, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-    Text("Species / form: ${card.speciesName?.takeIf(String::isNotBlank) ?: "Not confirmed"}", color = FieldTeamInk, fontSize = 12.sp)
+    Text("Species / form: ${card.speciesName?.takeIf(String::isNotBlank)?.let(BattleSpeciesDisplay::name) ?: "Not confirmed"}", color = FieldTeamInk, fontSize = 12.sp)
+    if (card.size != PokemonSize.UNKNOWN) {
+        Text("Size: ${card.size.label}", color = FieldTeamInk, fontSize = 11.sp)
+    }
     Text("CP ${card.cp ?: "not recorded"} · ${when {
         card.isShadow -> "Shadow"
         card.isPurified -> "Purified"

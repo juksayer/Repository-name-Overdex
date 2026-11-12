@@ -35,6 +35,11 @@ fun MatchArchive.summarize(): MatchSummary {
     // Publication order can differ from capture order; late OCR must not extend the battle.
     val last = first?.let { origin -> records.maxByOrNull { elapsed(origin, it) } }
     val battle = records.filter { (start == null || elapsed(start, it) >= 0) && (end == null || elapsed(it, end) >= 0) }
+    val countProjection = com.example.overdex.battle.replay.ReplayTeamLossProjection(this)
+    val currentFaints = com.example.overdex.battle.replay.ReplayVerifiedHpFaintProjection(this,
+        countProjection.articles).articles.filter {
+            (start == null || elapsed(start, it) >= 0) && (end == null || elapsed(it, end) >= 0)
+        }.mapNotNull { it.payload as? ArchivedActivePokemonFaintedWitnessed }
     fun side(side: String): MatchSideSummary {
         val identities = records.mapNotNull { it.payload as? ArchivedActivePokemonSpeciesWitnessed }
             .filter { it.side == side }.distinctBy { it.speciesId?.toString() ?: it.speciesName.lowercase() }
@@ -54,7 +59,7 @@ fun MatchArchive.summarize(): MatchSummary {
             species = identities.map { it.speciesName },
             fastMoveUses = uses.size,
             chargedMoveUses = charges.size,
-            faintCount = battle.mapNotNull { it.payload as? ArchivedActivePokemonFaintedWitnessed }
+            faintCount = currentFaints
                 .filter { it.side == side }.distinctBy { it.speciesId?.toString() ?: it.speciesName }.size,
             identifiedFastMoves = records.mapNotNull { it.payload as? ArchivedFastMoveIdentified }
                 .filter { it.side == side }.map { "${it.speciesName}: ${it.moveName}" }.distinct(),

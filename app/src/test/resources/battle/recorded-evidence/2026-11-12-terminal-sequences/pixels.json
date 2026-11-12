@@ -1,0 +1,344 @@
+[
+  {
+    "file": "211335-16289495-816.png",
+    "sha256": "4712bee656140cf54f3787a025daa4b0e217ed87a05ebd7e7854099199166bf1",
+    "source": "/home/sean/Desktop/Screen_recording_20261111_211335.mp4",
+    "sourceSha256": "846cf23949029f732174fc76ed9e884d159e92237769c50842a8592214a11297",
+    "pts": 16289495,
+    "timeBase": "1/90000",
+    "width": 816,
+    "height": 1808,
+    "bounds": [
+      228,
+      723,
+      751,
+      1356
+    ],
+    "transformation": "native",
+    "flashes": [
+      {
+        "x": 595.2756832667171,
+        "y": 932.2421950956034,
+        "area": 9257,
+        "width": 133,
+        "height": 101,
+        "density": 0.689123799598005
+      }
+    ]
+  },
+  {
+    "file": "211335-16289495-672.png",
+    "sha256": "e9128705b6fad8ca026ffe100f377862a78a98c1fd397f71dd4a505b413e8ba1",
+    "source": "/home/sean/Desktop/Screen_recording_20261111_211335.mp4",
+    "sourceSha256": "846cf23949029f732174fc76ed9e884d159e92237769c50842a8592214a11297",
+    "pts": 16289495,
+    "timeBase": "1/90000",
+    "width": 672,
+    "height": 1493,
+    "bounds": [
+      188,
+      597,
+      618,
+      1120
+    ],
+    "transformation": "OpenCV INTER_AREA 672x1493 before crop",
+    "flashes": [
+      {
+        "x": 490.1709102482495,
+        "y": 769.7573201782304,
+        "area": 6284,
+        "width": 109,
+        "height": 82,
+        "density": 0.7030655627657194
+      }
+    ]
+  },
+  {
+    "file": "211335-16303262-816.png",
+    "sha256": "23f93f0d3957a683225977833fd33a5dfd74654aea7a12f16995f6f0c35aaeb2",
+    "source": "/home/sean/Desktop/Screen_recording_20261111_211335.mp4",
+    "sourceSha256": "846cf23949029f732174fc76ed9e884d159e92237769c50842a8592214a11297",
+    "pts": 16303262,
+    "timeBase": "1/90000",
+    "width": 816,
+    "height": 1808,
+    "bounds": [
+      228,
+      723,
+      751,
+      1356
+    ],
+    "transformation": "native",
+    "flashes": [
+      {
+        "x": 591.4807339449542,
+        "y": 944.2665137614679,
+        "area": 2180,
+        "width": 64,
+        "height": 63,
+        "density": 0.5406746031746031
+      }
+    ]
+  },
+  {
+    "file": "211335-16303262-672.png",
+    "sha256": "19dab7dc0d87d1504e8e811b3f1addeb32153cfd4c12c7e041afd2b563bbfc9e",
+    "source": "/home/sean/Desktop/Screen_recording_20261111_211335.mp4",
+    "sourceSha256": "846cf23949029f732174fc76ed9e884d159e92237769c50842a8592214a11297",
+    "pts": 16303262,
+    "timeBase": "1/90000",
+    "width": 672,
+    "height": 1493,
+    "bounds": [
+      188,
+      597,
+      618,
+      1120
+    ],
+    "transformation": "OpenCV INTER_AREA 672x1493 before crop",
+    "flashes": [
+      {
+        "x": 486.8762816131237,
+        "y": 779.6179084073821,
+        "area": 1463,
+        "width": 52,
+        "height": 51,
+        "density": 0.551659125188537
+      }
+    ]
+  },
+  {
+    "file": "211335-16326056-816.png",
+    "sha256": "7862d8daad9e9b57fb186572fd8fe702d2611468ab859a381fa6dfd16633d6ef",
+    "source": "/home/sean/Desktop/Screen_recording_20261111_211335.mp4",
+    "sourceSha256": "846cf23949029f732174fc76ed9e884d159e92237769c50842a8592214a11297",
+    "pts": 16326056,
+    "timeBase": "1/90000",
+    "width": 816,
+    "height": 1808,
+    "bounds": [
+      228,
+      723,
+      751,
+      1356
+    ],
+    "transformation": "native",
+    "flashes": []
+  },
+  {
+    "file": "211335-16326056-672.png",
+    "sha256": "90d1941dceac8176938c8f226046e8292e74bdf0b726735f96a93af0bc0a9ee7",
+    "source": "/home/sean/Desktop/Screen_recording_20261111_211335.mp4",
+    "sourceSha256": "846cf23949029f732174fc76ed9e884d159e92237769c50842a8592214a11297",
+    "pts": 16326056,
+    "timeBase": "1/90000",
+    "width": 672,
+    "height": 1493,
+    "bounds": [
+      188,
+      597,
+      618,
+      1120
+    ],
+    "transformation": "OpenCV INTER_AREA 672x1493 before crop",
+    "flashes": []
+  },
+  {
+    "file": "112107-10061189-816.png",
+    "sha256": "0fd7502f4b449873e821431290a12411602499189e4ec2e2b36c1d6d82237b51",
+    "source": "/home/sean/Desktop/Screen_recording_20261111_112107.mp4",
+    "sourceSha256": "493996b9fcb183adc2704e7db71fe41dbe4f09d902c8dbfebe4d78a769e51fb7",
+    "pts": 10061189,
+    "timeBase": "1/90000",
+    "width": 816,
+    "height": 1808,
+    "bounds": [
+      228,
+      723,
+      751,
+      1356
+    ],
+    "transformation": "native",
+    "flashes": [
+      {
+        "x": 265.198233995585,
+        "y": 1090.8993377483444,
+        "area": 2265,
+        "width": 54,
+        "height": 53,
+        "density": 0.7914046121593291
+      }
+    ]
+  },
+  {
+    "file": "112107-10061189-672.png",
+    "sha256": "80cde1d3ce06c5a09b70d3d015acb51912774e6afa27e89b875ffd47e81654e2",
+    "source": "/home/sean/Desktop/Screen_recording_20261111_112107.mp4",
+    "sourceSha256": "493996b9fcb183adc2704e7db71fe41dbe4f09d902c8dbfebe4d78a769e51fb7",
+    "pts": 10061189,
+    "timeBase": "1/90000",
+    "width": 672,
+    "height": 1493,
+    "bounds": [
+      188,
+      597,
+      618,
+      1120
+    ],
+    "transformation": "OpenCV INTER_AREA 672x1493 before crop",
+    "flashes": [
+      {
+        "x": 218.4954128440367,
+        "y": 900.6900393184796,
+        "area": 1526,
+        "width": 44,
+        "height": 43,
+        "density": 0.806553911205074
+      }
+    ]
+  },
+  {
+    "file": "112107-10594610-816.png",
+    "sha256": "b98efbe2e21ba93252d8f349f8dec9bda3236e6c6c68692b712f54d98c60526e",
+    "source": "/home/sean/Desktop/Screen_recording_20261111_112107.mp4",
+    "sourceSha256": "493996b9fcb183adc2704e7db71fe41dbe4f09d902c8dbfebe4d78a769e51fb7",
+    "pts": 10594610,
+    "timeBase": "1/90000",
+    "width": 816,
+    "height": 1808,
+    "bounds": [
+      228,
+      723,
+      751,
+      1356
+    ],
+    "transformation": "native",
+    "flashes": [
+      {
+        "x": 537.7064364207222,
+        "y": 913.536310250596,
+        "area": 17199,
+        "width": 175,
+        "height": 150,
+        "density": 0.6552
+      }
+    ]
+  },
+  {
+    "file": "112107-10594610-672.png",
+    "sha256": "dc7c8f6390503cbb823732db0fc6924444c24c75d71c2e92b2287457e5403ac5",
+    "source": "/home/sean/Desktop/Screen_recording_20261111_112107.mp4",
+    "sourceSha256": "493996b9fcb183adc2704e7db71fe41dbe4f09d902c8dbfebe4d78a769e51fb7",
+    "pts": 10594610,
+    "timeBase": "1/90000",
+    "width": 672,
+    "height": 1493,
+    "bounds": [
+      188,
+      597,
+      618,
+      1120
+    ],
+    "transformation": "OpenCV INTER_AREA 672x1493 before crop",
+    "flashes": [
+      {
+        "x": 442.71801008633213,
+        "y": 754.324044790153,
+        "area": 11699,
+        "width": 137,
+        "height": 124,
+        "density": 0.6886625853543678
+      }
+    ]
+  },
+  {
+    "file": "112107-10610725-816.png",
+    "sha256": "03616d5a94c755ac51f448c0724456238a3de259c2b952f1af24d0d788b87b59",
+    "source": "/home/sean/Desktop/Screen_recording_20261111_112107.mp4",
+    "sourceSha256": "493996b9fcb183adc2704e7db71fe41dbe4f09d902c8dbfebe4d78a769e51fb7",
+    "pts": 10610725,
+    "timeBase": "1/90000",
+    "width": 816,
+    "height": 1808,
+    "bounds": [
+      228,
+      723,
+      751,
+      1356
+    ],
+    "transformation": "native",
+    "flashes": [
+      {
+        "x": 521.7173858188241,
+        "y": 919.5296492556145,
+        "area": 3963,
+        "width": 74,
+        "height": 88,
+        "density": 0.6085687960687961
+      }
+    ]
+  },
+  {
+    "file": "112107-10610725-672.png",
+    "sha256": "18d0bd57558f31ae1bbecd83ca2e51115a9116767309cd78c541f34eb2955d76",
+    "source": "/home/sean/Desktop/Screen_recording_20261111_112107.mp4",
+    "sourceSha256": "493996b9fcb183adc2704e7db71fe41dbe4f09d902c8dbfebe4d78a769e51fb7",
+    "pts": 10610725,
+    "timeBase": "1/90000",
+    "width": 672,
+    "height": 1493,
+    "bounds": [
+      188,
+      597,
+      618,
+      1120
+    ],
+    "transformation": "OpenCV INTER_AREA 672x1493 before crop",
+    "flashes": [
+      {
+        "x": 429.6432552954292,
+        "y": 759.1018208844296,
+        "area": 2691,
+        "width": 60,
+        "height": 72,
+        "density": 0.6229166666666667
+      }
+    ]
+  },
+  {
+    "file": "112107-10632385-816.png",
+    "sha256": "0bbdcdd3cb7fa12b65e7d9352550865ee21509b8ccfeb93432f257f983085552",
+    "source": "/home/sean/Desktop/Screen_recording_20261111_112107.mp4",
+    "sourceSha256": "493996b9fcb183adc2704e7db71fe41dbe4f09d902c8dbfebe4d78a769e51fb7",
+    "pts": 10632385,
+    "timeBase": "1/90000",
+    "width": 816,
+    "height": 1808,
+    "bounds": [
+      228,
+      723,
+      751,
+      1356
+    ],
+    "transformation": "native",
+    "flashes": []
+  },
+  {
+    "file": "112107-10632385-672.png",
+    "sha256": "4418a399fc3a4799102b9d138b4e705fbdfbd3dc6fb9321a0ca7ca9c837e97db",
+    "source": "/home/sean/Desktop/Screen_recording_20261111_112107.mp4",
+    "sourceSha256": "493996b9fcb183adc2704e7db71fe41dbe4f09d902c8dbfebe4d78a769e51fb7",
+    "pts": 10632385,
+    "timeBase": "1/90000",
+    "width": 672,
+    "height": 1493,
+    "bounds": [
+      188,
+      597,
+      618,
+      1120
+    ],
+    "transformation": "OpenCV INTER_AREA 672x1493 before crop",
+    "flashes": []
+  }
+]

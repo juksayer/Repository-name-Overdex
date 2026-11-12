@@ -24,10 +24,35 @@ class PersistedAttackIncomingWitness(
             witnessScope.launch {
                 val episodes = IncomingAttackAnnouncementEpisodes()
                 val shieldText = BattleShieldDecisionTextEvidence()
+                var ended = false
                 match.articles.collect { article ->
+                    if (article.payload is MatchEnded) ended = true
+                    if (ended) return@collect
+                    if (article.payload is ChargeMoveUsedAnnounced) {
+                        article.monotonicTimeNanos?.let(episodes::observeChargeCompletion)
+                    }
                     shieldText.accept(article)?.let { signal ->
                         match.custody.submitTestimony(SourceId("SHIELD_DECISION_TEXT_WITNESS"),
                             AttackIncoming, signal.wall, null, signal.ids, signal.at)
+                    }
+                    if (article.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS") {
+                        val raw = article.payload as? RawTestimony ?: return@collect
+                        val reading = raw.ocr ?: return@collect
+                        val at = article.monotonicTimeNanos ?: return@collect
+                        if (article.matchId?.value != match.matchId || raw.data != reading.rawText ||
+                            !OutcomeShieldPromptEvidence.matchesText(reading.acceptedText)) return@collect
+                        val crop = match.realityTimeline.getArticles().firstOrNull { candidate ->
+                            candidate.id.value in article.evidenceReferences.orEmpty() &&
+                                candidate.payload is CropCaptured && candidate.matchId == article.matchId &&
+                                candidate.monotonicTimeNanos == at && candidate.perceivedAt == article.perceivedAt &&
+                                OutcomeShieldPromptEvidence.resolve(candidate, reading) != null
+                        } ?: return@collect
+                        if (!episodes.accept(reading.acceptedText, at, OutcomeShieldPromptEvidence.SOURCE_ID)) return@collect
+                        // The raw OCR and its crop are the canonical proof, with their original
+                        // capture time. No new OCR pass or result-reader publication wait is needed.
+                        match.custody.submitTestimony(sourceId, AttackIncoming, article.perceivedAt, null,
+                            listOf(article.id.value, crop.id.value), at)
+                        return@collect
                     }
                     if (article.sourceId.id !in ANNOUNCEMENT_PHASE_TEXT_SOURCES) return@collect
                     val text = (article.payload as? RawTestimony)?.data as? String ?: return@collect
@@ -50,6 +75,8 @@ internal class IncomingAttackAnnouncementEpisodes {
 
     fun accept(text: String, at: Long, source: String = "ANNOUNCEMENT_WITNESS"): Boolean =
         episodes.accept(source, text, at)
+
+    fun observeChargeCompletion(at: Long) = episodes.retireVisibilityThrough(at)
 }
 
 /** Exact phase vocabulary; grades and general shield mentions are not start cues. */

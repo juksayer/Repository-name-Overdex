@@ -1,0 +1,12 @@
+{
+  "sourceArchiveName": "2026-11-11_12-44-58_8c55c9c3-e7c2-40e7-80de-bd7cd529a6f6.odxmatch.zip",
+  "sourceArchiveSha256": "3d9acb465204b5d981a2df21bea56373fdf1de104c28abd44c30292ab24b55d4",
+  "sourceMatchId": "8c55c9c3-e7c2-40e7-80de-bd7cd529a6f6",
+  "sourceArticleCount": 2642,
+  "fixtureArticleCount": 4,
+  "fixtureSha256": "29edf9d3da8783429fd08e4b75200b87ccbd2f680558218902f5b044b3a34739",
+  "preservation": "All four Articles are unchanged from the original timeline, in original publication order, including IDs, timestamps, source, evidence references, recipient visual measurements, audio reference candidates and reference search scopes. Audio artifact bytes are not included.",
+  "companionFixture": "2026-11-11-faint-attribution.json",
+  "selection": "Exact two sound Articles and their paired original recipient visual Articles 5976cdf5-2ee8-4c5e-ba0e-707f423821c8 and b2e334b1-d92e-41e0-98e5-11ca7b82c74f. Combine by articleId without overwriting original Articles. Both visual Articles are required in the standalone fixture so the regression exercises actual paired evidence without the optional full archive.",
+  "limitations": "The matching original audio capture and some scope references are omitted. This supplement is measured audio evidence, not a newly fabricated or labeled FastMoveUseObserved. The source video has no audio track; pixel review separately supports an impact at PTS89.627-89.837."
+}

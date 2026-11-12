@@ -1,0 +1,127 @@
+{
+  "archiveId": "f66d7125-3616-4e44-86c8-c1af6469dd35",
+  "videoSource": "Screen_recording_20261111_161531.mp4",
+  "notes": "Video strips are unscaled crops from independently decoded actual native 816x1808 video frames. They are test recovery evidence, not added archive testimony. Missing loose-crop source clocks are intentionally not guessed.",
+  "samples": [
+    {
+      "file": "balls-27.922200000.png",
+      "sourceFrame": "frame-27.922200000.png",
+      "videoPts": 2512998,
+      "videoTimeBase": "1/90000",
+      "videoSeconds": 27.9222,
+      "crop": [
+        663,
+        155,
+        790,
+        194
+      ],
+      "sourceWidth": 816,
+      "sourceHeight": 1808,
+      "expectedCount": 3,
+      "sha256": "99e6553ba1970094b9ac0fd2b58861545e9f235782675a41d5075d696f51ff7a"
+    },
+    {
+      "file": "balls-28.104466667.png",
+      "sourceFrame": "frame-28.104466667.png",
+      "videoPts": 2529402,
+      "videoTimeBase": "1/90000",
+      "videoSeconds": 28.104466666666667,
+      "crop": [
+        663,
+        155,
+        790,
+        194
+      ],
+      "sourceWidth": 816,
+      "sourceHeight": 1808,
+      "expectedCount": 3,
+      "sha256": "335840052515b4c76eaf2c5969ebee72b9d4817c913fc2d4c5529e968e1075b8"
+    },
+    {
+      "file": "balls-60.504888889.png",
+      "sourceFrame": "frame-60.504888889.png",
+      "videoPts": 5445440,
+      "videoTimeBase": "1/90000",
+      "videoSeconds": 60.504888888888885,
+      "crop": [
+        663,
+        155,
+        790,
+        194
+      ],
+      "sourceWidth": 816,
+      "sourceHeight": 1808,
+      "expectedCount": 2,
+      "sha256": "c4315c38b7648f21604f669161769d7eb6a8a01f0aa5f8a8f5e737abc0a01bfc"
+    },
+    {
+      "file": "balls-60.704577778.png",
+      "sourceFrame": "frame-60.704577778.png",
+      "videoPts": 5463412,
+      "videoTimeBase": "1/90000",
+      "videoSeconds": 60.70457777777778,
+      "crop": [
+        663,
+        155,
+        790,
+        194
+      ],
+      "sourceWidth": 816,
+      "sourceHeight": 1808,
+      "expectedCount": 2,
+      "sha256": "4dc24ad2b51616fb9287746724e9b5d7a110dde1b37e606da51e3b971578034d"
+    },
+    {
+      "file": "balls-91.016655556.png",
+      "sourceFrame": "frame-91.016655556.png",
+      "videoPts": 8191499,
+      "videoTimeBase": "1/90000",
+      "videoSeconds": 91.01665555555556,
+      "crop": [
+        663,
+        155,
+        790,
+        194
+      ],
+      "sourceWidth": 816,
+      "sourceHeight": 1808,
+      "expectedCount": 1,
+      "sha256": "b287997548d51c8f5d3d656ef23bd5fd09ab66aa01bf05ae6767cc83e536d097"
+    },
+    {
+      "file": "balls-91.222800000.png",
+      "sourceFrame": "frame-91.222800000.png",
+      "videoPts": 8210052,
+      "videoTimeBase": "1/90000",
+      "videoSeconds": 91.2228,
+      "crop": [
+        663,
+        155,
+        790,
+        194
+      ],
+      "sourceWidth": 816,
+      "sourceHeight": 1808,
+      "expectedCount": 1,
+      "sha256": "032c3e75d96981af01f2f05d5150ab81cc0f2b0140415bb207cf0899490a1902"
+    },
+    {
+      "file": "archived-baseline.png",
+      "sourceArtifactSha256": "634fc5a14f305da5b4f601d07b48df9ec71f95999790d58d93ede41fe037315e",
+      "expectedCount": 3,
+      "source": "Moondrop private loose content-addressed crop store; original compact only retains the two-ball strip"
+    },
+    {
+      "file": "archived-two.png",
+      "sourceArtifactSha256": "b60045d1e8a4a69bec466daf8549574621b106e287b017b61fd28804352d0649",
+      "expectedCount": 2,
+      "source": "Moondrop private loose content-addressed crop store; original compact only retains the two-ball strip"
+    },
+    {
+      "file": "archived-blank.png",
+      "sourceArtifactSha256": "56625807ab0ca5374101db3463bd31120e9e88fb6eddba7bed7141d51078f75b",
+      "expectedCount": null,
+      "source": "Moondrop private loose content-addressed crop store; original compact only retains the two-ball strip"
+    }
+  ]
+}

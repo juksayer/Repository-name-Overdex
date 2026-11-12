@@ -106,6 +106,7 @@ dependencies {
     implementation("androidx.camera:camera-view:$cameraxVersion")
 
     testImplementation(libs.junit)
+    testImplementation(kotlin("reflect"))
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

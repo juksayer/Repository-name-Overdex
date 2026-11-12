@@ -72,6 +72,8 @@ data class FastMoveCandidateSnapshot(
 class FastMoveCadenceInference(
     private val pokemonKnowledge: PokemonKnowledge,
     private val opponentFormReferences: PokemonFormKnowledge = PokemonFormKnowledge(pokemonKnowledge),
+    private val onRebuild: ((String, Int) -> Unit)? = null,
+    private val faintHistoryCache: FaintHistoryCache? = null,
 ) {
     private enum class CadenceBasis {
         OBSERVED_USES,
@@ -147,7 +149,7 @@ class FastMoveCadenceInference(
     )
 
     private val states = EnumMap<ActivePokemonSide, SideState>(ActivePokemonSide::class.java)
-    private val fainted = FaintedCombatants()
+    private val fainted = FaintedCombatants(onRebuild, faintHistoryCache)
     // A switch changes the active appearance, not the combatant's learned move.
     // Include side and form name: mirror opponents never inherit our configured move.
     private val combatants = mutableMapOf<Pair<ActivePokemonSide, String>, SideState>()
@@ -180,6 +182,14 @@ class FastMoveCadenceInference(
         private set
 
     suspend fun accept(article: RealityArticle): List<FastMoveCadenceDerivation> {
+        val recovered = fainted.observe(article).flatMap { acceptEvidence(it) }
+        val faint = article.payload as? ActivePokemonFaintedWitnessed
+        if (faint != null && !fainted.supports(faint, article.monotonicTimeNanos ?: Long.MIN_VALUE))
+            return recovered
+        return recovered + acceptEvidence(article)
+    }
+
+    private suspend fun acceptEvidence(article: RealityArticle): List<FastMoveCadenceDerivation> {
         // A first interval or ambiguous audio can change presentation without
         // producing any derived Article. Invalidate from the inputs instead.
         // Plain HP samples, OCR diagnostics and unrelated Articles reuse the
@@ -239,7 +249,6 @@ class FastMoveCadenceInference(
             rawImpactArticles.clear()
             states.values.forEach { it.referenceSounds.clear() }
         }
-        fainted.observe(article)
         val announcedText = (article.payload as? com.example.overdex.battle.custody.RawTestimony)?.data as? String
         if (article.payload is ChargeMoveUsedAnnounced ||
             article.payload is com.example.overdex.battle.custody.ChargedMoveEnergySpent ||

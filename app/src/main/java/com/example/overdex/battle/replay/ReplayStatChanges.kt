@@ -23,7 +23,7 @@ internal class ReplayStatChanges(
     private val combatantAt: (String, Long) -> ReplayCombatant?,
 ) {
     private data class Change(val at: Long, val targetAt: Long, val side: String?, val stat: String,
-        val direction: Int, val moveName: String?)
+        val direction: Int, val moveName: String?, val sourceArticleIds: List<String>)
     private val changes: List<Change>
     init {
         val byId = articles.associateBy { it.articleId }
@@ -42,8 +42,20 @@ internal class ReplayStatChanges(
             val targetAt = resolution?.evidenceReferences.orEmpty().mapNotNull(byId::get)
                 .singleOrNull { it.payload is ArchivedChargedMoveEnergySpent }?.monotonicTimeNanos ?: at
             Change(at, targetAt, resolved?.affectedSide, cue.stat, cue.direction,
-                resolved?.moveName?.takeIf(String::isNotBlank))
+                resolved?.moveName?.takeIf(String::isNotBlank),
+                (listOf(article.articleId) + listOfNotNull(resolution?.articleId) +
+                    resolution?.evidenceReferences.orEmpty()).distinct())
         }
+    }
+
+    val eventMarkers: List<ReplayEventMarker> get() = changes.map { change ->
+        val stat = if (change.stat == "ATTACK") "Attack" else "Defense"
+        ReplayEventMarker("stat:${change.sourceArticleIds.first()}",
+            if (change.direction > 0) ReplayEventMarkerKind.BUFF else ReplayEventMarkerKind.DEBUFF,
+            change.at, change.side,
+            "$stat ${if (change.direction > 0) "↑" else "↓"}" +
+                change.moveName?.let { " · $it" }.orEmpty(),
+            sourceArticleIds = change.sourceArticleIds)
     }
     fun at(cursor: Long): List<ReplayStatChangeAction> = changes.mapNotNull { change ->
         val age = cursor - change.at

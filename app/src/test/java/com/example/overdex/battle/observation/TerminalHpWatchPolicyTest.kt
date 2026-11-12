@@ -37,11 +37,16 @@ class TerminalHpWatchPolicyTest {
         assertEquals(HpBarFillColor.RED, check(policy, 200, sample()).single().sample.fillColor)
     }
 
-    @Test fun `fresh green ordinary anchor may transition directly to measured red`() {
+    @Test fun `healthy ordinary anchors do not spend the narrow sampling budget`() {
         val policy = TerminalHpWatchPolicy()
         assertTrue(seed(policy, bar = own.copy(filledFraction = .8f)))
-        assertEquals(HpBarFillColor.RED, check(policy, 100, sample()).single().sample.fillColor)
-        assertTrue(policy.isArmed(player, ms(100)))
+        var calls = 0
+        assertTrue(policy.checkFrame(width, height, ms(100)) { _, _ -> calls++; sample() }.isEmpty())
+        assertEquals(0, calls)
+        assertFalse(policy.isArmed(player, ms(100)))
+        assertTrue(seed(policy, 110))
+        assertEquals(HpBarFillColor.RED, check(policy, 120, sample()).single().sample.fillColor)
+        assertTrue(policy.isArmed(player, ms(120)))
     }
 
     @Test fun `empty without a preceding actual red never arms or emits zero`() {
@@ -84,10 +89,10 @@ class TerminalHpWatchPolicyTest {
         assertEquals(1, check(policy, 590, sample(color = HpBarFillColor.EMPTY)).size)
     }
 
-    @Test fun `anchor freshness expires without calling the sampler beyond five hundred milliseconds`() {
+    @Test fun `unconfirmed anchor expires without sampling beyond five hundred milliseconds`() {
         val policy = TerminalHpWatchPolicy()
         assertTrue(seed(policy))
-        check(policy, 100, sample())
+        check(policy, 100, null)
         val generation = policy.snapshotGeneration(player)
         var calls = 0
         val result = policy.checkFrame(width, height, ms(601)) { _, _ -> calls++; sample(color = HpBarFillColor.EMPTY) }
@@ -98,6 +103,39 @@ class TerminalHpWatchPolicyTest {
             policy.isCurrentGeneration(player, generation))
         assertTrue(seed(policy, 601))
         assertEquals(1, check(policy, 620, sample()).size)
+    }
+
+    @Test fun `confirmed red survives a damage flash but null frames cannot move the deadline`() {
+        val policy = TerminalHpWatchPolicy()
+        assertTrue(seed(policy))
+        assertEquals(1, check(policy, 100, sample()).size)
+        for (at in listOf(700L, 1500L, 2500L, 3099L)) {
+            assertTrue(check(policy, at, null).isEmpty())
+            assertTrue(policy.isArmed(player, ms(at)))
+        }
+        var calls = 0
+        assertTrue(policy.checkFrame(width, height, ms(3100)) { _, _ ->
+            calls++; sample(color = HpBarFillColor.EMPTY)
+        }.isEmpty())
+        assertEquals(0, calls)
+        assertFalse(policy.isArmed(player, ms(3100)))
+    }
+
+    @Test fun `clear empty pixels after a long flash can complete only the existing red appearance`() {
+        val policy = TerminalHpWatchPolicy()
+        assertTrue(seed(policy))
+        check(policy, 100, sample())
+        assertTrue(check(policy, 900, null).isEmpty())
+        val zero = check(policy, 1600, sample(color = HpBarFillColor.EMPTY)).single()
+        assertEquals(0f, zero.sample.measurement.filledFraction, 0f)
+        assertTrue(check(policy, 1700, sample(color = HpBarFillColor.EMPTY)).isEmpty())
+
+        val switched = TerminalHpWatchPolicy()
+        assertTrue(seed(switched))
+        check(switched, 100, sample())
+        assertTrue(check(switched, 900, null).isEmpty())
+        switched.reset(player, ms(1200))
+        assertTrue(check(switched, 1600, sample(color = HpBarFillColor.EMPTY)).isEmpty())
     }
 
     @Test fun `repeated red cannot extend a burst forever without another ordinary seed`() {
@@ -201,7 +239,7 @@ class TerminalHpWatchPolicyTest {
                 assertTrue(check(policy, at, sample(color = color, fraction = .8f)).isEmpty())
                 assertTrue(policy.isCurrentGeneration(player, generation))
             }
-            assertTrue(seed(policy, 200, own.copy(filledFraction = .6f)))
+            assertTrue(seed(policy, 200, own.copy(filledFraction = .2f)))
             assertTrue(policy.isCurrentGeneration(player, generation))
             assertEquals(1, check(policy, 330, sample()).size)
         }

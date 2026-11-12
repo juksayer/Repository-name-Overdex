@@ -81,6 +81,49 @@ class MatchSummaryNavigationDeviceTest {
         compose.onNodeWithText("YOU WIN").assertIsDisplayed()
     }
 
+    @Test fun batchSelectionWaitsForItsOwnRecordAndNeverSubstitutesTheLatestMatch() {
+        val timeline = com.example.overdex.battle.reality.InMemoryRealityTimeline()
+        val latestId = com.example.overdex.battle.observation.MatchId("latest-win")
+        timeline.append(com.example.overdex.battle.reality.RealityArticle(
+            com.example.overdex.battle.reality.ArticleId("latest-result"), 1_000, 1_000,
+            com.example.overdex.battle.custody.SourceId("TEST"),
+            com.example.overdex.battle.custody.MatchEnded(com.example.overdex.model.BattleResult.WIN),
+            matchId = latestId))
+        val selected = java.util.concurrent.atomic.AtomicReference<MatchArchive?>(null)
+        var right: () -> Unit = {}; var a: () -> Unit = {}; var b: () -> Unit = {}
+        var inspected: String? = null
+        var returned = false
+        compose.setContent {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val directory = remember { ArchiveDirectoryManager(context) }
+            var lcd by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
+            Column {
+                Box(Modifier.size(320.dp, 300.dp).glassShield()) {
+                    MatchSummaryRoute(MatchArchiveSource(latestId, timeline), directory, {},
+                        { archive, _ -> inspected = archive.matchId }, { returned = true },
+                        {}, {}, {}, { right = it }, { a = it }, { b = it }, { lcd = it },
+                        selectedMatchId = "older-loss", loadSelectedMatch = { id ->
+                            assertEquals("older-loss", id)
+                            selected.get()
+                        })
+                }
+                Box(Modifier.size(220.dp, 150.dp)) { lcd?.invoke() }
+            }
+        }
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithText("The selected match is not available yet.").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("YOU WIN").assertDoesNotExist()
+        val older = fixture().let { archive -> archive.copy(matchId = "older-loss", articles = archive.articles.map {
+            it.copy(matchId = "older-loss", payload = if (it.payload is ArchivedMatchEnded) ArchivedMatchEnded("LOSS") else it.payload)
+        }) }
+        selected.set(older)
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("GOOD EFFORT").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("YOU WIN").assertDoesNotExist()
+        compose.runOnIdle { right() }; compose.waitForIdle()
+        compose.runOnIdle { a(); assertEquals("older-loss", inspected); b(); assertTrue(returned) }
+    }
+
     @Test fun liveSummaryIgnoresUnassignedSessionArticles() {
         val timeline = com.example.overdex.battle.reality.InMemoryRealityTimeline()
         val id = com.example.overdex.battle.observation.MatchId("live-summary")

@@ -36,6 +36,7 @@ internal class FastMoveEnergyTiming {
     private val reservations = EnumMap<ActivePokemonSide, MutableList<Reservation>>(ActivePokemonSide::class.java)
     private val appearanceBoundaries = EnumMap<ActivePokemonSide, TreeSet<Long>>(ActivePokemonSide::class.java)
     private val faintTimes = EnumMap<ActivePokemonSide, TreeSet<Long>>(ActivePokemonSide::class.java)
+    private var hpFaintTimes: Map<ActivePokemonSide, Set<Long>> = emptyMap()
     private val chargedPauses = mutableListOf<Pause>()
     private val decisionPauses = mutableListOf<Pause>()
     private val phaseCues = TreeMap<Long, MutableList<TestimonyPayload>>()
@@ -106,6 +107,8 @@ internal class FastMoveEnergyTiming {
         faintTimes.getOrPut(side) { TreeSet() }.add(at)
     }
 
+    fun reconcileHpFaints(times: Map<ActivePokemonSide, Set<Long>>) { hpFaintTimes = times }
+
     fun reserve(side: ActivePokemonSide, observedAt: Long, duration: Long): Boolean =
         reserveDecision(side, observedAt, duration) == ReservationDecision.RESERVED
 
@@ -120,7 +123,8 @@ internal class FastMoveEnergyTiming {
         appearanceBoundaries[side]?.floor(observedAt)?.let { earliestStart = maxOf(earliestStart, it) }
         // Neither side can generate Fast Move energy while a fainted opponent
         // has not yet been replaced. An unreadable entry keeps this unavailable.
-        val faintPauses = faintTimes.flatMap { (faintedSide, times) ->
+        val faintPauses = ActivePokemonSide.entries.flatMap { faintedSide ->
+            val times = faintTimes[faintedSide].orEmpty() + hpFaintTimes[faintedSide].orEmpty()
             times.map { it to appearanceBoundaries[faintedSide]?.higher(it) }
         }
         val closedFaintPauses = faintPauses.mapNotNull { (start, end) -> end?.let { start to it } }

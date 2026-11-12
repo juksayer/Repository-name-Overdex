@@ -99,6 +99,50 @@ class ChargedImpactHpBarMeasurerTest {
         }
     }
 
+    @Test fun `neighboring crops read one complete bar with fill outside the empty portion`() {
+        val impact = BattleCropBounds(225, 330, 350, 400)
+        val ordinary = BattleCropBounds(350, 330, 475, 400)
+        val source = bar(fillWidth = 70, fill = YELLOW)
+        // The ordinary region contains only the unfilled right portion. Neither
+        // incomplete outline independently supplies a fraction, especially zero.
+        assertNull(ChargedImpactHpBarMeasurer.acquire(700, 700, reference, impact, source))
+        assertNull(ChargedImpactHpBarMeasurer.acquire(700, 700, reference, ordinary, source))
+        val shared = requireNotNull(ChargedImpactHpBarMeasurer.sharedTerritory(700, 700, impact, ordinary))
+        val sample = requireNotNull(ChargedImpactHpBarMeasurer.acquire(700, 700, reference, shared, source))
+        assertEquals(HpBarFillColor.YELLOW, sample.fillColor)
+        assertTrue(sample.measurement.filledFraction in .3f.. .4f)
+        val tracked = requireNotNull(TrackedTerminalHpBarMeasurer.measure(700, 700, sample.measurement, shared, source))
+        assertEquals(HpBarFillColor.YELLOW, tracked.fillColor)
+        assertEquals(sample.measurement.filledFraction, tracked.measurement.filledFraction, .02f)
+        // A real complete empty outline remains measurable after the handoff.
+        assertEquals(HpBarFillColor.EMPTY,
+            ChargedImpactHpBarMeasurer.acquire(700, 700, reference, shared, bar())?.fillColor)
+    }
+
+    @Test fun `vertical crop boundary cannot cut the interior away from its outline`() {
+        val impact = BattleCropBounds(225, 363, 475, 400)
+        val ordinary = BattleCropBounds(225, 330, 475, 363)
+        val source = bar(fillWidth = 12, fill = RED)
+        assertNull(ChargedImpactHpBarMeasurer.acquire(700, 700, reference, impact, source))
+        assertNull(ChargedImpactHpBarMeasurer.acquire(700, 700, reference, ordinary, source))
+        val shared = requireNotNull(ChargedImpactHpBarMeasurer.sharedTerritory(700, 700, impact, ordinary))
+        val sample = requireNotNull(ChargedImpactHpBarMeasurer.acquire(700, 700, reference, shared, source))
+        assertEquals(HpBarFillColor.RED, sample.fillColor)
+        assertTrue(sample.measurement.filledFraction > 0f)
+    }
+
+    @Test fun `sharing cannot bypass missing invalid or unrelated impact calibration`() {
+        val impact = BattleCropBounds(225, 330, 350, 400)
+        assertNull(ChargedImpactHpBarMeasurer.sharedTerritory(700, 700, null, impact))
+        assertNull(ChargedImpactHpBarMeasurer.sharedTerritory(700, 700, impact.copy(left = -1), impact))
+        for (other in listOf(null, BattleCropBounds(500, 330, 650, 400),
+                BattleCropBounds(350, 400, 475, 450), impact.copy(right = 701))) {
+            assertEquals(impact, ChargedImpactHpBarMeasurer.sharedTerritory(700, 700, impact, other))
+        }
+        assertEquals(BattleCropBounds(225, 330, 475, 410),
+            ChargedImpactHpBarMeasurer.sharedTerritory(700, 700, impact, BattleCropBounds(340, 340, 475, 410)))
+    }
+
     private fun bar(shape: ActiveHpBarMeasurement = centered, fillWidth: Int = 0, fill: Int = RED): (Int, Int) -> Int = { x, y ->
         when {
             (y == shape.top || y == shape.bottom) && x in shape.left until shape.right -> WHITE

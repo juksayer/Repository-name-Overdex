@@ -48,20 +48,23 @@ fun MatchSummaryRoute(
     onLcdContentUpdate: ((@Composable () -> Unit)?) -> Unit,
     onOpenExportedMatch: () -> Unit = {},
     selectedArchiveUri: Uri? = null,
+    selectedMatchId: String? = null,
+    loadSelectedMatch: (suspend (String) -> MatchArchive?)? = null,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     // A history selection owns this summary even when a newer live match exists.
-    val liveSource = source.takeIf { selectedArchiveUri == null }
-    var archive by remember(selectedArchiveUri, liveSource) { mutableStateOf<MatchArchive?>(null) }
-    var uri by remember(selectedArchiveUri, liveSource) { mutableStateOf<Uri?>(null) }
-    var loading by remember(selectedArchiveUri, liveSource) { mutableStateOf(true) }
-    var error by remember(selectedArchiveUri, liveSource) { mutableStateOf<String?>(null) }
+    val liveSource = source.takeIf { selectedArchiveUri == null && selectedMatchId == null }
+    var archive by remember(selectedArchiveUri, selectedMatchId, liveSource) { mutableStateOf<MatchArchive?>(null) }
+    var uri by remember(selectedArchiveUri, selectedMatchId, liveSource) { mutableStateOf<Uri?>(null) }
+    var loading by remember(selectedArchiveUri, selectedMatchId, liveSource) { mutableStateOf(true) }
+    var error by remember(selectedArchiveUri, selectedMatchId, liveSource) { mutableStateOf<String?>(null) }
+    val selectedLoader by rememberUpdatedState(loadSelectedMatch)
     var exporting by remember { mutableStateOf(false) }
     var exportStatus by remember { mutableStateOf<String?>(null) }
     var exportProgress by remember { mutableStateOf<Float?>(null) }
 
-    LaunchedEffect(liveSource, directory, selectedArchiveUri) {
+    LaunchedEffect(liveSource, directory, selectedArchiveUri, selectedMatchId) {
         loading = true
         error = null
         if (selectedArchiveUri != null) {
@@ -84,7 +87,11 @@ fun MatchSummaryRoute(
         while (isActive) {
             try {
                 val loaded = withContext(Dispatchers.IO) {
-                    if (liveSource != null) {
+                    if (selectedMatchId != null) {
+                        val selected = selectedLoader?.invoke(selectedMatchId)
+                        require(selected == null || selected.matchId == selectedMatchId) { "Selected match does not match its record" }
+                        selected to null
+                    } else if (liveSource != null) {
                         liveSource.snapshot() to null
                     } else {
                         val newest = directory.listArchives().maxByOrNull { it.lastModified }
@@ -99,11 +106,11 @@ fun MatchSummaryRoute(
                 }
                 archive = loaded.first
                 uri = loaded.second
-                error = null
+                error = if (selectedMatchId != null && loaded.first == null) "The selected match is not available yet." else null
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                error = "Unable to read the latest match: ${failure.message}"
+                error = "Unable to read the ${if (selectedMatchId != null) "selected" else "latest"} match: ${failure.message}"
             }
             loading = false
             delay(1_000)

@@ -15,6 +15,7 @@ import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
 import com.example.overdex.battle.custody.FastMoveRecipientVisualArtifactMeasured
 import com.example.overdex.battle.custody.FastMoveRecipientVisualCadenceMeasured
 import com.example.overdex.battle.custody.FastMoveUseObserved
+import com.example.overdex.battle.custody.FastMoveSoundMeasured
 import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.MatchStarted
@@ -40,9 +41,14 @@ data class FastMoveUseDerivation(
  * Coalesces independent, already-recorded hit measurements into one observed
  * Fast Move use. Move name, type, damage, and energy remain downstream claims.
  */
-class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit = {}) {
+class FastMoveUseInference(private val onRebuild: ((String, Int) -> Unit)? = null,
+    private val faintHistoryCache: FaintHistoryCache? = null,
+    private val onFirstImpact: (RealityArticle) -> Unit = {}) {
     private data class Appearance(val id: String, val speciesName: String?, val atNanos: Long)
-    private data class UseEvidence(val article: RealityArticle, val kind: String, val defaultConfidence: Float)
+    private data class UseEvidence(
+        val article: RealityArticle, val kind: String, val defaultConfidence: Float,
+        val audioSupport: RecipientAudioSupport? = null,
+    )
     private data class PendingUse(
         val attackingSide: ActivePokemonSide,
         val damagedSide: ActivePokemonSide,
@@ -59,10 +65,23 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
 
     private val appearances = EnumMap<ActivePokemonSide, Appearance>(ActivePokemonSide::class.java)
     private val appearanceHistory = EnumMap<ActivePokemonSide, MutableList<Appearance>>(ActivePokemonSide::class.java)
-    private var fainted = FaintedCombatants()
+    private var fainted = FaintedCombatants(onRebuild, faintHistoryCache)
     private val pending = mutableListOf<PendingUse>()
     private val hpHistory = EnumMap<ActivePokemonSide, MutableList<RealityArticle>>(ActivePokemonSide::class.java)
     private val impactHistory = mutableListOf<UseEvidence>()
+    private val pendingSounds = linkedMapOf<String, RealityArticle>()
+    private val consumedAudioOccurrences = ArrayDeque<RecipientAudioSupport>()
+    private val consumedRecipientIds = linkedSetOf<String>()
+    private data class PublishedDirectHit(
+        val side: ActivePokemonSide, val appearance: Appearance?, val atNanos: Long, val mergeNanos: Long,
+    )
+    private val publishedDirectHits = ArrayDeque<PublishedDirectHit>()
+    private data class PublishedPairedHit(
+        val side: ActivePokemonSide, val attacker: Appearance?, val recipient: Appearance?,
+        val atNanos: Long, val mergeNanos: Long,
+        val matchedDirectTimes: MutableMap<String, Long> = mutableMapOf(),
+    )
+    private val publishedPairedHits = ArrayDeque<PublishedPairedHit>()
     private val chargedHpCamera = ChargedHpCameraGuard()
     private val knownDurations = mutableMapOf<Pair<ActivePokemonSide, String>, Long>()
     private var watermarkNanos = Long.MIN_VALUE
@@ -70,10 +89,14 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
     private data class HeldEvidence(
         val side: ActivePokemonSide, var appearance: Appearance?, val evidence: UseEvidence
     )
+    private enum class ChargedOpening { INCOMING, GET_READY }
     private data class ChargedPause(
-        val start: Long, var end: Long, var confirmedEnd: Boolean = false,
+        var start: Long, var end: Long, var opening: ChargedOpening? = null,
+        var confirmedAtNanos: Long? = null,
         val held: MutableList<HeldEvidence> = mutableListOf()
-    )
+    ) {
+        val confirmedEnd: Boolean get() = confirmedAtNanos != null
+    }
     private val chargedPauses = mutableListOf<ChargedPause>()
     // Accounting can begin from real combat even if every countdown glyph was
     // missed. This does not create MatchStarted or claim to know when GO occurred.
@@ -105,17 +128,30 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
     }
 
     fun accept(article: RealityArticle): List<FastMoveUseDerivation> {
+        val recovered = fainted.observe(article).flatMap(::acceptEvidence)
+        val faint = article.payload as? ActivePokemonFaintedWitnessed
+        if (faint != null && !fainted.supports(faint, article.monotonicTimeNanos ?: Long.MIN_VALUE))
+            return recovered
+        return recovered + acceptEvidence(article)
+    }
+
+    private fun acceptEvidence(article: RealityArticle): List<FastMoveUseDerivation> {
         val atNanos = article.monotonicTimeNanos ?: return emptyList()
         if (article.payload == ObservationRestartedByUser || article.payload == ScreenIgnoredByUser) {
             if (atNanos < attemptFromNanos || matchEnded) return emptyList()
             pending.clear()
             hpHistory.clear()
             impactHistory.clear()
+            pendingSounds.clear()
+            consumedAudioOccurrences.clear()
+            consumedRecipientIds.clear()
+            publishedDirectHits.clear()
+            publishedPairedHits.clear()
             chargedHpCamera.reset()
             appearances.clear()
             appearanceHistory.clear()
             knownDurations.clear()
-            fainted = FaintedCombatants()
+            fainted = FaintedCombatants(onRebuild, faintHistoryCache)
             decisionPauses.clear()
             decisionObservedAtNanos = Long.MIN_VALUE
             chargedPauses.clear()
@@ -128,7 +164,6 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
             return emptyList()
         }
         if (screenIgnored || atNanos < attemptFromNanos) return emptyList()
-        fainted.observe(article)
         watermarkNanos = max(watermarkNanos, atNanos)
         receiptWatermarkMillis = max(receiptWatermarkMillis, article.recordedAt)
         chargedHpCamera.advanceTo(atNanos)
@@ -164,6 +199,13 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
                 samples.removeAll { (it.monotonicTimeNanos ?: 0L) < watermarkNanos - PHASE_HISTORY_NANOS }
                 while (samples.size > MAX_HP_HISTORY) samples.removeAt(0)
             }
+            is FastMoveSoundMeasured -> if (combatConfirmed && atNanos >= accountingFromNanos) {
+                pendingSounds.putIfAbsent(article.id.value, article)
+                pendingSounds.entries.removeAll { (_, sound) ->
+                    watermarkNanos - (sound.monotonicTimeNanos ?: watermarkNanos) > PHASE_HISTORY_NANOS
+                }
+                while (pendingSounds.size > MAX_PENDING_SOUNDS) pendingSounds.remove(pendingSounds.keys.first())
+            }
             is com.example.overdex.battle.custody.BattleDecisionTimerObserved -> {
                 if (atNanos >= decisionObservedAtNanos) {
                     decisionObservedAtNanos = atNanos
@@ -180,8 +222,8 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
                 return flushExpired(watermarkNanos)
             }
             AttackIncoming, GetReadyWitnessed -> {
-                val active = chargedPauses.lastOrNull { atNanos in it.start..it.end }
-                if (active == null) chargedPauses += ChargedPause(atNanos, atNanos + CHARGED_MAX_PHASE_NANOS)
+                val opening = if (payload == AttackIncoming) ChargedOpening.INCOMING else ChargedOpening.GET_READY
+                observeChargedOpening(atNanos, opening)
                 // A late phase cue can arrive while impact evidence is still
                 // being fused. Never flush those in-phase hits as Fast Moves.
                 pending.removeAll { use -> chargedPauses.any { use.anchorNanos in it.start..it.end } }
@@ -190,10 +232,11 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
             ChargeMoveUsedAnnounced -> {
                 chargedHpCamera.observeCharge(atNanos)
                 decisionPauses.lastOrNull()?.let { if (atNanos in it.start until it.end) it.end = atNanos }
-                val phase = chargedPauses.lastOrNull { atNanos in it.start..it.end }
+                val phase = chargedPauses.filter { atNanos in it.start..it.end }
+                    .maxByOrNull { it.start }
                     ?: ChargedPause(atNanos, atNanos + CHARGED_IMPACT_TAIL_NANOS).also { chargedPauses += it }
                 phase.end = atNanos + CHARGED_IMPACT_TAIL_NANOS
-                phase.confirmedEnd = true
+                phase.confirmedAtNanos = atNanos
                 pending.removeAll { it.anchorNanos in phase.start..phase.end }
                 // The announcement can take seconds to reach custody. Preserve
                 // real impacts already captured AFTER its end, with their own
@@ -277,6 +320,37 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         return output
     }
 
+    private fun observeChargedOpening(atNanos: Long, opening: ChargedOpening) {
+        val active = chargedPauses.filter { phase ->
+            atNanos in phase.start..(phase.confirmedAtNanos ?: phase.end) &&
+                (phase.opening == null || phase.opening == opening)
+        }.maxByOrNull { it.start }
+        if (active != null) {
+            active.opening = opening
+            return
+        }
+        // Recognition order is not capture order. An already witnessed impact
+        // can precede delivery of its warning/QTE cue. Extend only the beginning
+        // of that same completed interval, retaining its measured end and tail.
+        // The next source-time interval is the only candidate: do not skip a
+        // newer phase or a replacement to find a convenient later impact.
+        val following = chargedPauses.filter { it.start > atNanos }.minByOrNull { it.start }
+        val impactAt = following?.confirmedAtNanos
+        val compatible = following != null && impactAt != null &&
+            impactAt - atNanos <= CHARGED_MAX_PHASE_NANOS &&
+            (following.opening == null || following.opening == opening) &&
+            appearanceHistory.values.none { history -> history.any { it.atNanos > atNanos && it.atNanos <= impactAt } } &&
+            chargedPauses.none { other -> other !== following &&
+                (other.start in atNanos..impactAt ||
+                    other.confirmedAtNanos?.let { it in atNanos..impactAt } == true) }
+        if (compatible) {
+            following.start = atNanos
+            following.opening = opening
+        } else {
+            chargedPauses += ChargedPause(atNanos, atNanos + CHARGED_MAX_PHASE_NANOS, opening)
+        }
+    }
+
     private fun enqueueEvidence(side: ActivePokemonSide, appearance: Appearance?, measured: UseEvidence) {
         val article = measured.article
         val atNanos = article.monotonicTimeNanos ?: return
@@ -285,11 +359,30 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
             impactHistory.removeAll { (it.article.monotonicTimeNanos ?: 0L) < watermarkNanos - PHASE_HISTORY_NANOS }
             while (impactHistory.size > MAX_IMPACT_HISTORY) impactHistory.removeAt(0)
         }
+        if (measured.kind == "HP_BORDER_PULSE" || measured.kind == "HP_DAMAGE_TICK") {
+            val paired = publishedPairedHits.filter { hit ->
+                hit.side == side && hit.attacker == appearance &&
+                    hit.recipient == appearanceAt(side.opposite(), atNanos) &&
+                    abs(hit.atNanos - atNanos) <= hit.mergeNanos && !crossesBoundary(hit.atNanos, atNanos) &&
+                    hit.matchedDirectTimes[measured.kind]?.let { it == atNanos } != false
+            }.minByOrNull { abs(it.atNanos - atNanos) }
+            if (paired != null) {
+                // The raw testimony stays in custody. Its first complementary
+                // direct stream corroborates the published pair, not a new use.
+                // A second distinct loss/onset in that stream stays independent.
+                paired.matchedDirectTimes[measured.kind] = atNanos
+                return
+            }
+        }
         // Keep complementary impact streams separate until publication, so a
         // late plateau sample or boundary can still change their association.
         val neighborhood = pending.filter { use ->
             use.attackingSide == side && use.appearance == appearance &&
                 abs(atNanos - use.anchorNanos) <= mergeWindow(use) &&
+                !crossesBoundary(use.anchorNanos, atNanos) &&
+                (measured.kind != "RECIPIENT_VISUAL_ARTIFACT" || use.evidence.none {
+                    it.article.payload is FastMoveRecipientVisualArtifactMeasured && it.article.monotonicTimeNanos != atNanos
+                }) &&
                 (!FastMoveUseEvidence.isImpact(measured.kind) || use.evidence.none {
                     it.kind == measured.kind && it.article.monotonicTimeNanos != atNanos
                 })
@@ -499,12 +592,14 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
     }
 
     fun flush(includeAwaitingCharge: Boolean = false): List<FastMoveUseDerivation> {
+        reconcileRecipientAudio()
         val ready = pending.filter { includeAwaitingCharge || !chargedHpCamera.isAwaitingCharge(it.anchorNanos) }
         pending.removeAll(ready.toSet())
         return resolvePending(ready).flatMap { finalize(it.use) }
     }
 
     private fun flushSide(side: ActivePokemonSide, beforeNanos: Long = Long.MAX_VALUE): List<FastMoveUseDerivation> {
+        reconcileRecipientAudio()
         val ready = pending.filter { it.attackingSide == side && it.anchorNanos < beforeNanos &&
             !chargedHpCamera.isAwaitingCharge(it.anchorNanos) }
         val resolved = resolvePending(ready)
@@ -529,6 +624,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
     }
 
     private fun flushExpired(atNanos: Long): List<FastMoveUseDerivation> {
+        reconcileRecipientAudio()
         chargedPauses.filter { atNanos > it.end + DELIVERY_GRACE_NANOS }.forEach { it.held.clear() }
         val ready = resolvePending(pending).filter { resolved ->
             val use = resolved.use
@@ -577,6 +673,88 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         else -> null
     }
 
+    /** Re-evaluate bounded, unpublished pairs so receipt order never supplies causality. */
+    private fun reconcileRecipientAudio() {
+        pending.forEach { use ->
+            use.evidence.removeAll { it.kind == FastMoveUseEvidence.MATCHED_AUDIO }
+            use.evidence.replaceAll { evidence ->
+                if (evidence.kind == FastMoveUseEvidence.RECIPIENT_AUDIO_IMPACT)
+                    evidence.copy(kind = "RECIPIENT_VISUAL_ARTIFACT") else evidence
+            }
+        }
+        data class Pairing(val use: PendingUse, val visual: UseEvidence, val sound: RealityArticle,
+            val support: RecipientAudioSupport)
+        val pairs = pending.flatMap { use -> use.evidence.mapNotNull { visual ->
+            val payload = visual.article.payload as? FastMoveRecipientVisualArtifactMeasured ?: return@mapNotNull null
+            val at = visual.article.monotonicTimeNanos ?: return@mapNotNull null
+            if (visual.article.id.value in consumedRecipientIds || payload.changedSampleCount <= 0 ||
+                !payload.changedPixelFraction.isFinite() || payload.changedPixelFraction !in .08f..1f ||
+                !payload.meanColorDistance.isFinite() || payload.meanColorDistance !in .16f..1f) return@mapNotNull null
+            // A late pair must not recreate an HP hit that already left the
+            // pending cluster. Keep only bounded, source-time direct-hit keys;
+            // audio-derived hits retain their separate occurrence deduplication.
+            if (publishedDirectHits.any { it.side == use.attackingSide && it.appearance == use.appearance &&
+                    abs(it.atNanos - at) <= it.mergeNanos && !crossesBoundary(it.atNanos, at) }) return@mapNotNull null
+            val identities = ActivePokemonSide.entries.mapNotNull { side ->
+                appearanceAt(side, at)?.speciesName?.let { side to it }
+            }.toMap()
+            pendingSounds.values.mapNotNull soundLoop@{ soundArticle ->
+                val soundAt = soundArticle.monotonicTimeNanos ?: return@soundLoop null
+                if (soundArticle.id == visual.article.id ||
+                    abs(soundArticle.recordedAt - visual.article.recordedAt) > DELIVERY_GRACE_NANOS / 1_000_000L)
+                    return@soundLoop null
+                val support = FastMoveUseEvidence.recipientAudioSupport(soundArticle.payload as FastMoveSoundMeasured,
+                    soundAt, payload.damagedSide, at, identities) ?: return@soundLoop null
+                // Validate the sound's matched segment and onset against the same
+                // source-time appearance/phase as the visual impact. A late cue
+                // can still remove an unpublished pair through these guards.
+                val from = minOf(at, support.occurrenceAtNanos, support.segmentAtNanos)
+                val through = maxOf(at, support.occurrenceAtNanos)
+                // An onset after the visual must still belong to this exchange.
+                // Only the matched segment's ringing tail may cross a later
+                // departure; it does not move the sound's actual onset back.
+                if (from < accountingFromNanos || crossesBoundary(from, through) ||
+                    chargedHpCamera.isAwaitingCharge(through) || chargedHpCamera.isChargeImpact(through) ||
+                    ActivePokemonSide.entries.any { side ->
+                        val first = appearanceAt(side, from)
+                        first?.speciesName == null || first != appearanceAt(side, through) ||
+                            (through > at && fainted.at(side, requireNotNull(first.speciesName), through))
+                    }) return@soundLoop null
+                Pairing(use, visual, soundArticle, support)
+            }
+        }.flatten() }.sortedWith(compareBy<Pairing> { it.support.distanceNanos }
+            .thenBy { it.visual.article.monotonicTimeNanos }.thenBy { it.sound.id.value })
+        val usedVisuals = mutableSetOf<String>()
+        val usedSounds = mutableSetOf<String>()
+        val selectedOccurrences = mutableListOf<RecipientAudioSupport>()
+        for (pair in pairs) {
+            if (pair.visual.article.id.value in usedVisuals || pair.sound.id.value in usedSounds ||
+                (consumedAudioOccurrences + selectedOccurrences).any { sameAudioOccurrence(it, pair.support) }) continue
+            usedVisuals += pair.visual.article.id.value
+            usedSounds += pair.sound.id.value
+            selectedOccurrences += pair.support
+            val index = pair.use.evidence.indexOf(pair.visual)
+            if (index < 0) continue
+            // A direct HP hit already occupies this neighborhood. Corroborate
+            // that existing use instead of creating a third impact stream that
+            // could split a loss/border pair into two attacks.
+            val direct = pending.filter { candidate ->
+                sameContext(candidate, pair.use) &&
+                    abs(candidate.anchorNanos - requireNotNull(pair.visual.article.monotonicTimeNanos)) <= mergeWindow(candidate) &&
+                    !crossesBoundary(candidate.anchorNanos, requireNotNull(pair.visual.article.monotonicTimeNanos)) &&
+                    candidate.evidence.any { it.kind == "HP_BORDER_PULSE" || it.kind == "HP_DAMAGE_TICK" }
+            }.minByOrNull { abs(it.anchorNanos - requireNotNull(pair.visual.article.monotonicTimeNanos)) }
+            val destination = direct ?: pair.use
+            if (direct == null) pair.use.evidence[index] = pair.visual.copy(kind = FastMoveUseEvidence.RECIPIENT_AUDIO_IMPACT)
+            else if (direct.evidence.none { it.article.id == pair.visual.article.id }) direct.evidence += pair.visual
+            destination.evidence += UseEvidence(pair.sound, FastMoveUseEvidence.MATCHED_AUDIO, .80f, pair.support)
+        }
+    }
+
+    private fun sameAudioOccurrence(a: RecipientAudioSupport, b: RecipientAudioSupport): Boolean =
+        a.attackingSide == b.attackingSide && a.moveName.equals(b.moveName, ignoreCase = true) &&
+            abs(a.occurrenceAtNanos - b.occurrenceAtNanos) < AUDIO_OCCURRENCE_JITTER_NANOS
+
     private fun finalize(use: PendingUse): List<FastMoveUseDerivation> {
         // The banner may reach custody after the relocated HP flash. Keep the
         // original measurements, but do not publish a charged-camera impact as
@@ -588,6 +766,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         ))
         val anchor = ordered.firstOrNull { FastMoveUseEvidence.isImpact(it.kind) } ?: return emptyList()
         val evidenceKinds = ordered.map { it.kind }.distinct().sortedBy { EVIDENCE_ORDER.indexOf(it) }
+        if (!FastMoveUseEvidence.establishesUse(evidenceKinds)) return emptyList()
         // Plateau frames explain association; correlated samples do not multiply
         // the independent witnesses' confidence or establish an attack by themselves.
         val confidence = (1.0 - ordered.filter {
@@ -595,6 +774,27 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         }.fold(1.0) { remaining, item ->
             remaining * (1.0 - (item.article.confidence ?: item.defaultConfidence).coerceIn(0f, 0.99f))
         }).toFloat().coerceIn(0f, 0.99f)
+        if (evidenceKinds.any { it == "HP_DAMAGE_TICK" || it == "HP_BORDER_PULSE" }) {
+            publishedDirectHits += PublishedDirectHit(use.attackingSide, use.appearance,
+                requireNotNull(anchor.article.monotonicTimeNanos), mergeWindow(use))
+            publishedDirectHits.removeAll { watermarkNanos - it.atNanos > PHASE_HISTORY_NANOS }
+            while (publishedDirectHits.size > MAX_IMPACT_HISTORY) publishedDirectHits.removeFirst()
+        }
+        if (FastMoveUseEvidence.RECIPIENT_AUDIO_IMPACT in evidenceKinds &&
+            FastMoveUseEvidence.MATCHED_AUDIO in evidenceKinds) {
+            val at = requireNotNull(anchor.article.monotonicTimeNanos)
+            publishedPairedHits += PublishedPairedHit(use.attackingSide, use.appearance,
+                appearanceAt(use.damagedSide, at), at, mergeWindow(use))
+            publishedPairedHits.removeAll { watermarkNanos - it.atNanos > PHASE_HISTORY_NANOS }
+            while (publishedPairedHits.size > MAX_IMPACT_HISTORY) publishedPairedHits.removeFirst()
+        }
+        ordered.filter { it.article.payload is FastMoveRecipientVisualArtifactMeasured &&
+            ordered.any { other -> other.audioSupport != null } }.forEach {
+            consumedRecipientIds += it.article.id.value
+        }
+        ordered.mapNotNull { it.audioSupport }.forEach(consumedAudioOccurrences::addLast)
+        while (consumedRecipientIds.size > MAX_CONSUMED_AUDIO_PAIRS) consumedRecipientIds.remove(consumedRecipientIds.first())
+        while (consumedAudioOccurrences.size > MAX_CONSUMED_AUDIO_PAIRS) consumedAudioOccurrences.removeFirst()
         return listOf(FastMoveUseDerivation(
             payload = FastMoveUseObserved(
                 useId = "fast-move-use:${anchor.article.id.value}",
@@ -604,7 +804,9 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
                 attackerSpeciesName = use.appearance?.speciesName,
                 evidenceKinds = evidenceKinds
             ),
-            predecessorIds = ordered.map { it.article.id },
+            predecessorIds = (ordered.map { it.article.id } + ordered.flatMap {
+                it.audioSupport?.contextArticleIds.orEmpty().map(::ArticleId)
+            }).distinct(),
             confidence = confidence,
             observedArticle = anchor.article
         ))
@@ -621,6 +823,9 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         // wait preserves capture timestamps and prevents late evidence recounts.
         const val DELIVERY_GRACE_NANOS = 1_200_000_000L
         const val MAX_PENDING_USES = 24
+        const val MAX_PENDING_SOUNDS = 24
+        const val MAX_CONSUMED_AUDIO_PAIRS = 96
+        const val AUDIO_OCCURRENCE_JITTER_NANOS = 250_000_000L
         const val MAX_DELAYED_PHASE_NANOS = 1_250_000_000L
         const val PLATEAU_ENDPOINT_NANOS = 150_000_000L
         const val MAX_PLATEAU_GAP_NANOS = 650_000_000L
@@ -635,6 +840,8 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
             "HP_DAMAGE_TICK",
             "HP_PLATEAU_CONTINUITY",
             "HP_BORDER_REPEAT_ON_PLATEAU",
+            FastMoveUseEvidence.RECIPIENT_AUDIO_IMPACT,
+            FastMoveUseEvidence.MATCHED_AUDIO,
             "RECIPIENT_VISUAL_ARTIFACT",
             "HP_BORDER_CADENCE",
             "HP_BAR_MOTION_COMPLETION",

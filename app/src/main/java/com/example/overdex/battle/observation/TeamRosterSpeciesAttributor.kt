@@ -72,7 +72,19 @@ class EntryAnnouncementSideTracker {
     private val latestBadgeBySide = linkedMapOf<ActivePokemonSide, Badge>()
 
     @Synchronized
-    fun observeFaint(side: ActivePokemonSide, speciesName: String?, atNanos: Long, articleId: String) {
+    fun observeFaint(
+        side: ActivePokemonSide,
+        speciesName: String?,
+        atNanos: Long,
+        articleId: String,
+        basis: String? = null,
+    ) {
+        // A revisable HP conclusion cannot assign an otherwise unsided entry.
+        if (com.example.overdex.battle.inference.isRevisableVisualFaint(basis)) return
+        // A skipped resource count identifies historical owners, not a newly
+        // vacant battlefield at the count's capture time. It cannot give a
+        // later unsided entry announcement a trainer side.
+        if (basis?.contains("POKE_BALL_COUNT_DECREASE_AGGREGATE", ignoreCase = true) == true) return
         val species = speciesName?.let(::normalizeEntrySpecies)
         // Ball-count testimony may arrive after the replacement's badge. Source
         // time, rather than publication order, decides whether a vacancy remains.

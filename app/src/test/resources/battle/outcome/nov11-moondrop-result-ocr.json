@@ -1,0 +1,1612 @@
+{
+  "schemaVersion": 1,
+  "description": "Recorded Moondrop result OCR and ordinary negative text, November 11 2026. Word boxes are in original crop pixels before OCR padding/scaling; source bounds map them to the complete captured frame. Geometry is measured per word, not per letter. No source images or player identity fields are included.",
+  "cases": [
+    {
+      "id": "loss-first-native",
+      "expected": "LOSS",
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "OOD EFFOR",
+        "acceptedText": "OOD EFFOR",
+        "words": [
+          {
+            "text": "OOD",
+            "line": 0,
+            "bounds": {
+              "left": 52.0,
+              "top": 74.0,
+              "right": 214.0,
+              "bottom": 146.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "EFFOR",
+            "line": 0,
+            "bounds": {
+              "left": 217.0,
+              "top": 74.0,
+              "right": 445.0,
+              "bottom": 146.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.00012183236,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Independently inspected source result. Missing edge letters in losses; full translucent win title has OCR substitutions. Original OCR geometry retained without repair."
+    },
+    {
+      "id": "loss-first-white",
+      "expected": "LOSS",
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "WHITE_TEXT_210_PADDED",
+        "rawText": "OOD EFFOR",
+        "acceptedText": "OOD EFFOR",
+        "words": [
+          {
+            "text": "OOD",
+            "line": 0,
+            "bounds": {
+              "left": 52.0,
+              "top": 70.0,
+              "right": 214.0,
+              "bottom": 142.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "EFFOR",
+            "line": 0,
+            "bounds": {
+              "left": 240.0,
+              "top": 70.0,
+              "right": 456.0,
+              "bottom": 142.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Independently inspected source result. Missing edge letters in losses; full translucent win title has OCR substitutions. Original OCR geometry retained without repair."
+    },
+    {
+      "id": "loss-second-native",
+      "expected": "LOSS",
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "OOD EFFOR",
+        "acceptedText": "OOD EFFOR",
+        "words": [
+          {
+            "text": "OOD",
+            "line": 0,
+            "bounds": {
+              "left": 45.0,
+              "top": 52.0,
+              "right": 205.0,
+              "bottom": 144.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.003940217,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "EFFOR",
+            "line": 0,
+            "bounds": {
+              "left": 243.0,
+              "top": 57.0,
+              "right": 459.0,
+              "bottom": 151.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.002216312,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Independently inspected source result. Missing edge letters in losses; full translucent win title has OCR substitutions. Original OCR geometry retained without repair."
+    },
+    {
+      "id": "loss-second-white",
+      "expected": "LOSS",
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "WHITE_TEXT_210_PADDED",
+        "rawText": "OOD EFFOR",
+        "acceptedText": "OOD EFFOR",
+        "words": [
+          {
+            "text": "OOD",
+            "line": 0,
+            "bounds": {
+              "left": 47.0,
+              "top": 63.0,
+              "right": 252.0,
+              "bottom": 142.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.006977462,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "EFFOR",
+            "line": 0,
+            "bounds": {
+              "left": 251.0,
+              "top": 65.0,
+              "right": 468.0,
+              "bottom": 144.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0019017056,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Independently inspected source result. Missing edge letters in losses; full translucent win title has OCR substitutions. Original OCR geometry retained without repair."
+    },
+    {
+      "id": "win-translucent-native",
+      "expected": "WIN",
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "oU WINy",
+        "acceptedText": "oU WINy",
+        "words": [
+          {
+            "text": "oU",
+            "line": 0,
+            "bounds": {
+              "left": 0.0,
+              "top": 47.0,
+              "right": 236.0,
+              "bottom": 149.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0002077102,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "WINy",
+            "line": 0,
+            "bounds": {
+              "left": 305.0,
+              "top": 72.0,
+              "right": 433.0,
+              "bottom": 145.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Independently inspected source result. Missing edge letters in losses; full translucent win title has OCR substitutions. Original OCR geometry retained without repair."
+    },
+    {
+      "id": "effectiveness-not-very-native",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "NOT VERY EFFECTIVĖ.",
+        "acceptedText": "NOT VERY EFFECTIVĖ.",
+        "words": [
+          {
+            "text": "NOT",
+            "line": 0,
+            "bounds": {
+              "left": 159.0,
+              "top": 17.0,
+              "right": 214.0,
+              "bottom": 42.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.176,
+            "dangerRedFraction": 0.0058181817,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "VERY",
+            "line": 0,
+            "bounds": {
+              "left": 220.0,
+              "top": 17.0,
+              "right": 278.0,
+              "bottom": 42.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.4572414,
+            "dangerRedFraction": 0.008275862,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "EFFECTIVĖ.",
+            "line": 0,
+            "bounds": {
+              "left": 289.0,
+              "top": 17.0,
+              "right": 404.0,
+              "bottom": 42.0
+            },
+            "violetFraction": 0.0013913043,
+            "tealFraction": 0.5533913,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    },
+    {
+      "id": "effectiveness-not-very-white",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "WHITE_TEXT_210_PADDED",
+        "rawText": "NOT VERY EFFECTIVE...",
+        "acceptedText": "NOT VERY EFFECTIVE...",
+        "words": [
+          {
+            "text": "NOT",
+            "line": 0,
+            "bounds": {
+              "left": 166.0,
+              "top": 22.0,
+              "right": 213.0,
+              "bottom": 39.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.07884856,
+            "dangerRedFraction": 0.005006258,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "VERY",
+            "line": 0,
+            "bounds": {
+              "left": 221.0,
+              "top": 22.0,
+              "right": 278.0,
+              "bottom": 39.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.2879257,
+            "dangerRedFraction": 0.010319917,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "EFFECTIVE...",
+            "line": 0,
+            "bounds": {
+              "left": 286.0,
+              "top": 22.0,
+              "right": 417.0,
+              "bottom": 39.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.38078132,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    },
+    {
+      "id": "effectiveness-super-joined",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "SUPEREFFECTIVE!",
+        "acceptedText": "SUPEREFFECTIVE!",
+        "words": [
+          {
+            "text": "SUPEREFFECTIVE!",
+            "line": 0,
+            "bounds": {
+              "left": 128.0,
+              "top": 91.0,
+              "right": 331.0,
+              "bottom": 114.0
+            },
+            "violetFraction": 0.16149068,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.00042835725,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    },
+    {
+      "id": "effectiveness-super-white",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "WHITE_TEXT_210_PADDED",
+        "rawText": "SUPER EFFECTIVE!",
+        "acceptedText": "SUPER EFFECTIVE!",
+        "words": [
+          {
+            "text": "SUPER",
+            "line": 0,
+            "bounds": {
+              "left": 136.0,
+              "top": 95.0,
+              "right": 206.0,
+              "bottom": 111.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "EFFECTIVE!",
+            "line": 0,
+            "bounds": {
+              "left": 215.0,
+              "top": 95.0,
+              "right": 335.0,
+              "bottom": 111.0
+            },
+            "violetFraction": 0.2125,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    },
+    {
+      "id": "effectiveness-clipped",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "RY EFFECTIVE...",
+        "acceptedText": "RY EFFECTIVE...",
+        "words": [
+          {
+            "text": "RY",
+            "line": 0,
+            "bounds": {
+              "left": -1.0,
+              "top": 113.0,
+              "right": 22.0,
+              "bottom": 136.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.47233203,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "EFFECTIVE...",
+            "line": 0,
+            "bounds": {
+              "left": 31.0,
+              "top": 112.0,
+              "right": 161.0,
+              "bottom": 137.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.32615384,
+            "dangerRedFraction": 0.25415385,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    },
+    {
+      "id": "choose-party-native",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "CHOOSE YOUR PARTY",
+        "acceptedText": "CHOOSE YOUR PARTY",
+        "words": [
+          {
+            "text": "CHOOSE",
+            "line": 0,
+            "bounds": {
+              "left": 100.0,
+              "top": 134.0,
+              "right": 205.0,
+              "bottom": 153.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "YOUR",
+            "line": 0,
+            "bounds": {
+              "left": 214.0,
+              "top": 134.0,
+              "right": 284.0,
+              "bottom": 153.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "PARTY",
+            "line": 0,
+            "bounds": {
+              "left": 294.0,
+              "top": 134.0,
+              "right": 371.0,
+              "bottom": 153.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    },
+    {
+      "id": "choose-party-white",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "WHITE_TEXT_210_PADDED",
+        "rawText": "CHOOSE YOUR PARIY",
+        "acceptedText": "CHOOSE YOUR PARIY",
+        "words": [
+          {
+            "text": "CHOOSE",
+            "line": 0,
+            "bounds": {
+              "left": 100.0,
+              "top": 134.0,
+              "right": 204.0,
+              "bottom": 152.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "YOUR",
+            "line": 0,
+            "bounds": {
+              "left": 215.0,
+              "top": 134.0,
+              "right": 283.0,
+              "bottom": 152.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "PARIY",
+            "line": 0,
+            "bounds": {
+              "left": 294.0,
+              "top": 134.0,
+              "right": 371.0,
+              "bottom": 152.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    },
+    {
+      "id": "choose-party-noisy",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "CHOOSE YoUB PARTY",
+        "acceptedText": "CHOOSE YoUB PARTY",
+        "words": [
+          {
+            "text": "CHOOSE",
+            "line": 0,
+            "bounds": {
+              "left": 100.0,
+              "top": 124.0,
+              "right": 204.0,
+              "bottom": 163.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.038954634,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "YoUB",
+            "line": 0,
+            "bounds": {
+              "left": 213.0,
+              "top": 124.0,
+              "right": 286.0,
+              "bottom": 162.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.23503965,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "PARTY",
+            "line": 0,
+            "bounds": {
+              "left": 293.0,
+              "top": 123.0,
+              "right": 368.0,
+              "bottom": 161.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    },
+    {
+      "id": "potion-description",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "A spray-type medicine that rest\nthe HP of one Pokémon by 20\npoints.",
+        "acceptedText": "A spray-type medicine that rest\nthe HP of one Pokémon by 20\npoints.",
+        "words": [
+          {
+            "text": "A",
+            "line": 0,
+            "bounds": {
+              "left": 115.0,
+              "top": 12.0,
+              "right": 131.0,
+              "bottom": 38.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.07932692,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "spray-type",
+            "line": 0,
+            "bounds": {
+              "left": 140.0,
+              "top": 12.0,
+              "right": 257.0,
+              "bottom": 38.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.025312295,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "medicine",
+            "line": 0,
+            "bounds": {
+              "left": 266.0,
+              "top": 12.0,
+              "right": 364.0,
+              "bottom": 38.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.05808477,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "that",
+            "line": 0,
+            "bounds": {
+              "left": 373.0,
+              "top": 12.0,
+              "right": 417.0,
+              "bottom": 38.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.036713287,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "rest",
+            "line": 0,
+            "bounds": {
+              "left": 432.0,
+              "top": 12.0,
+              "right": 465.0,
+              "bottom": 38.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.028846154,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "the",
+            "line": 1,
+            "bounds": {
+              "left": 116.0,
+              "top": 44.0,
+              "right": 150.0,
+              "bottom": 68.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.063725494,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "HP",
+            "line": 1,
+            "bounds": {
+              "left": 161.0,
+              "top": 44.0,
+              "right": 193.0,
+              "bottom": 68.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.08203125,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "of",
+            "line": 1,
+            "bounds": {
+              "left": 201.0,
+              "top": 44.0,
+              "right": 223.0,
+              "bottom": 68.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.015151516,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "one",
+            "line": 1,
+            "bounds": {
+              "left": 232.0,
+              "top": 44.0,
+              "right": 273.0,
+              "bottom": 68.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.024390243,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "Pokémon",
+            "line": 1,
+            "bounds": {
+              "left": 283.0,
+              "top": 44.0,
+              "right": 385.0,
+              "bottom": 68.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.05637255,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "by",
+            "line": 1,
+            "bounds": {
+              "left": 395.0,
+              "top": 44.0,
+              "right": 420.0,
+              "bottom": 68.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.035,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "20",
+            "line": 1,
+            "bounds": {
+              "left": 428.0,
+              "top": 44.0,
+              "right": 457.0,
+              "bottom": 68.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.033045977,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "points.",
+            "line": 2,
+            "bounds": {
+              "left": 115.0,
+              "top": 72.0,
+              "right": 187.0,
+              "bottom": 98.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.038995728,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    },
+    {
+      "id": "max-potion-description",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "points.\nMax Potion\nA spray-type medicine that",
+        "acceptedText": "points.\nMax Potion\nA spray-type medicine that",
+        "words": [
+          {
+            "text": "points.",
+            "line": 0,
+            "bounds": {
+              "left": 116.0,
+              "top": 4.0,
+              "right": 188.0,
+              "bottom": 28.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.07349537,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "Max",
+            "line": 1,
+            "bounds": {
+              "left": 118.0,
+              "top": 132.0,
+              "right": 187.0,
+              "bottom": 159.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.37573805,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "Potion",
+            "line": 1,
+            "bounds": {
+              "left": 199.0,
+              "top": 132.0,
+              "right": 303.0,
+              "bottom": 159.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.377849,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "A",
+            "line": 2,
+            "bounds": {
+              "left": 114.0,
+              "top": 178.0,
+              "right": 130.0,
+              "bottom": 203.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0875,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "spray-type",
+            "line": 2,
+            "bounds": {
+              "left": 138.0,
+              "top": 176.0,
+              "right": 255.0,
+              "bottom": 203.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.038936373,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "medicine",
+            "line": 2,
+            "bounds": {
+              "left": 265.0,
+              "top": 174.0,
+              "right": 362.0,
+              "bottom": 201.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.069873996,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "that",
+            "line": 2,
+            "bounds": {
+              "left": 372.0,
+              "top": 173.0,
+              "right": 414.0,
+              "bottom": 199.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.04945055,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    },
+    {
+      "id": "effectiveness-super-overlapping-lines",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "SUPER\nEFFECTIVE!",
+        "acceptedText": "SUPER\nEFFECTIVE!",
+        "words": [
+          {
+            "text": "SUPER",
+            "line": 0,
+            "bounds": {
+              "left": 144.0,
+              "top": 64.0,
+              "right": 215.0,
+              "bottom": 89.0
+            },
+            "violetFraction": 0.3284507,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "EFFECTIVE!",
+            "line": 1,
+            "bounds": {
+              "left": 194.0,
+              "top": 64.0,
+              "right": 336.0,
+              "bottom": 89.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    },
+    {
+      "id": "radar-progress",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "4/6",
+        "acceptedText": "4/6",
+        "words": [
+          {
+            "text": "4/6",
+            "line": 0,
+            "bounds": {
+              "left": 212.0,
+              "top": 158.0,
+              "right": 256.0,
+              "bottom": 180.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.24896695,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    },
+    {
+      "id": "rocket-medal-labels",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": ") Hero\n) Purifier",
+        "acceptedText": ") Hero\n) Purifier",
+        "words": [
+          {
+            "text": ")",
+            "line": 0,
+            "bounds": {
+              "left": 19.0,
+              "top": 38.0,
+              "right": 28.0,
+              "bottom": 70.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "Hero",
+            "line": 0,
+            "bounds": {
+              "left": 40.0,
+              "top": 37.0,
+              "right": 110.0,
+              "bottom": 71.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.26092437,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": ")",
+            "line": 1,
+            "bounds": {
+              "left": 22.0,
+              "top": 121.0,
+              "right": 32.0,
+              "bottom": 156.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "Purifier",
+            "line": 1,
+            "bounds": {
+              "left": 40.0,
+              "top": 120.0,
+              "right": 146.0,
+              "bottom": 157.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.22845487,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    },
+    {
+      "id": "rocket-medal-totals",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "Hero\nPurifier\nTOTAL\n+4\no+2\n+10",
+        "acceptedText": "Hero\nPurifier\nTOTAL\n+4\no+2\n+10",
+        "words": [
+          {
+            "text": "Hero",
+            "line": 0,
+            "bounds": {
+              "left": 112.0,
+              "top": 0.0,
+              "right": 157.0,
+              "bottom": 14.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.3873016,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "Purifier",
+            "line": 1,
+            "bounds": {
+              "left": 112.0,
+              "top": 51.0,
+              "right": 180.0,
+              "bottom": 67.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.34558824,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "TOTAL",
+            "line": 2,
+            "bounds": {
+              "left": 58.0,
+              "top": 150.0,
+              "right": 124.0,
+              "bottom": 168.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.30555555,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "+4",
+            "line": 3,
+            "bounds": {
+              "left": 395.0,
+              "top": 0.0,
+              "right": 413.0,
+              "bottom": 12.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.2824074,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "o+2",
+            "line": 4,
+            "bounds": {
+              "left": 371.0,
+              "top": 51.0,
+              "right": 413.0,
+              "bottom": 67.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.09375,
+            "dangerRedFraction": 0.04315476,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "+10",
+            "line": 5,
+            "bounds": {
+              "left": 357.0,
+              "top": 146.0,
+              "right": 409.0,
+              "bottom": 172.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.18047337,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    },
+    {
+      "id": "bonus-catch-prompt",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "Bonus Challenge! Catch\nDeino!",
+        "acceptedText": "Bonus Challenge! Catch\nDeino!",
+        "words": [
+          {
+            "text": "Bonus",
+            "line": 0,
+            "bounds": {
+              "left": 10.0,
+              "top": 58.0,
+              "right": 124.0,
+              "bottom": 102.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.6263955,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "Challenge!",
+            "line": 0,
+            "bounds": {
+              "left": 140.0,
+              "top": 58.0,
+              "right": 340.0,
+              "bottom": 102.0
+            },
+            "violetFraction": 0.089431815,
+            "tealFraction": 0.19090909,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "Catch",
+            "line": 0,
+            "bounds": {
+              "left": 358.0,
+              "top": 58.0,
+              "right": 454.0,
+              "bottom": 102.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.6131629,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "Deino!",
+            "line": 1,
+            "bounds": {
+              "left": 174.0,
+              "top": 116.0,
+              "right": 298.0,
+              "bottom": 148.0
+            },
+            "violetFraction": 0.38810483,
+            "tealFraction": 0.0027721773,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    },
+    {
+      "id": "catch-nice",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "Nice!",
+        "acceptedText": "Nice!",
+        "words": [
+          {
+            "text": "Nice!",
+            "line": 0,
+            "bounds": {
+              "left": 207.0,
+              "top": 83.0,
+              "right": 294.0,
+              "bottom": 124.0
+            },
+            "violetFraction": 0.06840482,
+            "tealFraction": 0.038687974,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    },
+    {
+      "id": "catch-xp-summary",
+      "expected": null,
+      "source": {
+        "cropName": "MatchOutcomeCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 100,
+        "cropTop": 641,
+        "cropRight": 564,
+        "cropBottom": 858
+      },
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "TOTAL 140 XP\nKÉMON CAUGHT\nCE THROW\n100\n20",
+        "acceptedText": "TOTAL 140 XP\nKÉMON CAUGHT\nCE THROW\n100\n20",
+        "words": [
+          {
+            "text": "TOTAL",
+            "line": 0,
+            "bounds": {
+              "left": 86.0,
+              "top": 26.0,
+              "right": 228.0,
+              "bottom": 59.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "140",
+            "line": 0,
+            "bounds": {
+              "left": 243.0,
+              "top": 26.0,
+              "right": 316.0,
+              "bottom": 59.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "XP",
+            "line": 0,
+            "bounds": {
+              "left": 329.0,
+              "top": 26.0,
+              "right": 382.0,
+              "bottom": 59.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "KÉMON",
+            "line": 1,
+            "bounds": {
+              "left": 6.0,
+              "top": 137.0,
+              "right": 81.0,
+              "bottom": 157.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "CAUGHT",
+            "line": 1,
+            "bounds": {
+              "left": 88.0,
+              "top": 137.0,
+              "right": 179.0,
+              "bottom": 157.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "CE",
+            "line": 2,
+            "bounds": {
+              "left": 1.0,
+              "top": 178.0,
+              "right": 24.0,
+              "bottom": 201.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "THROW",
+            "line": 2,
+            "bounds": {
+              "left": 24.0,
+              "top": 178.0,
+              "right": 106.0,
+              "bottom": 201.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "100",
+            "line": 3,
+            "bounds": {
+              "left": 434.0,
+              "top": 141.0,
+              "right": 461.0,
+              "bottom": 157.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "20",
+            "line": 4,
+            "bounds": {
+              "left": 453.0,
+              "top": 179.0,
+              "right": 465.0,
+              "bottom": 201.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": null,
+        "expectedMinimumHeightAt672": null,
+        "profileSampleCount": 0
+      },
+      "note": "Ordinary game text from the same outcome crop; must not establish a match result."
+    }
+  ]
+}

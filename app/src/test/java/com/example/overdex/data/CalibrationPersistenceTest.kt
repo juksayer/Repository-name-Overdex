@@ -21,6 +21,72 @@ import org.junit.rules.TemporaryFolder
 class CalibrationPersistenceTest {
     @get:Rule val temporary = TemporaryFolder()
 
+    @Test fun `replacement prompt and terminal evidence each have an independent adjustable territory`() {
+        val calibration = BattleCalibration()
+        val crops = com.example.overdex.battle.observation.BattleCropContracts
+        val witnesses = com.example.overdex.battle.observation.BattleWitnessContracts
+        assertEquals(AnchorRegion(.12f, .725f, .76f, .065f), calibration.forcedReplacementMessageRegion)
+        assertEquals(AnchorRegion(0f, .35f, .62f, .63f), calibration.playerTerminalVisualRegion)
+        assertEquals(AnchorRegion(.25f, .23f, .75f, .58f), calibration.opponentTerminalVisualRegion)
+        listOf(
+            Triple(crops.forcedReplacementMessage, witnesses.forcedReplacementMessageCapture,
+                calibration.forcedReplacementMessageRegion),
+            Triple(crops.playerTerminalVisual, witnesses.playerTerminalVisualCapture, calibration.playerTerminalVisualRegion),
+            Triple(crops.opponentTerminalVisual, witnesses.opponentTerminalVisualCapture, calibration.opponentTerminalVisualRegion),
+        ).forEach { (crop, witness, region) ->
+            assertEquals(region, crop.region.regionIn(calibration))
+            assertEquals(crop, witness.crop)
+        }
+        assertEquals("ForcedReplacementMessageCrop", crops.forcedReplacementMessage.cropName)
+        assertEquals("PlayerTerminalVisualCrop", crops.playerTerminalVisual.cropName)
+        assertEquals("OpponentTerminalVisualCrop", crops.opponentTerminalVisual.cropName)
+    }
+
+    @Test fun `prompt and terminal territory adjustments survive named profile preferences and working restore`() {
+        val context = TestContext(temporary.newFolder())
+        val original = CalibrationManager(context).load()
+        val positioned = original.copy(
+            playerAppearanceRegion = AnchorRegion(.01f, .45f, .50f, .48f),
+            appearanceColorReferenceRegion = AnchorRegion(.69f, .41f, .29f, .30f),
+            appearanceBackgroundRegion = AnchorRegion(.01f, .28f, .42f, .13f),
+            forcedReplacementMessageRegion = AnchorRegion(.15f, .72f, .70f, .06f),
+            playerTerminalVisualRegion = AnchorRegion(.03f, .34f, .60f, .64f),
+            opponentTerminalVisualRegion = AnchorRegion(.24f, .21f, .74f, .60f),
+        )
+        val profile = saveProfile(context, original)
+        val store = MatchCalibrationProfileStore(context)
+        assertNotNull(store.confirmWorking(profile.id))
+        assertTrue(CalibrationManager(context).save(positioned))
+        assertEquals(positioned, CalibrationManager(context).load())
+        assertEquals(positioned, MatchCalibrationProfileStore(context).activeProfile()!!.battleCalibration)
+        assertEquals(original, store.restoreWorking(profile.id)!!.battleCalibration)
+        assertEquals(original, CalibrationManager(context).load())
+    }
+
+    @Test fun `older profiles receive only new territory defaults without rewriting the saved file`() {
+        val context = TestContext(temporary.newFolder())
+        val original = BattleCalibration(opponentTrainerHandRegion = strip(925f, 745f, 95f, 155f))
+        val saved = saveProfile(context, original)
+        val store = MatchCalibrationProfileStore(context)
+        assertNotNull(store.confirmWorking(saved.id))
+        val file = File(context.filesDir, "calibration_profiles/${saved.id}.json")
+        val json = kotlinx.serialization.json.Json.parseToJsonElement(file.readText()) as kotlinx.serialization.json.JsonObject
+        val regions = json["battleRegions"] as kotlinx.serialization.json.JsonObject
+        val checkpoint = json["workingCheckpoint"] as kotlinx.serialization.json.JsonObject
+        val checkpointRegions = checkpoint["battleRegions"] as kotlinx.serialization.json.JsonObject
+        val newKeys = setOf("forced_replacement_message", "player_terminal_visual", "opponent_terminal_visual",
+            "player_appearance", "appearance_color_reference", "appearance_background")
+        file.writeText(kotlinx.serialization.json.JsonObject(json + mapOf(
+            "battleRegions" to kotlinx.serialization.json.JsonObject(regions - newKeys),
+            "workingCheckpoint" to kotlinx.serialization.json.JsonObject(checkpoint + ("battleRegions" to
+                kotlinx.serialization.json.JsonObject(checkpointRegions - newKeys)))
+        )).toString())
+        val before = file.readText()
+        assertEquals(original, CalibrationManager(context).load())
+        assertEquals(original, store.activeProfile()!!.workingCheckpoint!!.battleCalibration)
+        assertEquals(before, file.readText())
+    }
+
     @Test fun `charged impact HP has independent centered territory and its own crop contract`() {
         val calibration = BattleCalibration()
         assertEquals(AnchorRegion(.25f, .24f, .50f, .38f), calibration.chargedImpactHpRegion)

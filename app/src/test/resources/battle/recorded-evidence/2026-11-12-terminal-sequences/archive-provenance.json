@@ -1,0 +1,20 @@
+[
+  {
+    "stamp": "211335",
+    "source": "/home/sean/overdex-device-backups/2026-11-11-moondrop-2113-review/2026-11-11_21-13-35_b508a605-132a-48a8-a4e1-67514c729fc1.odxmatch.zip",
+    "sourceSha256": "97027bc36e6d3c5e59718307aa708ffca6c29f8179d98a83a1254b2300a45050",
+    "member": "timeline.json",
+    "memberSha256": "8a5f807fd9c5404217905e65fdb1cc3100e0e9270d92e5d6dc148315c7f6d4ba",
+    "videoGoSeconds": 39.0,
+    "alignmentNote": "Cramorant coarse alignment only, tested +/- 1 second; Leavanny previously visually identified GO, still subject to capture latency. Video measurements are test-only enrichment, never original archive evidence."
+  },
+  {
+    "stamp": "112107",
+    "source": "/home/sean/overdex-device-backups/2026-11-11-final-hit-review/2026-11-11_11-20-02_87612e9f-35ed-4d22-b6cb-062fb264e223.odxmatch.zip",
+    "sourceSha256": "936fdd4e6421a0987839ca741f8ea2dc22401512f34354a58d4b349c0750a77e",
+    "member": "timeline.json",
+    "memberSha256": "05c2feb45e36d5dd8d4d3f04957f6d3c7df43ea9e6fa6705a78f0faf272920ec",
+    "videoGoSeconds": 24.863511,
+    "alignmentNote": "Cramorant coarse alignment only, tested +/- 1 second; Leavanny previously visually identified GO, still subject to capture latency. Video measurements are test-only enrichment, never original archive evidence."
+  }
+]

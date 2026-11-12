@@ -16,9 +16,11 @@ internal class FastMoveListeningGate {
     private val firstSpecies = mutableMapOf<ActivePokemonSide, Evidence>()
     private var pendingDamage: Evidence? = null
     private val activeNames = mutableMapOf<ActivePokemonSide, String>()
+    private val activeAt = mutableMapOf<ActivePokemonSide, Long>()
     private val faintedNames = mutableSetOf<Pair<ActivePokemonSide, String>>()
     private val awaitingReplacement = mutableSetOf<ActivePokemonSide>()
     private var faints = 0
+    private var latestFaintAt = Long.MIN_VALUE
     @Volatile var generation: Long = 0
         private set
 
@@ -32,7 +34,8 @@ internal class FastMoveListeningGate {
                 start = null; end = null; stopped = false; openingIds = emptyList()
                 attemptFromNanos = at ?: attemptFromNanos
                 firstSpecies.clear(); pendingDamage = null
-                activeNames.clear(); faintedNames.clear(); awaitingReplacement.clear(); faints = 0
+                activeNames.clear(); activeAt.clear(); faintedNames.clear(); awaitingReplacement.clear(); faints = 0
+                latestFaintAt = Long.MIN_VALUE
             }
             ScreenIgnoredByUser, ObservationSessionStoppedByUser -> {
                 generation++
@@ -47,9 +50,12 @@ internal class FastMoveListeningGate {
             MatchStarted, AttackIncoming, GetReadyWitnessed, ChargeMoveUsedAnnounced -> open(at, articleId)
             is MatchEnded -> if (at != null) end = minOf(end ?: at, at)
             is ActivePokemonSpeciesWitnessed -> {
-                val name = payload.speciesName.lowercase().trim()
-                val old = activeNames.put(payload.side, name)
-                if (old != name && payload.side to name !in faintedNames) awaitingReplacement.remove(payload.side)
+                val name = com.example.overdex.battle.inference.TeamLossResolver.speciesKey(payload.speciesName)
+                if (at != null && at >= (activeAt[payload.side] ?: Long.MIN_VALUE)) {
+                    val old = activeNames.put(payload.side, name)
+                    activeAt[payload.side] = at
+                    if (old != name && payload.side to name !in faintedNames) awaitingReplacement.remove(payload.side)
+                }
                 if (at != null && name.isNotEmpty() &&
                     at < (firstSpecies[payload.side]?.at ?: Long.MAX_VALUE)) {
                     firstSpecies[payload.side] = Evidence(at, articleId)
@@ -70,14 +76,24 @@ internal class FastMoveListeningGate {
                 }
             }
             is ActivePokemonFaintedWitnessed -> {
+                // Keep independent audio available while an HP conclusion can
+                // still be revised. It is not an irreversible five-KO counter.
+                if (com.example.overdex.battle.inference.isRevisableVisualFaint(payload.basis)) return
                 val began = start ?: return
                 if (at == null || at < began || end != null || stopped) return
-                val name = payload.speciesName?.lowercase()?.trim() ?: activeNames[payload.side]
-                if (payload.side in awaitingReplacement || (name != null && payload.side to name in faintedNames)) return
+                val name = payload.speciesName?.let(com.example.overdex.battle.inference.TeamLossResolver::speciesKey)
+                    ?: activeNames[payload.side]
+                if (name != null && payload.side to name in faintedNames) return
+                if (name == null && payload.side in awaitingReplacement) return
                 if (name != null) faintedNames += payload.side to name
-                awaitingReplacement += payload.side
+                // A loss can be identified after its replacement is already on
+                // the field. Do not wait again for that completed replacement.
+                if (name == activeNames[payload.side] && at >= (activeAt[payload.side] ?: Long.MIN_VALUE)) {
+                    awaitingReplacement += payload.side
+                }
                 faints++
-                if (faints >= 5) end = at
+                latestFaintAt = maxOf(latestFaintAt, at)
+                if (faints >= 5) end = latestFaintAt
             }
             else -> Unit
         }

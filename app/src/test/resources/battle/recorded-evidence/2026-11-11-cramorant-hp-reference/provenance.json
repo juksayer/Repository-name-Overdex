@@ -1,0 +1,36 @@
+{
+  "sourceArchivePath": "/home/sean/overdex-device-backups/2026-11-11-moondrop-2113-review/2026-11-11_21-13-35_b508a605-132a-48a8-a4e1-67514c729fc1.odxmatch.zip",
+  "sourceArchiveSha256": "97027bc36e6d3c5e59718307aa708ffca6c29f8179d98a83a1254b2300a45050",
+  "sourceTimelineSha256": "8a5f807fd9c5404217905e65fdb1cc3100e0e9270d92e5d6dc148315c7f6d4ba",
+  "matchId": "b508a605-132a-48a8-a4e1-67514c729fc1",
+  "matchStartMonotonicNanos": 18443304147868,
+  "articlesFileSha256": "3b04d47080f0039cd7918daedd65885511c306fa81cd25045e805c8098bac293",
+  "articleRoles": {
+    "cramorantSpeciesBoundary": "a1633907-0236-400e-bc5c-34f615df3ea8",
+    "latestNormalOpponentHp": "71bd7d45-2d95-401a-a353-3a640a31abe7",
+    "preBoundaryOpponentHp": "36bc3d67-a041-4026-9fe7-8052b38556c6",
+    "acceptedFinalQte": "ef4ab365-9c6e-4acf-8e16-ca20925cbbfa",
+    "finalQteCrop": "e70d4cff-38bb-4771-99e8-0a12d5c17d74",
+    "originalFailedPreparation": "67b62448-18d6-4bef-add2-8fce3d93e6d5"
+  },
+  "originalArticleCanonicalSha256": {
+    "e2304a7d-c0bf-4d59-bffc-cff76540a508": "853459a89922ba09105b5088c874235a5d13b41dc1e946a1dab82a31e7ffb1f1",
+    "36bc3d67-a041-4026-9fe7-8052b38556c6": "7e8992c9ef981cf413139a3c7e048a16a8d12b72e5c45a4d86bba789d61b7fd1",
+    "a2a023c8-0e90-42d7-8f1c-88e6d1721120": "a24f0b93eeef55ac17cb46ecd74cad1562451d0289fd7d800d5ea9ce2176c81e",
+    "b07f7cb7-cd48-46fa-a037-6fb15b14af7e": "e5836c7a32edb221f79cbd83757bb1d0490891fad725e445d4ffac4618686779",
+    "6e6ad1e0-af65-4c34-923f-d0bf03726271": "7fa6646ab816a97e12610fd0f37839b65fb0f15ef66b6913628e9ce5f9cfc2b5",
+    "a1633907-0236-400e-bc5c-34f615df3ea8": "b96f7569df21cbbf89c15e456725cf9f04da05ad6906e79337c9ac8d8bd465a6",
+    "71bd7d45-2d95-401a-a353-3a640a31abe7": "82bb5af9bcf0901ac6528764a7464dd4384dfd27c1ae7331c50ce8532cbef61c",
+    "e70d4cff-38bb-4771-99e8-0a12d5c17d74": "a6eef5a3fd734fb7ae403c2f187b860207c2448a27dc0adbc9449e52d7ce172a",
+    "67b62448-18d6-4bef-add2-8fce3d93e6d5": "7549c8c126136a4381371f938e2df08041307cb13540a5f5d4be2bd36d5c7dfe",
+    "8611d54b-436d-4aea-86c9-40dc28310c85": "52883e1d5748f2577481206c3f1429b11eb44f1460901e1e1e58e8640839e8f1",
+    "ef4ab365-9c6e-4acf-8e16-ca20925cbbfa": "58d10c48353c359d021ea8d548817b73c1bf11a325b78a0e06c233f857052054"
+  },
+  "canonicalHashEncoding": "UTF-8 JSON sorted keys, no whitespace, ensure_ascii=false; original field values unchanged",
+  "notes": [
+    "All selected Articles are unmodified objects from the original archive; the fixture only changes JSON indentation.",
+    "Includes all transitive Article evidenceReferences and predecessorIds.",
+    "Referenced image bytes are not copied; these tests exercise source-time ownership and geometry, not recognition.",
+    "The original failed preparation remains NO_REFERENCE. Passing counterfactual delivery-order tests does not revise the archive or prove this was its live subscriber order."
+  ]
+}

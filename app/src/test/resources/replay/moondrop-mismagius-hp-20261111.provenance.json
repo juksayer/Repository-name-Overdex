@@ -1,0 +1,13 @@
+{
+  "sourceArchive": "2026-11-11_16-15-22_f66d7125-3616-4e44-86c8-c1af6469dd35.odxmatch.zip",
+  "sourceArchiveSha256": "31d6111cb5ca9bc94bdd328433009250ed58789264fb62bad479789a1776f38b",
+  "matchId": "f66d7125-3616-4e44-86c8-c1af6469dd35",
+  "selection": "Exact original HP, species, move, resource, and boundary Articles; no reconstructed events or edited timestamps. Media omitted from test fixture.",
+  "articleCount": 294,
+  "fixtureSha256": "8fcf49c8af924e9644128d9e4e855733f30de9f0f6de8d88518edcb14f12ac7f",
+  "falseHpArticleId": "47be66de-e034-4547-b7c4-f4a49fba64ac",
+  "video": "/home/sean/Desktop/Screen_recording_20261111_161531.mp4",
+  "videoFrameSeconds": 65.0306667,
+  "videoFirstGoSeconds": 27.3885667,
+  "videoRelation": "Approximate GO-relative corroboration, not an exact hardware clock mapping; visible fill is about 77 percent under attack effect."
+}

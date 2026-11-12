@@ -5,21 +5,96 @@ import com.example.overdex.battle.archive.ArchivedActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.archive.ArchivedOpponentBattleResourceCountMeasured
 import com.example.overdex.battle.archive.ArchivedPlayerPokeBallCountMeasured
 import com.example.overdex.battle.archive.ArchivedRealityArticle
+import com.example.overdex.battle.inference.TeamLossResolution
+import com.example.overdex.battle.inference.VerifiedHpFaintResolution
+import com.example.overdex.battle.inference.VerifiedHpFaintResolver
 import com.example.overdex.battle.observation.TeamRosterSpeciesAttributor
 
 /** Completed-archive presentation intervals. No testimony or identity instant is changed. */
 internal class ReplayKnockoutTrack(
     private val articles: List<ArchivedRealityArticle>,
     appearancesBySide: Map<String, List<ReplayIdentityObservation>>,
+    reconciledLosses: Map<String, TeamLossResolution> = emptyMap(),
+    verifiedHpLosses: Map<String, VerifiedHpFaintResolution> = emptyMap(),
+    terminalLosses: Map<String, com.example.overdex.battle.inference.TerminalChargedFaintResolution> = emptyMap(),
 ) {
     // Conflicting duplicate IDs cannot supply a unique custody link.
     private val articlesById = articles.groupBy { it.articleId }.mapValues { (_, copies) -> copies.singleOrNull() }
+    private val appearanceRunsBySide = appearancesBySide.mapValues { (_, appearances) ->
+        buildList<ReplayIdentityObservation> {
+            appearances.forEach { appearance ->
+                val previous = lastOrNull()
+                if (previous != null && key(previous.speciesName) == key(appearance.speciesName) &&
+                    (previous.speciesId == null || appearance.speciesId == null || previous.speciesId == appearance.speciesId) &&
+                    (previous.playerTeamSlot == null || appearance.playerTeamSlot == null ||
+                        previous.playerTeamSlot == appearance.playerTeamSlot) &&
+                    ('(' !in previous.speciesName || '(' !in appearance.speciesName ||
+                        previous.speciesName.equals(appearance.speciesName, ignoreCase = true))) {
+                    // Reading a more specific form does not replace the actor.
+                    // Preserve its earliest appearance while keeping the form
+                    // label and every source link available for the KO display.
+                    this[lastIndex] = previous.copy(
+                        speciesName = if (appearance.speciesName.length > previous.speciesName.length)
+                            appearance.speciesName else previous.speciesName,
+                        speciesId = previous.speciesId ?: appearance.speciesId,
+                        playerTeamSlot = previous.playerTeamSlot ?: appearance.playerTeamSlot,
+                        evidenceArticleIds = (previous.evidenceArticleIds + listOfNotNull(appearance.articleId) +
+                            appearance.evidenceArticleIds).distinct(),
+                    )
+                } else add(appearance)
+            }
+        }
+    }
 
     val knockouts: List<ReplayKnockout> = articles.mapNotNull { article ->
         val faint = article.payload as? ArchivedActivePokemonFaintedWitnessed ?: return@mapNotNull null
         val name = faint.speciesName ?: return@mapNotNull null
         val at = article.monotonicTimeNanos ?: return@mapNotNull null
-        val appearances = appearancesBySide[faint.side].orEmpty()
+        val resolution = reconciledLosses[article.articleId]
+        val hpResolution = verifiedHpLosses[article.articleId]
+        val terminalResolution = terminalLosses[article.articleId]
+        // Source-history resolvers compress an adjacent bare/form read.
+        // Legacy identity reconstruction may already distinguish two configured
+        // actors with the same Dex number, so retain its original intervals.
+        val appearances = (if (resolution != null || hpResolution != null || terminalResolution != null) appearanceRunsBySide else appearancesBySide)[faint.side].orEmpty()
+        if (hpResolution != null || terminalResolution != null) {
+            val candidate = hpResolution?.owner ?: terminalResolution!!.owner
+            val index = appearances.indexOfLast { it.atNanos <= candidate.appearanceAtNanos }
+            val appearance = appearances.getOrNull(index) ?: return@mapNotNull null
+            val replacement = appearances.getOrNull(index + 1)
+            if (key(appearance.speciesName) != key(candidate.speciesName) ||
+                replacement?.let { it.atNanos <= at } == true) return@mapNotNull null
+            return@mapNotNull ReplayKnockout(faint.side, appearance.speciesName, appearance.atNanos,
+                at, at, replacement?.atNanos, hpResolution?.evidenceReferences ?: terminalResolution!!.evidenceReferences,
+                basis = if (hpResolution != null) VerifiedHpFaintResolver.BASIS else
+                    com.example.overdex.battle.inference.TerminalChargedFaintResolver.BASIS)
+        }
+        if (resolution != null) {
+            val candidate = resolution.resolved ?: return@mapNotNull null
+            // A source count can arrive after several entries. Its uniquely
+            // resolved appearance, rather than the actor active at that count,
+            // owns the KO and the presentation interval before its replacement.
+            val index = appearances.indexOfLast { it.atNanos <= candidate.appearanceAtNanos }
+            val appearance = appearances.getOrNull(index) ?: return@mapNotNull null
+            if (key(appearance.speciesName) != key(candidate.speciesName)) return@mapNotNull null
+            val replacement = appearances.getOrNull(index + 1)
+            val start = if (replacement == null || at < replacement.atNanos) at else
+                maxOf(appearance.atNanos, replacement.atNanos - MIN_VISIBLE_KO_NANOS)
+            return@mapNotNull ReplayKnockout(
+                side = faint.side, speciesName = appearance.speciesName, appearanceAtNanos = appearance.atNanos,
+                recordedAtNanos = at, presentationAtNanos = start,
+                replacementAtNanos = replacement?.atNanos,
+                sourceArticleIds = (resolution.evidenceReferences + listOfNotNull(replacement?.articleId) +
+                    replacement?.evidenceArticleIds.orEmpty()).distinct(),
+                // An aggregate count proves a set of owners, not the count
+                // after each earlier departure. In particular, do not move a
+                // later count of one to the first faint or fabricate count two.
+                verifiedPokeBallsAfter = resolution.afterCount.takeIf {
+                    resolution.beforeCount - resolution.afterCount == 1
+                },
+                basis = ReplayTeamLossProjection.BASIS,
+            )
+        }
         val current = appearances.indexOfLast { it.atNanos <= at }
         if (current < 0) return@mapNotNull null
         fun matches(index: Int) = index >= 0 && key(appearances[index].speciesName) == key(name)
@@ -123,6 +198,8 @@ internal data class ReplayKnockout(
     val sourceArticleIds: List<String>,
     /** Completed-archive presentation only; the cited measurement retains its original clock. */
     val verifiedPokeBallsAfter: Int? = null,
+    /** Separate the reconstructed conclusion from the archived faint witness. */
+    val basis: String? = null,
 ) {
     // Leave a visible beat lying down before the next sprite replaces it.
     val finishByNanos: Long? get() = replacementAtNanos?.let {

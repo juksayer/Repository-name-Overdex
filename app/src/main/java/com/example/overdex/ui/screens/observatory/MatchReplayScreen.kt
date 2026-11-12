@@ -91,6 +91,8 @@ import com.example.overdex.battle.replay.ReplayAttackSounds
 import com.example.overdex.battle.replay.replayAttackSoundsBetween
 import com.example.overdex.battle.replay.ReplayTransportSounds
 import com.example.overdex.battle.replay.ReplayPlaybackClock
+import com.example.overdex.battle.replay.ReplayEventMarker
+import com.example.overdex.battle.replay.ReplayEventMarkerNavigation
 import com.example.overdex.data.LocalSpriteProvider
 import com.example.overdex.model.Move
 import com.example.overdex.model.PokemonType
@@ -277,6 +279,10 @@ fun MatchReplayScreen(
     }
     val playbackStart = playbackWindow?.startNanos ?: model.startNanos
     val playbackEnd = playbackWindow?.endNanos ?: model.endNanos
+    val eventMarkers = remember(model, playbackStart, playbackEnd) {
+        model.eventMarkers.filter { it.atNanos in playbackStart..playbackEnd }
+    }
+    var selectedMarkerId by remember(archive, playbackWindow) { mutableStateOf<String?>(null) }
     var cursor by remember(archive, initialCursorNanos, playbackWindow) {
         mutableLongStateOf((initialCursorNanos ?: playbackStart).coerceIn(playbackStart, playbackEnd))
     }
@@ -308,8 +314,20 @@ fun MatchReplayScreen(
     var clipEnd by remember(archive) { mutableStateOf<Long?>(null) }
     var savingClip by remember { mutableStateOf(false) }
     var clipStatus by remember { mutableStateOf<String?>(null) }
-    var editorAction by remember { mutableIntStateOf(0) }
-    val editorActionCount = if (onOpenEditor != null) 4 else 3
+    var editorAction by remember(archive, playbackWindow, allowClipSave, onOpenEditor != null) { mutableIntStateOf(0) }
+    val actionLabels = buildList {
+        add("PLAY / PAUSE")
+        if (allowClipSave) {
+            add("MARK START")
+            add("MARK END + SAVE")
+            if (onOpenEditor != null) add("CLIP LIBRARY")
+        }
+        add("PREVIOUS EVENT")
+        add("NEXT EVENT")
+    }
+    val editorActionCount = actionLabels.size
+    val previousEventAction = editorActionCount - 2
+    val nextEventAction = editorActionCount - 1
     val completion by rememberUpdatedState(onPlaybackComplete)
     fun markClipStart() {
         playing = false
@@ -392,16 +410,32 @@ fun MatchReplayScreen(
         if (cursor != previous) transportSounds.scrub()
     }
 
+    fun seekMarker(marker: ReplayEventMarker) {
+        playing = false
+        selectedMarkerId = marker.id
+        cursor = marker.atNanos.coerceIn(playbackStart, playbackEnd)
+        attackSounds.stop()
+        transportSounds.scrub()
+    }
+
+    fun seekAdjacentMarker(forward: Boolean) {
+        val index = if (forward) ReplayEventMarkerNavigation.nextIndex(eventMarkers, cursor, selectedMarkerId)
+            else ReplayEventMarkerNavigation.previousIndex(eventMarkers, cursor, selectedMarkerId)
+        index?.let { seekMarker(eventMarkers[it]) }
+    }
+
     SideEffect {
         onUp { scrubBy(-SCRUB_STEP_NANOS) }
         onDown { scrubBy(SCRUB_STEP_NANOS) }
-        onLeft { if (allowClipSave) editorAction = (editorAction + editorActionCount - 1) % editorActionCount }
-        onRight { if (allowClipSave) editorAction = (editorAction + 1) % editorActionCount }
+        onLeft { editorAction = (editorAction + editorActionCount - 1) % editorActionCount }
+        onRight { editorAction = (editorAction + 1) % editorActionCount }
         onA {
-            if (!savingClip && clipEnd == null) when (editorAction) {
-                1 -> markClipStart()
-                2 -> markClipEnd()
-                3 -> { playing = false; onOpenEditor?.invoke() }
+            if (!savingClip && clipEnd == null) when {
+                editorAction == previousEventAction -> seekAdjacentMarker(false)
+                editorAction == nextEventAction -> seekAdjacentMarker(true)
+                allowClipSave && editorAction == 1 -> markClipStart()
+                allowClipSave && editorAction == 2 -> markClipEnd()
+                allowClipSave && editorAction == 3 -> { playing = false; onOpenEditor?.invoke() }
                 else -> togglePlayback()
             }
         }
@@ -418,9 +452,10 @@ fun MatchReplayScreen(
         val lcdScroll = rememberScrollState()
         val marksRequester = remember { BringIntoViewRequester() }
         LaunchedEffect(editorAction, clipStatus, savingClip) {
-            if (allowClipSave) when (editorAction) {
-                0 -> lcdScroll.animateScrollTo(0)
-                1, 2 -> marksRequester.bringIntoView()
+            when {
+                editorAction == 0 || editorAction == previousEventAction || editorAction == nextEventAction ->
+                    lcdScroll.animateScrollTo(0)
+                allowClipSave && editorAction in 1..2 -> marksRequester.bringIntoView()
             }
         }
         val drag by rememberUpdatedState<(Offset) -> Unit>({ delta ->
@@ -450,6 +485,7 @@ fun MatchReplayScreen(
                         modifier = Modifier.fillMaxWidth().height(8.dp).align(Alignment.Center),
                         color = TerminalGreen,
                     )
+                    ReplayEventMarkerStrip(eventMarkers, playbackStart, playbackEnd, Modifier.fillMaxSize())
                     matchStartFraction?.let { fraction ->
                         Box(
                             Modifier.align(Alignment.CenterStart)
@@ -459,6 +495,9 @@ fun MatchReplayScreen(
                     }
                 }
             }
+            ReplayEventMarkerControls(eventMarkers, cursor, selectedMarkerId, playbackStart, ::seekMarker,
+                previousSelected = editorAction == previousEventAction,
+                nextSelected = editorAction == nextEventAction)
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 MatchLcdTextButton("BACK", { scrubBy(-SCRUB_STEP_NANOS) },
                     Modifier.weight(1f).semantics { contentDescription = "Step backward one second" })
@@ -519,8 +558,8 @@ fun MatchReplayScreen(
                 )
                 MatchLcdTextButton("BACK", { if (!savingClip) { playing = false; transportSounds.stop(); onBack() } }, Modifier.weight(1f))
             }
+            MatchLcdText("←/→ ${actionLabels[editorAction]}   A SELECT")
             if (allowClipSave) {
-                MatchLcdText("←/→ ${listOf("PLAY / PAUSE", "MARK START", "MARK END + SAVE", "CLIP LIBRARY")[editorAction]}   A SELECT")
                 Column(Modifier.fillMaxWidth().bringIntoViewRequester(marksRequester)) {
                     MatchLcdText("CLIP AT ${formatReplayTime(cursor - model.startNanos)}   ↑/↓ STEP")
                     Row(Modifier.fillMaxWidth()) {
@@ -852,7 +891,7 @@ private fun FastMoveReplayIndicator(
 private const val SCRUB_STEP_NANOS = 1_000_000_000L
 private const val LCD_SCRUB_WIDTH_PX = 600f
 
-private fun formatReplayTime(nanos: Long): String {
+internal fun formatReplayTime(nanos: Long): String {
     val deciseconds = (nanos / 100_000_000L).coerceAtLeast(0L)
     val minutes = deciseconds / 600L
     val seconds = (deciseconds % 600L) / 10L
@@ -900,8 +939,8 @@ internal fun ReplayCombatantSlot(
                     visibleTop = art.top
                     onVisibleArt(art)
                 },
-                contentDescription = if (combatant.isFainted) "${combatant.speciesName}, fainted"
-                    else if (inactive) "${combatant.speciesName}, defeated" else combatant.speciesName,
+                contentDescription = if (combatant.isFainted) "${combatant.displayName}, fainted"
+                    else if (inactive) "${combatant.displayName}, defeated" else combatant.displayName,
                 modifier = Modifier
                     .requiredSize(spriteSize)
                     // Pokémon GO places the player's back-facing combatant
@@ -959,7 +998,7 @@ internal fun ReplayCombatantSlot(
         if (combatant != null && hp != null) {
             ReplayHpBar(
                 hp,
-                "${if (useBackSprite) "Player" else "Opponent"} ${combatant.speciesName} HP",
+                "${if (useBackSprite) "Player" else "Opponent"} ${combatant.displayName} HP",
                 Modifier.align(Alignment.TopCenter).offset(y = if (useBackSprite) 4.dp else (-20).dp),
             )
         }

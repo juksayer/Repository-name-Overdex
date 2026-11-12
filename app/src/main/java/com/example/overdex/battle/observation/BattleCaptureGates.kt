@@ -12,27 +12,43 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collect
 
-/** Source-time assignments stop on a usable reading, rather than on a saved but unreadable image. */
+/** Source-ordered cues request fresh, bounded acquisition; only usable readings complete it. */
 private class BoundedCaptureAssignments(private val cropNames: Set<String>, private val now: () -> Long) {
-    private data class Assignment(val from: Long, val until: Long)
+    private data class Assignment(val from: Long, val until: Long, val confirmationRequested: Boolean = false)
     private val pending = mutableMapOf<String, Assignment>()
     private val requestedThrough = mutableMapOf<String, Long>()
     private val measuredThrough = mutableMapOf<String, Long>()
 
     fun request(crops: Set<String>, at: Long) {
         val current = now()
-        if (at > current || current - at >= WINDOW_NANOS) return
+        if (at > current) return
         crops.filter { it in cropNames }.forEach { crop ->
             if (at <= (requestedThrough[crop] ?: Long.MIN_VALUE) ||
                 at <= (measuredThrough[crop] ?: Long.MIN_VALUE)) return@forEach
             requestedThrough[crop] = at
-            pending[crop] = Assignment(at, at + WINDOW_NANOS)
+            // Recognition can arrive several seconds after its source frame.
+            // Keep that source time for ordering, but acquire current pixels for
+            // a full window. Earlier queued frames/readings cannot finish it.
+            pending[crop] = Assignment(current, current + WINDOW_NANOS)
         }
     }
     fun enabled(crop: String): Boolean = pending[crop]?.let { now() < it.until } == true
     fun accepts(crop: String, at: Long): Boolean = pending[crop]?.let {
         enabled(crop) && at >= it.from && at < it.until && at <= now()
     } == true
+    fun hasMeasurement(crop: String): Boolean = crop in measuredThrough
+
+    /** A first usable frame earns one bounded chance to collect an independent confirmation. */
+    fun candidate(crop: String, at: Long) {
+        val assignment = pending[crop] ?: return
+        val current = now()
+        val finalDeadline = assignment.from + 2 * WINDOW_NANOS
+        // A queued frame from an earlier assignment cannot extend this one.
+        // Neither repeated candidates nor slow decoding can keep capture alive.
+        if (assignment.confirmationRequested || at < assignment.from || at >= assignment.until ||
+            at > current || current >= finalDeadline) return
+        pending[crop] = assignment.copy(until = finalDeadline, confirmationRequested = true)
+    }
     fun measured(crop: String, at: Long) {
         if (crop !in cropNames || at > now() || at <= (measuredThrough[crop] ?: Long.MIN_VALUE)) return
         measuredThrough[crop] = at
@@ -59,8 +75,10 @@ class TeamResourceSnapshotGate(
     private val hpAtBySide = mutableMapOf<ActivePokemonSide, Long>()
     private val emptyHpSides = mutableSetOf<ActivePokemonSide>()
     private var initialized = false
+    private var startObserved = false
     private var ended = false
     private var attemptFrom = Long.MIN_VALUE
+    private var lifecycleAt = Long.MIN_VALUE
 
     @Synchronized fun isEnabled(cropName: String): Boolean = !ended && assignments.enabled(cropName)
     @Synchronized fun acceptsFrame(cropName: String, at: Long): Boolean =
@@ -81,10 +99,19 @@ class TeamResourceSnapshotGate(
     @Synchronized internal fun measured(cropName: String, observedAt: Long) {
         if (!ended && observedAt >= attemptFrom) assignments.measured(cropName, observedAt)
     }
+    /** Scheduling feedback only; a candidate is not a count or faint testimony. */
+    @Synchronized fun candidateRead(cropName: String, capturedAt: Long) {
+        if (!ended && capturedAt >= attemptFrom) assignments.candidate(cropName, capturedAt)
+    }
+
+    private fun requestMissingBaseline(crops: Set<String>, at: Long) {
+        requestSnapshot(crops.filterTo(linkedSetOf()) {
+            !assignments.hasMeasurement(it) && !assignments.enabled(it)
+        }, at)
+    }
 
     private fun initialize(at: Long) {
-        if (initialized || ended || at < attemptFrom || at > now() ||
-            now() - at >= BoundedCaptureAssignments.WINDOW_NANOS) return
+        if (initialized || ended || at < attemptFrom || at > now()) return
         initialized = true
         requestSnapshot(observedAt = at)
     }
@@ -98,12 +125,15 @@ class TeamResourceSnapshotGate(
 
     @Synchronized internal fun observeSpecies(side: ActivePokemonSide, species: String, observedAt: Long = now()) {
         if (ended || observedAt < attemptFrom || observedAt > now() ||
-            now() - observedAt >= BoundedCaptureAssignments.WINDOW_NANOS ||
             observedAt <= (speciesAtBySide[side] ?: Long.MIN_VALUE)) return
         speciesAtBySide[side] = observedAt
         initialize(observedAt)
         val previous = speciesBySide.put(side, species)
-        if (previous != null && !species.equals(previous, ignoreCase = true)) {
+        if (previous == null) {
+            // The first pre-GO window may contain only one readable frame.
+            // This independent entry cue retries only the still-missing side.
+            requestMissingBaseline(sideCrops(side), observedAt)
+        } else if (!species.equals(previous, ignoreCase = true)) {
             emptyHpSides -= side
             hpAtBySide[side] = maxOf(hpAtBySide[side] ?: Long.MIN_VALUE, observedAt)
             requestSnapshot(sideCrops(side), observedAt)
@@ -116,9 +146,6 @@ class TeamResourceSnapshotGate(
         hpAtBySide[side] = observedAt
         initialize(observedAt)
         if (filledFraction == 0f) {
-            // An expired zero cannot consume the transition before a fresh
-            // frame has a chance to open its bounded count assignment.
-            if (now() - observedAt >= BoundedCaptureAssignments.WINDOW_NANOS) return
             if (emptyHpSides.add(side)) requestSnapshot(setOf(ballCrop(side)), observedAt)
         } else emptyHpSides -= side
     }
@@ -129,18 +156,26 @@ class TeamResourceSnapshotGate(
 
     @Synchronized internal fun observe(article: RealityArticle) {
         val at = article.monotonicTimeNanos ?: return
+        if (at > now()) return
         when (val payload = article.payload) {
-            ObservationRestartedByUser -> reset(at)
-            ScreenIgnoredByUser, ObservationSessionStoppedByUser, is MatchEnded -> observeMatchEnded()
+            ObservationRestartedByUser -> if (at > lifecycleAt) reset(at)
+            ScreenIgnoredByUser, ObservationSessionStoppedByUser, is MatchEnded -> observeMatchEnded(at)
             else -> {
                 if (ended || at < attemptFrom) return
                 when (payload) {
-                    MatchStarted -> initialize(at)
+                    MatchStarted -> {
+                        initialize(at)
+                        if (!startObserved) {
+                            startObserved = true
+                            requestMissingBaseline(cropNames, at)
+                        }
+                    }
                     GetReadyWitnessed, AttackIncoming, ChargeMoveUsedAnnounced -> requestResourceWatch(at)
                     is ActivePokemonSpeciesWitnessed -> observeSpecies(payload.side, payload.speciesName, at)
                     is ActiveHpBarMeasured -> observeActiveHp(payload.side, payload.filledFraction, at)
                     is ActiveHpBarDamageTickMeasured -> observeDamageTick(payload.damagedSide, payload.afterFraction, at)
                     is ActivePokemonFaintedWitnessed -> requestSnapshot(sideCrops(payload.side), at)
+                    is ForcedReplacementPromptWitnessed -> requestSnapshot(sideCrops(ActivePokemonSide.PLAYER), at)
                     is SpeciesCheckMeasured -> if (payload.status == "OPENED" && payload.reason in setOf("SWITCH", "FAINT"))
                         requestSnapshot(sideCrops(payload.side), payload.triggerMonotonicNanos)
                     is PlayerPokeBallCountMeasured -> measured(BattleCropContracts.playerPokeBalls.cropName, at)
@@ -163,14 +198,19 @@ class TeamResourceSnapshotGate(
         scope?.cancel("Resource snapshot gate stopped"); scope = null
         observeMatchEnded()
     }
-    @Synchronized internal fun observeMatchEnded() { ended = true; assignments.clear() }
+    @Synchronized internal fun observeMatchEnded(at: Long = now()) {
+        if (at < attemptFrom || at < lifecycleAt || at > now()) return
+        lifecycleAt = at
+        ended = true
+        assignments.clear()
+    }
     private fun reset(from: Long) {
-        ended = false; initialized = false; attemptFrom = from; assignments.clear()
+        ended = false; initialized = false; startObserved = false; attemptFrom = from; lifecycleAt = from; assignments.clear()
         speciesBySide.clear(); speciesAtBySide.clear(); hpAtBySide.clear(); emptyHpSides.clear()
     }
 }
 
-/** Initial player bench acquisition, then bounded assignments only for a player switch or faint. */
+/** Initial player bench acquisition, then bounded assignments for player changes or replacement text. */
 class InactiveBenchSnapshotGate(
     private val cropNames: Set<String>,
     private val now: () -> Long = System::nanoTime,
@@ -185,14 +225,14 @@ class InactiveBenchSnapshotGate(
     private var speciesAt = Long.MIN_VALUE
     private var ended = false
     private var attemptFrom = Long.MIN_VALUE
+    private var lifecycleAt = Long.MIN_VALUE
 
     @Synchronized fun isEnabled(cropName: String): Boolean = !ended && assignments.enabled(cropName)
     @Synchronized fun acceptsFrame(cropName: String, at: Long): Boolean =
         !ended && at >= attemptFrom && assignments.accepts(cropName, at)
     fun captured(@Suppress("UNUSED_PARAMETER") cropName: String) = Unit
     private fun initialize(at: Long) {
-        if (initialized || ended || at < attemptFrom || at > now() ||
-            now() - at >= BoundedCaptureAssignments.WINDOW_NANOS) return
+        if (initialized || ended || at < attemptFrom || at > now()) return
         initialized = true; requestSnapshot(at)
     }
     private fun requestSnapshot(at: Long) {
@@ -203,24 +243,23 @@ class InactiveBenchSnapshotGate(
     }
     @Synchronized internal fun observe(article: RealityArticle) {
         val at = article.monotonicTimeNanos ?: return
+        if (at > now()) return
         when (val payload = article.payload) {
-            ObservationRestartedByUser -> reset(at)
-            ScreenIgnoredByUser, ObservationSessionStoppedByUser, is MatchEnded -> { ended = true; assignments.clear() }
+            ObservationRestartedByUser -> if (at > lifecycleAt) reset(at)
+            ScreenIgnoredByUser, ObservationSessionStoppedByUser, is MatchEnded -> end(at)
             else -> {
                 if (ended || at < attemptFrom || at > now()) return
                 when (payload) {
                     MatchStarted -> initialize(at)
                     is ActiveHpBarMeasured -> if (payload.side == ActivePokemonSide.PLAYER) initialize(at)
-                    is ActivePokemonSpeciesWitnessed -> if (payload.side == ActivePokemonSide.PLAYER && at > speciesAt &&
-                        now() - at < BoundedCaptureAssignments.WINDOW_NANOS) {
-                        // Only wake-state bookkeeping is skipped for an expired
-                        // transition; its original identity article stays intact.
+                    is ActivePokemonSpeciesWitnessed -> if (payload.side == ActivePokemonSide.PLAYER && at > speciesAt) {
                         speciesAt = at
                         initialize(at)
                         if (species != null && !payload.speciesName.equals(species, true)) requestSnapshot(at)
                         species = payload.speciesName
                     }
                     is ActivePokemonFaintedWitnessed -> if (payload.side == ActivePokemonSide.PLAYER) requestSnapshot(at)
+                    is ForcedReplacementPromptWitnessed -> requestSnapshot(at)
                     is SpeciesCheckMeasured -> if (payload.side == ActivePokemonSide.PLAYER && payload.status == "OPENED" &&
                         payload.reason in setOf("SWITCH", "FAINT")) requestSnapshot(payload.triggerMonotonicNanos)
                     is PlayerInactiveHpBarMeasured -> measured(if (payload.slot == 0)
@@ -241,11 +280,17 @@ class InactiveBenchSnapshotGate(
     }
     override fun stop() {
         scope?.cancel("Bench snapshot gate stopped"); scope = null
-        synchronized(this) { ended = true; assignments.clear() }
+        synchronized(this) { end(now()) }
+    }
+    private fun end(at: Long) {
+        if (at < attemptFrom || at < lifecycleAt || at > now()) return
+        lifecycleAt = at
+        ended = true
+        assignments.clear()
     }
     private fun reset(from: Long) {
         initialized = false; species = null; speciesAt = Long.MIN_VALUE
-        ended = false; attemptFrom = from; assignments.clear()
+        ended = false; attemptFrom = from; lifecycleAt = from; assignments.clear()
     }
 }
 

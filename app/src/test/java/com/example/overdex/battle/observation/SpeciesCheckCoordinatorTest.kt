@@ -308,4 +308,192 @@ class SpeciesCheckCoordinatorTest {
         assertEquals("Vaporeon", reports.last().speciesName)
     }
 
+    @Test fun `accepted native badge covers an older delayed entry without reopening capture`() {
+        checks.request(side, "CHARGE", "charge", time)
+        val window = checks.windowFor(side, time)!!
+        val capturedAt = time + 100_000_000L
+        time += 200_000_000L
+        assertNotNull(checks.acceptImmediate(side, window.id, "Stunfisk", "native-badge", capturedAt))
+        time += 5_000_000_000L
+        val entryAt = capturedAt - 1L
+
+        checks.request(side, "ENTRY", "delayed-entry", entryAt)
+
+        assertEquals(listOf("OPENED", "CONFIRMED", "COVERED"), reports.map { it.status })
+        val covered = reports.last()
+        assertEquals("ENTRY", covered.reason)
+        assertEquals(entryAt, covered.triggerMonotonicNanos)
+        assertEquals("Stunfisk", covered.speciesName)
+        assertEquals(listOf("delayed-entry", "native-badge"), references.last())
+        assertFalse(checks.isChecking(side))
+        assertFalse(checks.captureEnabled(side))
+        assertFalse(checks.needsReading(side, window.id, capturedAt))
+    }
+
+    @Test fun `entry at or after badge capture still opens a new check`() {
+        for (offset in listOf(0L, 1L)) {
+            checks.restartObservationAttempt()
+            checks.request(side, "ENTRY", "first")
+            val first = checks.windowFor(side, time)!!
+            val capturedAt = time + 100_000_000L
+            time += 200_000_000L
+            checks.acceptImmediate(side, first.id, "Stunfisk", "badge", capturedAt)
+
+            checks.request(side, "ENTRY", "new-entry", capturedAt + offset)
+
+            assertEquals("OPENED", reports.last().status)
+            assertEquals("new-entry", checks.windowFor(side, time)?.triggerId)
+            assertTrue(checks.captureEnabled(side))
+            assertTrue(checks.windowFor(side, time)!!.id > first.id)
+        }
+    }
+
+    @Test fun `late recognition does not make an older capture cover a newer entry`() {
+        checks.request(side, "ENTRY", "first")
+        val first = checks.windowFor(side, time)!!
+        val capturedAt = time + 100_000_000L
+        val replacementAt = time + 200_000_000L
+        time += SpeciesCheckCoordinator.MAX_WINDOW_NANOS + 1L
+        checks.tick()
+        assertNotNull(checks.acceptImmediate(side, first.id, "Stunfisk", "old-badge", capturedAt))
+
+        checks.request(side, "ENTRY", "replacement", replacementAt)
+
+        assertEquals("OPENED", reports.last().status)
+        assertEquals("replacement", checks.windowFor(side, time)?.triggerId)
+        assertTrue(checks.captureEnabled(side))
+    }
+
+    @Test fun `badge coverage belongs only to its captured side`() {
+        checks.request(side, "ENTRY", "opponent")
+        val window = checks.windowFor(side, time)!!
+        val capturedAt = time + 100_000_000L
+        time += 200_000_000L
+        checks.acceptImmediate(side, window.id, "Stunfisk", "opponent-badge", capturedAt)
+
+        checks.request(ActivePokemonSide.PLAYER, "ENTRY", "player-entry", capturedAt - 1L)
+
+        assertEquals("OPENED", reports.last().status)
+        assertTrue(checks.isChecking(ActivePokemonSide.PLAYER))
+        assertFalse(checks.isChecking(side))
+    }
+
+    @Test fun `uncertain legacy implicit or invalid source clocks cannot cover a delayed entry`() {
+        for (mode in listOf("uncertain", "legacy", "implicit", "future", "blank crop", "blank species")) {
+            checks.restartObservationAttempt()
+            checks.request(side, "ENTRY", "first-$mode")
+            val window = checks.windowFor(side, time)!!
+            val entryAt = time + 50_000_000L
+            time += 200_000_000L
+            when (mode) {
+                "uncertain" -> checks.read(side, window.id, "Stunfisk", "one-frame")
+                "legacy" -> {
+                    checks.read(side, window.id, "Stunfisk", "one-frame")
+                    checks.read(side, window.id, "Stunfisk", "second-frame")
+                }
+                "implicit" -> checks.acceptImmediate(side, window.id, "Stunfisk", "no-source-clock")
+                "future" -> checks.acceptImmediate(side, window.id, "Stunfisk", "future", time + 1L)
+                "blank crop" -> checks.acceptImmediate(side, window.id, "Stunfisk", "", time)
+                else -> checks.acceptImmediate(side, window.id, "", "blank-species", time)
+            }
+            time += SpeciesCheckCoordinator.MAX_WINDOW_NANOS + 1L
+            checks.tick()
+
+            checks.request(side, "ENTRY", "delayed-$mode", entryAt)
+
+            assertEquals(mode, "OPENED", reports.last().status)
+            assertEquals("delayed-$mode", checks.windowFor(side, time)?.triggerId)
+        }
+    }
+
+    @Test fun `native badge coverage leaves all other battle cue assignments enabled`() {
+        for (reason in listOf("FAINT", "SWITCH", "CRY", "CHARGE", "QTE", "MATCH_START", "VS", "COUNTDOWN")) {
+            checks.restartObservationAttempt()
+            checks.request(side, "ENTRY", "first")
+            val window = checks.windowFor(side, time)!!
+            val capturedAt = time + 100_000_000L
+            time += 200_000_000L
+            checks.acceptImmediate(side, window.id, "Stunfisk", "native-badge", capturedAt)
+
+            checks.request(side, reason, "cue-$reason", capturedAt - 1L)
+
+            assertEquals(reason, "OPENED", reports.last().status)
+            assertEquals(reason, checks.windowFor(side, time)?.reason)
+            assertTrue(reason, checks.captureEnabled(side))
+        }
+    }
+
+    @Test fun `covered entry does not change the candidate or ownership of a newer pending check`() {
+        checks.request(side, "ENTRY", "first")
+        val first = checks.windowFor(side, time)!!
+        val capturedAt = time + 100_000_000L
+        time += 200_000_000L
+        checks.acceptImmediate(side, first.id, "Stunfisk", "old-badge", capturedAt)
+        time += 100_000_000L
+        checks.request(side, "FAINT", "new-faint", time)
+        val newer = checks.windowFor(side, time)!!
+        assertNull(checks.read(side, newer.id, "Sealeo", "new-frame-one"))
+
+        checks.request(side, "ENTRY", "old-entry", capturedAt - 1L)
+
+        assertEquals("COVERED", reports.last().status)
+        assertEquals(newer, checks.windowFor(side, time))
+        assertEquals(listOf("new-faint", "new-frame-one", "new-frame-two"),
+            checks.read(side, newer.id, "Sealeo", "new-frame-two"))
+    }
+
+    @Test fun `covered entry does not expire or otherwise advance a newer pending assignment`() {
+        checks.request(side, "ENTRY", "first")
+        val first = checks.windowFor(side, time)!!
+        val capturedAt = time + 100_000_000L
+        time += 200_000_000L
+        checks.acceptImmediate(side, first.id, "Stunfisk", "old-badge", capturedAt)
+        checks.request(side, "FAINT", "new-faint", time)
+        val countBeforeCoverage = reports.size
+        time += SpeciesCheckCoordinator.MAX_WINDOW_NANOS + 1L
+
+        checks.request(side, "ENTRY", "delayed-entry", capturedAt - 1L)
+
+        assertEquals(listOf("COVERED"), reports.drop(countBeforeCoverage).map { it.status })
+        assertTrue(checks.isChecking(side))
+        checks.tick()
+        assertFalse(checks.isChecking(side))
+        assertEquals("EXPIRED", reports.last().status)
+    }
+
+    @Test fun `restart clears badge coverage and stop rejects preserved late acceptance`() {
+        checks.request(side, "ENTRY", "first")
+        val first = checks.windowFor(side, time)!!
+        val capturedAt = time + 100_000_000L
+        time += 200_000_000L
+        checks.acceptImmediate(side, first.id, "Stunfisk", "old-badge", capturedAt)
+        checks.restartObservationAttempt()
+        assertNull(checks.acceptImmediate(side, first.id, "Stunfisk", "old-attempt", capturedAt))
+
+        checks.request(side, "ENTRY", "after-restart", capturedAt - 1L)
+
+        assertEquals("OPENED", reports.last().status)
+        val current = checks.windowFor(side, time)!!
+        checks.stop()
+        val reportsAtStop = reports.size
+        assertNull(checks.acceptImmediate(side, current.id, "Sealeo", "late-native", time))
+        assertNull(checks.read(side, current.id, "Sealeo", "late-legacy"))
+        checks.request(side, "ENTRY", "after-stop", capturedAt - 1L)
+        assertEquals(reportsAtStop, reports.size)
+        assertFalse(checks.isChecking(side))
+    }
+
+    @Test fun `entry without a cited source cannot consume badge coverage`() {
+        checks.request(side, "ENTRY", "first")
+        val window = checks.windowFor(side, time)!!
+        val capturedAt = time + 100_000_000L
+        time += 200_000_000L
+        checks.acceptImmediate(side, window.id, "Stunfisk", "native-badge", capturedAt)
+
+        checks.request(side, "ENTRY", null, capturedAt - 1L)
+
+        assertEquals("OPENED", reports.last().status)
+        assertTrue(checks.isChecking(side))
+    }
+
 }

@@ -12,6 +12,7 @@ import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
 import com.example.overdex.battle.custody.FastMoveRecipientVisualArtifactMeasured
 import com.example.overdex.battle.custody.FastMoveIdentified
+import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.RawTestimony
@@ -369,6 +370,138 @@ class FastMoveUseInferenceTest {
         inference.accept(article("inside", 8_000_000_000L, pulse(ActivePokemonSide.OPPONENT)))
         inference.accept(article("later", 14_000_000_000L, pulse(ActivePokemonSide.OPPONENT)))
         assertEquals(listOf("fast-move-use:later"), inference.flush().map { it.payload.useId })
+    }
+
+    @Test fun `late opening cue retains the completed charge tail and following measured attack`() {
+        // Exact capture offsets of the recorded no-shields prompt and Mud Bomb.
+        // The post-tail hit is synthetic evidence, not a claim about that archive.
+        val promptAt = 141_205_292_316L
+        val usedAt = 142_727_025_316L
+        val resumedAt = usedAt + 750_000_001L
+        for (opening in listOf(AttackIncoming, GetReadyWitnessed)) {
+            for (order in listOf("capture order", "used before prompt", "hit before prompt")) {
+                val inference = startedInference()
+                val prompt = article("prompt", promptAt, opening).copy(recordedAt = 150_000L)
+                val used = article("used", usedAt, ChargeMoveUsedAnnounced).copy(recordedAt = 150_000L)
+                val loss = article("resumed-loss", resumedAt,
+                    ActiveHpBarDamageTickMeasured(ActivePokemonSide.PLAYER, .7f, .65f, .05f))
+                    .copy(recordedAt = 150_001L)
+                val pulse = article("resumed-pulse", resumedAt, pulse(ActivePokemonSide.PLAYER))
+                    .copy(recordedAt = 150_001L)
+                val sources = when (order) {
+                    "capture order" -> listOf(prompt, used, loss, pulse)
+                    "used before prompt" -> listOf(used, prompt, loss, pulse)
+                    else -> listOf(used, loss, pulse, prompt)
+                }
+                val outputs = sources.flatMap(inference::accept) + inference.flush()
+                val use = outputs.single()
+                assertEquals("$opening / $order", resumedAt, use.observedArticle.monotonicTimeNanos)
+                assertEquals(setOf(loss.id, pulse.id), use.predecessorIds.toSet())
+                assertEquals(ActivePokemonSide.OPPONENT, use.payload.attackingSide)
+                assertTrue(inference.accept(prompt.copy(id = ArticleId("duplicate-prompt"))).isEmpty())
+                assertTrue(inference.accept(article("late-charge-loss", usedAt + 100_000_000L,
+                    pulse(ActivePokemonSide.PLAYER))).isEmpty())
+                assertTrue(inference.flush().isEmpty())
+                inference.accept(article("next-hit", resumedAt + 1_000_000_000L, pulse(ActivePokemonSide.PLAYER)))
+                assertEquals(listOf("fast-move-use:next-hit"), inference.flush().map { it.payload.useId })
+            }
+        }
+    }
+
+    @Test fun `earlier same phase cue extends its start without renewing an already completed end`() {
+        val inference = startedInference()
+        inference.accept(article("shield-controls", 141_500_000_000L, AttackIncoming))
+        inference.accept(article("used", 142_727_025_316L, ChargeMoveUsedAnnounced))
+        inference.accept(article("older-no-shields", 141_205_292_316L, AttackIncoming))
+        inference.accept(article("in-extended-start", 141_300_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        inference.accept(article("after-tail", 143_500_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        assertEquals(listOf("fast-move-use:after-tail"), inference.flush().map { it.payload.useId })
+    }
+
+    @Test fun `late opening associates the next completed charge by capture order not delivery order`() {
+        for (reverseUsedDelivery in listOf(false, true)) {
+            val inference = startedInference()
+            val completed = listOf(
+                article("first-used", 20_000_000_000L, ChargeMoveUsedAnnounced),
+                article("second-used", 28_000_000_000L, ChargeMoveUsedAnnounced),
+            )
+            (if (reverseUsedDelivery) completed.reversed() else completed).forEach(inference::accept)
+            inference.accept(article("second-prompt", 26_000_000_000L, GetReadyWitnessed))
+            inference.accept(article("first-prompt", 18_000_000_000L, AttackIncoming))
+            val outputs = listOf(
+                article("between-charges", 21_000_000_000L, pulse(ActivePokemonSide.PLAYER)),
+                article("after-second", 29_000_000_000L, pulse(ActivePokemonSide.OPPONENT)),
+            ).flatMap(inference::accept) + inference.flush()
+            assertEquals(setOf("fast-move-use:between-charges", "fast-move-use:after-second"),
+                outputs.map { it.payload.useId }.toSet())
+        }
+    }
+
+    @Test fun `late prior prompt cannot close a genuinely newer charged phase`() {
+        val inference = startedInference()
+        inference.accept(article("first-used", 20_000_000_000L, ChargeMoveUsedAnnounced))
+        inference.accept(article("second-prompt", 22_000_000_000L, GetReadyWitnessed))
+        inference.accept(article("late-first-prompt", 18_000_000_000L, AttackIncoming))
+        inference.accept(article("inside-second", 23_000_000_000L, pulse(ActivePokemonSide.OPPONENT)))
+        assertTrue(inference.flush().isEmpty())
+        inference.accept(article("second-used", 24_000_000_000L, ChargeMoveUsedAnnounced))
+        inference.accept(article("after-second", 25_000_000_000L, pulse(ActivePokemonSide.OPPONENT)))
+        assertEquals(listOf("fast-move-use:after-second"), inference.flush().map { it.payload.useId })
+    }
+
+    @Test fun `a new opening after impact starts its own phase even during the previous impact tail`() {
+        val inference = startedInference()
+        inference.accept(article("first-used", 20_000_000_000L, ChargeMoveUsedAnnounced))
+        inference.accept(article("new-prompt", 20_500_000_000L, AttackIncoming))
+        inference.accept(article("inside-new-phase", 21_000_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        assertTrue(inference.flush().isEmpty())
+        inference.accept(article("new-used", 24_000_000_000L, ChargeMoveUsedAnnounced))
+        inference.accept(article("after-new-phase", 25_000_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        assertEquals(listOf("fast-move-use:after-new-phase"), inference.flush().map { it.payload.useId })
+    }
+
+    @Test fun `late opening cannot borrow an incompatible completed phase across a boundary`() {
+        for (boundary in listOf("replacement", "opposite phase", "unfinished phase", "too distant")) {
+            val inference = startedInference()
+            inference.accept(article("original", 1_000_000_000L, ActivePokemonSpeciesWitnessed(
+                ActivePokemonSide.PLAYER, "Turtonator", 776)))
+            if (boundary == "replacement") inference.accept(article("replacement", 19_000_000_000L,
+                ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Camerupt", 323)))
+            if (boundary == "opposite phase") inference.accept(article("different-opening", 19_000_000_000L,
+                GetReadyWitnessed))
+            if (boundary == "unfinished phase") inference.accept(article("unfinished-opening", 5_000_000_000L,
+                GetReadyWitnessed))
+            inference.accept(article("completed", 20_000_000_000L, ChargeMoveUsedAnnounced))
+            val promptAt = if (boundary in setOf("too distant", "unfinished phase")) 1_000_000_001L
+                else 18_000_000_000L
+            inference.accept(article("older-incoming", promptAt, AttackIncoming))
+            // A safe failed association retains the bounded ordinary pause. It
+            // must not claim that this unrelated later impact completed it.
+            val probeAt = if (promptAt < 10_000_000_000L) 10_000_000_000L else 21_000_000_000L
+            inference.accept(article("not-released-by-unrelated-charge", probeAt, pulse(ActivePokemonSide.PLAYER)))
+            assertTrue(boundary, inference.flush().isEmpty())
+            inference.accept(article("bounded-resumption", 31_000_000_000L, pulse(ActivePokemonSide.PLAYER)))
+            assertEquals(boundary, listOf("fast-move-use:bounded-resumption"),
+                inference.flush().map { it.payload.useId })
+        }
+    }
+
+    @Test fun `late opening cannot cross observation restart or revive an ended match`() {
+        val restarted = startedInference()
+        restarted.accept(article("old-used", 20_000_000_000L, ChargeMoveUsedAnnounced))
+        restarted.accept(article("restart", 21_000_000_000L,
+            com.example.overdex.battle.custody.ObservationRestartedByUser))
+        restarted.accept(article("late-old-prompt", 18_000_000_000L, AttackIncoming))
+        restarted.accept(article("new-start", 22_000_000_000L, MatchStarted))
+        restarted.accept(article("new-hit", 23_000_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        assertEquals(listOf("fast-move-use:new-hit"), restarted.flush().map { it.payload.useId })
+
+        val ended = startedInference()
+        ended.accept(article("used", 20_000_000_000L, ChargeMoveUsedAnnounced))
+        ended.accept(article("end", 21_000_000_000L, MatchEnded(BattleResult.LOSS)))
+        ended.accept(article("late-old-prompt", 18_000_000_000L, GetReadyWitnessed))
+        ended.accept(article("late-hit", 20_900_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        assertTrue(ended.flush().isEmpty())
     }
 
     @Test fun `ignored screen and older attempt damage cannot restart accounting`() {

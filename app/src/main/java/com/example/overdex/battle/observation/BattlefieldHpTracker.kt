@@ -47,6 +47,15 @@ internal class LiveBattlefieldHpTracker(
     private var cachedSize: Pair<Int, Int>? = null
     private var cached = HpBarFrameDiagnostics(emptyMap(), emptyMap())
 
+    /** Capture-space territory for the receiving side; no pixels or cached measurement. */
+    fun hpTerritory(side: ActivePokemonSide, width: Int, height: Int): BattleCropBounds? {
+        val contract = if (side == ActivePokemonSide.PLAYER) BattleCropContracts.playerHpEvidence
+            else BattleCropContracts.opponentHpEvidence
+        return contract.resolveRect(calibration, width, height)?.let {
+            BattleCropBounds(it.left, it.top, it.right, it.bottom)
+        }
+    }
+
     @Synchronized fun reset(side: ActivePokemonSide) {
         tracker.reset(side)
         species.remove(side)

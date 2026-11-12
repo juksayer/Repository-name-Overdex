@@ -1,0 +1,92 @@
+{
+  "classes": [
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticleWitness$start$3$1$1.class",
+      "sha256": "b02ff64d8ed0991c40fce973adfa1bd79d0b9c27e42e0901f4277fb8ef55d832"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticleFrameMeasurement.class",
+      "sha256": "ca4eb7a856960c98b5b45c71d9d648b17288ec2da1b3226bf9a0f11488ff2a68"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticleFrameMeasurerKt.class",
+      "sha256": "874795f03644d79aa8876aa9e2658af2ef8a83b95a9b6273287bb24bb5693329"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticleObservationBuffer.class",
+      "sha256": "dc2c2c70b192d038f5c45c5d21cfb0982356cea051e6c6b2ce21c5142f28e459"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticleWitness$start$3$1.class",
+      "sha256": "b7c74c751062175f5a4f6f55ae82bb932eecd62958451e97fb5773b161937dab"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticleFrameMeasurer$Geometry.class",
+      "sha256": "803ff62ea32e24c32da0129cf4bd8cf3cb9e04dd7267dc1fc9a83e043e09dc52"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticleObservationBuffer$Companion.class",
+      "sha256": "2a72df46599fb7e5336e8c4f2a1b4d20cb00b8a74b9d04e9cb36d1a286651d10"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticleWitness.class",
+      "sha256": "59b9ce182241e64c05aa3aa9fbd1b2adc01bf32ad01ec3d23bb5469d660bd885"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticleReadStatus.class",
+      "sha256": "b3a7c15e06b9b620b81afeb757a2bead88721a4f22d72e50d4678704596843b0"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticleAssignment.class",
+      "sha256": "b5f693d6505a598cfbba6906d895ca9affa0874f505f6399fee7ff0ae172bb1f"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticleWitness$start$1.class",
+      "sha256": "bde1c00bf0a29adcd2f93064416af76c2ec322e52138455814d2176d7030f562"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticleFrameMeasurer$Features.class",
+      "sha256": "73ade94301ae17acef41d65dea681b19c6df1b425534c5ef209e443378dc16cd"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticleFrameMeasurer.class",
+      "sha256": "b6f25bcde09290da6d8bcc77c1679814c7b35998c56807f01a82c54006e14449"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticleObservationBuffer$1.class",
+      "sha256": "f0789bffdbbc084cd6440e91d1daea2d5c5cc5b2f31bb5718dc47ddbe827b3f5"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticlePoint.class",
+      "sha256": "a0048af1f98cd7a6a47b81bb3baf119835162c7b774765d4da6168ccc6c01466"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticleWitness$start$3$2.class",
+      "sha256": "b41a8dc7165da1feac01e48970eb417636c74b5f6569d9736553c68bb831a07b"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/TerminalParticleFrameMeasurer$Companion.class",
+      "sha256": "63c9e6040cf1c34bc7c957f0017a1ca6b1ca7691163e8e98d47284f49f16a7ef"
+    },
+    {
+      "file": "com/example/overdex/battle/observation/BattleCropBounds.class",
+      "sha256": "c90a905ff5f7063969c05976263681eb2032ed6b13f78ca2eb49f323d37757e1"
+    },
+    {
+      "file": "com/example/overdex/battle/custody/TerminalFlashFeature$Companion.class",
+      "sha256": "c77791c45aa7d4c7777c0b47b351663a07fbab05af5c7082052074072176cb3e"
+    },
+    {
+      "file": "com/example/overdex/battle/custody/TerminalFlashFeature$$serializer.class",
+      "sha256": "c2a2df91420a7ed077516f9d15988d8a13e1ad1dce1087c92e0d1ffed6426567"
+    },
+    {
+      "file": "com/example/overdex/battle/custody/TerminalFlashFeature.class",
+      "sha256": "163e3af3105b12396453c27d71fc71b52d0cab4c396258142a951b36c1a529e6"
+    }
+  ],
+  "jarSha256": "81a839ecc1ef7d956a408dc9609974ca3c2f27ec5339da48994eb140da4671dd",
+  "javaSourceSha256": "0b0b2a0def48dcc0c28ae504d3888b1a23b1b97c021f38515a18cc6ccb0f80a6",
+  "scriptSha256": "ba4c228ac0c3184956f6265c3f79fbffe1c5150a3579a5a265806c44c998e6a6",
+  "scope": "Exact compiled production reader. Host raw-pixel callback replaces Bitmap.getPixels only. Host timing is not phone cost."
+}

@@ -51,6 +51,31 @@ internal object SpeciesOcrTypography {
         return previous[right.length]
     }
 
+    /** Exact within the caller's acceptance budget; larger distances all mean rejection. */
+    fun boundedWeightedDistance(left: String, right: String, maxCost: Int): Int {
+        require(maxCost >= 0 && maxCost < Int.MAX_VALUE / 2)
+        val rejected = maxCost + 1
+        if (kotlin.math.abs(left.length - right.length) > maxCost / ORDINARY_EDIT_COST) return rejected
+        if (left.isEmpty()) return (right.length * ORDINARY_EDIT_COST).coerceAtMost(rejected)
+        val band = maxCost / ORDINARY_EDIT_COST
+        var previous = IntArray(right.length + 1) { (it * ORDINARY_EDIT_COST).coerceAtMost(rejected) }
+        var current = IntArray(right.length + 1) { rejected }
+        for (i in 1..left.length) {
+            current.fill(rejected)
+            current[0] = (i * ORDINARY_EDIT_COST).coerceAtMost(rejected)
+            var rowBest = current[0]
+            for (j in maxOf(1, i - band)..minOf(right.length, i + band)) {
+                current[j] = minOf(previous[j] + ORDINARY_EDIT_COST,
+                    current[j - 1] + ORDINARY_EDIT_COST,
+                    previous[j - 1] + substitutionCost(left[i - 1], right[j - 1])).coerceAtMost(rejected)
+                rowBest = minOf(rowBest, current[j])
+            }
+            if (rowBest > maxCost) return rejected
+            val swap = previous; previous = current; current = swap
+        }
+        return previous[right.length]
+    }
+
     fun allowedCost(speciesLength: Int): Int = when {
         speciesLength >= 10 -> 4
         speciesLength >= 6 -> 2

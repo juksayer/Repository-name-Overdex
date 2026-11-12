@@ -1,6 +1,7 @@
 package com.example.overdex.battle.observation
 
 import com.example.overdex.battle.custody.ActivePokemonSide
+import com.example.overdex.battle.custody.ActiveHpBarMeasured
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.BattleCryCandidateMeasurement
 import com.example.overdex.battle.custody.BattleCryCandidatesMeasured
@@ -41,7 +42,8 @@ class OpponentFaintTrackerTest {
         tracker.accept(article("balls-3", 2, balls(3)))
         tracker.accept(article("sealeo", 5, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
         tracker.accept(article("delayed-still-3", 4, balls(3)))
-        assertEquals("Sneasel", tracker.accept(article("balls-2", 6, balls(2)))?.speciesName)
+        assertNull(tracker.accept(article("balls-2", 6, balls(2))))
+        assertEquals("Sneasel", tracker.accept(article("sealeo-alive", 7, alive()))?.speciesName)
         assertNull(tracker.accept(article("even-older", 3, balls(3))))
         assertNull(tracker.accept(article("still-2", 7, balls(2))))
     }
@@ -88,9 +90,11 @@ class OpponentFaintTrackerTest {
         tracker.accept(article("balls-3", 2, balls(3)))
         tracker.accept(article("sealeo", 3, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
 
-        val faint = tracker.accept(article("balls-2", 4, balls(2)))
+        assertNull(tracker.accept(article("balls-2", 4, balls(2))))
+        val faint = tracker.accept(article("sealeo-alive", 5, alive()))
 
         assertEquals("Sneasel", faint?.speciesName)
+        assertEquals(4_000_000_000L, faint?.sourceArticle?.monotonicTimeNanos)
     }
 
     @Test fun `repeated count after a switch prevents fainting the previous occupant`() {
@@ -107,6 +111,8 @@ class OpponentFaintTrackerTest {
         count,
         3
     )
+
+    private fun alive() = ActiveHpBarMeasured(ActivePokemonSide.OPPONENT, 0, 0, 100, 10, .5f)
 
     private fun article(id: String, seconds: Long, payload: com.example.overdex.battle.custody.TestimonyPayload) =
         RealityArticle(

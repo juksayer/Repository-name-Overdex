@@ -60,6 +60,29 @@ class BattlefieldHpTrackerTest {
         assertEquals(310, result[opponent]?.left)
     }
 
+    @Test fun `recorded QTE lookalike cannot replace an established opponent bar`() {
+        val tracker = BattlefieldHpTracker()
+        val home = ActiveHpBarMeasurement(337, 683, 529, 701, .7074468f, .94f)
+        assertEquals(home, tracker.assign(672, 0, regions, listOf(home))[opponent])
+
+        // Moondrop source 28860264888873: the ordinary reader reported 8.3%
+        // during GREAT, although the next actual Stunfisk bar still read 70%.
+        // Confidence alone must not make the incompatible shape fit the lock.
+        val lookalike = ActiveHpBarMeasurement(446, 446, 619, 469, .082840234f, .99f)
+        assertTrue(tracker.assign(672, 100_000_000L, regions, listOf(lookalike)).isEmpty())
+
+        val returned = home.copy(top = 674, bottom = 692, filledFraction = .6968085f)
+        assertEquals(returned, tracker.assign(672, 200_000_000L, regions, listOf(returned))[opponent])
+
+        // Retain the existing ownership continuity while the true bar travels
+        // inward for the charged camera. Position is not part of the size test.
+        val moving = returned.copy(left = 291, right = 483, top = 735, bottom = 753)
+        assertEquals(moving, tracker.assign(672, 300_000_000L, regions, listOf(moving))[opponent])
+        val centeredEmpty = moving.copy(left = 244, right = 436, filledFraction = 0f)
+        assertEquals(centeredEmpty,
+            tracker.assign(672, 400_000_000L, regions, listOf(centeredEmpty))[opponent])
+    }
+
     @Test fun `clipped white outline cannot use an orange damage chunk as its end cap`() {
         val bars = ActiveHpBarMeasurer.measureAll(240, 120) { x, y ->
             when {

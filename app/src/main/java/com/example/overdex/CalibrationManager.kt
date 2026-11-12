@@ -207,6 +207,33 @@ class CalibrationManager(context: Context) {
             .putFloat("charged_impact_hp_w", calibration.chargedImpactHpRegion.width)
             .putFloat("charged_impact_hp_h", calibration.chargedImpactHpRegion.height)
 
+            .putFloat("forced_replacement_message_x", calibration.forcedReplacementMessageRegion.x)
+            .putFloat("forced_replacement_message_y", calibration.forcedReplacementMessageRegion.y)
+            .putFloat("forced_replacement_message_w", calibration.forcedReplacementMessageRegion.width)
+            .putFloat("forced_replacement_message_h", calibration.forcedReplacementMessageRegion.height)
+
+            .putFloat("player_appearance_x", calibration.playerAppearanceRegion.x)
+            .putFloat("player_appearance_y", calibration.playerAppearanceRegion.y)
+            .putFloat("player_appearance_w", calibration.playerAppearanceRegion.width)
+            .putFloat("player_appearance_h", calibration.playerAppearanceRegion.height)
+            .putFloat("appearance_color_reference_x", calibration.appearanceColorReferenceRegion.x)
+            .putFloat("appearance_color_reference_y", calibration.appearanceColorReferenceRegion.y)
+            .putFloat("appearance_color_reference_w", calibration.appearanceColorReferenceRegion.width)
+            .putFloat("appearance_color_reference_h", calibration.appearanceColorReferenceRegion.height)
+            .putFloat("appearance_background_x", calibration.appearanceBackgroundRegion.x)
+            .putFloat("appearance_background_y", calibration.appearanceBackgroundRegion.y)
+            .putFloat("appearance_background_w", calibration.appearanceBackgroundRegion.width)
+            .putFloat("appearance_background_h", calibration.appearanceBackgroundRegion.height)
+            .putFloat("player_terminal_visual_x", calibration.playerTerminalVisualRegion.x)
+            .putFloat("player_terminal_visual_y", calibration.playerTerminalVisualRegion.y)
+            .putFloat("player_terminal_visual_w", calibration.playerTerminalVisualRegion.width)
+            .putFloat("player_terminal_visual_h", calibration.playerTerminalVisualRegion.height)
+
+            .putFloat("opponent_terminal_visual_x", calibration.opponentTerminalVisualRegion.x)
+            .putFloat("opponent_terminal_visual_y", calibration.opponentTerminalVisualRegion.y)
+            .putFloat("opponent_terminal_visual_w", calibration.opponentTerminalVisualRegion.width)
+            .putFloat("opponent_terminal_visual_h", calibration.opponentTerminalVisualRegion.height)
+
             .putFloat("trainer_charge_move_controls_x", calibration.trainerChargeMoveControlsRegion.x)
             .putFloat("trainer_charge_move_controls_y", calibration.trainerChargeMoveControlsRegion.y)
             .putFloat("trainer_charge_move_controls_w", calibration.trainerChargeMoveControlsRegion.width)
@@ -696,7 +723,13 @@ class CalibrationManager(context: Context) {
             outOfBattleMenuRegion = outOfBattleMenuRegion,
             matchOutcomeRegion = matchOutcomeRegion,
             opponentTrainerHandRegion = loadExtraRegion("opponent_trainer_hand", BattleCalibration().opponentTrainerHandRegion),
-            chargedImpactHpRegion = loadExtraRegion("charged_impact_hp", BattleCalibration().chargedImpactHpRegion)
+            chargedImpactHpRegion = loadExtraRegion("charged_impact_hp", BattleCalibration().chargedImpactHpRegion),
+            forcedReplacementMessageRegion = loadExtraRegion("forced_replacement_message", BattleCalibration().forcedReplacementMessageRegion),
+            playerTerminalVisualRegion = loadExtraRegion("player_terminal_visual", BattleCalibration().playerTerminalVisualRegion),
+            playerAppearanceRegion = loadExtraRegion("player_appearance", BattleCalibration().playerAppearanceRegion),
+            appearanceColorReferenceRegion = loadExtraRegion("appearance_color_reference", BattleCalibration().appearanceColorReferenceRegion),
+            appearanceBackgroundRegion = loadExtraRegion("appearance_background", BattleCalibration().appearanceBackgroundRegion),
+            opponentTerminalVisualRegion = loadExtraRegion("opponent_terminal_visual", BattleCalibration().opponentTerminalVisualRegion)
         )
     }
 }

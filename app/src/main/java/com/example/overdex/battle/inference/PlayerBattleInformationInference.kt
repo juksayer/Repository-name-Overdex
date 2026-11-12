@@ -56,7 +56,8 @@ internal class PlayerBattleInformationInference(private val knowledge: PokemonKn
                     matches, "TEAM_SELECT", listOfNotNull(article.id, config?.id),
                     statusOverride = if (matches && expected?.let(::key) != key(p.speciesName)) "COMPATIBLE" else null)
             }
-            is ActivePokemonFaintedWitnessed -> if (p.side == ActivePokemonSide.PLAYER) {
+            is ActivePokemonFaintedWitnessed -> if (p.side == ActivePokemonSide.PLAYER &&
+                !com.example.overdex.battle.inference.isRevisableVisualFaint(p.basis)) {
                 article.monotonicTimeNanos?.let { at ->
                     val active = appearances.floorEntry(at)?.value?.payload as? ActivePokemonSpeciesWitnessed
                     if (p.speciesName == null || active?.speciesName?.let(::key) == key(p.speciesName)) appearances[at] = null

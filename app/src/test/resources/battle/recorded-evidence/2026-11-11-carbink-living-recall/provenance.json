@@ -1,0 +1,72 @@
+{
+  "source": "/home/sean/Desktop/Screen_recording_20261111_124455.mp4",
+  "sourceSha256": "3d0c54910dc590fcdcd33060ff535300f41f5bbf8170a29b21b2d9ff0f12e655",
+  "derivation": "Lossless native decoded PNG crops; no resizing, annotation or pixel recoloring. Video times remain separate from archive clocks.",
+  "evidence": "Human-reviewed living Carbink recall. Shrink and disappearance do not establish zero HP; these are independent video-derived fixtures, not archived live measurements.",
+  "frames": [
+    {
+      "name": "shrinking.png",
+      "sourcePts": 16316796,
+      "timeBase": "1/90000",
+      "sourceSeconds": 181.29773333333333,
+      "sourceWidth": 816,
+      "sourceHeight": 1808,
+      "cropBounds": [
+        370,
+        700,
+        685,
+        855
+      ],
+      "sourceFrameSha256": "fcacc854e8bc92e28fbdf1ae5cec03e21e047b5ec00efb1cbf19bd6ab326f436",
+      "cropSha256": "5b4f619fd72135bb9327ea26f40ab05dfec00576c226118af1263859586e76b3"
+    },
+    {
+      "name": "last-readable.png",
+      "sourcePts": 16323159,
+      "timeBase": "1/90000",
+      "sourceSeconds": 181.36843333333334,
+      "sourceWidth": 816,
+      "sourceHeight": 1808,
+      "cropBounds": [
+        370,
+        700,
+        685,
+        855
+      ],
+      "sourceFrameSha256": "f90afb4bc39f8d82c92501dac758da15e953742e0d65babfcb11aa4c711b4da7",
+      "cropSha256": "75a464cc49173507da0e96787fe32c30cc7e901eb2f754e657077bfd950f94ab"
+    },
+    {
+      "name": "sprite-gone.png",
+      "sourcePts": 16327910,
+      "timeBase": "1/90000",
+      "sourceSeconds": 181.4212222222222,
+      "sourceWidth": 816,
+      "sourceHeight": 1808,
+      "cropBounds": [
+        370,
+        700,
+        685,
+        855
+      ],
+      "sourceFrameSha256": "441157416b4fc0f35a68054e1154541507c69f8923842be98e62265dd5e20942",
+      "cropSha256": "96e52ac989cbbf94c1b73ae38749b71ca95183aa03d16330abf559f8b9d50865"
+    },
+    {
+      "name": "replacement-label.png",
+      "sourcePts": 16348941,
+      "timeBase": "1/90000",
+      "sourceSeconds": 181.6549,
+      "sourceWidth": 816,
+      "sourceHeight": 1808,
+      "cropBounds": [
+        370,
+        700,
+        685,
+        855
+      ],
+      "sourceFrameSha256": "e078fb4899f48b996cb997d24f1c308d16a600dfaeb3a9977655d772f63d395f",
+      "cropSha256": "a816a8dcf23914e53a8916442ab9160f25931c53277e7ab1efeab3bf2bae253a"
+    }
+  ]
+}

@@ -60,7 +60,13 @@ enum class BattleRegionId {
     PLAYER_SHIELDS,
     OPPONENT_SHIELDS,
     OPPONENT_TRAINER_HAND,
-    CHARGED_IMPACT_HP;
+    CHARGED_IMPACT_HP,
+    FORCED_REPLACEMENT_MESSAGE,
+    PLAYER_TERMINAL_VISUAL,
+    OPPONENT_TERMINAL_VISUAL,
+    PLAYER_APPEARANCE,
+    APPEARANCE_COLOR_REFERENCE,
+    APPEARANCE_BACKGROUND;
 
     fun regionIn(calibration: BattleCalibration): AnchorRegion = when (this) {
         ANNOUNCEMENT -> calibration.announcementRegion
@@ -99,6 +105,12 @@ enum class BattleRegionId {
         OPPONENT_SHIELDS -> calibration.opponentShieldsRegion
         OPPONENT_TRAINER_HAND -> calibration.opponentTrainerHandRegion
         CHARGED_IMPACT_HP -> calibration.chargedImpactHpRegion
+        FORCED_REPLACEMENT_MESSAGE -> calibration.forcedReplacementMessageRegion
+        PLAYER_TERMINAL_VISUAL -> calibration.playerTerminalVisualRegion
+        PLAYER_APPEARANCE -> calibration.playerAppearanceRegion
+        APPEARANCE_COLOR_REFERENCE -> calibration.appearanceColorReferenceRegion
+        APPEARANCE_BACKGROUND -> calibration.appearanceBackgroundRegion
+        OPPONENT_TERMINAL_VISUAL -> calibration.opponentTerminalVisualRegion
     }
 }
 
@@ -218,6 +230,12 @@ object BattleCropContracts {
     // Experimental raw pixels only: hand movement is not a witnessed recall or send-out.
     val opponentTrainerHand = BattleCropContract("OpponentTrainerHandCrop", BattleRegionId.OPPONENT_TRAINER_HAND)
     val chargedImpactHp = BattleCropContract("ChargedImpactHpCrop", BattleRegionId.CHARGED_IMPACT_HP)
+    val forcedReplacementMessage = BattleCropContract("ForcedReplacementMessageCrop", BattleRegionId.FORCED_REPLACEMENT_MESSAGE, minimumSize = 24)
+    val playerAppearance = BattleCropContract("PlayerAppearanceCrop", BattleRegionId.PLAYER_APPEARANCE)
+    val appearanceColorReference = BattleCropContract("AppearanceColorReferenceCrop", BattleRegionId.APPEARANCE_COLOR_REFERENCE)
+    val appearanceBackground = BattleCropContract("AppearanceBackgroundCrop", BattleRegionId.APPEARANCE_BACKGROUND)
+    val playerTerminalVisual = BattleCropContract("PlayerTerminalVisualCrop", BattleRegionId.PLAYER_TERMINAL_VISUAL)
+    val opponentTerminalVisual = BattleCropContract("OpponentTerminalVisualCrop", BattleRegionId.OPPONENT_TERMINAL_VISUAL)
 }
 
 /** A Witness produces exactly one kind of testimony. */
@@ -228,6 +246,18 @@ data class BattleWitnessContract<T : TestimonyPayload>(
 )
 
 object BattleWitnessContracts {
+    val forcedReplacementMessageCapture = BattleWitnessContract(
+        witnessId = "FORCED_REPLACEMENT_MESSAGE_CAPTURE", crop = BattleCropContracts.forcedReplacementMessage,
+        testimonyType = CropCaptured::class
+    )
+    val playerTerminalVisualCapture = BattleWitnessContract(
+        witnessId = "PLAYER_TERMINAL_VISUAL_CAPTURE", crop = BattleCropContracts.playerTerminalVisual,
+        testimonyType = CropCaptured::class
+    )
+    val opponentTerminalVisualCapture = BattleWitnessContract(
+        witnessId = "OPPONENT_TERMINAL_VISUAL_CAPTURE", crop = BattleCropContracts.opponentTerminalVisual,
+        testimonyType = CropCaptured::class
+    )
     val chargedImpactHpCapture = BattleWitnessContract(
         witnessId = "CHARGED_IMPACT_HP_CAPTURE", crop = BattleCropContracts.chargedImpactHp,
         testimonyType = CropCaptured::class

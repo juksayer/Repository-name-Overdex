@@ -34,14 +34,15 @@ internal data class ReplayFastMoveCycle(
     val durationNanos get() = impactAtNanos - startedAtNanos
     val hasReferenceDuration get() = witness.durationNanos != null
     val visibleUntilNanos get() = minOf(witness.windowEndNanos,
-        impactAtNanos + if (hasReferenceDuration) IMPACT_HOLD_NANOS else 0L)
+        impactAtNanos + IMPACT_HOLD_NANOS)
 
     fun actionAt(cursor: Long): ReplayFastMoveAction? {
         if (cursor !in startedAtNanos until visibleUntilNanos) return null
         return ReplayFastMoveAction(
             side = witness.side, moveName = witness.moveName, type = witness.type,
             startedAtNanos = startedAtNanos,
-            progress = ((cursor - startedAtNanos).toFloat() / durationNanos).coerceIn(0f, 1f),
+            progress = if (durationNanos == 0L) 1f
+                else ((cursor - startedAtNanos).toFloat() / durationNanos).coerceIn(0f, 1f),
             evidenceKinds = witness.evidenceKinds,
             durationNanos = durationNanos, impactAtNanos = impactAtNanos,
             sourceArticleIds = witness.articleIds, observedAtNanos = witness.sourceTimesNanos,
@@ -70,24 +71,19 @@ internal object ReplayFastMoveSchedule {
             for (witness in sideWitnesses.sortedBy { it.observedAtNanos }) {
                 val duration = witness.durationNanos
                 if (duration == null) {
-                    // Old/undetermined moves retain their short neutral presentation.
-                    // A terminal hit is already witnessed at this instant. If a
-                    // forward decorative flight would be cut off by its faint
-                    // or result, fit that same neutral glyph before the hit.
-                    // This is not a reference duration or another move use.
-                    if (witness.endsAtTerminalBoundary &&
-                        witness.observedAtNanos <= witness.windowEndNanos &&
-                        witness.observedAtNanos + UNKNOWN_MOVE_VISUAL_NANOS > witness.windowEndNanos) {
-                        val start = witness.observedAtNanos - UNKNOWN_MOVE_VISUAL_NANOS
-                        if (start >= witness.windowStartNanos) {
-                            cycles += ReplayFastMoveCycle(witness.copy(
-                                evidenceKinds = witness.evidenceKinds + "TERMINAL_NEUTRAL_PRESENTATION_FIT"),
-                                start, witness.observedAtNanos)
-                        }
-                        continue
-                    }
-                    cycles += ReplayFastMoveCycle(witness, witness.observedAtNanos,
-                        witness.observedAtNanos + UNKNOWN_MOVE_VISUAL_NANOS)
+                    // The witness timestamps an impact, even when its move is
+                    // unidentified. End the decorative neutral flight there so
+                    // the glyph lands with source-timed HP loss, not 450 ms later.
+                    // Short windows shorten only the decoration; they never gain
+                    // reference cadence or borrow time from an earlier appearance.
+                    val impact = witness.observedAtNanos
+                    if (impact !in witness.windowStartNanos..witness.windowEndNanos ||
+                        witness.windowEndNanos <= witness.windowStartNanos) continue
+                    val start = maxOf(witness.windowStartNanos, impact - UNKNOWN_MOVE_VISUAL_NANOS)
+                    val presentationEvidence = setOf("NEUTRAL_PRESENTATION_ENDS_AT_IMPACT") +
+                        if (witness.endsAtTerminalBoundary) setOf("TERMINAL_NEUTRAL_PRESENTATION_FIT") else emptySet()
+                    cycles += ReplayFastMoveCycle(witness.copy(
+                        evidenceKinds = witness.evidenceKinds + presentationEvidence), start, impact)
                     continue
                 }
                 val previous = cycles.lastOrNull()?.takeIf {

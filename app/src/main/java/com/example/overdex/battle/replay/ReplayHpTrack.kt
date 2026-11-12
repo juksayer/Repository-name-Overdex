@@ -6,10 +6,28 @@ import com.example.overdex.battle.archive.ArchivedActiveHpBarMeasured
 import com.example.overdex.battle.archive.ArchivedHpBarBorderPulse
 import com.example.overdex.battle.archive.ArchivedFastMoveUseObserved
 import com.example.overdex.battle.archive.ArchivedRealityArticle
+import com.example.overdex.battle.archive.ArchivedActivePokemonSpeciesWitnessed
+import com.example.overdex.battle.archive.ArchivedActivePokemonFaintedWitnessed
+import com.example.overdex.battle.archive.ArchivedChargeMoveUsedAnnounced
+import com.example.overdex.battle.archive.ArchivedGetReadyWitnessed
+import com.example.overdex.battle.archive.ArchivedAttackIncoming
+import com.example.overdex.battle.archive.ArchivedMatchEnded
+import com.example.overdex.battle.archive.ArchivedSpeciesCheckMeasured
+import com.example.overdex.battle.archive.ArchivedPlayerPokeBallCountMeasured
+import com.example.overdex.battle.archive.ArchivedOpponentBattleResourceCountMeasured
+import com.example.overdex.battle.inference.TeamLossResolver
 import com.example.overdex.battle.observation.ActiveHpBarGeometry
 
 /** Reject a pulse when its own captured frame proves the tracker left the active bar. */
-internal class ReplayHpEvidence(articles: List<ArchivedRealityArticle>) {
+internal class ReplayHpEvidence(
+    articles: List<ArchivedRealityArticle>,
+    private val contradictedEmptyIds: Set<String> = emptySet(),
+) {
+    private val contradictedEmptyFrames = articles.mapNotNull { article ->
+        val hp = article.payload as? ArchivedActiveHpBarMeasured ?: return@mapNotNull null
+        val at = article.monotonicTimeNanos ?: return@mapNotNull null
+        (hp.side to at).takeIf { article.articleId in contradictedEmptyIds }
+    }.toSet()
     private val measured = articles.sortedBy { it.monotonicTimeNanos }.mapNotNull { article ->
         val bar = article.payload as? ArchivedActiveHpBarMeasured ?: return@mapNotNull null
         val at = article.monotonicTimeNanos ?: return@mapNotNull null
@@ -18,8 +36,78 @@ internal class ReplayHpEvidence(articles: List<ArchivedRealityArticle>) {
     private val anchors = measured.filter { it.third.hasBarShape() }
         .groupBy { it.first }.mapValues { (_, bars) -> bars.first().third }
     private val byFrame = measured.associate { (side, at, bar) -> (side to at) to bar }
+    // A single effect-obscured fill can have perfectly valid outline geometry.
+    // Do not let that reading permanently pin this actor's bar to a false low.
+    // Reconcile only against several nearby independent measurements of the
+    // same actor; never manufacture HP from a move's expected damage.
+    private val contradictedFills = buildMap<Pair<String, Long>, MutableSet<Float>> {
+        val ordered = articles.filter { it.monotonicTimeNanos != null }.sortedBy { it.monotonicTimeNanos }
+        for ((side, bars) in measured.groupBy { it.first }) {
+            val identities = java.util.TreeMap<Long, String?>()
+            val boundaries = java.util.TreeSet<Long>()
+            var previousIdentity: String? = null
+            var countBaseline: Int? = null
+            ordered.forEach { article ->
+                val time = article.monotonicTimeNanos!!
+                when (val payload = article.payload) {
+                    is ArchivedActivePokemonSpeciesWitnessed -> if (payload.side == side) {
+                        val identity = TeamLossResolver.speciesKey(payload.speciesName)
+                        if (previousIdentity != null && identity != previousIdentity) boundaries += time
+                        identities[time] = if (identities.containsKey(time) && identities[time] != identity) null else identity
+                        previousIdentity = identity
+                    }
+                    is ArchivedActivePokemonFaintedWitnessed -> if (payload.side == side) boundaries += time
+                    is ArchivedSpeciesCheckMeasured -> if (payload.side == side && payload.status == "OPENED" &&
+                        payload.reason in setOf("ENTRY", "SWITCH", "FAINT", "EMPTY_HP")) boundaries += payload.triggerMonotonicNanos
+                    is ArchivedChargeMoveUsedAnnounced, is ArchivedGetReadyWitnessed,
+                    is ArchivedAttackIncoming, is ArchivedMatchEnded -> boundaries += time
+                    else -> Unit
+                }
+                val count = when (val payload = article.payload) {
+                    is ArchivedPlayerPokeBallCountMeasured -> payload.visibleCount.takeIf { side == "PLAYER" }
+                    is ArchivedOpponentBattleResourceCountMeasured -> payload.visibleCount.takeIf {
+                        side == "OPPONENT" && payload.resource == "POKE_BALLS" }
+                    else -> null
+                }
+                if (count != null && count in 0..3) {
+                    if (countBaseline != null && count < countBaseline!!) boundaries += time
+                    if (countBaseline == null || count <= countBaseline!!) countBaseline = count
+                }
+            }
+            fun identityAt(at: Long): String? = identities.floorEntry(at)?.value
+            val frames = java.util.TreeMap(bars.groupBy { it.second })
+            bars.forEach { (_, at, candidate) ->
+                if (!candidate.hasBarShape() || candidate.filledFraction <= 0f) return@forEach
+                val identity = identityAt(at) ?: return@forEach
+                val nextFrames = frames.tailMap(at, false).values.asSequence()
+                    .takeWhile { it.first().second - at <= 1_500_000_000L }.take(3).toList()
+                if (nextFrames.size != 3 ||
+                    nextFrames.last().first().second - nextFrames.first().first().second < 90_000_000L) return@forEach
+                // Multiple readers of the same image are one frame. Every
+                // co-timed reading must agree, independent of archive order.
+                val next = nextFrames.flatten()
+                if (next.any { (_, time, bar) ->
+                        identityAt(time) != identity || !bar.hasBarShape() ||
+                            bar.filledFraction < candidate.filledFraction + .12f ||
+                            !ActiveHpBarGeometry.matchesSize(bar.barRight - bar.barLeft, bar.barBottom - bar.barTop,
+                                candidate.barRight - candidate.barLeft, candidate.barBottom - candidate.barTop) ||
+                            kotlin.math.abs(bar.barLeft - candidate.barLeft) > (candidate.barRight - candidate.barLeft) / 4 ||
+                            kotlin.math.abs(bar.barTop - candidate.barTop) > (candidate.barBottom - candidate.barTop) * 3
+                    } || next.maxOf { it.third.filledFraction } - next.minOf { it.third.filledFraction } > .025f
+                ) return@forEach
+                // A transition captured at the candidate's own timestamp has
+                // ambiguous ownership too. Initial identification alone is not
+                // a transition and does not prevent reconciling that frame.
+                val crossedBoundary = boundaries.ceiling(at)?.let { it <= next.last().second } == true
+                if (!crossedBoundary) getOrPut(side to at) { mutableSetOf() } += candidate.filledFraction
+            }
+        }
+    }
 
     fun accepts(article: ArchivedRealityArticle): Boolean {
+        if (article.articleId in contradictedEmptyIds && article.payload is ArchivedActiveHpBarMeasured) return false
+        val tick = article.payload as? ArchivedActiveHpBarDamageTickMeasured
+        if (tick?.afterFraction == 0f && (tick.damagedSide to article.monotonicTimeNanos) in contradictedEmptyFrames) return false
         val side = when (val payload = article.payload) {
             is ArchivedActiveHpBarMeasured -> payload.side
             is ArchivedActiveHpBarDamageTickMeasured -> payload.damagedSide
@@ -29,6 +117,14 @@ internal class ReplayHpEvidence(articles: List<ArchivedRealityArticle>) {
             else -> return true
         }
         val at = article.monotonicTimeNanos ?: return true
+        // A bad fill does not disprove an independently visible border pulse
+        // or supported attack in the same frame. Reject only its HP value.
+        val fraction = when (val payload = article.payload) {
+            is ArchivedActiveHpBarMeasured -> payload.filledFraction
+            is ArchivedActiveHpBarDamageTickMeasured -> payload.afterFraction
+            else -> null
+        }
+        if (fraction != null && fraction > 0f && fraction in (contradictedFills[side to at] ?: emptySet())) return false
         // Older compact archives may lack the co-timed geometry. That absence
         // alone does not contradict a preserved independent hit witness.
         val bar = byFrame[side to at] ?: return true

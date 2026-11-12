@@ -124,6 +124,16 @@ class PersistedAnnouncementWitness internal constructor(
                         val crop = article.payload as CropCaptured
                         val capturedAt = article.monotonicTimeNanos ?: continue
                         val completedAt = now()
+                        var acceptedText = readings.firstOrNull { it.acceptedText.isNotBlank() }?.acceptedText.orEmpty()
+                        val vocabularyResolution = if (observerId.id == "QTE_PROGRESS_TEXT_WITNESS" &&
+                            cropContract == BattleCropContracts.qteProgressText)
+                            resolveQteProgressText(acceptedText) else null
+                        // The preserved crop already exists. This small scheduling handoff
+                        // must not wait behind raw/accepted/typed publication. It carries
+                        // no battle event; the complete evidence chain still follows below.
+                        if (readings.isNotEmpty()) match.acceptedChargeCapturePreparation.offer(
+                            observerId.id, cropContract, article,
+                            vocabularyResolution?.acceptedText ?: acceptedText, completedAt)
                         match.custody.submitTestimony(
                             SourceId("${observerId.id}_LATENCY"),
                             RawTestimony("cropId=${article.id.value} priority=${OcrPriority.TRANSIENT} " +
@@ -150,7 +160,6 @@ class PersistedAnnouncementWitness internal constructor(
                             else pending.succeeded(it)
                         }
                         val context = OcrSourceContext(crop.cropProvenance.sourceWidth, crop.overlayBounds, OcrOverlayPolicy.SMALL_WORDS)
-                        var acceptedText = ""
                         val references = mutableListOf(article.id.value)
                         for (reading in readings) {
                             currentCoroutineContext().ensureActive()
@@ -159,7 +168,6 @@ class PersistedAnnouncementWitness internal constructor(
                                 listOf(article.id.value), capturedAt)
                             val rawArticle = match.articles.first { it.sequenceNumber == receipt.sequenceNumber }
                             references += rawArticle.id.value
-                            if (acceptedText.isBlank()) acceptedText = reading.acceptedText
                             val announcedSpecies = ENTRY.matchEntire(reading.acceptedText.trim())?.groupValues?.get(1)
                             heightProfile.learn(reading, context, announcedSpecies != null &&
                                 speciesNames.any { it.equals(announcedSpecies, ignoreCase = true) })
@@ -170,18 +178,15 @@ class PersistedAnnouncementWitness internal constructor(
                         // OCR remains untouched above; preserve a cited reason
                         // for the one observed alias rather than teaching the
                         // Timeline or replay to guess at malformed grades.
-                        if (observerId.id == "QTE_PROGRESS_TEXT_WITNESS" &&
-                            cropContract == BattleCropContracts.qteProgressText) {
-                            resolveQteProgressText(acceptedText)?.let { resolution ->
-                                val receipt = match.custody.submitTestimony(
-                                    SourceId("${observerId.id}_VOCABULARY_RESOLUTION"),
-                                    RawTestimony("basis=${resolution.basis} original=${resolution.originalText} " +
-                                        "accepted=${resolution.acceptedText}"),
-                                    article.perceivedAt, null, references.toList(), capturedAt)
-                                val resolvedArticle = match.articles.first { it.sequenceNumber == receipt.sequenceNumber }
-                                references += resolvedArticle.id.value
-                                acceptedText = resolution.acceptedText
-                            }
+                        vocabularyResolution?.let { resolution ->
+                            val receipt = match.custody.submitTestimony(
+                                SourceId("${observerId.id}_VOCABULARY_RESOLUTION"),
+                                RawTestimony("basis=${resolution.basis} original=${resolution.originalText} " +
+                                    "accepted=${resolution.acceptedText}"),
+                                article.perceivedAt, null, references.toList(), capturedAt)
+                            val resolvedArticle = match.articles.first { it.sequenceNumber == receipt.sequenceNumber }
+                            references += resolvedArticle.id.value
+                            acceptedText = resolution.acceptedText
                         }
                         currentCoroutineContext().ensureActive()
                         // Existing consumers receive surviving words; the raw

@@ -7,9 +7,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.example.overdex.battle.archive.MatchArchiveSource
-import com.example.overdex.battle.observation.MatchId
-import com.example.overdex.battle.reality.InMemoryRealityTimeline
 import com.example.overdex.model.observation.InstrumentDeploymentState
 import com.example.overdex.model.observation.ObservationSessionState
 import com.example.overdex.ui.ODXFi.ODXFiShell
@@ -114,27 +111,29 @@ class SettingsAndMatchReturnDeviceTest {
         lateinit var owner: Owner
         compose.runOnUiThread { owner = Owner(); owner.registry.currentState = Lifecycle.State.STARTED }
         val handoff = MatchSummaryHandoff()
-        val opened = mutableListOf<String>()
+        val opened = mutableListOf<List<String>>()
         compose.setContent {
             CompositionLocalProvider(LocalLifecycleOwner provides owner) {
                 MatchSummaryReturnEffect(handoff.pending,
-                    onOpenSummary = { opened += it.matchId.value },
+                    onOpenSummary = { opened += it },
                     onHandled = { handoff.acknowledge(it) })
             }
         }
         compose.runOnIdle {
-            handoff.offer(MatchArchiveSource(MatchId("first"), InMemoryRealityTimeline()))
+            handoff.offer("first")
+            handoff.clearForNewMatch()
+            handoff.offer("second")
         }
         compose.waitForIdle()
         compose.runOnIdle { assertTrue(opened.isEmpty()); owner.registry.currentState = Lifecycle.State.RESUMED }
         compose.waitUntil { opened.size == 1 }
         compose.runOnIdle {
-            assertNull(handoff.pending.value)
+            assertTrue(handoff.pending.value.isEmpty())
             owner.registry.currentState = Lifecycle.State.STARTED
             owner.registry.currentState = Lifecycle.State.RESUMED
         }
         compose.waitForIdle()
-        compose.runOnIdle { assertEquals(listOf("first"), opened) }
+        compose.runOnIdle { assertEquals(listOf(listOf("first", "second")), opened) }
     }
 
     @Test fun explicitObservatorySettingsUsePhysicalButtonsAndCurrentValues() {

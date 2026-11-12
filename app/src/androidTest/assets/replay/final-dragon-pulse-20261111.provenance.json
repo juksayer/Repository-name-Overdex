@@ -1,0 +1,12 @@
+{
+  "sourceArchive": "2026-11-11_11-20-02_87612e9f-35ed-4d22-b6cb-062fb264e223.odxmatch.zip",
+  "sourceArchiveSha256": "936fdd4e6421a0987839ca741f8ea2dc22401512f34354a58d4b349c0750a77e",
+  "sourceMatchId": "87612e9f-35ed-4d22-b6cb-062fb264e223",
+  "sourceArticleCount": 1918,
+  "fixtureArticleCount": 492,
+  "fixtureSha256": "72a8743dfdd1c3c6a7ac2cd9af16b5fddc300f878ca48cf2eecda512088bd726",
+  "selection": "Exact HP, attack, identity, resources, lifecycle, announced-text, and QTE-progress Articles. No media, diagnostics, sound samples or fabricated events. Original Article fields/order retained.",
+  "recordingBaseNanos": 30724798220754,
+  "finalChargeArticleId": "3429122f-72e6-416f-9a48-74400467ad1f",
+  "finalQteProgressArticleId": "670fdb3c-0535-465f-8efe-0cf12870a12c"
+}

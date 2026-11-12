@@ -179,6 +179,22 @@ data class BattleCalibration(
     // not a fixed bar rectangle, and is independent from ordinary battlefield HP.
     val chargedImpactHpRegion: AnchorRegion = AnchorRegion(
         x = 0.25f, y = 0.24f, width = 0.50f, height = 0.38f
+    ),
+    // Starter prompt strip from the full-display Moondrop reference. Independent
+    // from the upper announcement and numeric decision timer territories.
+    val forcedReplacementMessageRegion: AnchorRegion = AnchorRegion(
+        x = 0.12f, y = 0.725f, width = 0.76f, height = 0.065f
+    ),
+    // Raw visual sequence territories only. Their overlap includes charged-camera
+    // motion; neither crop establishes a departure, shrink, recall or faint.
+    val playerAppearanceRegion: AnchorRegion = AnchorRegion(0f, 373f/747f, 185f/336f, 337f/747f),
+    val appearanceColorReferenceRegion: AnchorRegion = AnchorRegion(220f/336f, 300f/747f, 116f/336f, 260f/747f),
+    val appearanceBackgroundRegion: AnchorRegion = AnchorRegion(0f, 210f/747f, 150f/336f, 105f/747f),
+    val playerTerminalVisualRegion: AnchorRegion = AnchorRegion(
+        x = 0f, y = 0.35f, width = 0.62f, height = 0.63f
+    ),
+    val opponentTerminalVisualRegion: AnchorRegion = AnchorRegion(
+        x = 0.25f, y = 0.23f, width = 0.75f, height = 0.58f
     )
 ) {
     companion object {

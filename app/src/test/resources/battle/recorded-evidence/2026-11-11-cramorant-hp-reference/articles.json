@@ -1,0 +1,428 @@
+[
+  {
+    "articleId": "e2304a7d-c0bf-4d59-bffc-cff76540a508",
+    "matchId": "b508a605-132a-48a8-a4e1-67514c729fc1",
+    "perceivedAt": 1794453374585,
+    "recordedAt": 1794453374831,
+    "sourceId": "ANNOUNCEMENT_CROP_CAPTURE",
+    "payload": {
+      "kind": "crop_captured",
+      "artifactPath": "artifacts/crops/sha256/c1adc3a8f949842ed6f1d43563f6a5ebf7fe07054be5c8d7329fda9ddb449918.png",
+      "sha256": "c1adc3a8f949842ed6f1d43563f6a5ebf7fe07054be5c8d7329fda9ddb449918",
+      "byteCount": 39420,
+      "mediaType": "image/png",
+      "cropName": "AnnouncementCrop",
+      "sourceWidth": 672,
+      "sourceHeight": 1493,
+      "cropLeft": 50,
+      "cropTop": 326,
+      "cropRight": 622,
+      "cropBottom": 375,
+      "overlayBounds": {
+        "left": 350.08887,
+        "top": -181.67667,
+        "right": 608.3111,
+        "bottom": 73.37747
+      }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 3928,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 18563152623260
+  },
+  {
+    "articleId": "36bc3d67-a041-4026-9fe7-8052b38556c6",
+    "matchId": "b508a605-132a-48a8-a4e1-67514c729fc1",
+    "perceivedAt": 1794453376460,
+    "recordedAt": 1794453376619,
+    "sourceId": "OPPONENT_ACTIVE_HP_BAR_WITNESS",
+    "payload": {
+      "kind": "active_hp_bar_measured",
+      "side": "OPPONENT",
+      "barLeft": 395,
+      "barTop": 632,
+      "barRight": 588,
+      "barBottom": 649,
+      "filledFraction": 0.17460318,
+      "sourceWidth": 672,
+      "sourceHeight": 1493,
+      "fillColor": null
+    },
+    "predecessorIds": [],
+    "confidence": 0.8924537,
+    "sequenceNumber": 3997,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 18565005307029
+  },
+  {
+    "articleId": "a2a023c8-0e90-42d7-8f1c-88e6d1721120",
+    "matchId": "b508a605-132a-48a8-a4e1-67514c729fc1",
+    "perceivedAt": 1794453374585,
+    "recordedAt": 1794453380263,
+    "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+    "payload": {
+      "kind": "raw_text",
+      "value": "Go, Camerupt!\nA 6083 Iee Pu\nA +60R3 Slhadow B",
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "Go, Camerupt!\nA 6083 Iee Pu\nA +60R3 Slhadow B",
+        "acceptedText": "Go, Camerupt!",
+        "words": [
+          {
+            "text": "Go,",
+            "line": 0,
+            "bounds": {
+              "left": 180.0,
+              "top": 9.0,
+              "right": 227.0,
+              "bottom": 38.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.11592076,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "Camerupt!",
+            "line": 0,
+            "bounds": {
+              "left": 238.0,
+              "top": 9.0,
+              "right": 390.0,
+              "bottom": 38.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.12772232,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          },
+          {
+            "text": "A",
+            "line": 1,
+            "bounds": {
+              "left": 459.0,
+              "top": 2.0,
+              "right": 474.0,
+              "bottom": 16.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.06666667,
+            "dangerRedFraction": 0.2,
+            "decision": "HUD_SIZE_POSITION"
+          },
+          {
+            "text": "6083",
+            "line": 1,
+            "bounds": {
+              "left": 479.0,
+              "top": 2.0,
+              "right": 514.0,
+              "bottom": 16.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.010204081,
+            "dangerRedFraction": 0.2755102,
+            "decision": "HUD_SIZE_POSITION"
+          },
+          {
+            "text": "Iee",
+            "line": 1,
+            "bounds": {
+              "left": 521.0,
+              "top": 2.0,
+              "right": 546.0,
+              "bottom": 16.0
+            },
+            "violetFraction": 0.30857143,
+            "tealFraction": 0.05142857,
+            "dangerRedFraction": 0.0,
+            "decision": "HUD_SIZE_POSITION"
+          },
+          {
+            "text": "Pu",
+            "line": 1,
+            "bounds": {
+              "left": 553.0,
+              "top": 2.0,
+              "right": 569.0,
+              "bottom": 16.0
+            },
+            "violetFraction": 0.3482143,
+            "tealFraction": 0.04910714,
+            "dangerRedFraction": 0.0,
+            "decision": "HUD_SIZE_POSITION"
+          },
+          {
+            "text": "A",
+            "line": 2,
+            "bounds": {
+              "left": 443.0,
+              "top": 20.0,
+              "right": 457.0,
+              "bottom": 32.0
+            },
+            "violetFraction": 0.035714287,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.26190478,
+            "decision": "HUD_SIZE_POSITION"
+          },
+          {
+            "text": "+60R3",
+            "line": 2,
+            "bounds": {
+              "left": 464.0,
+              "top": 20.0,
+              "right": 497.0,
+              "bottom": 32.0
+            },
+            "violetFraction": 0.12373737,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.34343433,
+            "decision": "HUD_SIZE_POSITION"
+          },
+          {
+            "text": "Slhadow",
+            "line": 2,
+            "bounds": {
+              "left": 505.0,
+              "top": 20.0,
+              "right": 554.0,
+              "bottom": 32.0
+            },
+            "violetFraction": 0.54761904,
+            "tealFraction": 0.0034013605,
+            "dangerRedFraction": 0.0,
+            "decision": "HUD_SIZE_POSITION"
+          },
+          {
+            "text": "B",
+            "line": 2,
+            "bounds": {
+              "left": 561.0,
+              "top": 20.0,
+              "right": 569.0,
+              "bottom": 32.0
+            },
+            "violetFraction": 0.8125,
+            "tealFraction": 0.0,
+            "dangerRedFraction": 0.0,
+            "decision": "HUD_SIZE_POSITION"
+          }
+        ],
+        "sourceFrameWidth": 672,
+        "expectedMinimumHeightAt672": 20.16,
+        "profileSampleCount": 0
+      }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4087,
+    "evidenceReferences": [
+      "e2304a7d-c0bf-4d59-bffc-cff76540a508"
+    ],
+    "monotonicTimeNanos": 18563152623260
+  },
+  {
+    "articleId": "b07f7cb7-cd48-46fa-a037-6fb15b14af7e",
+    "matchId": "b508a605-132a-48a8-a4e1-67514c729fc1",
+    "perceivedAt": 1794453374585,
+    "recordedAt": 1794453381089,
+    "sourceId": "ANNOUNCEMENT_WITNESS",
+    "payload": {
+      "kind": "raw_text",
+      "value": "Go, Camerupt!",
+      "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4113,
+    "evidenceReferences": [
+      "e2304a7d-c0bf-4d59-bffc-cff76540a508",
+      "a2a023c8-0e90-42d7-8f1c-88e6d1721120"
+    ],
+    "monotonicTimeNanos": 18563152623260
+  },
+  {
+    "articleId": "6e6ad1e0-af65-4c34-923f-d0bf03726271",
+    "matchId": "b508a605-132a-48a8-a4e1-67514c729fc1",
+    "perceivedAt": 1794453381268,
+    "recordedAt": 1794453382813,
+    "sourceId": "OPPONENT_ACTIVE_SPECIES_TEXT_CAPTURE",
+    "payload": {
+      "kind": "crop_captured",
+      "artifactPath": "artifacts/crops/sha256/4f802ced970ef8b3d17fae7a3fb34f67459fa759af477adad2e432cde2fae732.png",
+      "sha256": "4f802ced970ef8b3d17fae7a3fb34f67459fa759af477adad2e432cde2fae732",
+      "byteCount": 3639,
+      "mediaType": "image/png",
+      "cropName": "OpponentActiveSpeciesTextCrop",
+      "sourceWidth": 672,
+      "sourceHeight": 1493,
+      "cropLeft": 496,
+      "cropTop": 96,
+      "cropRight": 653,
+      "cropBottom": 128,
+      "overlayBounds": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4153,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 18569834423029
+  },
+  {
+    "articleId": "a1633907-0236-400e-bc5c-34f615df3ea8",
+    "matchId": "b508a605-132a-48a8-a4e1-67514c729fc1",
+    "perceivedAt": 1794453381268,
+    "recordedAt": 1794453386581,
+    "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+    "payload": {
+      "kind": "active_pokemon_species_witnessed",
+      "side": "OPPONENT",
+      "speciesName": "Cramorant",
+      "speciesId": 845,
+      "ocrText": "Cramorant",
+      "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+    },
+    "predecessorIds": [],
+    "confidence": 0.98,
+    "sequenceNumber": 4249,
+    "evidenceReferences": [
+      "b07f7cb7-cd48-46fa-a037-6fb15b14af7e",
+      "6e6ad1e0-af65-4c34-923f-d0bf03726271"
+    ],
+    "monotonicTimeNanos": 18569834423029
+  },
+  {
+    "articleId": "71bd7d45-2d95-401a-a353-3a640a31abe7",
+    "matchId": "b508a605-132a-48a8-a4e1-67514c729fc1",
+    "perceivedAt": 1794453385535,
+    "recordedAt": 1794453389936,
+    "sourceId": "OPPONENT_ACTIVE_HP_BAR_WITNESS",
+    "payload": {
+      "kind": "active_hp_bar_measured",
+      "side": "OPPONENT",
+      "barLeft": 441,
+      "barTop": 694,
+      "barRight": 634,
+      "barBottom": 712,
+      "filledFraction": 0.7619048,
+      "sourceWidth": 672,
+      "sourceHeight": 1493,
+      "fillColor": null
+    },
+    "predecessorIds": [],
+    "confidence": 0.8554784,
+    "sequenceNumber": 4301,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 18574090407953
+  },
+  {
+    "articleId": "e70d4cff-38bb-4771-99e8-0a12d5c17d74",
+    "matchId": "b508a605-132a-48a8-a4e1-67514c729fc1",
+    "perceivedAt": 1794453390464,
+    "recordedAt": 1794453391916,
+    "sourceId": "QTE_PROGRESS_TEXT_CAPTURE",
+    "payload": {
+      "kind": "crop_captured",
+      "artifactPath": "artifacts/crops/sha256/556f19cde078fa96530edc8f72bf135badf63d4ff5f704d16ffc0807a3280da9.png",
+      "sha256": "556f19cde078fa96530edc8f72bf135badf63d4ff5f704d16ffc0807a3280da9",
+      "byteCount": 45671,
+      "mediaType": "image/png",
+      "cropName": "QteProgressTextCrop",
+      "sourceWidth": 672,
+      "sourceHeight": 1493,
+      "cropLeft": 80,
+      "cropTop": 425,
+      "cropRight": 591,
+      "cropBottom": 508,
+      "overlayBounds": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4397,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 18579026798337
+  },
+  {
+    "articleId": "67b62448-18d6-4bef-add2-8fce3d93e6d5",
+    "matchId": "b508a605-132a-48a8-a4e1-67514c729fc1",
+    "perceivedAt": 1794453390464,
+    "recordedAt": 1794453393199,
+    "sourceId": "CHARGED_HP_CAPTURE_SCHEDULING",
+    "payload": {
+      "kind": "raw_text",
+      "value": "stage=EARLY_PREPARATION kind=PLAYER_QTE_PROGRESS result=NO_REFERENCE recognizedAt=18581445169184 receivedAt=18581446034338 recognitionDelayMs=2418 windowToken=none",
+      "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4447,
+    "evidenceReferences": [
+      "e70d4cff-38bb-4771-99e8-0a12d5c17d74"
+    ],
+    "monotonicTimeNanos": 18579026798337
+  },
+  {
+    "articleId": "8611d54b-436d-4aea-86c9-40dc28310c85",
+    "matchId": "b508a605-132a-48a8-a4e1-67514c729fc1",
+    "perceivedAt": 1794453390464,
+    "recordedAt": 1794453393201,
+    "sourceId": "QTE_PROGRESS_TEXT_WITNESS_OCR",
+    "payload": {
+      "kind": "raw_text",
+      "value": "GREAT!",
+      "ocr": {
+        "treatment": "RAW",
+        "rawText": "GREAT!",
+        "acceptedText": "GREAT!",
+        "words": [
+          {
+            "text": "GREAT!",
+            "line": 0,
+            "bounds": {
+              "left": 126.0,
+              "top": 0.0,
+              "right": 384.0,
+              "bottom": 35.0
+            },
+            "violetFraction": 0.0,
+            "tealFraction": 0.08261351,
+            "dangerRedFraction": 0.0,
+            "decision": "RETAINED"
+          }
+        ],
+        "sourceFrameWidth": 672,
+        "expectedMinimumHeightAt672": 20.16,
+        "profileSampleCount": 0
+      }
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4449,
+    "evidenceReferences": [
+      "e70d4cff-38bb-4771-99e8-0a12d5c17d74"
+    ],
+    "monotonicTimeNanos": 18579026798337
+  },
+  {
+    "articleId": "ef4ab365-9c6e-4acf-8e16-ca20925cbbfa",
+    "matchId": "b508a605-132a-48a8-a4e1-67514c729fc1",
+    "perceivedAt": 1794453390464,
+    "recordedAt": 1794453393257,
+    "sourceId": "QTE_PROGRESS_TEXT_WITNESS",
+    "payload": {
+      "kind": "raw_text",
+      "value": "GREAT!",
+      "ocr": null
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 4454,
+    "evidenceReferences": [
+      "e70d4cff-38bb-4771-99e8-0a12d5c17d74",
+      "8611d54b-436d-4aea-86c9-40dc28310c85"
+    ],
+    "monotonicTimeNanos": 18579026798337
+  }
+]

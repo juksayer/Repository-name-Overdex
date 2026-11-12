@@ -335,6 +335,9 @@ private fun ArchiveArticleRow(
         }
 
         val payloadText = when (val p = article.payload) {
+            is ArchivedTerminalParticleObservations -> "PARTICLE OBSERVATIONS [${p.samples.size} readings${if (p.ended) "; window closed" else ""}]"
+            is ArchivedForcedReplacementPromptWitnessed -> "REPLACEMENT PROMPT: ${p.rawText}"
+            is ArchivedTerminalVisualSequenceCaptured -> "${p.side} VISUAL SEQUENCE [${p.frameCount} frames]"
             is com.example.overdex.battle.archive.ArchivedPlayerActiveIdentityResolved ->
                 "PLAYER IDENTITY: ${p.speciesName} [slot=${p.teamSlot ?: "unresolved"}; ${p.basis}]"
             is com.example.overdex.battle.archive.ArchivedMatchResultMusicMeasured -> "RESULT MUSIC [${p.theme}; similarity=${p.similarity}; runner-up=${p.runnerUpSimilarity}; windows=${p.confirmingWindows}]"
@@ -347,6 +350,8 @@ private fun ArchiveArticleRow(
                 is com.example.overdex.battle.archive.ArchivedPlayerChargedMoveEffectivenessObserved -> "PLAYER CHARGED BUTTON ${p.slot}: ${p.recognizedText} [matchup hint; no attack]"
                 is com.example.overdex.battle.archive.ArchivedPlayerBattleInformationChecked -> "PLAYER CHECK ${p.speciesName} ${p.field}: ${p.observedValue} [${p.status}; saved=${p.configuredValue ?: "none"}; ${p.basis}]"
                 is ArchivedRawText -> p.value
+            is com.example.overdex.battle.archive.ArchivedMatchOutcomeLabelWitnessed ->
+                "RESULT LABEL [${p.result}; ${p.basis}; frames=${p.supportingFrameCount}]: ${p.rawText}"
             is ArchivedRawInt -> p.value.toString()
             is ArchivedMatchRecordStarted -> "MATCH RECORD STARTED [basis=DROIDBALL DEPLOYED]"
             is ArchivedBattleOverlayOpened -> "BATTLE OVERLAY OPENED [reason=${p.reason}]"
@@ -460,6 +465,9 @@ private fun ArticleDetailsOverlay(
             DetailField(label = "SOURCE ID", value = article.sourceId)
             
             val payloadText = when (val p = article.payload) {
+                is ArchivedTerminalParticleObservations -> "PARTICLE OBSERVATIONS\nRequested territory: ${p.requestedRecipient}\nReadings in this batch: ${p.samples.size}\nTotal readings: ${p.totalSamples}\nWindow closed: ${p.ended}\nPhase source time: ${p.phaseAtNanos}\nSource deadline: ${p.sourceDeadlineNanos}\nStatuses: ${p.samples.groupingBy { it.status }.eachCount()}\nThis observation does not establish a faint."
+                is ArchivedForcedReplacementPromptWitnessed -> "REPLACEMENT PROMPT\nOriginal OCR: ${p.rawText}\nBasis: ${p.basis}"
+                is ArchivedTerminalVisualSequenceCaptured -> "${p.side} VISUAL SEQUENCE\nCaptured frames: ${p.frameCount}\nReason: ${p.trigger}\nFirst source frame: ${p.sourceStartedAtNanos}\nLast source frame: ${p.sourceEndedAtNanos}"
                 is com.example.overdex.battle.archive.ArchivedPlayerActiveIdentityResolved ->
                     "PLAYER IDENTITY: ${p.speciesName}\nObserved label: ${p.observedSpeciesName}\nTeam slot: ${p.teamSlot ?: "unresolved"}\nAppearance: ${p.appearanceStartedAtNanos}\nBasis: ${p.basis}"
                 is com.example.overdex.battle.archive.ArchivedMatchResultMusicMeasured -> "RESULT MUSIC [${p.theme}; similarity=${p.similarity}; runner-up=${p.runnerUpSimilarity}; windows=${p.confirmingWindows}; reference=${p.referenceSha256}; reference offset=${p.referenceOffsetNanos}; duration=${p.durationNanos}]"
@@ -472,6 +480,8 @@ private fun ArticleDetailsOverlay(
                 is com.example.overdex.battle.archive.ArchivedPlayerChargedMoveEffectivenessObserved -> "PLAYER CHARGED BUTTON ${p.slot}: ${p.recognizedText} [matchup hint; no attack]"
                 is com.example.overdex.battle.archive.ArchivedPlayerBattleInformationChecked -> "PLAYER CHECK ${p.speciesName} ${p.field}: ${p.observedValue} [${p.status}; saved=${p.configuredValue ?: "none"}; ${p.basis}]"
                 is ArchivedRawText -> p.value
+                is com.example.overdex.battle.archive.ArchivedMatchOutcomeLabelWitnessed ->
+                    "RESULT LABEL [${p.result}]\nOriginal OCR: ${p.rawText}\nBasis: ${p.basis}\nSupporting source frames: ${p.supportingFrameCount}\nOCR treatment: ${p.ocr.treatment}"
                 is ArchivedRawInt -> p.value.toString()
                 is ArchivedMatchRecordStarted -> "MATCH RECORD STARTED [basis=DROIDBALL DEPLOYED]"
                 is ArchivedBattleOverlayOpened -> "BATTLE OVERLAY OPENED [reason=${p.reason}]"

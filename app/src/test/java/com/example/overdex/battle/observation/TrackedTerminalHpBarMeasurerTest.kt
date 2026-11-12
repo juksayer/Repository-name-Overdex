@@ -1,5 +1,6 @@
 package com.example.overdex.battle.observation
 
+import com.example.overdex.model.AnchorRegion
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -112,18 +113,47 @@ class TrackedTerminalHpBarMeasurerTest {
         assertNull(measure(bar(fillWidth = 0, dy = 30)))
     }
 
+    @Test fun `empty outline can drop one bar height during the faint animation`() {
+        val sample = measure(bar(fillWidth = 0, dy = 15))
+        assertNotNull(sample)
+        assertEquals(HpBarFillColor.EMPTY, sample!!.fillColor)
+        assertEquals(anchor.top + 15, sample.measurement.top)
+        assertEquals(anchor.bottom + 15, sample.measurement.bottom)
+    }
+
     @Test fun `only a tiny rectangle is read once regardless of frame dimensions`() {
         val source = bar(fillWidth = 0)
         val coordinates = mutableSetOf<Pair<Int, Int>>()
         val sample = TrackedTerminalHpBarMeasurer.measure(1080, 2400, anchor) { x, y ->
             assertTrue("Repeated source read", coordinates.add(x to y))
             assertTrue(x in 37..242)
-            assertTrue(y in 70..106)
+            assertTrue(y in 62..114)
             source(x, y)
         }
         assertNotNull(sample)
-        assertTrue(coordinates.size <= 206 * 37)
+        assertTrue(coordinates.size <= 206 * 53)
         assertTrue(coordinates.size < 1080 * 2400 / 100)
+    }
+
+    @Test fun `visibility covers the outer search rows and respects a clipped charged territory`() {
+        val bounds = requireNotNull(TrackedTerminalHpBarMeasurer.searchBounds(400, 300, anchor))
+        assertEquals(BattleCropBounds(37, 62, 243, 115), bounds)
+        val region = AnchorRegion(bounds.left / 400f, bounds.top / 300f,
+            (bounds.right - bounds.left) / 400f, (bounds.bottom - bounds.top) / 300f)
+        // These rows fall outside the former +/-16 mask but are read by the
+        // sampler. A retained presentation here must block the whole sample.
+        for (y in listOf(62, 63, 112, 113, 114)) {
+            assertTrue(!SpeciesCaptureVisibility.canRead(region, AnchorRegion(40 / 400f, y / 300f, 5 / 400f, 1 / 300f)))
+        }
+        val territory = BattleCropBounds(38, 70, 242, 110)
+        assertEquals(territory, TrackedTerminalHpBarMeasurer.searchBounds(400, 300, anchor, territory))
+        val seen = mutableSetOf<Pair<Int, Int>>()
+        TrackedTerminalHpBarMeasurer.measure(400, 300, anchor, territory) { x, y ->
+            seen += x to y
+            DARK
+        }
+        assertEquals((territory.right - territory.left) * (territory.bottom - territory.top), seen.size)
+        assertTrue(seen.all { (x, y) -> x in territory.left until territory.right && y in territory.top until territory.bottom })
     }
 
     @Test fun `invalid or clipped anchors never read any source pixel`() {

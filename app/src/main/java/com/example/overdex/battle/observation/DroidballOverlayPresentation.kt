@@ -4,6 +4,7 @@ import com.example.overdex.model.PokemonType
 import com.example.overdex.battle.custody.OpponentBattleResource
 import com.example.overdex.battle.custody.OpponentBattleResourceCountMeasured
 import com.example.overdex.battle.forecast.OpponentEnergyEstimate
+import com.example.overdex.battle.inference.TeamLossResolver
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -110,12 +111,14 @@ object DroidballOverlayPresentation {
     private val _expanded = MutableStateFlow(false)
     val expanded = _expanded.asStateFlow()
     private val _panelAllowed = MutableStateFlow(false)
-    /** Team Select or a deliberate tap may reveal a display; observation alone cannot. */
+    /** Team Select, accepted Match Start, or a deliberate tap may reveal a display. */
     val panelAllowed = _panelAllowed.asStateFlow()
     // A setup menu must not stay over entry announcements or 3/2/1 while the
     // compact battle layout is still waiting for its native badge anchor.
     @Volatile private var preBattleMenuSuppressed = false
     @Volatile private var userHidPendingHud = false
+    private var lastAutomaticallyOpenedMatchId: String? = null
+    @Volatile private var matchStartRequestedHud = false
     private val _opponentSpecies = MutableStateFlow<List<ObservedOpponentSpecies>>(emptyList())
     /** First-seen opponent identities for the three HUD cells. */
     val opponentSpecies = _opponentSpecies.asStateFlow()
@@ -172,9 +175,9 @@ object DroidballOverlayPresentation {
         }
         if (phase == DroidballSessionPhase.COUNTDOWN || phase == DroidballSessionPhase.BATTLE_ACTIVE) {
             if (!_battleBadgeSeen.value) dismissTeamSelectForBattle()
-            _expanded.value = _panelAllowed.value && _battleBadgeSeen.value && !userHidPendingHud
+            _expanded.value = _panelAllowed.value && (_battleBadgeSeen.value || matchStartRequestedHud) && !userHidPendingHud
         } else if (phase == DroidballSessionPhase.RESULT) {
-            _expanded.value = _panelAllowed.value
+            _expanded.value = _panelAllowed.value && !userHidPendingHud
         }
     }
 
@@ -183,6 +186,7 @@ object DroidballOverlayPresentation {
 
     /** A scan request chooses the scanner but cannot reveal a display by itself. */
     fun showTeamSelectScan() {
+        matchStartRequestedHud = false
         preBattleMenuSuppressed = false
         userHidPendingHud = false
         _battleBadgeSeen.value = false
@@ -192,6 +196,7 @@ object DroidballOverlayPresentation {
 
     /** A deliberate navigation boundary is not a late prebattle phase emission. */
     fun showNavigationIdle() {
+        matchStartRequestedHud = false
         preBattleMenuSuppressed = false
         userHidPendingHud = false
         _battleBadgeSeen.value = false
@@ -199,6 +204,9 @@ object DroidballOverlayPresentation {
     }
 
     fun showAcceptedTeamSelect() {
+        // A delayed prebattle read may still contribute roster evidence, but
+        // it cannot replace a started Match's display or undo a later Hide.
+        if (matchStartRequestedHud) return
         if (preBattleMenuSuppressed) {
             // A result from an older party frame may finish after the surface
             // has departed. Its roster remains useful; its menu must not reopen.
@@ -220,12 +228,28 @@ object DroidballOverlayPresentation {
 
     /** Collapse setup from fresh surface departure, without testifying that GO occurred. */
     fun dismissTeamSelectForBattle() {
-        if (_battleBadgeSeen.value || _mode.value == DroidballOverlayMode.RESULT) return
+        if (_battleBadgeSeen.value || matchStartRequestedHud || _mode.value == DroidballOverlayMode.RESULT) return
         preBattleMenuSuppressed = true
         _expanded.value = false
     }
 
-    /** Battle evidence selects its layout; only Team Select or a user action reveals it. */
+    /**
+     * An accepted start reveals this Match's display once. The current live session
+     * owns this call; neither an inferred layout nor Replay may request it.
+     * Repeated delivery must not undo a later deliberate collapse.
+     */
+    fun showStartedMatch(matchId: String): Boolean {
+        if (matchId == lastAutomaticallyOpenedMatchId) return false
+        lastAutomaticallyOpenedMatchId = matchId
+        matchStartRequestedHud = true
+        _panelAllowed.value = true
+        userHidPendingHud = false
+        _mode.value = DroidballOverlayMode.BATTLE_HUD
+        _expanded.value = true
+        return true
+    }
+
+    /** Other battle evidence selects its layout without authorizing a new display. */
     fun showBattleHud(userRequested: Boolean = false) {
         if (userRequested) {
             _panelAllowed.value = true
@@ -235,7 +259,8 @@ object DroidballOverlayPresentation {
             _mode.value = DroidballOverlayMode.BATTLE_HUD
         }
         if (!userRequested && !_battleBadgeSeen.value) dismissTeamSelectForBattle()
-        _expanded.value = _panelAllowed.value && (userRequested || (_battleBadgeSeen.value && !userHidPendingHud))
+        _expanded.value = _panelAllowed.value &&
+            (userRequested || ((_battleBadgeSeen.value || matchStartRequestedHud) && !userHidPendingHud))
     }
 
     @Synchronized fun clearOpponentSpecies() {
@@ -308,7 +333,7 @@ object DroidballOverlayPresentation {
                         speciesName = speciesName,
                         speciesId = speciesId,
                         isProvisional = false,
-                        isFainted = normalizeMoveName(speciesName) in faintedSpeciesNames,
+                        isFainted = TeamLossResolver.speciesKey(speciesName) in faintedSpeciesNames,
                         observedAtNanos = observedAtNanos,
                     )
                 }
@@ -317,7 +342,7 @@ object DroidballOverlayPresentation {
                     speciesName,
                     speciesId,
                     isProvisional = false,
-                    isFainted = normalizeMoveName(speciesName) in faintedSpeciesNames,
+                    isFainted = TeamLossResolver.speciesKey(speciesName) in faintedSpeciesNames,
                     observedAtNanos = observedAtNanos,
                 )
             }
@@ -326,7 +351,7 @@ object DroidballOverlayPresentation {
                 speciesName,
                 speciesId,
                 isProvisional = true,
-                isFainted = normalizeMoveName(speciesName) in faintedSpeciesNames,
+                isFainted = TeamLossResolver.speciesKey(speciesName) in faintedSpeciesNames,
                 observedAtNanos = observedAtNanos,
             )
         } else {
@@ -356,15 +381,37 @@ object DroidballOverlayPresentation {
 
     private const val PROVISIONAL_CORRECTION_WINDOW_NANOS = 4_000_000_000L
 
+    /**
+     * Replace the presentation's complete faint resolution after source-time evidence changes.
+     * The caller serializes current snapshots, including revisions caused by late evidence;
+     * [at] dates badge invalidation, not the freshness of this resolved snapshot. A historical
+     * correction must not select an older active opponent or rewrite witnessed resource counts.
+     */
+    @Synchronized fun reconcileOpponentFaints(speciesNames: Set<String>, at: Long) {
+        val resolved = speciesNames.map(TeamLossResolver::speciesKey).filter(String::isNotBlank).toSet()
+        if (resolved == faintedSpeciesNames) return
+        faintedSpeciesNames.clear()
+        faintedSpeciesNames.addAll(resolved)
+        _opponentSpecies.value = _opponentSpecies.value.map { observed ->
+            val fainted = TeamLossResolver.speciesKey(observed.speciesName) in resolved
+            if (observed.isFainted == fainted) observed else observed.copy(isFainted = fainted)
+        }
+        invalidateOpponentBadge(at)
+        // Restoring a wrongly dimmed active cell must restore its existing move knowledge,
+        // while a correction about an earlier opponent leaves the current actor selected.
+        publishMovePossibilities()
+    }
+
     @Synchronized fun markOpponentFainted(speciesName: String? = activeOpponentSpeciesName, at: Long = System.nanoTime()) {
         val target = speciesName ?: return
-        if (faintedSpeciesNames.add(normalizeMoveName(target))) invalidateOpponentBadge(at)
+        val targetKey = TeamLossResolver.speciesKey(target)
+        if (faintedSpeciesNames.add(targetKey)) invalidateOpponentBadge(at)
         _opponentSpecies.value = _opponentSpecies.value.map { observed ->
-            if (observed.speciesName.equals(target, ignoreCase = true)) {
+            if (TeamLossResolver.speciesKey(observed.speciesName) == targetKey) {
                 observed.copy(isFainted = true)
             } else observed
         }
-        if (activeOpponentSpeciesName.equals(target, ignoreCase = true)) {
+        if (activeOpponentSpeciesName?.let(TeamLossResolver::speciesKey) == targetKey) {
             _activeOpponentMovePossibilities.value = null
         }
     }
@@ -372,7 +419,7 @@ object DroidballOverlayPresentation {
     /** Only a visible, validated badge showing zero remaining balls calls this. */
     @Synchronized fun markOpponentTeamFainted(at: Long = System.nanoTime()) {
         if (_opponentSpecies.value.any { !it.isFainted }) invalidateOpponentBadge(at)
-        _opponentSpecies.value.forEach { faintedSpeciesNames += normalizeMoveName(it.speciesName) }
+        _opponentSpecies.value.forEach { faintedSpeciesNames += TeamLossResolver.speciesKey(it.speciesName) }
         _opponentSpecies.value = _opponentSpecies.value.map { it.copy(isFainted = true) }
         _activeOpponentMovePossibilities.value = null
     }
@@ -411,7 +458,7 @@ object DroidballOverlayPresentation {
 
     private fun publishMovePossibilities() {
         val speciesName = activeOpponentSpeciesName ?: return
-        if (normalizeMoveName(speciesName) in faintedSpeciesNames) {
+        if (TeamLossResolver.speciesKey(speciesName) in faintedSpeciesNames) {
             _activeOpponentMovePossibilities.value = null
             return
         }
@@ -451,8 +498,9 @@ object DroidballOverlayPresentation {
     fun toggleExpanded() {
         _panelAllowed.value = true
         val willExpand = !_expanded.value
-        if (!willExpand && !_battleBadgeSeen.value &&
-            (_mode.value == DroidballOverlayMode.BATTLE_HUD || preBattleMenuSuppressed)) {
+        if (!willExpand &&
+            (_mode.value in setOf(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayMode.BATTLE_LIVE,
+                DroidballOverlayMode.RESULT) || preBattleMenuSuppressed)) {
             userHidPendingHud = true
         } else if (willExpand) userHidPendingHud = false
         _expanded.value = willExpand
@@ -461,6 +509,8 @@ object DroidballOverlayPresentation {
     fun reset() {
         _chargeTextProtected.value = false
         energyForecastMatchId = null
+        lastAutomaticallyOpenedMatchId = null
+        matchStartRequestedHud = false
         _panelAllowed.value = false
         preBattleMenuSuppressed = false
         userHidPendingHud = false

@@ -1,6 +1,7 @@
 package com.example.overdex.battle.interpretation
 
 import com.example.overdex.battle.custody.RawTestimony
+import com.example.overdex.battle.custody.MatchOutcomeLabelWitnessed
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
@@ -9,6 +10,7 @@ import com.example.overdex.model.BattleActor
 import com.example.overdex.model.BattleEventType
 import com.example.overdex.model.BattleResult
 import com.example.overdex.model.Pokemon
+import com.example.overdex.model.observation.OcrTextEvidence
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -314,4 +316,39 @@ class BattleInterpreterTest {
 
         assertNull("Unrecognized opponent species text must not derive a BattleEvent", event)
     }
+
+    @Test fun `accepted typed partial outcomes derive end events without canonicalizing their raw text`() = runBlocking {
+        listOf(
+            Triple("YOU_WIN_WITNESS", BattleResult.WIN, "oU WINy"),
+            Triple("GOOD_EFFORT_WITNESS", BattleResult.LOSS, "OOD EFFOR"),
+        ).forEach { (source, result, raw) ->
+            val label = acceptedLabel(result, raw)
+            val article = RealityArticle(ArticleId("partial-$source"), 500L, 99_999L,
+                SourceId(source), label, evidenceReferences = listOf("original-raw"), monotonicTimeNanos = 700L)
+            val event = interpreter.interpret(article)
+            assertEquals(BattleEventType.BATTLE_ENDED, event?.type)
+            assertEquals(result, event?.result)
+            assertEquals(500L, event?.timestamp)
+            assertEquals(article.id, event?.sourceArticleId)
+            assertEquals(raw, label.rawText)
+            assertEquals(raw, label.ocr.rawText)
+            assertNull("Partial raw text without accepted typed testimony must retain the strict legacy behavior",
+                interpreter.interpret(article.copy(payload = RawTestimony(raw, label.ocr))))
+        }
+    }
+
+    @Test fun `typed outcome acceptance must match its registered witness source`() = runBlocking {
+        val label = acceptedLabel(BattleResult.WIN, "W")
+        val original = RealityArticle(ArticleId("wrong-source"), 500L, 1000L,
+            SourceId("MATCH_OUTCOME_TEXT_WITNESS"), label)
+        listOf("MATCH_OUTCOME_TEXT_WITNESS", "SPECIES_WITNESS", "UNREGISTERED_WIN_WITNESS", "GOOD_EFFORT_WITNESS")
+            .forEach { source -> assertNull(source, interpreter.interpret(original.copy(sourceId = SourceId(source)))) }
+        assertNull(interpreter.interpret(original.copy(sourceId = SourceId("YOU_WIN_WITNESS"),
+            payload = acceptedLabel(BattleResult.LOSS, "FF"))))
+    }
+
+    private fun acceptedLabel(result: BattleResult, raw: String) = MatchOutcomeLabelWitnessed(
+        result, raw, "PARTIAL_TITLE_GEOMETRY",
+        OcrTextEvidence("RAW", raw, raw, emptyList(), 1080, null), 2,
+    )
 }

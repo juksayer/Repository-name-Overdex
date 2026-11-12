@@ -52,6 +52,7 @@ import com.example.overdex.battle.reality.InMemoryRealityTimeline
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.observation.CropCaptureWitness
 import com.example.overdex.battle.observation.BattleWitnessContracts
+import com.example.overdex.battle.observation.BattleCropContracts
 import com.example.overdex.battle.observation.FirstLiveCombatRouter
 import com.example.overdex.battle.observation.CustomCropCaptureWitness
 import com.example.overdex.battle.observation.PersistedOutcomeTextWitness
@@ -318,9 +319,52 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private val summaryHandoff = com.example.overdex.ui.navigation.MatchSummaryHandoff()
+    private val summaryInbox = com.example.overdex.ui.navigation.MatchSummaryInboxStore(application)
+    private val summaryInboxMutex = Mutex()
+    private val summaryInboxReady = kotlinx.coroutines.CompletableDeferred<Unit>()
+    private val summarySources = java.util.concurrent.ConcurrentHashMap<String, MatchArchiveSource>()
     val pendingMatchSummary = summaryHandoff.pending
+    val lastMatchSummaryBatch = summaryHandoff.delivered
 
-    fun acknowledgeMatchSummary(matchId: MatchId) = summaryHandoff.acknowledge(matchId)
+    init {
+        archiveScope.launch {
+            summaryInboxMutex.withLock {
+                runCatching { summaryHandoff.restore(summaryInbox.readState()) }
+                    .onFailure { Log.w("MATCH_SUMMARY", "Unable to restore pending summaries", it) }
+            }
+            summaryInboxReady.complete(Unit)
+        }
+    }
+
+    fun acknowledgeMatchSummary(matchIds: List<String>) {
+        summaryHandoff.acknowledge(matchIds)
+        persistSummaryInbox()
+    }
+
+    /** Resolve the selected ID only; a new live match must never replace an older row. */
+    suspend fun loadMatchSummary(matchId: String): com.example.overdex.battle.archive.MatchArchive? =
+        withContext(Dispatchers.IO) {
+            summaryInboxReady.await()
+            summarySources[matchId]?.snapshot() ?: summaryInbox.readArchive(matchId)
+        }
+
+    private fun persistSummaryInbox(source: MatchArchiveSource? = null) {
+        archiveScope.launch {
+            summaryInboxReady.await()
+            summaryInboxMutex.withLock {
+                runCatching { saveSummaryInbox(source) }
+                    .onFailure { Log.w("MATCH_SUMMARY", "Unable to save comparison records", it) }
+            }
+        }
+    }
+
+    /** I/O only, under summaryInboxMutex. Publish membership after its available snapshots. */
+    private fun saveSummaryInbox(source: MatchArchiveSource? = null) {
+        val state = summaryHandoff.snapshotState()
+        val sources = (state.pendingIds + state.deliveredIds).distinct().mapNotNull(summarySources::get) + listOfNotNull(source)
+        sources.distinctBy { it.matchId }.forEach { summaryInbox.upsert(it.snapshot()) }
+        summaryInbox.saveState(state)
+    }
 
     fun getFieldNotes(pokemonId: Int) = flow {
         emit(fieldNoteRepository.getFieldNotesForPokemon(pokemonId))
@@ -494,7 +538,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun startFreshMatch(resultCode: Int, data: android.content.Intent, startCaptureService: Boolean): Match {
-        summaryHandoff.clearForNewMatch()
+        // Completed summaries remain pending while the player records another match.
         _deploymentState.value = InstrumentDeploymentState.DEPLOYING
         
         // Initialize Match
@@ -503,7 +547,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             matchId = matchId,
             custody = InMemoryTestimonyCustody(),
             realityTimeline = InMemoryRealityTimeline(),
-            pokemonKnowledge = pokemonRepository
+            pokemonKnowledge = pokemonRepository,
+            // Opt-in for a separately authorized device timing trial; no UI or testimony output.
+            processingDiagnostics = if (com.example.overdex.BuildConfig.DEBUG && java.io.File(
+                getApplication<Application>().filesDir, "diagnostics/enable-match-processing-profile").isFile)
+                com.example.overdex.battle.observation.MatchProcessingDiagnostics() else null,
         )
         val session = DroidballSession(match)
         DroidballOverlayPresentation.clearOpponentSpecies()
@@ -536,8 +584,14 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         DroidballOverlayPresentation.showSessionPhase(session.phase.value)
         viewModelScope.launch {
             session.phase.collect { phase ->
-                if (_droidballSession.value !== session) return@collect
-                DroidballOverlayPresentation.showSessionPhase(phase)
+                if (!com.example.overdex.battle.observation.presentDroidballSessionPhase(
+                        session = session,
+                        currentSession = _droidballSession.value,
+                        phase = phase,
+                        captureActive = DroidballService.runtimeState.value ==
+                            com.example.overdex.battle.observation.DroidballRuntimeState.ACTIVE,
+                        shellVisible = isOverdexVisible,
+                    )) return@collect
                 if (!session.canEditTeam) fieldTeamEditor.close()
             }
         }
@@ -625,6 +679,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             BattleWitnessContracts.playerInactiveLowerHpBarCapture.crop.cropName
         )
         val inactiveBenchSnapshotGate = InactiveBenchSnapshotGate(inactiveBenchCrops)
+        val forcedReplacementAttention = com.example.overdex.battle.observation.ForcedReplacementCaptureGate()
+        val terminalVisualGate = com.example.overdex.battle.observation.TerminalVisualCaptureGate()
         val teamResourceCrops = setOf(
             BattleWitnessContracts.playerPokeBallsCapture.crop.cropName,
             BattleWitnessContracts.opponentPokeBallsCapture.crop.cropName,
@@ -870,10 +926,18 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             ))
         }
         observationDispatcher.register(teamResourceSnapshotGate)
-        observationDispatcher.register(PersistedPlayerPokeBallWitness(cropArtifactStore))
-        observationDispatcher.register(PersistedOpponentBattleResourceWitness.pokeBalls(cropArtifactStore))
-        observationDispatcher.register(PersistedOpponentBattleResourceWitness.shields(cropArtifactStore))
-        observationDispatcher.register(PersistedOpponentBattleResourceWitness.playerShields(cropArtifactStore))
+        observationDispatcher.register(PersistedPlayerPokeBallWitness(cropArtifactStore, onCandidateRead = { at ->
+            teamResourceSnapshotGate.candidateRead(BattleCropContracts.playerPokeBalls.cropName, at)
+        }))
+        observationDispatcher.register(PersistedOpponentBattleResourceWitness.pokeBalls(cropArtifactStore) { at ->
+            teamResourceSnapshotGate.candidateRead(BattleCropContracts.opponentPokeBalls.cropName, at)
+        })
+        observationDispatcher.register(PersistedOpponentBattleResourceWitness.shields(cropArtifactStore) { at ->
+            teamResourceSnapshotGate.candidateRead(BattleCropContracts.opponentShields.cropName, at)
+        })
+        observationDispatcher.register(PersistedOpponentBattleResourceWitness.playerShields(cropArtifactStore) { at ->
+            teamResourceSnapshotGate.candidateRead(BattleCropContracts.playerShields.cropName, at)
+        })
         observationDispatcher.register(PersistedActivePokemonTypeWitness.player(cropArtifactStore) { at ->
             battleEvidenceLive() && activeTypeSampling.needsReading(com.example.overdex.battle.custody.ActivePokemonSide.PLAYER, at)
         })
@@ -971,9 +1035,41 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val battlefieldHpTracker = com.example.overdex.battle.observation.LiveBattlefieldHpTracker(calibration)
         val activeHpBarWitness = LiveActiveHpBarWitness(
             input, battlefieldHpTracker, activeHpEvidenceLive, playerHpFrameHub, opponentHpFrameHub,
-            onDepartureCheck = teamResourceSnapshotGate::requestDepartureCheck,
+            onDepartureCheck = { side, at ->
+                teamResourceSnapshotGate.requestDepartureCheck(side, at)
+                if (side == com.example.overdex.battle.custody.ActivePokemonSide.PLAYER)
+                    forcedReplacementAttention.request(at)
+                terminalVisualGate.request(side, com.example.overdex.battle.observation.TerminalVisualTrigger.DEPARTURE, at)
+            },
             chargedImpactHpRegion = calibration.chargedImpactHpRegion,
+            onBattlefieldReturn = { at ->
+                com.example.overdex.battle.custody.ActivePokemonSide.entries.forEach { side ->
+                    terminalVisualGate.requestChargedReturn(side, at)
+                }
+            },
         )
+        observationDispatcher.register(forcedReplacementAttention)
+        observationDispatcher.register(CropCaptureWitness(
+            input = input, calibration = calibration,
+            contract = BattleWitnessContracts.forcedReplacementMessageCapture,
+            artifactStore = cropArtifactStore,
+            isEnabled = { battleEvidenceLive() && forcedReplacementAttention.isEnabled() },
+            acceptsFrame = forcedReplacementAttention::acceptsFrame,
+            captureIntervalNanos = 500_000_000L,
+            captureDispatcher = auxiliaryCaptureDispatcher,
+            observerId = ObserverId(BattleWitnessContracts.forcedReplacementMessageCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
+            name = "Forced Replacement Message Capture",
+        ))
+        observationDispatcher.register(com.example.overdex.battle.observation.PersistedForcedReplacementWitness(
+            cropArtifactStore, needsReading = { at -> battleEvidenceLive() && forcedReplacementAttention.acceptsFrame(at) },
+        ))
+        observationDispatcher.register(com.example.overdex.battle.observation.TerminalVisualSequenceWitness(
+            input, calibration, cropArtifactStore, terminalVisualGate,
+            captureDispatcher = auxiliaryCaptureDispatcher,
+        ))
+        observationDispatcher.register(com.example.overdex.battle.observation.TerminalParticleWitness(
+            input, calibration, terminalVisualGate,
+        ))
         observationDispatcher.register(activeHpBarWitness)
         observationDispatcher.register(CropCaptureWitness(
             input = input,
@@ -1243,7 +1339,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         com.example.overdex.battle.observation.MatchOutcomePhrase.WIN
                 },
                 observerId = ObserverId("YOU_WIN_WITNESS", ObserverSource.SCREEN_CAPTURE),
-                name = "You Win"
+                name = "You Win",
+                allowPartialOutcome = true,
             )
         )
         observationDispatcher.register(
@@ -1253,7 +1350,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         com.example.overdex.battle.observation.MatchOutcomePhrase.LOSS
                 },
                 observerId = ObserverId("GOOD_EFFORT_WITNESS", ObserverSource.SCREEN_CAPTURE),
-                name = "Good Effort"
+                name = "Good Effort",
+                allowPartialOutcome = true,
             )
         )
 
@@ -1498,11 +1596,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         match.speciesChecks.stop()
         val source = MatchArchiveSource(MatchId(match.matchId), match.realityTimeline)
         fieldMatchLedger.complete(source)
+        summarySources[source.matchId.value] = source
+        summaryHandoff.offer(source.matchId.value)
+        persistSummaryInbox(source)
         // A late result from a released match may still be archived, but must
         // not replace the current match or reopen its summary during the next one.
         if (_activeMatch.value === match) {
             _latestMatchArchiveSource.value = source
-            summaryHandoff.offer(source)
         }
         archiveCompletedMatch(source, reason, if (awaitAcceptedEvidence) match else null, releaseAfterArchive)
     }
@@ -1518,6 +1618,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 // finish publishing on Match's separate serial dispatcher.
                 if (drainingMatch != null) kotlinx.coroutines.withTimeout(30_000L) {
                     drainingMatch.awaitAcceptedEvidencePublished()
+                }
+                // Preserve refreshed metadata even if publishing the media archive fails.
+                summaryInboxReady.await()
+                summaryInboxMutex.withLock {
+                    runCatching { saveSummaryInbox(source) }
+                        .onFailure { Log.w("MATCH_SUMMARY", "Unable to refresh comparison record", it) }
                 }
                 archiveMutex.withLock {
                     archiveDirectoryManager.exportMatch(
@@ -1554,6 +1660,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             }.onFailure { error ->
                 Log.e("MATCH_ARCHIVE", "Unable to auto-save $reason match ${source.matchId.value}", error)
             }
+            // Also export after a drain timeout: a blocked stage is useful evidence.
+            // This archive worker is independent of Match's congested processing queue.
+            if (drainingMatch?.processingDiagnostics != null) runCatching {
+                com.example.overdex.battle.observation.MatchProcessingDiagnosticExport.write(
+                    java.io.File(getApplication<Application>().filesDir, "diagnostics/match_processing"), drainingMatch)
+            }.onFailure { Log.w("MATCH_PROCESSING", "Unable to write timing summary", it) }
         }
     }
 

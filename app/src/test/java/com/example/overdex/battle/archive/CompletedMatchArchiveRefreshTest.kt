@@ -36,6 +36,8 @@ class CompletedMatchArchiveRefreshTest {
             article("stat", StatChangeObserved(ActivePokemonSide.OPPONENT, "ATTACK", -1, 1, "Rock Tomb", "sound")),
             article("music", MatchResultMusicMeasured("WIN", "a".repeat(64), .9f, .2f, 0, 1)),
             article("comparison", MatchResultMusicCompared("WIN", "WIN", true, "music", "result")),
+            article("particle-window-end", TerminalParticleObservations(ActivePokemonSide.OPPONENT,
+                1L, 20L, emptyList(), ended = true, totalSamples = 10)),
         )
         evidence.forEach { row ->
             assertTrue(row.id.value, shouldRefreshCompletedMatchArchive(row, completed))
@@ -57,6 +59,8 @@ class CompletedMatchArchiveRefreshTest {
             article("pulse", DeviceMotionPulseMeasured(1L, 1f, 1f, 1)),
             article("result", MatchEnded(BattleResult.WIN)),
             article("availability", WitnessOperating(false)),
+            article("empty-particle-progress", TerminalParticleObservations(ActivePokemonSide.OPPONENT,
+                1L, 20L, emptyList(), ended = false, totalSamples = 0)),
         )
         excluded.forEach { assertFalse(it.id.value, shouldRefreshCompletedMatchArchive(it, completed)) }
         val session = article("session", GetReadyWitnessed).copy(matchId = null)

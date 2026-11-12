@@ -10,6 +10,26 @@ import kotlin.math.max
  * Unlike the ordinary locator this can find a still-visible EMPTY outline.
  */
 internal object ChargedImpactHpBarMeasurer {
+    /**
+     * During an owned charge window, neighboring search boxes may share territory.
+     * Both portions are read from one source frame, never stitched from history.
+     * Disjoint calibration boxes do not authorize searching the intervening field.
+     */
+    fun sharedTerritory(width: Int, height: Int, impact: BattleCropBounds?, ordinary: BattleCropBounds?): BattleCropBounds? {
+        fun valid(b: BattleCropBounds?) = b != null && b.left >= 0 && b.top >= 0 &&
+            b.right <= width && b.bottom <= height && b.right > b.left && b.bottom > b.top
+        if (!valid(impact)) return null
+        impact!!
+        if (!valid(ordinary)) return impact
+        ordinary!!
+        val horizontal = minOf(impact.right, ordinary.right) - maxOf(impact.left, ordinary.left)
+        val vertical = minOf(impact.bottom, ordinary.bottom) - maxOf(impact.top, ordinary.top)
+        // Shared edge or overlapping area, not only a corner.
+        if (horizontal < 0 || vertical < 0 || (horizontal == 0 && vertical == 0)) return impact
+        return BattleCropBounds(minOf(impact.left, ordinary.left), minOf(impact.top, ordinary.top),
+            maxOf(impact.right, ordinary.right), maxOf(impact.bottom, ordinary.bottom))
+    }
+
     fun searchBounds(
         width: Int, height: Int, reference: ActiveHpBarMeasurement,
         territory: BattleCropBounds? = null,

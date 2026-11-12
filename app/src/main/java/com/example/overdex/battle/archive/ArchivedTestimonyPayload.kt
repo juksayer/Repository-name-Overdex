@@ -41,6 +41,16 @@ data class ArchivedRawText(
 ) : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("match_outcome_label_witnessed")
+data class ArchivedMatchOutcomeLabelWitnessed(
+    val result: String,
+    val rawText: String,
+    val basis: String,
+    val ocr: com.example.overdex.model.observation.OcrTextEvidence,
+    val supportingFrameCount: Int,
+) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("raw_int")
 data class ArchivedRawInt(
     val value: Int
@@ -109,6 +119,32 @@ data class ArchivedActivePokemonFaintedWitnessed(
     val speciesName: String? = null,
     val speciesId: Int? = null,
     val basis: String
+) : ArchivedTestimonyPayload
+
+@Serializable @SerialName("forced_replacement_prompt_witnessed")
+data class ArchivedForcedReplacementPromptWitnessed(
+    val rawText: String,
+    val basis: String,
+    val ocr: com.example.overdex.model.observation.OcrTextEvidence,
+) : ArchivedTestimonyPayload
+
+@Serializable @SerialName("terminal_visual_sequence_captured")
+data class ArchivedTerminalVisualSequenceCaptured(
+    val side: String,
+    val trigger: String,
+    val sourceStartedAtNanos: Long,
+    val sourceEndedAtNanos: Long,
+    val frameCount: Int,
+) : ArchivedTestimonyPayload
+
+@Serializable @SerialName("terminal_particle_observations")
+data class ArchivedTerminalParticleObservations(
+    val requestedRecipient: String,
+    val phaseAtNanos: Long,
+    val sourceDeadlineNanos: Long,
+    val samples: List<com.example.overdex.battle.custody.TerminalParticleSample>,
+    val ended: Boolean,
+    val totalSamples: Int,
 ) : ArchivedTestimonyPayload
 
 @Serializable @SerialName("team_select_party") data object ArchivedTeamSelectPartyWitnessed : ArchivedTestimonyPayload

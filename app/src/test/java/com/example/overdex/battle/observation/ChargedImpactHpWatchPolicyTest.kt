@@ -122,11 +122,175 @@ class ChargedImpactHpWatchPolicyTest {
         assertTrue(watch.fastMoveEvidenceAllowed(opponent, normal.copy(filledFraction = .1f), at + 1_033_000_000L))
     }
 
+    @Test fun `camera is excluded and normal return seeds without reporting charged damage`() {
+        val watch = seeded()
+        watch.prepare(opponent, base)
+        val at = base + 6_000_000_000L
+        val request = requireNotNull(watch.request(672, 1419, at))
+        assertTrue(watch.accept(request, TrackedTerminalHpBarSample(center, HpBarFillColor.EMPTY), at))
+        val detector = ActiveHpBarDamageTickDetector()
+        detector.accept(normal.copy(filledFraction = 1f), at - 100_000_000L)
+        fun deliver(bar: ActiveHpBarMeasurement, time: Long): ActiveHpBarDamageTickMeasurement? {
+            val disposition = watch.fastMoveDisposition(opponent, bar, time)
+            return detector.accept(LiveActiveHpBarSample(bar, null, null, 0, time,
+                fastMoveEvidenceAllowed = disposition == ChargedImpactHpWatchPolicy.FastMoveDisposition.EVIDENCE,
+                baselineOnly = disposition == ChargedImpactHpWatchPolicy.FastMoveDisposition.BASELINE_ONLY))
+        }
+        assertNull(deliver(center.copy(filledFraction = .8f), at))
+        assertNull(deliver(center.copy(filledFraction = .2f), at + 50_000_000L))
+        assertNull(deliver(normal.copy(filledFraction = .4f), at + 1_000_000_000L))
+        assertNull(deliver(normal.copy(filledFraction = .4f), at + 1_050_000_000L))
+        val ticks = (1..8).mapNotNull { deliver(normal.copy(filledFraction = .3f),
+            at + 1_050_000_000L + it * 50_000_000L) }
+        assertEquals(1, ticks.size)
+        assertEquals(.4f, ticks.single().beforeFraction, .001f)
+        assertEquals(.3f, ticks.single().afterFraction, .001f)
+    }
+
+    @Test fun `appearance boundary seeds a lower normal bar without a false hit`() {
+        val watch = seeded()
+        val detector = ActiveHpBarDamageTickDetector()
+        detector.accept(normal.copy(filledFraction = 1f), base)
+        watch.appearanceBoundary(opponent, base + 1)
+        val disposition = watch.fastMoveDisposition(opponent, normal, base + 2)
+        assertEquals(ChargedImpactHpWatchPolicy.FastMoveDisposition.BASELINE_ONLY, disposition)
+        assertNull(detector.accept(LiveActiveHpBarSample(normal.copy(filledFraction = .4f), null, null,
+            0, base + 2, fastMoveEvidenceAllowed = false, baselineOnly = true)))
+        assertNull(detector.accept(normal.copy(filledFraction = .4f), base + 50_000_000L))
+    }
+
     @Test fun `unavailable frame does not consume the window or turn into zero`() {
         val watch = seeded()
         watch.prepare(opponent, base)
         assertNotNull(watch.request(672, 1419, base + 3_000_000_000L))
         assertNotNull(watch.request(672, 1419, base + 3_100_000_000L))
         assertNull(watch.request(672, 1419, base + 12_000_000_001L))
+    }
+
+    @Test fun `used cue keeps a later empty frame observable after early green acquisition expires`() {
+        val watch = seeded()
+        watch.prepare(opponent, base, "get-ready")
+        val acquired = base + 2_100_000_000L
+        val request = requireNotNull(watch.request(672, 1419, acquired))
+        assertTrue(watch.accept(request, TrackedTerminalHpBarSample(center.copy(filledFraction = .8f),
+            HpBarFillColor.GREEN), acquired))
+        assertFalse(watch.canCapture(acquired + 3_000_000_000L))
+        assertNull(watch.request(672, 1419, acquired + 3_000_000_000L))
+
+        watch.impact(base + 8_000_000_000L, "used")
+        val emptyAt = base + 8_100_000_000L
+        assertTrue(watch.canCapture(emptyAt))
+        val later = requireNotNull(watch.request(672, 1419, emptyAt))
+        assertEquals(opponent, later.side)
+        assertEquals(listOf("get-ready", "used"), later.cueArticleIds)
+        assertNull("The old outline must be reacquired after the tracking gap", later.anchor)
+        assertTrue(watch.accept(later, TrackedTerminalHpBarSample(center, HpBarFillColor.EMPTY), emptyAt))
+        assertFalse(watch.canCapture(emptyAt + 33_000_000L))
+    }
+
+    @Test fun `the first used cue bounds the window and later duplicates cannot slide it`() {
+        val watch = seeded()
+        watch.prepare(opponent, base, "ready")
+        val acquired = base + 2_100_000_000L
+        val request = requireNotNull(watch.request(672, 1419, acquired))
+        assertTrue(watch.accept(request, TrackedTerminalHpBarSample(center.copy(filledFraction = .8f),
+            HpBarFillColor.GREEN), acquired))
+        watch.impact(base + 8_000_000_000L, "used-first")
+        watch.impact(base + 8_000_000_000L, "used-first")
+        watch.impact(base + 9_000_000_000L, "used-repeat")
+        watch.impact(base + 10_000_000_000L, "used-repeat-later")
+
+        val deadline = base + 11_000_000_000L
+        assertTrue(watch.canCapture(deadline))
+        val finalRequest = requireNotNull(watch.request(672, 1419, deadline))
+        assertEquals(1, finalRequest.cueArticleIds.count { it == "used-first" })
+        assertFalse(watch.canCapture(deadline + 1))
+        assertNull(watch.request(672, 1419, deadline + 1))
+    }
+
+    @Test fun `an earlier source impact tightens the same deadline when delivery is reversed`() {
+        for (reverse in listOf(false, true)) {
+            val watch = seeded()
+            watch.prepare(opponent, base)
+            val acquired = base + 2_100_000_000L
+            val request = requireNotNull(watch.request(672, 1419, acquired))
+            assertTrue(watch.accept(request, TrackedTerminalHpBarSample(center.copy(filledFraction = .8f),
+                HpBarFillColor.GREEN), acquired))
+            val cues = listOf(base + 8_000_000_000L to "earlier-source", base + 9_000_000_000L to "later-source")
+            (if (reverse) cues.reversed() else cues).forEach { (at, id) -> watch.impact(at, id) }
+
+            val deadline = base + 11_000_000_000L
+            assertTrue("reverse=$reverse", watch.canCapture(deadline))
+            assertNotNull(watch.request(672, 1419, deadline))
+            assertFalse("reverse=$reverse", watch.canCapture(deadline + 1))
+            assertNull(watch.request(672, 1419, deadline + 1))
+        }
+    }
+
+    @Test fun `a last in-phase used cue has at most fifteen seconds from preparation`() {
+        val watch = seeded()
+        watch.prepare(opponent, base)
+        val acquired = base + 2_100_000_000L
+        val request = requireNotNull(watch.request(672, 1419, acquired))
+        assertTrue(watch.accept(request, TrackedTerminalHpBarSample(center.copy(filledFraction = .8f),
+            HpBarFillColor.GREEN), acquired))
+        watch.impact(base + 12_000_000_000L, "last-in-phase")
+        watch.impact(base + 14_000_000_000L, "duplicate")
+        val deadline = base + 15_000_000_000L
+        assertTrue(watch.canCapture(deadline))
+        assertNotNull(watch.request(672, 1419, deadline))
+        assertFalse(watch.canCapture(deadline + 1))
+        assertNull(watch.request(672, 1419, deadline + 1))
+    }
+
+    @Test fun `an acquired outline without a used cue retains its three second bound`() {
+        val watch = seeded()
+        watch.prepare(opponent, base)
+        val acquired = base + 2_100_000_000L
+        val request = requireNotNull(watch.request(672, 1419, acquired))
+        assertTrue(watch.accept(request, TrackedTerminalHpBarSample(center.copy(filledFraction = .8f),
+            HpBarFillColor.GREEN), acquired))
+        assertTrue(watch.canCapture(acquired + 2_999_999_999L))
+        assertFalse(watch.canCapture(acquired + 3_000_000_000L))
+        assertNull(watch.request(672, 1419, acquired + 3_000_000_000L))
+    }
+
+    @Test fun `a used cue delivered after its source deadline cannot reopen current or backdated frames`() {
+        val watch = seeded()
+        watch.prepare(opponent, base)
+        val acquired = base + 2_100_000_000L
+        val request = requireNotNull(watch.request(672, 1419, acquired))
+        assertTrue(watch.accept(request, TrackedTerminalHpBarSample(center.copy(filledFraction = .8f),
+            HpBarFillColor.GREEN), acquired))
+        assertNull(watch.request(672, 1419, base + 12_000_000_000L))
+        // The announcement arrives now, but still describes its original +8 s source frame.
+        watch.impact(base + 8_000_000_000L, "delayed-used")
+        assertFalse(watch.canCapture(base + 12_100_000_000L))
+        assertNull(watch.request(672, 1419, base + 12_100_000_000L))
+        assertNull(watch.request(672, 1419, base + 8_100_000_000L))
+    }
+
+    @Test fun `out of phase used cues cannot revive an expired early acquisition`() {
+        val watch = seeded()
+        watch.prepare(opponent, base)
+        val acquired = base + 2_100_000_000L
+        val request = requireNotNull(watch.request(672, 1419, acquired))
+        assertTrue(watch.accept(request, TrackedTerminalHpBarSample(center.copy(filledFraction = .8f),
+            HpBarFillColor.GREEN), acquired))
+        watch.impact(base - 1, "older-phase")
+        watch.impact(base + 12_000_000_001L, "after-phase")
+        assertFalse(watch.canCapture(base + 13_000_000_000L))
+        assertNull(watch.request(672, 1419, base + 13_000_000_000L))
+    }
+
+    @Test fun `a used cue cannot reopen a consumed empty observation`() {
+        val watch = seeded()
+        watch.prepare(opponent, base)
+        val emptyAt = base + 3_000_000_000L
+        val request = requireNotNull(watch.request(672, 1419, emptyAt))
+        assertTrue(watch.accept(request, TrackedTerminalHpBarSample(center, HpBarFillColor.EMPTY), emptyAt))
+        watch.impact(base + 8_000_000_000L, "used")
+        assertFalse(watch.canCapture(base + 8_100_000_000L))
+        assertNull(watch.request(672, 1419, base + 8_100_000_000L))
     }
 }

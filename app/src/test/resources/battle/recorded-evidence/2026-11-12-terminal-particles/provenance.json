@@ -1,0 +1,1032 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "name": "cramorant-finish",
+      "width": 816,
+      "height": 1808,
+      "bounds": [
+        228,
+        723,
+        751,
+        1356
+      ],
+      "context": "reviewed final charged KO",
+      "source": "/home/sean/Desktop/Screen_recording_20261111_211335.mp4",
+      "sourceSha256": "846cf23949029f732174fc76ed9e884d159e92237769c50842a8592214a11297",
+      "transform": "native crop",
+      "frames": [
+        {
+          "file": "cramorant-finish-816-previous.png",
+          "sha256": "f35b3f0e853739aaf37ffa5007a8a63ec94fcb5814b328be51ccdaa2c84d7737",
+          "pts": 16265084,
+          "timeBase": "1/90000",
+          "seconds": 180.72315555555556,
+          "sourceAtNanos": 180723155556
+        },
+        {
+          "file": "cramorant-finish-816-current.png",
+          "sha256": "d417041efe9f72ea025aa4a94fedbefe1c2190ec1ade18b4a304d2799dae3cf7",
+          "pts": 16273443,
+          "timeBase": "1/90000",
+          "seconds": 180.81603333333334,
+          "sourceAtNanos": 180816033333
+        }
+      ],
+      "referenceCluster": [
+        {
+          "x": 602.0,
+          "y": 853.1666666666666,
+          "area": 6,
+          "w": 3,
+          "h": 4,
+          "contrast": 40.5128205128205,
+          "fresh": 1.0,
+          "haloCoverage": 1.0,
+          "haloWeakestQuadrant": 1.0,
+          "falloff": 34.088888888888874
+        },
+        {
+          "x": 635.5,
+          "y": 860.5,
+          "area": 8,
+          "w": 4,
+          "h": 2,
+          "contrast": 25.02777777777777,
+          "fresh": 1.0,
+          "haloCoverage": 1.0,
+          "haloWeakestQuadrant": 1.0,
+          "falloff": 34.625
+        },
+        {
+          "x": 680.1506849315069,
+          "y": 895.6575342465753,
+          "area": 292,
+          "w": 20,
+          "h": 20,
+          "contrast": 49.213258317025435,
+          "fresh": 1.0,
+          "haloCoverage": 0.8349146110056926,
+          "haloWeakestQuadrant": 0.6511627906976745,
+          "falloff": 51.48086503418571
+        },
+        {
+          "x": 704.75,
+          "y": 895.75,
+          "area": 4,
+          "w": 2,
+          "h": 3,
+          "contrast": 33.31060606060606,
+          "fresh": 1.0,
+          "haloCoverage": 1.0,
+          "haloWeakestQuadrant": 1.0,
+          "falloff": 33.08080808080808
+        },
+        {
+          "x": 576.1111111111111,
+          "y": 944.8888888888889,
+          "area": 9,
+          "w": 3,
+          "h": 5,
+          "contrast": 49.30158730158729,
+          "fresh": 1.0,
+          "haloCoverage": 0.7857142857142857,
+          "haloWeakestQuadrant": 0.3333333333333333,
+          "falloff": 22.091362126245826
+        },
+        {
+          "x": 507.85714285714283,
+          "y": 952.4285714285714,
+          "area": 7,
+          "w": 3,
+          "h": 4,
+          "contrast": 49.65384615384616,
+          "fresh": 1.0,
+          "haloCoverage": 1.0,
+          "haloWeakestQuadrant": 1.0,
+          "falloff": 51.55400696864112
+        },
+        {
+          "x": 614.7142857142858,
+          "y": 957.7142857142858,
+          "area": 7,
+          "w": 3,
+          "h": 4,
+          "contrast": 45.21245421245422,
+          "fresh": 1.0,
+          "haloCoverage": 1.0,
+          "haloWeakestQuadrant": 1.0,
+          "falloff": 56.76262626262627
+        },
+        {
+          "x": 507.06451612903226,
+          "y": 969.258064516129,
+          "area": 31,
+          "w": 9,
+          "h": 4,
+          "contrast": 39.35738539898131,
+          "fresh": 1.0,
+          "haloCoverage": 0.8431372549019608,
+          "haloWeakestQuadrant": 0.6666666666666666,
+          "falloff": 63.37961696306431
+        }
+      ]
+    },
+    {
+      "name": "cramorant-finish",
+      "width": 672,
+      "height": 1493,
+      "bounds": [
+        188,
+        597,
+        618,
+        1120
+      ],
+      "context": "reviewed final charged KO",
+      "source": "/home/sean/Desktop/Screen_recording_20261111_211335.mp4",
+      "sourceSha256": "846cf23949029f732174fc76ed9e884d159e92237769c50842a8592214a11297",
+      "transform": "full-frame OpenCV INTER_LINEAR resize from 816x1808 to 672x1493, then crop",
+      "frames": [
+        {
+          "file": "cramorant-finish-672-previous.png",
+          "sha256": "d6b16779eaafdc8f1ed8ad9035cfc14e5503c773422a8bbb79f09b6c037b3be9",
+          "pts": 16265084,
+          "timeBase": "1/90000",
+          "seconds": 180.72315555555556,
+          "sourceAtNanos": 180723155556
+        },
+        {
+          "file": "cramorant-finish-672-current.png",
+          "sha256": "52a02ec32dd9faab46baea3dcc5f5bab9bd476245d5f7ecf989f93a9097baa7b",
+          "pts": 16273443,
+          "timeBase": "1/90000",
+          "seconds": 180.81603333333334,
+          "sourceAtNanos": 180816033333
+        }
+      ],
+      "referenceCluster": [
+        {
+          "x": 522.8,
+          "y": 710.4,
+          "area": 5,
+          "w": 3,
+          "h": 2,
+          "contrast": 32.03030303030303,
+          "fresh": 1.0,
+          "haloCoverage": 1.0,
+          "haloWeakestQuadrant": 1.0,
+          "falloff": 45.26190476190476
+        },
+        {
+          "x": 474.4,
+          "y": 780.2,
+          "area": 5,
+          "w": 2,
+          "h": 3,
+          "contrast": 44.71515151515149,
+          "fresh": 1.0,
+          "haloCoverage": 0.8571428571428571,
+          "haloWeakestQuadrant": 0.6,
+          "falloff": 26.349999999999994
+        },
+        {
+          "x": 418.0,
+          "y": 786.4,
+          "area": 5,
+          "w": 3,
+          "h": 4,
+          "contrast": 62.084615384615375,
+          "fresh": 1.0,
+          "haloCoverage": 0.9523809523809523,
+          "haloWeakestQuadrant": 0.8571428571428571,
+          "falloff": 51.27067669172931
+        },
+        {
+          "x": 417.6842105263158,
+          "y": 800.0,
+          "area": 19,
+          "w": 7,
+          "h": 3,
+          "contrast": 41.06578947368422,
+          "fresh": 1.0,
+          "haloCoverage": 0.875,
+          "haloWeakestQuadrant": 0.5833333333333334,
+          "falloff": 58.54374999999999
+        }
+      ]
+    },
+    {
+      "name": "leavanny-finish",
+      "width": 816,
+      "height": 1808,
+      "bounds": [
+        228,
+        723,
+        751,
+        1356
+      ],
+      "context": "reviewed final charged KO",
+      "source": "/home/sean/Desktop/Screen_recording_20261111_112107.mp4",
+      "sourceSha256": "493996b9fcb183adc2704e7db71fe41dbe4f09d902c8dbfebe4d78a769e51fb7",
+      "transform": "native crop",
+      "frames": [
+        {
+          "file": "leavanny-finish-816-previous.png",
+          "sha256": "f77573c649ddcd7262252a8de37e16068979fa8459625806e57733d01083cf70",
+          "pts": 10578299,
+          "timeBase": "1/90000",
+          "seconds": 117.53665555555555,
+          "sourceAtNanos": 117536655556
+        },
+        {
+          "file": "leavanny-finish-816-current.png",
+          "sha256": "a8f8a31a298f811ce58e8fa6d07583a705b822b9b9e8e2f6eec01415298038b3",
+          "pts": 10581688,
+          "timeBase": "1/90000",
+          "seconds": 117.57431111111111,
+          "sourceAtNanos": 117574311111
+        }
+      ],
+      "referenceCluster": [
+        {
+          "x": 602.0,
+          "y": 769.1904761904761,
+          "area": 21,
+          "w": 6,
+          "h": 5,
+          "contrast": 54.07282913165267,
+          "fresh": 1.0,
+          "haloCoverage": 1.0,
+          "haloWeakestQuadrant": 1.0,
+          "falloff": 79.52380952380952
+        },
+        {
+          "x": 541.7142857142858,
+          "y": 817.5,
+          "area": 14,
+          "w": 4,
+          "h": 4,
+          "contrast": 71.35714285714286,
+          "fresh": 1.0,
+          "haloCoverage": 0.8181818181818182,
+          "haloWeakestQuadrant": 0.5,
+          "falloff": 60.943722943722946
+        },
+        {
+          "x": 551.5,
+          "y": 821.5,
+          "area": 16,
+          "w": 4,
+          "h": 4,
+          "contrast": 58.446428571428584,
+          "fresh": 1.0,
+          "haloCoverage": 1.0,
+          "haloWeakestQuadrant": 1.0,
+          "falloff": 57.888888888888886
+        },
+        {
+          "x": 617.090909090909,
+          "y": 905.9545454545455,
+          "area": 22,
+          "w": 5,
+          "h": 6,
+          "contrast": 58.42513368983958,
+          "fresh": 1.0,
+          "haloCoverage": 0.8205128205128205,
+          "haloWeakestQuadrant": 0.3333333333333333,
+          "falloff": 51.633221850613154
+        }
+      ]
+    },
+    {
+      "name": "leavanny-finish",
+      "width": 672,
+      "height": 1493,
+      "bounds": [
+        188,
+        597,
+        618,
+        1120
+      ],
+      "context": "reviewed final charged KO",
+      "source": "/home/sean/Desktop/Screen_recording_20261111_112107.mp4",
+      "sourceSha256": "493996b9fcb183adc2704e7db71fe41dbe4f09d902c8dbfebe4d78a769e51fb7",
+      "transform": "full-frame OpenCV INTER_LINEAR resize from 816x1808 to 672x1493, then crop",
+      "frames": [
+        {
+          "file": "leavanny-finish-672-previous.png",
+          "sha256": "9c250934673f3467e517d530ee20abfecb8830a15b748edda913e9f90e18ed18",
+          "pts": 10578299,
+          "timeBase": "1/90000",
+          "seconds": 117.53665555555555,
+          "sourceAtNanos": 117536655556
+        },
+        {
+          "file": "leavanny-finish-672-current.png",
+          "sha256": "24fb7b9a7ae3bcd1fb51e4e78c43a1866e13fccb2b2a499abd5984fb0e539d37",
+          "pts": 10581688,
+          "timeBase": "1/90000",
+          "seconds": 117.57431111111111,
+          "sourceAtNanos": 117574311111
+        }
+      ],
+      "referenceCluster": [
+        {
+          "x": 495.85714285714283,
+          "y": 634.9285714285714,
+          "area": 14,
+          "w": 5,
+          "h": 3,
+          "contrast": 63.72619047619048,
+          "fresh": 1.0,
+          "haloCoverage": 1.0,
+          "haloWeakestQuadrant": 1.0,
+          "falloff": 73.71497584541063
+        },
+        {
+          "x": 446.125,
+          "y": 675.125,
+          "area": 8,
+          "w": 3,
+          "h": 3,
+          "contrast": 76.73611111111111,
+          "fresh": 1.0,
+          "haloCoverage": 0.9,
+          "haloWeakestQuadrant": 0.6,
+          "falloff": 49.78333333333333
+        },
+        {
+          "x": 454.3636363636364,
+          "y": 678.0909090909091,
+          "area": 11,
+          "w": 4,
+          "h": 3,
+          "contrast": 66.31701631701631,
+          "fresh": 1.0,
+          "haloCoverage": 1.0,
+          "haloWeakestQuadrant": 1.0,
+          "falloff": 58.53030303030303
+        },
+        {
+          "x": 369.26666666666665,
+          "y": 712.8333333333334,
+          "area": 30,
+          "w": 11,
+          "h": 7,
+          "contrast": 59.631981981981966,
+          "fresh": 0.6,
+          "haloCoverage": 0.89,
+          "haloWeakestQuadrant": 0.5833333333333334,
+          "falloff": 25.85198895027625
+        },
+        {
+          "x": 508.1666666666667,
+          "y": 747.8333333333334,
+          "area": 18,
+          "w": 5,
+          "h": 5,
+          "contrast": 67.20486111111111,
+          "fresh": 1.0,
+          "haloCoverage": 0.8421052631578947,
+          "haloWeakestQuadrant": 0.4,
+          "falloff": 38.88021778584391
+        }
+      ]
+    },
+    {
+      "name": "shield",
+      "width": 816,
+      "height": 1808,
+      "bounds": [
+        228,
+        723,
+        751,
+        1356
+      ],
+      "context": "shield competing signal, not a KO",
+      "source": "/home/sean/Desktop/Screen_recording_20261111_161531.mp4",
+      "sourceSha256": "c28262fcf263852ee595a0e2ba4c47981dd0e6d591fc3b0b3a178feccc677130",
+      "transform": "native crop",
+      "frames": [
+        {
+          "file": "shield-816-previous.png",
+          "sha256": "8822b476e02fb2089f7c47e4504e08cda26e7f4edde55d1a5beb4b91ee828793",
+          "pts": 4935183,
+          "timeBase": "1/90000",
+          "seconds": 54.835366666666665,
+          "sourceAtNanos": 54835366667
+        },
+        {
+          "file": "shield-816-current.png",
+          "sha256": "83362a69ac86f1dc11b43529012da2f776ae224376ab57cc3b98c6b66c9f2cfb",
+          "pts": 4937518,
+          "timeBase": "1/90000",
+          "seconds": 54.861311111111114,
+          "sourceAtNanos": 54861311111
+        }
+      ],
+      "referenceCluster": [
+        {
+          "x": 463.5,
+          "y": 1194.5,
+          "area": 8,
+          "w": 4,
+          "h": 2,
+          "contrast": 53.736111111111114,
+          "fresh": 1.0,
+          "haloCoverage": 0.875,
+          "haloWeakestQuadrant": 0.5,
+          "falloff": 53.3125
+        },
+        {
+          "x": 552.5,
+          "y": 1200.5,
+          "area": 4,
+          "w": 2,
+          "h": 2,
+          "contrast": 44.78333333333333,
+          "fresh": 1.0,
+          "haloCoverage": 0.875,
+          "haloWeakestQuadrant": 0.5,
+          "falloff": 45.4375
+        },
+        {
+          "x": 440.04166666666663,
+          "y": 1218.5,
+          "area": 24,
+          "w": 5,
+          "h": 8,
+          "contrast": 74.2054347826087,
+          "fresh": 1.0,
+          "haloCoverage": 0.5862068965517241,
+          "haloWeakestQuadrant": 0.25,
+          "falloff": 48.867049808429115
+        },
+        {
+          "x": 577.5,
+          "y": 1268.5,
+          "area": 8,
+          "w": 4,
+          "h": 2,
+          "contrast": 74.79166666666666,
+          "fresh": 1.0,
+          "haloCoverage": 0.75,
+          "haloWeakestQuadrant": 0.75,
+          "falloff": 37.173611111111114
+        }
+      ]
+    },
+    {
+      "name": "shield",
+      "width": 672,
+      "height": 1493,
+      "bounds": [
+        188,
+        597,
+        618,
+        1120
+      ],
+      "context": "shield competing signal, not a KO",
+      "source": "/home/sean/Desktop/Screen_recording_20261111_161531.mp4",
+      "sourceSha256": "c28262fcf263852ee595a0e2ba4c47981dd0e6d591fc3b0b3a178feccc677130",
+      "transform": "full-frame OpenCV INTER_LINEAR resize from 816x1808 to 672x1493, then crop",
+      "frames": [
+        {
+          "file": "shield-672-previous.png",
+          "sha256": "6c52900b1150c8a31a83cace4041544e1d5956877a25bcd32ef96fea3fd8efb4",
+          "pts": 4935183,
+          "timeBase": "1/90000",
+          "seconds": 54.835366666666665,
+          "sourceAtNanos": 54835366667
+        },
+        {
+          "file": "shield-672-current.png",
+          "sha256": "48ea03ad72807362d7989cf502b2e84552d1192e1ff2d7bc2bef875ba32cbdb0",
+          "pts": 4937518,
+          "timeBase": "1/90000",
+          "seconds": 54.861311111111114,
+          "sourceAtNanos": 54861311111
+        }
+      ],
+      "referenceCluster": []
+    },
+    {
+      "name": "qte",
+      "width": 816,
+      "height": 1808,
+      "bounds": [
+        228,
+        723,
+        751,
+        1356
+      ],
+      "context": "player QTE competing signal, not opponent collapse",
+      "source": "/home/sean/Desktop/Screen_recording_20261111_124455.mp4",
+      "sourceSha256": "3d0c54910dc590fcdcd33060ff535300f41f5bbf8170a29b21b2d9ff0f12e655",
+      "transform": "native crop",
+      "frames": [
+        {
+          "file": "qte-816-previous.png",
+          "sha256": "c7214e36c2d56f7da204bf337e2abfa357101e38a139c64e96bc38d6aa21f206",
+          "pts": 7370276,
+          "timeBase": "1/90000",
+          "seconds": 81.89195555555555,
+          "sourceAtNanos": 81891955556
+        },
+        {
+          "file": "qte-816-current.png",
+          "sha256": "bb2147f06cbd212aee683e0e023879d6a6961ede2dac500388e4acd2247a764a",
+          "pts": 7374342,
+          "timeBase": "1/90000",
+          "seconds": 81.93713333333334,
+          "sourceAtNanos": 81937133333
+        }
+      ],
+      "referenceCluster": [
+        {
+          "x": 375.66666666666663,
+          "y": 978.6666666666666,
+          "area": 6,
+          "w": 4,
+          "h": 2,
+          "contrast": 23.883561643835606,
+          "fresh": 1.0,
+          "haloCoverage": 0.8636363636363636,
+          "haloWeakestQuadrant": 0.4,
+          "falloff": 21.295454545454533
+        },
+        {
+          "x": 358.0,
+          "y": 996.625,
+          "area": 16,
+          "w": 4,
+          "h": 7,
+          "contrast": 53.430147058823536,
+          "fresh": 1.0,
+          "haloCoverage": 0.75,
+          "haloWeakestQuadrant": 0.25,
+          "falloff": 65.43437499999999
+        },
+        {
+          "x": 372.22222222222223,
+          "y": 995.2222222222222,
+          "area": 9,
+          "w": 5,
+          "h": 3,
+          "contrast": 34.81746031746033,
+          "fresh": 0.5555555555555556,
+          "haloCoverage": 1.0,
+          "haloWeakestQuadrant": 1.0,
+          "falloff": 42.780952380952385
+        },
+        {
+          "x": 315.4,
+          "y": 1059.9333333333334,
+          "area": 15,
+          "w": 4,
+          "h": 5,
+          "contrast": 23.433333333333337,
+          "fresh": 0.6,
+          "haloCoverage": 0.92,
+          "haloWeakestQuadrant": 0.8333333333333334,
+          "falloff": 30.131304347826102
+        }
+      ]
+    },
+    {
+      "name": "qte",
+      "width": 672,
+      "height": 1493,
+      "bounds": [
+        188,
+        597,
+        618,
+        1120
+      ],
+      "context": "player QTE competing signal, not opponent collapse",
+      "source": "/home/sean/Desktop/Screen_recording_20261111_124455.mp4",
+      "sourceSha256": "3d0c54910dc590fcdcd33060ff535300f41f5bbf8170a29b21b2d9ff0f12e655",
+      "transform": "full-frame OpenCV INTER_LINEAR resize from 816x1808 to 672x1493, then crop",
+      "frames": [
+        {
+          "file": "qte-672-previous.png",
+          "sha256": "9300557cc8603a4364565782acb7577adbbdf3e90caa945875a37245295e13d3",
+          "pts": 7370276,
+          "timeBase": "1/90000",
+          "seconds": 81.89195555555555,
+          "sourceAtNanos": 81891955556
+        },
+        {
+          "file": "qte-672-current.png",
+          "sha256": "9b173193a89a3d8a2f46f518057e0747ecc1f1c215ead417272bab25be0c509e",
+          "pts": 7374342,
+          "timeBase": "1/90000",
+          "seconds": 81.93713333333334,
+          "sourceAtNanos": 81937133333
+        }
+      ],
+      "referenceCluster": [
+        {
+          "x": 309.0,
+          "y": 807.4,
+          "area": 5,
+          "w": 3,
+          "h": 3,
+          "contrast": 36.1888888888889,
+          "fresh": 1.0,
+          "haloCoverage": 1.0,
+          "haloWeakestQuadrant": 1.0,
+          "falloff": 42.8984962406015
+        },
+        {
+          "x": 295.0909090909091,
+          "y": 822.9090909090909,
+          "area": 11,
+          "w": 3,
+          "h": 5,
+          "contrast": 55.87337662337663,
+          "fresh": 1.0,
+          "haloCoverage": 0.8275862068965517,
+          "haloWeakestQuadrant": 0.5,
+          "falloff": 61.52766639935845
+        },
+        {
+          "x": 306.2,
+          "y": 821.6,
+          "area": 5,
+          "w": 3,
+          "h": 2,
+          "contrast": 42.18484848484849,
+          "fresh": 0.8,
+          "haloCoverage": 1.0,
+          "haloWeakestQuadrant": 1.0,
+          "falloff": 54.70238095238096
+        },
+        {
+          "x": 259.875,
+          "y": 875.25,
+          "area": 8,
+          "w": 3,
+          "h": 4,
+          "contrast": 28.355769230769226,
+          "fresh": 0.5,
+          "haloCoverage": 0.9130434782608695,
+          "haloWeakestQuadrant": 0.6,
+          "falloff": 34.38777908343124
+        }
+      ]
+    },
+    {
+      "name": "carbink-recall",
+      "width": 816,
+      "height": 1808,
+      "bounds": [
+        228,
+        723,
+        751,
+        1356
+      ],
+      "context": "living recall with independently positive HP",
+      "source": "/home/sean/Desktop/Screen_recording_20261111_124455.mp4",
+      "sourceSha256": "3d0c54910dc590fcdcd33060ff535300f41f5bbf8170a29b21b2d9ff0f12e655",
+      "transform": "native crop",
+      "frames": [
+        {
+          "file": "carbink-recall-816-previous.png",
+          "sha256": "e76dd9ae5d8ead1c80421bb24dc3554e24cfc522f5e5673d5ee7e77460336362",
+          "pts": 16313409,
+          "timeBase": "1/90000",
+          "seconds": 181.2601,
+          "sourceAtNanos": 181260100000
+        },
+        {
+          "file": "carbink-recall-816-current.png",
+          "sha256": "7cf4db6e00eeac9e1a7acf381c2ae200c9cd3300a4ffffeffbd86d166a399dea",
+          "pts": 16316796,
+          "timeBase": "1/90000",
+          "seconds": 181.29773333333333,
+          "sourceAtNanos": 181297733333
+        }
+      ],
+      "referenceCluster": []
+    },
+    {
+      "name": "carbink-recall",
+      "width": 672,
+      "height": 1493,
+      "bounds": [
+        188,
+        597,
+        618,
+        1120
+      ],
+      "context": "living recall with independently positive HP",
+      "source": "/home/sean/Desktop/Screen_recording_20261111_124455.mp4",
+      "sourceSha256": "3d0c54910dc590fcdcd33060ff535300f41f5bbf8170a29b21b2d9ff0f12e655",
+      "transform": "full-frame OpenCV INTER_LINEAR resize from 816x1808 to 672x1493, then crop",
+      "frames": [
+        {
+          "file": "carbink-recall-672-previous.png",
+          "sha256": "391f547003c8b76f05326d38a168bd371bc98eb1ed2cdebd124049385df561d2",
+          "pts": 16313409,
+          "timeBase": "1/90000",
+          "seconds": 181.2601,
+          "sourceAtNanos": 181260100000
+        },
+        {
+          "file": "carbink-recall-672-current.png",
+          "sha256": "eac4dda73cc57d40ded9b928c8e716bc4ddbe27f695ff51b0083c92a5c81f081",
+          "pts": 16316796,
+          "timeBase": "1/90000",
+          "seconds": 181.29773333333333,
+          "sourceAtNanos": 181297733333
+        }
+      ],
+      "referenceCluster": []
+    },
+    {
+      "name": "roselia-concession",
+      "width": 816,
+      "height": 1808,
+      "bounds": [
+        228,
+        723,
+        751,
+        1356
+      ],
+      "context": "reported concession, not an attributed KO",
+      "source": "/home/sean/Desktop/Screen_recording_20261111_161531.mp4",
+      "sourceSha256": "c28262fcf263852ee595a0e2ba4c47981dd0e6d591fc3b0b3a178feccc677130",
+      "transform": "native crop",
+      "frames": [
+        {
+          "file": "roselia-concession-816-previous.png",
+          "sha256": "c85b3e14f924d2d963a83ba49cfff73813de895b97ea40c388f732a9b47a0ee1",
+          "pts": 8361528,
+          "timeBase": "1/90000",
+          "seconds": 92.90586666666667,
+          "sourceAtNanos": 92905866667
+        },
+        {
+          "file": "roselia-concession-816-current.png",
+          "sha256": "c842b070670b7d4f49eb3225dad9aabdeccd9a50152bdc961d4add6dd43f18a3",
+          "pts": 8366071,
+          "timeBase": "1/90000",
+          "seconds": 92.95634444444444,
+          "sourceAtNanos": 92956344444
+        }
+      ],
+      "referenceCluster": []
+    },
+    {
+      "name": "roselia-concession",
+      "width": 672,
+      "height": 1493,
+      "bounds": [
+        188,
+        597,
+        618,
+        1120
+      ],
+      "context": "reported concession, not an attributed KO",
+      "source": "/home/sean/Desktop/Screen_recording_20261111_161531.mp4",
+      "sourceSha256": "c28262fcf263852ee595a0e2ba4c47981dd0e6d591fc3b0b3a178feccc677130",
+      "transform": "full-frame OpenCV INTER_LINEAR resize from 816x1808 to 672x1493, then crop",
+      "frames": [
+        {
+          "file": "roselia-concession-672-previous.png",
+          "sha256": "071ff335fe93a37e3eb707f6b8fbbb6c50920f1874e31914bf6548e6cfe5f5aa",
+          "pts": 8361528,
+          "timeBase": "1/90000",
+          "seconds": 92.90586666666667,
+          "sourceAtNanos": 92905866667
+        },
+        {
+          "file": "roselia-concession-672-current.png",
+          "sha256": "2051afdbbf8a9c1dd3393a088a2af2c247b87992ca1b6abfdc583f6d827d6c55",
+          "pts": 8366071,
+          "timeBase": "1/90000",
+          "seconds": 92.95634444444444,
+          "sourceAtNanos": 92956344444
+        }
+      ],
+      "referenceCluster": []
+    },
+    {
+      "name": "pelipper-attack",
+      "width": 816,
+      "height": 1808,
+      "bounds": [
+        228,
+        723,
+        751,
+        1356
+      ],
+      "context": "attacker animation, no opponent KO in this recording",
+      "source": "/home/sean/Desktop/Screen_recording_20261111_190345.mp4",
+      "sourceSha256": "155a6cdc602b2d9e3bceec594ead6009e7089fc124e3c7b8ec8c98bfda0f2878",
+      "transform": "native crop",
+      "frames": [
+        {
+          "file": "pelipper-attack-816-previous.png",
+          "sha256": "cc14cb31d4ebe70ed06a396eb8841c89606669130898587c91b5b77358eebc32",
+          "pts": 26765067,
+          "timeBase": "1/90000",
+          "seconds": 297.38963333333334,
+          "sourceAtNanos": 297389633333
+        },
+        {
+          "file": "pelipper-attack-816-current.png",
+          "sha256": "30570b71920d999d5a189cb6b556d50f7bca0aab293f707e70c375f58b91d1d6",
+          "pts": 26770380,
+          "timeBase": "1/90000",
+          "seconds": 297.44866666666667,
+          "sourceAtNanos": 297448666667
+        }
+      ],
+      "referenceCluster": [
+        {
+          "x": 647.8,
+          "y": 1154.6,
+          "area": 5,
+          "w": 3,
+          "h": 2,
+          "contrast": 43.28787878787878,
+          "fresh": 1.0,
+          "haloCoverage": 1.0,
+          "haloWeakestQuadrant": 1.0,
+          "falloff": 77.01190476190476
+        },
+        {
+          "x": 684.25,
+          "y": 1181.0,
+          "area": 4,
+          "w": 3,
+          "h": 3,
+          "contrast": 43.888888888888886,
+          "fresh": 1.0,
+          "haloCoverage": 1.0,
+          "haloWeakestQuadrant": 1.0,
+          "falloff": 61.470588235294116
+        },
+        {
+          "x": 567.2,
+          "y": 1184.2,
+          "area": 5,
+          "w": 3,
+          "h": 3,
+          "contrast": 50.08055555555555,
+          "fresh": 1.0,
+          "haloCoverage": 0.9545454545454546,
+          "haloWeakestQuadrant": 0.8571428571428571,
+          "falloff": 70.53475935828878
+        },
+        {
+          "x": 564.75,
+          "y": 1188.25,
+          "area": 4,
+          "w": 2,
+          "h": 3,
+          "contrast": 48.371212121212125,
+          "fresh": 1.0,
+          "haloCoverage": 0.9545454545454546,
+          "haloWeakestQuadrant": 0.8,
+          "falloff": 57.95454545454547
+        },
+        {
+          "x": 562.9285714285714,
+          "y": 1195.5,
+          "area": 14,
+          "w": 3,
+          "h": 10,
+          "contrast": 53.63408521303259,
+          "fresh": 1.0,
+          "haloCoverage": 0.8461538461538461,
+          "haloWeakestQuadrant": 0.5333333333333333,
+          "falloff": 68.33674304418986
+        },
+        {
+          "x": 559.7,
+          "y": 1203.0,
+          "area": 10,
+          "w": 3,
+          "h": 7,
+          "contrast": 57.07291666666666,
+          "fresh": 1.0,
+          "haloCoverage": 1.0,
+          "haloWeakestQuadrant": 1.0,
+          "falloff": 76.27332170880558
+        }
+      ]
+    },
+    {
+      "name": "pelipper-attack",
+      "width": 672,
+      "height": 1493,
+      "bounds": [
+        188,
+        597,
+        618,
+        1120
+      ],
+      "context": "attacker animation, no opponent KO in this recording",
+      "source": "/home/sean/Desktop/Screen_recording_20261111_190345.mp4",
+      "sourceSha256": "155a6cdc602b2d9e3bceec594ead6009e7089fc124e3c7b8ec8c98bfda0f2878",
+      "transform": "full-frame OpenCV INTER_LINEAR resize from 816x1808 to 672x1493, then crop",
+      "frames": [
+        {
+          "file": "pelipper-attack-672-previous.png",
+          "sha256": "2bba2ec56c605672b82636274d971c48847d12a6b63f1f0ce721ef41523dc98b",
+          "pts": 26765067,
+          "timeBase": "1/90000",
+          "seconds": 297.38963333333334,
+          "sourceAtNanos": 297389633333
+        },
+        {
+          "file": "pelipper-attack-672-current.png",
+          "sha256": "cd76766a6577b966aa5f47d3bd9c8eb268efa2a3e4af71c90eddd4cdefd20388",
+          "pts": 26770380,
+          "timeBase": "1/90000",
+          "seconds": 297.44866666666667,
+          "sourceAtNanos": 297448666667
+        }
+      ],
+      "referenceCluster": []
+    },
+    {
+      "name": "mismagius-living",
+      "width": 816,
+      "height": 1808,
+      "bounds": [
+        228,
+        723,
+        751,
+        1356
+      ],
+      "context": "living charged sequence",
+      "source": "/home/sean/Desktop/Screen_recording_20261111_161531.mp4",
+      "sourceSha256": "c28262fcf263852ee595a0e2ba4c47981dd0e6d591fc3b0b3a178feccc677130",
+      "transform": "native crop",
+      "frames": [
+        {
+          "file": "mismagius-living-816-previous.png",
+          "sha256": "5526cdd9285dd11abbb5bfac28af478b955b7ee4bd2751c15e650f61852e8b84",
+          "pts": 5890005,
+          "timeBase": "1/90000",
+          "seconds": 65.4445,
+          "sourceAtNanos": 65444500000
+        },
+        {
+          "file": "mismagius-living-816-current.png",
+          "sha256": "9c8eb48dc96f2837cdcdd9d35d48b0d50c698d2b7633efce1d93ef2d3ed26802",
+          "pts": 5893790,
+          "timeBase": "1/90000",
+          "seconds": 65.48655555555555,
+          "sourceAtNanos": 65486555556
+        }
+      ],
+      "referenceCluster": []
+    },
+    {
+      "name": "mismagius-living",
+      "width": 672,
+      "height": 1493,
+      "bounds": [
+        188,
+        597,
+        618,
+        1120
+      ],
+      "context": "living charged sequence",
+      "source": "/home/sean/Desktop/Screen_recording_20261111_161531.mp4",
+      "sourceSha256": "c28262fcf263852ee595a0e2ba4c47981dd0e6d591fc3b0b3a178feccc677130",
+      "transform": "full-frame OpenCV INTER_LINEAR resize from 816x1808 to 672x1493, then crop",
+      "frames": [
+        {
+          "file": "mismagius-living-672-previous.png",
+          "sha256": "68953e07277bcbde729231f10feab8c71f956a584595096190d5208cbb40c131",
+          "pts": 5890005,
+          "timeBase": "1/90000",
+          "seconds": 65.4445,
+          "sourceAtNanos": 65444500000
+        },
+        {
+          "file": "mismagius-living-672-current.png",
+          "sha256": "8a7bfe9b4fd20817f9407b80aaeebde484cba83c2583dfa8bc0b34186a19535b",
+          "pts": 5893790,
+          "timeBase": "1/90000",
+          "seconds": 65.48655555555555,
+          "sourceAtNanos": 65486555556
+        }
+      ],
+      "referenceCluster": []
+    }
+  ],
+  "opencv": "4.12.0",
+  "scripts": {
+    "full_scan.py": "8ad71d61afb7ab189e7dca10b1bfba3453ebc7f65867c97e48ac7f1d056098d2",
+    "shape_probe.py": "2124d7a0e4fb84f0e10a6dda2255e9abb3190f840c95e3b81748295a595ab45e",
+    "build_reader_fixtures.py": "ed3362da936166c28dd3eeac07ca6ad9de8b8edce015a258f764faad1af3c70c"
+  },
+  "note": "Video-derived measurement fixtures. Context labels are human review, not classifier outputs. Clock is MP4 PTS, not archive time. Halo boundary guard applied before spatial grouping. No original archive altered."
+}

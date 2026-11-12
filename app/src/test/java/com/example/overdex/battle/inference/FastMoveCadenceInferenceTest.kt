@@ -122,7 +122,7 @@ class FastMoveCadenceInferenceTest {
             .copy(monotonicTimeNanos = 1_000_000_000L))
         assertEquals("Raichu (Alolan)", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.speciesName)
         engine.accept(article("ko", com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed(
-            ActivePokemonSide.OPPONENT, "Raichu (Alolan)", 26)).copy(monotonicTimeNanos = 3_000_000_000L))
+            ActivePokemonSide.OPPONENT, "Raichu (Alolan)", 26, "LEGACY_EXPLICIT_FAINT")).copy(monotonicTimeNanos = 3_000_000_000L))
         assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
         engine.accept(article("lingering-badge", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Raichu (Alolan)", 26))
             .copy(monotonicTimeNanos = 4_000_000_000L))
@@ -165,7 +165,7 @@ class FastMoveCadenceInferenceTest {
         val returning = engine.accept(identity("return", "Raichu (Alolan)", 1, 20))
         assertEquals("Spark", (returning.single().payload as FastMoveIdentified).moveName)
         engine.accept(article("a-ko", com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed(
-            ActivePokemonSide.PLAYER, "Raichu (Alolan)", 26)).copy(monotonicTimeNanos = 25))
+            ActivePokemonSide.PLAYER, "Raichu (Alolan)", 26, "LEGACY_EXPLICIT_FAINT")).copy(monotonicTimeNanos = 25))
         val surviving = engine.accept(identity("k-survives", "Raichu", 2, 30))
         assertEquals("Volt Switch", (surviving.single().payload as FastMoveIdentified).moveName)
     }
@@ -802,7 +802,7 @@ class FastMoveCadenceInferenceTest {
         engine.accept(entry("scan", ActivePokemonSide.OPPONENT, 2_000_000_000L))
         assertEquals("Water Gun", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
         engine.accept(article("faint", com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed(
-            ActivePokemonSide.OPPONENT, "Vaporeon", 134, "BALL_COUNT_DECREASE"
+            ActivePokemonSide.OPPONENT, "Vaporeon", 134, "LEGACY_EXPLICIT_FAINT"
         )).copy(monotonicTimeNanos = 3_000_000_000L))
         assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
         assertTrue(engine.accept(article("lingering-badge", ActivePokemonSpeciesWitnessed(

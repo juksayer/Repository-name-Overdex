@@ -19,6 +19,7 @@ import com.example.overdex.CalibrationManager
 import com.example.overdex.battle.observation.TeamSelectCalibration
 import com.example.overdex.battle.observation.TeamSelectCalibrationStore
 import com.example.overdex.data.BattleCalibration
+import com.example.overdex.data.BundledCalibrationSampleCatalog
 import com.example.overdex.data.CalibrationScreenshotFilter
 import com.example.overdex.data.CalibrationScreenshotLibrary
 import com.example.overdex.data.MatchCalibrationProfileStore
@@ -261,6 +262,60 @@ class CalibrationProfilePickerDeviceTest {
             }
             compose.onNodeWithTag("calibration-profile-save-error")
                 .assertTextContains("different screen shape", substring = true).assertIsDisplayed()
+        } finally { context.cleanUp() }
+    }
+
+    @Test fun bundledReferencesFollowTheApprovedCatalogWhileHistoricalFixturesRemainAvailable() {
+        val context = IsolatedContext(InstrumentationRegistry.getInstrumentation().targetContext)
+        try {
+            val labels = context.assets.open(BundledCalibrationSampleCatalog.ASSET_PATH).bufferedReader().use {
+                BundledCalibrationSampleCatalog.labels(it.readText())
+            }
+            val samples = loadCalibrationSamples(context, ScreenshotDirectoryManager(context), userImages = emptyList())
+            val bundled = samples.filter { it.sourceName == "BUNDLED REFERENCE" }.map { it.reference }
+            assertEquals("Only eligible catalog assets enter the bundled picker",
+                labels.keys.map { "asset:$it" }.toSet(), bundled.map { it.id }.toSet())
+            assertEquals("An approved asset is offered exactly once", labels.size, bundled.size)
+            assertEquals("The two-device approved library contains 32 Pixel and 21 Moondrop references", 53, bundled.size)
+
+            val historical = setOf(
+                "Screenshot_20260813-142635.png", "Screenshot_20260814-130929.png",
+                "Screenshot_20260814-131036.png", "Screenshot_20260814-131041.png",
+                "Screenshot_20260814-132455.png", "Screenshot_20260814-173324.png",
+                "Screenshot_20260825-165744.png",
+            ) + (1..17).map { "celluloid-shot${it.toString().padStart(4, '0')}.jpg" } +
+                listOf(20, 21, 22, 24).map { "celluloid-shot${it.toString().padStart(4, '0')}.jpg" }
+            assertEquals(28, historical.size)
+            assertTrue("Historical assets remain available to recognition fixtures",
+                context.assets.list("battle_samples").orEmpty().toSet().containsAll(historical))
+            assertTrue("Historical assets are not silently approved", labels.keys.intersect(historical).isEmpty())
+
+            val filters = listOf(CalibrationScreenshotFilter.All, CalibrationScreenshotFilter.ThisScreen,
+                CalibrationScreenshotFilter.Shape(1080, 2400), CalibrationScreenshotFilter.Shape(1080, 2280)) +
+                labels.values.map { it.deviceLabel }.distinct().map { CalibrationScreenshotFilter.Device(it) }
+            for ((width, height) in listOf(1080 to 2400, 1080 to 2280)) {
+                for (filter in filters) {
+                    val offered = CalibrationScreenshotLibrary.filter(bundled, filter, width, height)
+                    assertTrue("Retired references cannot reappear through $filter on $width x $height",
+                        offered.none { it.id.removePrefix("asset:") in historical })
+                }
+            }
+            val pixel = bundled.filter { it.deviceLabel == "Google Pixel 4" }
+            assertEquals("The existing Pixel reference pack stays intact", 32, pixel.size)
+            assertTrue(pixel.all { it.width == 1080 && it.height == 2280 })
+            assertEquals(pixel, CalibrationScreenshotLibrary.filter(bundled,
+                CalibrationScreenshotFilter.Device("Google Pixel 4"), 1080, 2400))
+            assertEquals(32, CalibrationScreenshotLibrary.filter(bundled,
+                CalibrationScreenshotFilter.ThisScreen, 1080, 2280).count { it.deviceLabel == "Google Pixel 4" })
+            val moondrop = bundled.filter { it.deviceLabel == "MOONDROP MD-PH-001" }
+            assertEquals("The reviewed current Moondrop pack contains twenty-one native references", 21, moondrop.size)
+            assertTrue(moondrop.all { it.width == 1080 && it.height == 2400 })
+            assertEquals(moondrop, CalibrationScreenshotLibrary.filter(bundled,
+                CalibrationScreenshotFilter.ThisScreen, 1080, 2400))
+            assertEquals(moondrop, CalibrationScreenshotLibrary.filter(bundled,
+                CalibrationScreenshotFilter.ThisScreen, 672, 1493))
+            assertEquals(moondrop, CalibrationScreenshotLibrary.filter(bundled,
+                CalibrationScreenshotFilter.Device("MOONDROP MD-PH-001"), 1080, 2280))
         } finally { context.cleanUp() }
     }
 
