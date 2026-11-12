@@ -38,6 +38,67 @@ These are design notes, not implemented behavior or a change to the work order.
 
 ## Current slice
 
+November 11 [finishing-hit observation windows](../verification/2026-11-11-finishing-observation-windows.md)
+separates recipient pixels from HP availability, adds bounded replacement-message
+and terminal-sequence capture, and pairs independent recipient transients with
+strict side-resolved audio. The original missing final Mud Shot and Gourgeist
+faint remain unresolved. Automatic shrink/faint classification and physical
+capture-cost acceptance remain open; these changes do not advance to swap hints
+or HUD styling.
+
+November 11 [partial result-label recognition](../verification/2026-11-11-partial-result-labels.md)
+adds geometry-backed interpretation of the recorded `OOD EFFOR` losses and
+`oU WINy` win. Strong partials compare the entire retained reading with the two
+expected labels; weak W/FF-family signatures also need expected result positions
+and two distinct source frames 100 ms–3 s apart. Original OCR, word geometry and
+source times remain intact; accepted interpretations are separately typed and
+cited. The strict string resolver remains unchanged. Installed on the Moondrop
+November 11 with saved records/calibration verified unchanged; live-battle
+validation is pending. Next acceptance: fresh result readings on both
+devices, including small effectiveness text, single fragments, different title
+layouts, interrupted captures and observation restarts. The proposed victory
+jump / loss head-drop witnesses remain research requiring a calibrated trainer
+region, temporal sequences, labeled real positives/negatives and bounded
+after-battle attention. A still pose alone is insufficient. See the
+[rulebook](../reference/battle-rulebook.md#result-label-observations-and-supporting-motion--november-11)
+and [current thresholds](../reference/battle-event-rules.md#partial-result-label-recognition--november-11).
+
+November 11 [team-count and result review](../verification/2026-11-11-moondrop-team-count-review.md)
+finds opponent counts skipping 3 → 1 in all three new Moondrop recordings,
+incomplete aggregate faint accounting, clipped GOOD EFFORT crops, and a fully
+captured but misread translucent YOU WIN crop. Those recordings used the build
+preceding the receipt-based wake-up repair; the subsequent November 11 install
+includes that repair and the partial result-label change above. Prioritize
+fresh-device verification of that repair, then skipped-count reconciliation and
+bounded native-badge reacquisition. Retained-badge count overwriting was not
+found; capture starvation remains a source-level risk without conclusive
+archive telemetry. The [battle rulebook](../reference/battle-rulebook.md)
+preserves the trainer's original if/then notes and qualified requirements,
+separately from current implementation.
+
+November 10 [reviewed Moondrop references](../verification/2026-11-10-moondrop-reference-collection.md)
+curates the user's 67 original PNGs (66 unique images) into 21 geometry references plus the full
+36-image QTE library covering all 18 types. Bundled calibration now uses an
+explicit approved catalog, retiring 28 unapproved historical references from
+selection while preserving every old asset. The added `supereffectivetext.png`
+supplies opponent-HP effectiveness placement for S07; the player-side placement
+in S06 remains missing. The screenshot establishes no source attack, Fast Move
+versus charged move, cause, or timing. Grade text and several event-specific
+views remain explicit collection gaps; QTE recognition is not inferred from
+stills. The final package passed 2,344 unit tests and nine emulator checks, then
+was installed and launched on the Moondrop. Saved calibration and record files
+matched after startup; manual calibration and live-battle acceptance remain open.
+
+November 10 [Fast Move terminal and charged-phase coverage](../verification/2026-11-10-fast-move-terminal-and-charge-gaps.md)
+preserves a verified empty outline through the numeric handoff so a fresh,
+settled low-HP baseline can complete its loss without waiting for another empty
+frame. Charged-camera acquisition and impact now have separate bounded
+deadlines. The handoff reuses existing measurements; the charged reader remains
+active through its corrected deadline. Neither infers a missing attack from a
+result. The review also records the unresolved missing-announcement pause
+and incomplete audio reference pools; fresh continuous battle evidence remains
+necessary for the reported immediate post-charge Incinerate finishing case.
+
 November 10 [charged-impact HP calibration](../verification/2026-11-10-charged-impact-hp-box.md)
 adds an independent **Charged Impact HP** search territory for the centered
 receiving Pokémon. Existing charged-phase attention now uses that saved box;
