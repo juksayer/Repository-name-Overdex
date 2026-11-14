@@ -522,7 +522,7 @@ recall supplies a negative case. Reprocessing video pixels in a test does not
 add missing HP measurements to an existing archive.
 | MOVE-04 | A supported Fast Move impact lacks a resolved reference duration. | Replay may show a neutral decorative flight ending at its source impact, clipped to the current appearance and ordinary-play window; an impact exactly at entry can be an impact-only marker. | The decoration cannot identify the move, assert its cadence, generate energy/extra uses, shift source HP time, or borrow flight time from a previous appearance or charge sequence. |
 
-**MOVE-05 — proposed finishing association, trainer report November 14.** If an
+**MOVE-05 — finishing association; bounded Replay implementation November 14.** If an
 existing supported move is directed at the same opposing appearance that an
 independent evidence chain establishes fainted, and source-time ordering and
 pending-hit evidence leave that move as the unambiguous cause, associate the
@@ -531,10 +531,23 @@ outline or final damage-tick record does not by itself forbid that association.
 Do not create an extra attack, guessed damage or rewritten timestamp. Mere
 adjacency is not enough when a pending Fast Move, switch, shield or mirror-side
 ambiguity supplies a competing explanation. The trainer's Camerupt mirror case
-is [recorded for review](../verification/2026-11-14-replay-actor-and-finishing-link-report.md),
-now has a reproduced Replay actor error and a recovered Moondrop charge name;
-the Pixel finishing association remains unresolved. MOVE-02's appearance ownership
-also forbids assigning Camerupt's use to an earlier Turtonator appearance.
+is [recorded for review](../verification/2026-11-14-replay-actor-and-finishing-link-report.md).
+The completed-archive path now links a named, independently sided charge to one
+uniquely count-resolved outgoing appearance when its replacement follows within
+eight seconds of the charge source time. Unchanged native shield readings must
+bracket the exchange; a missing bracket, shield conflict, competing use (including
+an unscheduled canonical Fast Move), surviving receiving HP after the presentation
+impact, intervening phase/reset/result, or changed actor prevents association.
+The eight-second bound is a conservative candidate limit tested on this recording,
+not a universal game timing rule. The existing charge impact drives the faint
+pose and inferred depleted endpoint; original move/faint clocks and separate
+move, faint and shield references remain available. This does not manufacture a
+measured damage tick or backdate the badge count. See the
+[Rock Tomb verification](../verification/2026-11-14-rock-tomb-faint-association.md).
+Pixel's unresolved mirror performer, aggregate losses and the unrecorded final
+Gourgeist faint remain outside this path. Live inference is unchanged. MOVE-02's
+appearance ownership also forbids assigning Camerupt's use to an earlier
+Turtonator appearance.
 
 **MOVE-03 clarification — tested diagnostic, November 14.** A border pulse and
 an HP step can describe one hit even when the step's confirming sample arrives

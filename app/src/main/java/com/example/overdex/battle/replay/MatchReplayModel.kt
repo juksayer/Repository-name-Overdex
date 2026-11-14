@@ -260,6 +260,18 @@ class MatchReplayModel(
             } else use
         }
     }
+    /** Links already-supported uses and independently resolved losses; no new testimony. */
+    val finishingChargeAssociations: List<ReplayFinishingChargeAssociation> by lazy {
+        ReplayFinishingChargeAssociator.resolve(replayArticles,
+            recordedChargedMoveUses.map { use -> ReplayFinishingChargeCandidate(use.side, use.moveName,
+                use.preparationAtNanos, use.sourceAtNanos, use.impactAtNanos, use.articleIds, use.isCompleted) },
+            knockoutTrack.knockouts, fastMoveCycles, ::combatantFor,
+            { side, at -> identityTrackFor(side).appearanceStartAt(at) },
+            { side, at -> identityTrackFor(side).nextAppearanceAfter(at) }, hpEvidence::accepts)
+    }
+
+    private fun identityTrackFor(side: String) = if (side == "PLAYER") playerIdentityTrack else opponentIdentityTrack
+
     private val energyTrack = ReplayEnergyTrack(actionArticles.filter {
         it.payload !is ArchivedFastMoveEnergyDerived || playerTeamConfiguration.acceptsDerivedEvidence(it)
     }, ::combatantFor, fastMoveCycles)
@@ -333,21 +345,29 @@ class MatchReplayModel(
                 use.isCompleted && (matchEndNanos == null || use.animationAtNanos <= matchEndNanos) &&
                     canPerformReplayAction(use.side, use.preparationAtNanos, use.animationAtNanos)
             }.forEach { use ->
+                val association = finishingChargeAssociations.singleOrNull {
+                    it.moveSourceAtNanos == use.sourceAtNanos && it.attackingSide == use.side
+                }
                 add(ReplayEventMarker("charge:${use.side}:${use.sourceAtNanos}:${use.articleIds.sorted().joinToString()}",
                     ReplayEventMarkerKind.CHARGED_MOVE, use.animationAtNanos,
-                    use.side.takeIf { it.isBattleSide() }, "Charged move · ${use.moveName ?: "name unknown"}",
-                    sourceAtNanos = use.sourceAtNanos, sourceArticleIds = use.articleIds.sorted()))
+                    use.side.takeIf { it.isBattleSide() }, "Charged move · ${use.moveName ?: "name unknown"}" +
+                        if (association != null) " · KO" else "",
+                    sourceAtNanos = use.sourceAtNanos,
+                    sourceArticleIds = association?.evidenceArticleIds ?: use.articleIds.sorted()))
             }
             addAll(ReplayEventMarkers.fastMoves(fastMoveCycles))
             knockoutTrack.knockouts.forEach { knockout ->
                 val combatant = ReplayCombatant(knockout.speciesName, null, knockout.appearanceAtNanos,
                     isFainted = true, faintedAtNanos = knockout.recordedAtNanos,
                     knockoutPresentationAtNanos = knockout.presentationAtNanos)
-                val poseAt = alignKnockoutPose(knockout.side, combatant)?.knockoutPresentationAtNanos
+                val association = finishingChargeAssociations.singleOrNull { it.recipientSide == knockout.side &&
+                    it.recipientAppearanceAtNanos == knockout.appearanceAtNanos }
+                val poseAt = association?.presentationImpactAtNanos ?: alignKnockoutPose(knockout.side, combatant)?.knockoutPresentationAtNanos
                     ?: knockout.presentationAtNanos
                 add(ReplayEventMarker("faint:${knockout.side}:${knockout.appearanceAtNanos}",
                     ReplayEventMarkerKind.FAINT, poseAt, knockout.side, "Faint · ${BattleSpeciesDisplay.name(knockout.speciesName)}",
-                    sourceAtNanos = knockout.recordedAtNanos, sourceArticleIds = knockout.sourceArticleIds))
+                    sourceAtNanos = knockout.recordedAtNanos,
+                    sourceArticleIds = association?.evidenceArticleIds ?: knockout.sourceArticleIds))
             }
             addAll(ReplayEventMarkers.activeChanges(mapOf("PLAYER" to playerIdentityTrack.appearances(),
                 "OPPONENT" to opponentIdentityTrack.appearances()), knockoutTrack.knockouts, replayArticlesById))
@@ -386,8 +406,10 @@ class MatchReplayModel(
             monotonicTimeNanos - milestone.atNanos in 0 until QTE_MILESTONE_VISUAL_NANOS
         }
         // The prebuilt tracks choose the correct known identity interval.
-        val player = alignKnockoutPose("PLAYER", applyFaintState("PLAYER", playerIdentityTrack.combatantAt(monotonicTimeNanos), monotonicTimeNanos))
-        val opponent = alignKnockoutPose("OPPONENT", applyFaintState("OPPONENT", opponentIdentityTrack.combatantAt(monotonicTimeNanos), monotonicTimeNanos))
+        val player = alignKnockoutPose("PLAYER", applyFinishingChargeAssociation("PLAYER",
+            applyFaintState("PLAYER", playerIdentityTrack.combatantAt(monotonicTimeNanos), monotonicTimeNanos), monotonicTimeNanos))
+        val opponent = alignKnockoutPose("OPPONENT", applyFinishingChargeAssociation("OPPONENT",
+            applyFaintState("OPPONENT", opponentIdentityTrack.combatantAt(monotonicTimeNanos), monotonicTimeNanos), monotonicTimeNanos))
         // A ranked cry candidate stays measurable evidence only. It cannot
         // create a replay combatant or sprite without an identity article.
 
@@ -452,6 +474,9 @@ class MatchReplayModel(
                     ((monotonicTimeNanos - it.atNanos).toFloat() / 180_000_000L).coerceIn(0f, 1f)
                 } ?: 1f,
                 transition = use.transition,
+                finishingAssociation = finishingChargeAssociations.singleOrNull {
+                    it.attackingSide == use.side && it.moveSourceAtNanos == use.sourceAtNanos
+                },
             )
         }
 
@@ -492,6 +517,19 @@ class MatchReplayModel(
             playerHp = player?.let { replayHpAt("PLAYER", it, monotonicTimeNanos) },
             opponentHp = opponent?.let { replayHpAt("OPPONENT", it, monotonicTimeNanos) },
         )
+    }
+
+    private fun applyFinishingChargeAssociation(side: String, combatant: ReplayCombatant?, cursor: Long): ReplayCombatant? {
+        combatant ?: return null
+        val link = finishingChargeAssociations.singleOrNull {
+            it.recipientSide == side && cursor in it.presentationImpactAtNanos until it.replacementAtNanos &&
+                identityTrackFor(side).appearanceStartAt(cursor) == it.recipientAppearanceAtNanos
+        } ?: return combatant
+        return combatant.copy(isFainted = true, faintedAtNanos = link.faintSourceAtNanos,
+            knockoutPresentationAtNanos = link.presentationImpactAtNanos,
+            knockoutFinishByNanos = link.replacementAtNanos - 100_000_000L,
+            knockoutBasis = link.basis, knockoutSourceArticleIds = link.evidenceArticleIds,
+            finishingChargeAssociation = link)
     }
 
     /** Delay only the pose when an incoming charge is already in flight at the recorded KO. */
@@ -1965,6 +2003,7 @@ data class ReplayChargedMoveAction(
     val qteLevelProgress: Float = 1f,
     /** Original rim interval and phase cue retained beside the presentation estimate. */
     val transition: ReplayChargeTransition? = null,
+    val finishingAssociation: ReplayFinishingChargeAssociation? = null,
 )
 
 enum class ReplayChargePhase { CHARGING, STRIKING }
@@ -2028,6 +2067,7 @@ data class ReplayCombatant(
     val knockoutFinishByNanos: Long? = null,
     val knockoutBasis: String? = null,
     val knockoutSourceArticleIds: List<String> = emptyList(),
+    val finishingChargeAssociation: ReplayFinishingChargeAssociation? = null,
     val playerTeamSlot: Int? = null,
 ) {
     /** Presentation only; speciesName remains the original form/reference lookup key. */
