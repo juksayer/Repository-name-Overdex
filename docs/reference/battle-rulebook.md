@@ -549,6 +549,15 @@ Gourgeist faint remain outside this path. Live inference is unchanged. MOVE-02's
 appearance ownership also forbids assigning Camerupt's use to an earlier
 Turtonator appearance.
 
+**MOVE-05 review proposal — November 14, not implemented.** If native evidence
+has established zero shields for a side in the same Match, consider carrying
+that zero forward for finishing-hit association rather than requiring a fresh
+reading during every charge. Reset and conflicting evidence must invalidate that
+carry-forward; this does not authorize stale positive shield counts or bypass
+actor, surviving-HP or competing-move checks. The new Moondrop Earth Power →
+Rapidash case is blocked by this fresh-reading requirement despite repeated zero
+readings. See the [new-match review](../verification/2026-11-14-new-moondrop-finishing-review.md).
+
 **MOVE-03 clarification — tested diagnostic, November 14.** A border pulse and
 an HP step can describe one hit even when the step's confirming sample arrives
 more than 450 ms after its initial lower reading. The paired Pixel recording
