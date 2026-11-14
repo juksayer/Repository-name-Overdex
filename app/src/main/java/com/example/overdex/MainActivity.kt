@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -48,7 +49,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.overdex.battle.archive.ArchiveDirectoryManager
+import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.battle.archive.MatchArchiveExportMode
+import com.example.overdex.battle.history.BattleRecordStore
 import com.example.overdex.battle.replay.ArchivedSpeciesCropRecognizer
 import com.example.overdex.battle.observation.CountdownBurstRecorder
 import com.example.overdex.battle.observation.CountdownGlyphMatcher
@@ -91,6 +94,8 @@ import com.example.overdex.ui.components.DirectoryCropEditDirection
 import com.example.overdex.ui.components.rememberDirectoryCropEditor
 import com.example.overdex.ui.components.DirectoryCropPreviewLcd
 import com.example.overdex.ui.components.FilterSettings
+import com.example.overdex.ui.components.TerminalScreen
+import com.example.overdex.ui.components.TerminalText
 import com.example.overdex.ui.components.rememberTerminalKeyboardController
 import com.example.overdex.ui.screens.AccessibilityProbeScreen
 import com.example.overdex.ui.screens.AddOwnedPokemonWizard
@@ -572,6 +577,7 @@ fun PokedexApp(
                 InstrumentCommand.OpenBattleRecords -> navController.navigate("battle_records")
                 InstrumentCommand.OpenTournament -> navController.navigate("tournaments")
                 InstrumentCommand.OpenBattleLogs -> navController.navigate("timeline_viewer")
+                InstrumentCommand.OpenMatchReplay -> navController.navigate("match_replay_directory")
                 InstrumentCommand.OpenReplayEditor -> navController.navigate("replay_editor")
 
                 InstrumentCommand.OpenCapture -> navController.navigate("guided_registration") { launchSingleTop = true }
@@ -1681,81 +1687,22 @@ fun PokedexApp(
                     )
                 }
             }
-            composable("match_archive_directory") {
-                var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                var lcdLine1 by remember { mutableStateOf<String?>(null) }
-                var lcdLine2 by remember { mutableStateOf<String?>(null) }
-                var historyLcdContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
-
-                ODXFiShell(
-                    showBattleOverlay = false,
-                    viewModel = viewModel,
-                    filterSettings = filterSettings,
-                    onFilterSettingsChange = { filterSettings = it },
-                    onLaunchProbe = launchAccessibilityProbe,
-                    onLaunchObservatory = { navController.navigate("timeline_viewer") },
-                    onLaunchMatchCalibration = { navController.navigate("match_calibration") },
-                    deploymentState = deploymentState,
-                    frameCount = frameCount,
-                    lcdLine1 = lcdLine1,
-                    lcdLine2 = lcdLine2,
-                    lcdContent = historyLcdContent,
-                    onUp = { upHandler?.invoke() },
-                    onDown = { downHandler?.invoke() },
-                    onA = { aHandler?.invoke() },
-                    onB = { bHandler?.invoke() ?: navController.debugPopBackStack() }
-                ) { _ ->
-                    MatchArchiveDirectoryScreen(
-                        archiveDirectoryManager = archiveDirectoryManager,
-                        onBack = { navController.popBackStack() },
-                        onOpenArchive = { uri ->
-                            navController.navigate("match_summary?archiveUri=${Uri.encode(uri.toString())}")
-                        },
-                        isLoading = archiveLoadInProgress.value,
-                        onUp = { upHandler = it },
-                        onDown = { downHandler = it },
-                        onA = { aHandler = it },
-                        onB = { bHandler = it },
-                        onLcdUpdate = { line1, line2 ->
-                            lcdLine1 = line1
-                            lcdLine2 = line2
-                        },
-                        onLcdContentUpdate = { historyLcdContent = it }
-                    )
-                }
-            }
-            composable("match_archive_viewer") {
-                var matchLcdContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
-                val archive = openedArchive.value
-                if (archive != null) {
+            listOf("match_archive_directory", "match_replay_directory").forEach { directoryRoute ->
+                composable(directoryRoute) {
+                    val replaySelection = directoryRoute == "match_replay_directory"
                     var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                     var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                    var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                    var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                     var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                     var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                    var lcdDragHandler by remember { mutableStateOf<((Offset) -> Unit)?>(null) }
-                    var lcdTapHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                     var lcdLine1 by remember { mutableStateOf<String?>(null) }
                     var lcdLine2 by remember { mutableStateOf<String?>(null) }
+                    var historyLcdContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
 
                     ODXFiShell(
-                        lcdContent = matchLcdContent,
                         showBattleOverlay = false,
                         viewModel = viewModel,
                         filterSettings = filterSettings,
                         onFilterSettingsChange = { filterSettings = it },
-                        onUp = { upHandler?.invoke() },
-                        onDown = { downHandler?.invoke() },
-                        onLeft = { leftHandler?.invoke() },
-                        onRight = { rightHandler?.invoke() },
-                        onA = { aHandler?.invoke() },
-                        onB = { bHandler?.invoke() },
-                        onLcdDrag = { lcdDragHandler?.invoke(it) },
-                        onLcdTap = { lcdTapHandler?.invoke() },
                         onLaunchProbe = launchAccessibilityProbe,
                         onLaunchObservatory = { navController.navigate("timeline_viewer") },
                         onLaunchMatchCalibration = { navController.navigate("match_calibration") },
@@ -1763,75 +1710,166 @@ fun PokedexApp(
                         frameCount = frameCount,
                         lcdLine1 = lcdLine1,
                         lcdLine2 = lcdLine2,
-                    ) {
-                        com.example.overdex.ui.screens.observatory.MatchArchiveViewerScreen(
-                            archive = archive,
-                            onOpenEditor = { navController.navigate("replay_editor") },
-                            onLcdContentUpdate = { matchLcdContent = it },
-                            onBack = {
-                                openedArchive.value = null
-                                openedArchiveUri.value = null
-                                navController.debugPopBackStack()
+                        lcdContent = historyLcdContent,
+                        onUp = { upHandler?.invoke() },
+                        onDown = { downHandler?.invoke() },
+                        onA = { aHandler?.invoke() },
+                        onB = { bHandler?.invoke() ?: navController.debugPopBackStack() }
+                    ) { _ ->
+                        MatchArchiveDirectoryScreen(
+                            archiveDirectoryManager = archiveDirectoryManager,
+                            onBack = { navController.popBackStack() },
+                            onOpenArchive = { uri ->
+                                val encodedUri = Uri.encode(uri.toString())
+                                val route = if (replaySelection) "match_replay" else "match_summary"
+                                navController.navigate("$route?archiveUri=$encodedUri") { launchSingleTop = true }
                             },
+                            replaySelection = replaySelection,
+                            isLoading = archiveLoadInProgress.value,
                             onUp = { upHandler = it },
                             onDown = { downHandler = it },
-                            onLeft = { leftHandler = it },
-                            onRight = { rightHandler = it },
                             onA = { aHandler = it },
                             onB = { bHandler = it },
-                            onLcdDrag = { lcdDragHandler = it },
-                            onLcdTap = { lcdTapHandler = it },
                             onLcdUpdate = { line1, line2 ->
                                 lcdLine1 = line1
                                 lcdLine2 = line2
                             },
-                            resolveSpeciesId = { name -> viewModel.getPokemonByName(name)?.id },
-                            resolveSpeciesTypes = { name -> viewModel.getPokemonByName(name)?.types.orEmpty() },
-                            resolveFastMoveType = { speciesName, moveName ->
-                                viewModel.getPokemonByName(speciesName)
-                                    ?.fastMoves
-                                    ?.firstOrNull { candidate ->
-                                        candidate.name.uppercase().filter(Char::isLetterOrDigit) ==
-                                            moveName.uppercase().filter(Char::isLetterOrDigit)
-                                    }
-                                    ?.type
-                            },
-                            resolveFastMoves = { speciesName ->
-                                viewModel.getPokemonByName(speciesName)?.fastMoves.orEmpty()
-                            },
-                            resolveChargedMoveType = { speciesName, moveName ->
-                                viewModel.getPokemonByName(speciesName)?.chargedMoves?.firstOrNull {
-                                    it.name.uppercase().filter(Char::isLetterOrDigit) ==
-                                        moveName.uppercase().filter(Char::isLetterOrDigit)
-                                }?.type
-                            },
-                            resolveChargedMoves = { speciesName ->
-                                viewModel.getPokemonByName(speciesName)?.chargedMoves.orEmpty()
-                            },
-                            resolveArchivedAudio = { selectedArchive, moves, ids ->
-                                com.example.overdex.battle.replay.ArchivedEndingAudioRecognizer.recognize(
-                                    selectedArchive, moves, ids,
-                                    openArchive = { openedArchiveUri.value?.let { context.contentResolver.openInputStream(it) } },
-                                    readAsset = { context.assets.open(it).use { stream -> stream.readBytes() } })
-                            },
-                            resolveArchivedSpeciesCrops = { selectedArchive, progress ->
-                                val uri = openedArchiveUri.value
-                                if (uri == null) emptyList() else {
-                                    ArchivedSpeciesCropRecognizer.recognize(
-                                        archive = selectedArchive,
-                                        openArchive = { context.contentResolver.openInputStream(uri) },
-                                        knownSpeciesNames = viewModel.getAllSpeciesNames(),
-                                        resolveSpeciesId = { name -> viewModel.getPokemonByName(name)?.id },
-                                        onProgress = progress
-                                    )
-                                }
-                            }
+                            onLcdContentUpdate = { historyLcdContent = it }
                         )
                     }
-                } else {
-                    LaunchedEffect(Unit) {
-                        android.widget.Toast.makeText(context, "Archive data lost.", android.widget.Toast.LENGTH_SHORT).show()
-                        navController.debugPopBackStack()
+                }
+            }
+            listOf("match_archive_viewer", "match_replay?archiveUri={archiveUri}").forEach { viewerRoute ->
+                composable(viewerRoute, arguments = if (viewerRoute == "match_archive_viewer") emptyList() else listOf(
+                    navArgument("archiveUri") { type = NavType.StringType }
+                )) { entry ->
+                    var matchLcdContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
+                    val replayUri = entry.arguments?.getString("archiveUri")?.let(Uri::parse)
+                    val loadedReplay by produceState<Result<MatchArchive>?>(null, replayUri) {
+                        if (replayUri != null) {
+                            value = try {
+                                Result.success(withContext(Dispatchers.IO) { BattleRecordStore(context).readArchive(replayUri) })
+                            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                                throw cancelled
+                            } catch (error: Exception) {
+                                Result.failure(error)
+                            }
+                        }
+                    }
+                    val archive = if (replayUri != null) loadedReplay?.getOrNull() else openedArchive.value
+                    val sourceUri = replayUri ?: openedArchiveUri.value
+                    if (archive != null || replayUri != null) {
+                        var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                        var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                        var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                        var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                        var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                        var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                        var lcdDragHandler by remember { mutableStateOf<((Offset) -> Unit)?>(null) }
+                        var lcdTapHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                        var lcdLine1 by remember { mutableStateOf<String?>(null) }
+                        var lcdLine2 by remember { mutableStateOf<String?>(null) }
+
+                        ODXFiShell(
+                            lcdContent = matchLcdContent,
+                            showBattleOverlay = false,
+                            viewModel = viewModel,
+                            filterSettings = filterSettings,
+                            onFilterSettingsChange = { filterSettings = it },
+                            onUp = { upHandler?.invoke() },
+                            onDown = { downHandler?.invoke() },
+                            onLeft = { leftHandler?.invoke() },
+                            onRight = { rightHandler?.invoke() },
+                            onA = { aHandler?.invoke() },
+                            onB = { bHandler?.invoke() ?: navController.debugPopBackStack() },
+                            onLcdDrag = { lcdDragHandler?.invoke(it) },
+                            onLcdTap = { lcdTapHandler?.invoke() },
+                            onLaunchProbe = launchAccessibilityProbe,
+                            onLaunchObservatory = { navController.navigate("timeline_viewer") },
+                            onLaunchMatchCalibration = { navController.navigate("match_calibration") },
+                            deploymentState = deploymentState,
+                            frameCount = frameCount,
+                            lcdLine1 = lcdLine1,
+                            lcdLine2 = lcdLine2,
+                        ) {
+                            if (archive == null) {
+                                TerminalScreen {
+                                    TerminalText(loadedReplay?.exceptionOrNull()?.let {
+                                        "Unable to read the selected match: ${it.message ?: "recording unavailable"}"
+                                    } ?: "READING SAVED MATCH…")
+                                }
+                            } else com.example.overdex.ui.screens.observatory.MatchArchiveViewerScreen(
+                                archive = archive,
+                                startInReplay = replayUri != null,
+                                onOpenEditor = { navController.navigate("replay_editor") },
+                                onLcdContentUpdate = { matchLcdContent = it },
+                                onBack = {
+                                    if (replayUri == null) {
+                                        openedArchive.value = null
+                                        openedArchiveUri.value = null
+                                    }
+                                    navController.debugPopBackStack()
+                                },
+                                onUp = { upHandler = it },
+                                onDown = { downHandler = it },
+                                onLeft = { leftHandler = it },
+                                onRight = { rightHandler = it },
+                                onA = { aHandler = it },
+                                onB = { bHandler = it },
+                                onLcdDrag = { lcdDragHandler = it },
+                                onLcdTap = { lcdTapHandler = it },
+                                onLcdUpdate = { line1, line2 ->
+                                    lcdLine1 = line1
+                                    lcdLine2 = line2
+                                },
+                                resolveSpeciesId = { name -> viewModel.getPokemonByName(name)?.id },
+                                resolveSpeciesTypes = { name -> viewModel.getPokemonByName(name)?.types.orEmpty() },
+                                resolveFastMoveType = { speciesName, moveName ->
+                                    viewModel.getPokemonByName(speciesName)
+                                        ?.fastMoves
+                                        ?.firstOrNull { candidate ->
+                                            candidate.name.uppercase().filter(Char::isLetterOrDigit) ==
+                                                moveName.uppercase().filter(Char::isLetterOrDigit)
+                                        }
+                                        ?.type
+                                },
+                                resolveFastMoves = { speciesName ->
+                                    viewModel.getPokemonByName(speciesName)?.fastMoves.orEmpty()
+                                },
+                                resolveChargedMoveType = { speciesName, moveName ->
+                                    viewModel.getPokemonByName(speciesName)?.chargedMoves?.firstOrNull {
+                                        it.name.uppercase().filter(Char::isLetterOrDigit) ==
+                                            moveName.uppercase().filter(Char::isLetterOrDigit)
+                                    }?.type
+                                },
+                                resolveChargedMoves = { speciesName ->
+                                    viewModel.getPokemonByName(speciesName)?.chargedMoves.orEmpty()
+                                },
+                                resolveArchivedAudio = { selectedArchive, moves, ids ->
+                                    com.example.overdex.battle.replay.ArchivedEndingAudioRecognizer.recognize(
+                                        selectedArchive, moves, ids,
+                                        openArchive = { sourceUri?.let { context.contentResolver.openInputStream(it) } },
+                                        readAsset = { context.assets.open(it).use { stream -> stream.readBytes() } })
+                                },
+                                resolveArchivedSpeciesCrops = { selectedArchive, progress ->
+                                    val uri = sourceUri
+                                    if (uri == null) emptyList() else {
+                                        ArchivedSpeciesCropRecognizer.recognize(
+                                            archive = selectedArchive,
+                                            openArchive = { context.contentResolver.openInputStream(uri) },
+                                            knownSpeciesNames = viewModel.getAllSpeciesNames(),
+                                            resolveSpeciesId = { name -> viewModel.getPokemonByName(name)?.id },
+                                            onProgress = progress
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                    } else {
+                        LaunchedEffect(Unit) {
+                            android.widget.Toast.makeText(context, "Archive data lost.", android.widget.Toast.LENGTH_SHORT).show()
+                            navController.debugPopBackStack()
+                        }
                     }
                 }
             }

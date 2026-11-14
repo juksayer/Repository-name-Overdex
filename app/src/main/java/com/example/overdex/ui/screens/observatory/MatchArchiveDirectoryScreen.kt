@@ -54,7 +54,10 @@ fun MatchArchiveDirectoryScreen(
     onB: (() -> Unit) -> Unit = {},
     onLcdUpdate: (String?, String?) -> Unit = { _, _ -> },
     onLcdContentUpdate: ((@Composable () -> Unit)?) -> Unit = {},
+    replaySelection: Boolean = false,
 ) {
+    val title = if (replaySelection) "MATCH REPLAY" else "MATCH HISTORY"
+    val action = if (replaySelection) "REPLAY" else "SUMMARY"
     val context = LocalContext.current
     val reader = remember(context) { BattleRecordStore(context.applicationContext) }
     var selectedUri by rememberSaveable { mutableStateOf<String?>(null) }
@@ -98,7 +101,7 @@ fun MatchArchiveDirectoryScreen(
                 selectedMatchId = current.firstOrNull { it.sourceUri == selectedUri }?.summary?.matchId
             } catch (error: Exception) {
                 if (error is CancellationException) throw error
-                errorMessage = "Unable to read Match History: ${error.message ?: "storage unavailable"}"
+                errorMessage = "Unable to read saved matches: ${error.message ?: "storage unavailable"}"
             } finally {
                 initialLoading = false
             }
@@ -134,7 +137,7 @@ fun MatchArchiveDirectoryScreen(
         }
     }
     LaunchedEffect(selectedEntry, busy, errorMessage) {
-        onLcdUpdate(selectedEntry?.let(::dateLabel) ?: "MATCH HISTORY",
+        onLcdUpdate(selectedEntry?.let(::dateLabel) ?: title,
             errorMessage ?: if (busy) "READING SAVED MATCHES…" else selectedEntry?.resultLabel ?: "NO SAVED MATCHES")
     }
     BackHandler { latestBack() }
@@ -168,16 +171,16 @@ fun MatchArchiveDirectoryScreen(
                 else -> MatchLcdText("No saved matches yet.")
             }
             errorMessage?.let { MatchLcdText(it) }
-            MatchLcdButton("OPEN SUMMARY", ::openSelected, selected = selectedEntry != null,
+            MatchLcdButton(if (replaySelection) "PLAY MATCH" else "OPEN SUMMARY", ::openSelected, selected = selectedEntry != null,
                 enabled = !busy && selectedEntry != null)
             MatchLcdButton("BACK", { latestBack() })
         }
     }
 
     TerminalScreen {
-        TerminalPathIndicator(path = "/battle/match_history/")
+        TerminalPathIndicator(path = if (replaySelection) "/battle/match_replay/" else "/battle/match_history/")
         Column(Modifier.fillMaxSize()) {
-            TerminalHeader(text = "MATCH HISTORY")
+            TerminalHeader(text = title)
             TerminalText("SAVED MATCHES · NEWEST FIRST", color = TerminalPurple, fontSize = 11.sp)
             Spacer(Modifier.height(6.dp))
             if (matches.isEmpty()) {
@@ -208,11 +211,11 @@ fun MatchArchiveDirectoryScreen(
             }
             if (isLoading) {
                 Spacer(Modifier.height(4.dp))
-                TerminalText("READING MATCH SUMMARY…", color = TerminalGreen, fontSize = 11.sp)
+                TerminalText("READING MATCH…", color = TerminalGreen, fontSize = 11.sp)
             }
             errorMessage?.let { TerminalText(it, color = Color.Red, fontSize = 11.sp) }
             Spacer(Modifier.height(6.dp))
-            TerminalText(if (busy) "READING SAVED MATCHES…" else "↑/↓ MATCH   A SUMMARY   B BACK",
+            TerminalText(if (busy) "READING SAVED MATCHES…" else "↑/↓ MATCH   A $action   B BACK",
                 color = TerminalDimGreen, fontSize = 11.sp)
         }
     }

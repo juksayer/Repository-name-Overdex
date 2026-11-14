@@ -96,6 +96,7 @@ object OverdextopCatalog {
         program("manage_binders", "manage binders", "Create or edit views of your owned Pokémon.", OverdextopIcon.BINDER, InstrumentCommand.ManageBinders),
         program("add_pokemon", "add Pokémon", "Add a Pokémon card to your collection.", OverdextopIcon.POKEDEX, InstrumentCommand.AddSpecimen),
         history,
+        program("match_replay", "match replay", "Watch a saved match.", OverdextopIcon.REPLAY, InstrumentCommand.OpenMatchReplay),
         program("records", "battle records", "Inspect your recorded battle statistics.", OverdextopIcon.RECORDS, InstrumentCommand.OpenBattleRecords),
         program("replay_editor", "replay editor", "Create clips and compilations from saved battles.", OverdextopIcon.REPLAY, InstrumentCommand.OpenReplayEditor),
         program("tournaments", "tournaments", "Prepare a lobby and organize a tournament.", OverdextopIcon.TOURNAMENT, InstrumentCommand.OpenTournament),

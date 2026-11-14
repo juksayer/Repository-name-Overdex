@@ -79,11 +79,12 @@ fun MatchArchiveViewerScreen(
     resolveArchivedAudio: suspend (MatchArchive, List<Move>, Set<Int>) -> com.example.overdex.battle.replay.ReplayAudioRecovery = { _, _, _ -> com.example.overdex.battle.replay.ReplayAudioRecovery() },
     resolveArchivedSpeciesCrops: suspend (MatchArchive, (com.example.overdex.battle.replay.ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() },
     onOpenEditor: (() -> Unit)? = null,
+    startInReplay: Boolean = false,
 ) {
     val context = LocalContext.current
     var selectedIndex by remember { mutableIntStateOf(0) }
     var showDetails by remember { mutableStateOf(false) }
-    var showReplay by remember { mutableStateOf(false) }
+    var showReplay by remember(archive, startInReplay) { mutableStateOf(startInReplay) }
     var excerptStart by remember { mutableStateOf<ArchivedRealityArticle?>(null) }
     var excerptStatus by remember { mutableStateOf<String?>(null) }
     var excerptEnd by remember { mutableStateOf<ArchivedRealityArticle?>(null) }
@@ -150,7 +151,7 @@ fun MatchArchiveViewerScreen(
     if (showReplay) {
         MatchReplayScreen(
             archive = archive,
-            onBack = { showReplay = false },
+            onBack = { if (startInReplay) onBack() else showReplay = false },
             onUp = onUp,
             onDown = onDown,
             onA = onA,

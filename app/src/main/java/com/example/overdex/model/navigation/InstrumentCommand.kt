@@ -19,6 +19,7 @@ sealed interface InstrumentCommand {
     data object OpenBattleHistory : InstrumentCommand
     data object OpenBattleRecords : InstrumentCommand
     data object OpenBattleLogs : InstrumentCommand
+    data object OpenMatchReplay : InstrumentCommand
     data object OpenReplayEditor : InstrumentCommand
     data object OpenCapture : InstrumentCommand
     data object OpenCalibration : InstrumentCommand
