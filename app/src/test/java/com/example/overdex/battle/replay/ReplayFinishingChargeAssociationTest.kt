@@ -27,8 +27,8 @@ class ReplayFinishingChargeAssociationTest {
             assertEquals(1f, impact.chargedMoveActions.single().progress, 0f)
             assertEquals(link, impact.chargedMoveActions.single().finishingAssociation)
             assertFalse(model.sceneAt(link.presentationImpactAtNanos - 1).opponent!!.isFainted)
-            assertEquals("Gourgeist", model.sceneAt(link.replacementAtNanos).opponent!!.speciesName)
-            assertFalse(model.sceneAt(link.replacementAtNanos).opponent!!.isFainted)
+            assertEquals("Gourgeist", model.sceneAt(requireNotNull(link.replacementAtNanos)).opponent!!.speciesName)
+            assertFalse(model.sceneAt(requireNotNull(link.replacementAtNanos)).opponent!!.isFainted)
             assertEquals(impact, model.sceneAt(link.presentationImpactAtNanos)) // reverse scrub
             val marker = model.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT && it.atNanos == link.presentationImpactAtNanos }
             assertEquals(link.faintSourceAtNanos, marker.sourceAtNanos)

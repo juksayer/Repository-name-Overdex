@@ -130,6 +130,7 @@ fun MatchReplayScreen(
     resolveChargedMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
     resolveFastMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
     resolveChargedMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
+    resolveArchivedAudio: suspend (MatchArchive, List<Move>, Set<Int>) -> com.example.overdex.battle.replay.ReplayAudioRecovery = { _, _, _ -> com.example.overdex.battle.replay.ReplayAudioRecovery() },
     resolveArchivedSpeciesCrops: suspend (MatchArchive, (ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() },
     initialCursorNanos: Long? = null,
     playbackWindow: ReplayWindow? = null,
@@ -215,15 +216,27 @@ fun MatchReplayScreen(
     ) {
         value = null
         if (modelInputsReady) {
+            cropProgress = ReplayCropProgress("CHECKING ENDING AUDIO")
+            val extraNames = archivedCropIdentities.orEmpty().map { it.speciesName }.distinct()
+            val allFast = fastMovesBySpecies + extraNames.associateWith { resolveFastMoves(it) }
+            val allCharged = chargedMovesBySpecies + extraNames.associateWith { resolveChargedMoves(it) }
+            val allIds = speciesIds + extraNames.mapNotNull { name -> resolveSpeciesId(name)?.let { name to it } }.toMap()
+            val recoveredAudio = try {
+                resolveArchivedAudio(archive, (allFast.values.flatten() + allCharged.values.flatten()).distinct(), allIds.values.toSet())
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+              catch (error: Exception) {
+                com.example.overdex.battle.replay.ReplayAudioRecovery(unavailableArtifacts = listOf("Audio recovery failed: ${error.message}"))
+            }
             value = withContext(Dispatchers.Default) {
                 MatchReplayModel(
                     archive,
-                    speciesIds,
+                    allIds,
                     archivedCropIdentities.orEmpty(),
                     fastMoveTypes,
-                    fastMovesBySpecies,
+                    allFast,
                     chargedMoveTypes,
-                    chargedMovesBySpecies,
+                    allCharged,
+                    recoveredAudio,
                 )
             }
         }

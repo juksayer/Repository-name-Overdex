@@ -824,6 +824,24 @@ Two separated windows matching different portions of one Seed Bomb likewise
 support one effect, not two attacks. See the
 [ending audio study](../verification/2026-11-14-ending-seed-bomb-audio.md).
 
+**Retrospective implementation — November 14.** Replay now recovers distinct
+portions of one charged effect and a separately bounded cry tail from verified
+original audio. Both legal Fast and Charged references, configured/recorded extras
+and cry competitors participate. A matching Fast effect remains available as a
+competing cause even when no animation was scheduled. Missing references for
+an active Pokémon prevent terminal attribution. Multiple windows of one effect
+remain one attack.
+
+For a missing final opponent faint, the implemented rule additionally requires
+stable non-mirror identities, a unique legal performer, last-survivor count,
+zero shields and native WIN. Pending/unknown competing attacks, later survival,
+new charge/entry/session boundaries or missing relevant evidence leave the link
+unresolved. The result is explicitly a retrospective audio reconstruction; it
+neither rewrites original evidence nor creates a measured zero HP/count. The
+cry's estimated onset and its original capture clock remain separate. Live cry
+acceptance and universal numeric sample requirements are unchanged. See the
+[implementation and regression scope](../verification/2026-11-14-ending-seed-bomb-audio.md#implemented-retrospective-recovery).
+
 Trainer refinement: “mirror matches need to double the required samples”, then
 “if user A has the same lead pokemon that user B uses as a safe swap, maybe only
 3 or even 2 would be a prerequisite”. The refined proposal replaces a blanket

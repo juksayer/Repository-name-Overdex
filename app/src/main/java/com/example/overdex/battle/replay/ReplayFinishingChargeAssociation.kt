@@ -14,12 +14,12 @@ data class ReplayFinishingChargeAssociation(
     val moveSourceAtNanos: Long,
     val faintSourceAtNanos: Long,
     val presentationImpactAtNanos: Long,
-    val replacementAtNanos: Long,
+    val replacementAtNanos: Long?,
     val moveArticleIds: List<String>,
     val faintArticleIds: List<String>,
     val shieldArticleIds: List<String>,
+    val basis: String = "UNCONTESTED_CHARGE_TO_RESOLVED_COUNT_FAINT",
 ) {
-    val basis: String get() = "UNCONTESTED_CHARGE_TO_RESOLVED_COUNT_FAINT"
     val evidenceArticleIds: List<String> get() = (moveArticleIds + faintArticleIds + shieldArticleIds).distinct().sorted()
 }
 

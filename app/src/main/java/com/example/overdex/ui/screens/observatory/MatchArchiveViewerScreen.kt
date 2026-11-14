@@ -76,6 +76,7 @@ fun MatchArchiveViewerScreen(
     resolveChargedMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
     resolveChargedMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
     resolveFastMoves: suspend (speciesName: String) -> List<com.example.overdex.model.Move> = { emptyList() },
+    resolveArchivedAudio: suspend (MatchArchive, List<Move>, Set<Int>) -> com.example.overdex.battle.replay.ReplayAudioRecovery = { _, _, _ -> com.example.overdex.battle.replay.ReplayAudioRecovery() },
     resolveArchivedSpeciesCrops: suspend (MatchArchive, (com.example.overdex.battle.replay.ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() },
     onOpenEditor: (() -> Unit)? = null,
 ) {
@@ -167,6 +168,7 @@ fun MatchArchiveViewerScreen(
             resolveChargedMoveType = resolveChargedMoveType,
             resolveChargedMoves = resolveChargedMoves,
             resolveFastMoves = resolveFastMoves,
+            resolveArchivedAudio = resolveArchivedAudio,
             resolveArchivedSpeciesCrops = resolveArchivedSpeciesCrops
         )
         return

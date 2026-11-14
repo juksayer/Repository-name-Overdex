@@ -1808,6 +1808,12 @@ fun PokedexApp(
                             resolveChargedMoves = { speciesName ->
                                 viewModel.getPokemonByName(speciesName)?.chargedMoves.orEmpty()
                             },
+                            resolveArchivedAudio = { selectedArchive, moves, ids ->
+                                com.example.overdex.battle.replay.ArchivedEndingAudioRecognizer.recognize(
+                                    selectedArchive, moves, ids,
+                                    openArchive = { openedArchiveUri.value?.let { context.contentResolver.openInputStream(it) } },
+                                    readAsset = { context.assets.open(it).use { stream -> stream.readBytes() } })
+                            },
                             resolveArchivedSpeciesCrops = { selectedArchive, progress ->
                                 val uri = openedArchiveUri.value
                                 if (uri == null) emptyList() else {

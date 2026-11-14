@@ -96,7 +96,7 @@ class RecordedRockTombFaintDeviceTest {
             assertEquals(1f, model.sceneAt(cursor).chargedMoveActions.single().progress, 0f)
             sample(impact + ReplayFaintPose.DURATION_NANOS, "fall")
             assertEquals(90f, ReplayFaintPose.at(impact, cursor, false)!!.rotationDegrees, 0f)
-            sample(link.replacementAtNanos, "replacement")
+            sample(requireNotNull(link.replacementAtNanos), "replacement")
             compose.onNodeWithContentDescription("Gourgeist", useUnmergedTree = true).assertExists()
             compose.onNodeWithContentDescription("Camerupt, fainted", useUnmergedTree = true).assertDoesNotExist()
             sample(impact - 100_000_000L, "reverse")
