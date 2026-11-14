@@ -338,6 +338,7 @@ class MatchReplayModel(
                     use.side.takeIf { it.isBattleSide() }, "Charged move · ${use.moveName ?: "name unknown"}",
                     sourceAtNanos = use.sourceAtNanos, sourceArticleIds = use.articleIds.sorted()))
             }
+            addAll(ReplayEventMarkers.fastMoves(fastMoveCycles))
             knockoutTrack.knockouts.forEach { knockout ->
                 val combatant = ReplayCombatant(knockout.speciesName, null, knockout.appearanceAtNanos,
                     isFainted = true, faintedAtNanos = knockout.recordedAtNanos,

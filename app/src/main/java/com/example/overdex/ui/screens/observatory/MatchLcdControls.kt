@@ -112,7 +112,8 @@ internal fun ReplayEventMarkerStrip(
     }) {
         val duration = (endNanos - startNanos).coerceAtLeast(1)
         val radius = 2.dp.toPx()
-        events.forEach { marker ->
+        // Paint small Fast Move dots first so a coincident major event stays visible.
+        events.sortedBy { if (it.kind == ReplayEventMarkerKind.FAST_MOVE) 0 else 1 }.forEach { marker ->
             val x = radius + (size.width - 2 * radius).coerceAtLeast(0f) *
                 ((marker.atNanos - startNanos).toDouble() / duration).toFloat()
             val y = when (marker.side) {
@@ -126,6 +127,7 @@ internal fun ReplayEventMarkerStrip(
                     drawLine(color, Offset(x - radius, y - radius), Offset(x + radius, y + radius), 1.dp.toPx())
                     drawLine(color, Offset(x - radius, y + radius), Offset(x + radius, y - radius), 1.dp.toPx())
                 }
+                ReplayEventMarkerKind.FAST_MOVE -> drawCircle(color, radius / 2, Offset(x, y))
                 ReplayEventMarkerKind.CHARGED_MOVE -> drawCircle(color, radius, Offset(x, y))
                 else -> drawRect(color, Offset(x - radius, y - radius), Size(radius * 2, radius * 2))
             }
@@ -175,6 +177,7 @@ internal fun ReplayEventMarkerControls(
 private fun replayMarkerColor(kind: ReplayEventMarkerKind): Color = when (kind) {
     ReplayEventMarkerKind.MATCH_START -> com.example.overdex.ui.theme.TerminalPurple
     ReplayEventMarkerKind.CHARGED_MOVE -> Color(0xFFFFB74D)
+    ReplayEventMarkerKind.FAST_MOVE -> Color(0xFFB0BEC5)
     ReplayEventMarkerKind.FAINT -> Color(0xFFFF6B6B)
     ReplayEventMarkerKind.BUFF -> TerminalGreen
     ReplayEventMarkerKind.DEBUFF -> Color(0xFFFF80AB)

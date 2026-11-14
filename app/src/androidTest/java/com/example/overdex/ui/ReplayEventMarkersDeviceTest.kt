@@ -13,6 +13,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.graphics.toPixelMap
+import org.junit.Assert.assertTrue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -70,6 +73,28 @@ class ReplayEventMarkersDeviceTest {
         next.assertIsNotEnabled()
         previous.performClick()
         compose.runOnIdle { assertEquals("shield", selected) }
+    }
+
+    @Test fun fastMoveDotsAreSmallerThanChargedMoveMarkers() {
+        compose.setContent {
+            ReplayEventMarkerStrip(listOf(
+                ReplayEventMarker("fast", ReplayEventMarkerKind.FAST_MOVE, 2, "PLAYER", "Fast move"),
+                ReplayEventMarker("charge", ReplayEventMarkerKind.CHARGED_MOVE, 6, "PLAYER", "Charged move"),
+            ), 0, 8, Modifier.width(220.dp).height(16.dp).background(Color.Black))
+        }
+        val pixels = compose.onNodeWithContentDescription("Replay event markers").captureToImage().toPixelMap()
+        fun illuminated(from: Int, until: Int): Int {
+            var count=0
+            for (x in from until until) for (y in 0 until pixels.height) {
+                val color=pixels[x,y]
+                if (maxOf(color.red,color.green,color.blue) > .1f) count++
+            }
+            return count
+        }
+        val fast=illuminated(0,pixels.width/2)
+        val charge=illuminated(pixels.width/2,pixels.width)
+        assertTrue("Fast marker must remain visible", fast>0)
+        assertTrue("Charge marker must be clearly larger: fast=$fast charge=$charge", charge>fast*2)
     }
 
     @Test fun anArchiveWithoutSupportedEventsHasNoInventedSeekTarget() {

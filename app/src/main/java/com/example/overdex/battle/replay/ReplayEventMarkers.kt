@@ -26,7 +26,7 @@ data class ReplayEventMarker(
 
 enum class ReplayEventMarkerKind(val shortLabel: String) {
     MATCH_START("GO"), CHARGED_MOVE("CM"), FAINT("KO"),
-    BUFF("↑"), DEBUFF("↓"), ACTIVE_CHANGE("↔"), SHIELD("SH"),
+    BUFF("↑"), DEBUFF("↓"), ACTIVE_CHANGE("↔"), SHIELD("SH"), FAST_MOVE("FM"),
 }
 
 /** Pure cursor navigation also keeps different events at the same instant reachable. */
@@ -51,6 +51,20 @@ object ReplayEventMarkerNavigation {
 }
 
 internal object ReplayEventMarkers {
+    /** One marker per resolved animation, not one per contributing witness. */
+    fun fastMoves(cycles: List<ReplayFastMoveCycle>): List<ReplayEventMarker> = cycles.map { cycle ->
+        val use = cycle.witness
+        ReplayEventMarker(
+            id = "fast:${use.side}:${use.observedAtNanos}:${use.articleIds.sorted().joinToString()}",
+            kind = ReplayEventMarkerKind.FAST_MOVE,
+            atNanos = cycle.impactAtNanos,
+            side = use.side,
+            label = "Fast move · ${use.moveName ?: "name unknown"}",
+            sourceAtNanos = use.observedAtNanos,
+            sourceArticleIds = use.articleIds.sorted(),
+        )
+    }
+
     fun activeChanges(
         appearancesBySide: Map<String, List<ReplayIdentityObservation>>,
         knockouts: List<ReplayKnockout>,
