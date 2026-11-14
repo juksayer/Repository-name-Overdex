@@ -95,7 +95,7 @@ class ReplayAggregateTeamLossTest {
         ArchivedPlayerPokeBallCountMeasured(count, 3) else ArchivedOpponentBattleResourceCountMeasured("POKE_BALLS", count, 3)
 
     private fun event(id: String, payload: ArchivedTestimonyPayload, second: Long) = ArchivedRealityArticle(
-        id, "aggregate", 0, 0, "TEST", payload, emptyList(), null, null, emptyList(), second * SECOND)
+        id, "aggregate", 0, 0, "TEST", payload, emptyList(), .99f, null, emptyList(), second * SECOND)
 
     private companion object { const val SECOND = 1_000_000_000L }
 }

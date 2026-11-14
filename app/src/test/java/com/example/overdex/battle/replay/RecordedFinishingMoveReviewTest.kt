@@ -57,6 +57,10 @@ class RecordedFinishingMoveReviewTest {
             cycles.filterIsInstance<ReplayFastMoveCycle>().forEach { cycle ->
                 times.addAll(listOf(cycle.startedAtNanos, cycle.impactAtNanos - 1, cycle.impactAtNanos))
             }
+            // Cover the unobserved terminal exchange as well as existing scheduled actions.
+            replay.matchStartNanos?.let { start ->
+                for (offset in 98..104) times += start + offset * 1_000_000_000L
+            }
             val scenes = times.associateWith(replay::sceneAt)
             times.reversed().forEach { at -> assertEquals("Reverse seeking at $at", scenes[at], replay.sceneAt(at)) }
             val report = buildJsonObject {

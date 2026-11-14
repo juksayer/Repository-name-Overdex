@@ -1086,7 +1086,9 @@ internal fun ChargedMoveReplayIndicator(
 
 @Composable
 private fun ReplayHpBar(hp: ReplayHpState, label: String, modifier: Modifier = Modifier) {
-    val fraction = hp.filledFraction
+    val fraction = hp.filledFraction.takeIf {
+        hp.currentHpConfirmed || hp.assumedInitialFull || it == 0f
+    }
     val fillColor = when {
         fraction == null -> Color.Transparent
         fraction <= 0.2f -> Color(0xFFEF5350)

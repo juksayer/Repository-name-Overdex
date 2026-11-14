@@ -268,11 +268,11 @@ class MatchReplayModel(
                 use.preparationAtNanos, use.sourceAtNanos, use.impactAtNanos, use.articleIds, use.isCompleted) },
             knockoutTrack.knockouts, fastMoveCycles, ::combatantFor,
             { side, at -> identityTrackFor(side).appearanceStartAt(at) },
-            { side, at -> identityTrackFor(side).nextAppearanceAfter(at) }, hpEvidence::accepts) + ReplayTerminalAudioAssociation.resolve(replayArticles, audioRecovery,
+            { side, at -> identityTrackFor(side).nextAppearanceAfter(at) }, { hpEvidence.confirmsLiveHp(it) }) + ReplayTerminalAudioAssociation.resolve(replayArticles, audioRecovery,
             recordedChargedMoveUses.map { use -> ReplayFinishingChargeCandidate(use.side, use.moveName,
                 use.preparationAtNanos, use.sourceAtNanos, use.impactAtNanos, use.articleIds, use.isCompleted) },
             fastMoveCycles, ::combatantFor, { side, at -> identityTrackFor(side).appearanceStartAt(at) },
-            { side, at -> identityTrackFor(side).nextAppearanceAfter(at) }, hpEvidence::accepts, ::audioReferencesMissingAt)
+            { side, at -> identityTrackFor(side).nextAppearanceAfter(at) }, { hpEvidence.confirmsLiveHp(it) }, ::audioReferencesMissingAt)
     }
 
     private fun identityTrackFor(side: String) = if (side == "PLAYER") playerIdentityTrack else opponentIdentityTrack

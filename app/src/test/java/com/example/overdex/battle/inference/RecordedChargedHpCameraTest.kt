@@ -110,7 +110,12 @@ class RecordedChargedHpCameraTest {
         val spend = archive.articles.single { it.payload is ArchivedChargedMoveEnergySpent }.payload as ArchivedChargedMoveEnergySpent
         assertEquals("Hydro Cannon", spend.moveName)
         assertEquals(40, spend.energyCost)
-        assertEquals(.32786885f, scene.playerHp!!.filledFraction!!, .0001f)
+        val weakImpact = archive.articles.single {
+            (it.payload as? ArchivedActiveHpBarMeasured)?.filledFraction == .32786885f
+        }
+        assertTrue(weakImpact.confidence!! < .80f)
+        assertFalse("Weak impact HP stays unknown while the charge remains supported", scene.playerHp!!.currentHpConfirmed)
+        assertTrue(model.timedArticles.contains(weakImpact))
         assertEquals(original, MatchArchiveSerializer.serialize(archive))
     }
 

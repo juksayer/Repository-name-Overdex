@@ -1,0 +1,90 @@
+[
+  {
+    "label": "live",
+    "source": {
+      "pts": 12195198,
+      "timeBase": "1/90000",
+      "video": "/home/sean/Videos/Overdex/Moondrop-2026-11-12_16-05-21-wzGrCr.mp4",
+      "sha256": "3be83deb91b54b078f7047e7e3e66618dff47ca2a804d5c6a7d2bd7c7afdaf45"
+    },
+    "crop": {
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "left": 543,
+      "top": 896,
+      "right": 848,
+      "bottom": 923,
+      "cropLeft": 531,
+      "cropTop": 846,
+      "cropRight": 860,
+      "cropBottom": 973
+    },
+    "sha256": "dca3735e9b8b6934975d9fd3233f8aee02d7afe5c87f54ce2ed235478cf99783"
+  },
+  {
+    "label": "orange",
+    "source": {
+      "pts": 12201044,
+      "timeBase": "1/90000",
+      "video": "/home/sean/Videos/Overdex/Moondrop-2026-11-12_16-05-21-wzGrCr.mp4",
+      "sha256": "3be83deb91b54b078f7047e7e3e66618dff47ca2a804d5c6a7d2bd7c7afdaf45"
+    },
+    "crop": {
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "left": 543,
+      "top": 908,
+      "right": 848,
+      "bottom": 936,
+      "cropLeft": 531,
+      "cropTop": 858,
+      "cropRight": 860,
+      "cropBottom": 986
+    },
+    "sha256": "f729d87144199d553abad41b4b78c2a8f8b3447e15ec6aa76c1337bf5792b849"
+  },
+  {
+    "label": "orange-later",
+    "source": {
+      "pts": 12205604,
+      "timeBase": "1/90000",
+      "video": "/home/sean/Videos/Overdex/Moondrop-2026-11-12_16-05-21-wzGrCr.mp4",
+      "sha256": "3be83deb91b54b078f7047e7e3e66618dff47ca2a804d5c6a7d2bd7c7afdaf45"
+    },
+    "crop": {
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "left": 542,
+      "top": 921,
+      "right": 847,
+      "bottom": 949,
+      "cropLeft": 530,
+      "cropTop": 871,
+      "cropRight": 859,
+      "cropBottom": 999
+    },
+    "sha256": "53bb4636611896556092226a7ebdddedcbaa7e4370f52870d116e1ad5b8ded91"
+  },
+  {
+    "label": "fading",
+    "source": {
+      "pts": 12312111,
+      "timeBase": "1/90000",
+      "video": "/home/sean/Videos/Overdex/Moondrop-2026-11-12_16-05-21-wzGrCr.mp4",
+      "sha256": "3be83deb91b54b078f7047e7e3e66618dff47ca2a804d5c6a7d2bd7c7afdaf45"
+    },
+    "crop": {
+      "sourceWidth": 1080,
+      "sourceHeight": 2400,
+      "left": 544,
+      "top": 890,
+      "right": 848,
+      "bottom": 919,
+      "cropLeft": 532,
+      "cropTop": 840,
+      "cropRight": 860,
+      "cropBottom": 969
+    },
+    "sha256": "826d245e4fa9cae5f0397ac8cebe2660cc9313e883386565748e09c3544d5a6c"
+  }
+]

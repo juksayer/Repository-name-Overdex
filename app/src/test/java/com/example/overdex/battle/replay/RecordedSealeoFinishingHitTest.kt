@@ -55,6 +55,12 @@ class RecordedSealeoFinishingHitTest {
                 .distinctBy { it.sourceArticleIds }
             assertEquals("A captured finishing exchange must not disappear because recognition completed late", 1, actions.size)
             assertEquals("PLAYER", actions.single().side)
+            val impact = actions.single().impactAtNanos
+            val landing = model.sceneAt(impact).fastMoveActions.single {
+                VISUAL_ID in it.sourceArticleIds && SOUND_ID in it.sourceArticleIds
+            }
+            assertEquals("The supported projectile reaches its recipient", 1f, landing.progress, 0f)
+            assertEquals("Incinerate", landing.moveName)
             assertTrue(FastMoveUseEvidence.RECIPIENT_AUDIO_IMPACT in actions.single().evidenceKinds)
             assertEquals(0f, model.sceneAt(EMPTY_AT + 100_000_000L).opponentHp!!.filledFraction!!, .0001f)
             assertTrue("scene=${model.sceneAt(EMPTY_AT + 100_000_000L).opponent}; markers=${model.eventMarkers.filter { it.kind == ReplayEventMarkerKind.FAINT }}",

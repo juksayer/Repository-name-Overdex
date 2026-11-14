@@ -89,7 +89,7 @@ class ReplayFormRefinementKnockoutTest {
     private fun count(id: String, remaining: Int, seconds: Long) =
         event(id, ArchivedOpponentBattleResourceCountMeasured("POKE_BALLS", remaining, 3), seconds)
     private fun event(id: String, payload: ArchivedTestimonyPayload, seconds: Long) = ArchivedRealityArticle(
-        id, "forms", 0, 0, "TEST", payload, emptyList(), null, null, emptyList(), seconds * 1_000 * MS)
+        id, "forms", 0, 0, "TEST", payload, emptyList(), .99f, null, emptyList(), seconds * 1_000 * MS)
     private fun archive(articles: List<ArchivedRealityArticle>) = MatchArchive(matchId = "forms", articles = articles)
     private companion object { const val MS = 1_000_000L }
 }

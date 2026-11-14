@@ -897,3 +897,27 @@ to zero. One-column jitter tolerance does not disprove a subpixel hit. Validated
 on the paired Nov 13 recording and synthetic controls; not a universal game rule
 or a live-witness change. See
 [the recorded comparison](../verification/2026-11-14-camera-transition-pulse.md).
+
+**HP-12 — Replay HP certainty (November 14, 2026).** If a numeric HP value
+has explicitly weak or invalid measurement confidence, preserve the Article
+but do not use its amount as a fresh HP measurement. Missing confidence is
+unknown for survival attribution. For terminal survival and the current Replay
+bar, require classified live fill, complete in-frame geometry, confidence at
+least 0.80, the current appearance, and no contradictory complete-bar color
+profile. A tiny classified live sliver remains positive; there is no minimum
+surviving percentage. The confidence score qualifies measurement support, not
+the probability of an exact HP fraction.
+
+Replay retains its historical amount internally, but shows unknown when its
+latest source measurement is older than 500 ms, a later supported incoming hit
+has no new HP measurement, or newer color evidence is damage-only/unresolved.
+The 500 ms bound is a conservative presentation policy, not a KO window or a
+validated universal game constant. Capture time governs freshness; delayed
+publication cannot refresh it. A new appearance cannot inherit that certainty.
+
+Legacy high-confidence numeric measurements without color metadata can still
+corroborate team-loss ownership at their own capture time; they do not establish
+current terminal survival. Low-confidence or missing-confidence measurements
+cannot perform that corroboration. Independent move, pulse and faint testimony
+remains available. Unknown HP neither creates zero HP nor proves a faint, move
+use, or killer assignment. Original archives remain unchanged.

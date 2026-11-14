@@ -10,6 +10,7 @@ internal class ReplayTeamLossProjection(archive: MatchArchive) {
     private val sourceArticles = archive.articles.filter { it.matchId == archive.matchId }
     private val uniqueSources = sourceArticles.groupBy { it.articleId }
         .mapNotNull { (id, copies) -> copies.distinct().singleOrNull()?.let { id to it } }.toMap()
+    private val hpEvidence = ReplayHpEvidence(sourceArticles)
     private val observationsBySide = listOf("PLAYER", "OPPONENT").associateWith { side ->
         // Keep contradictory copies here: the shared resolver needs them as
         // unknown barriers rather than silently bridging the missing evidence.
@@ -18,7 +19,7 @@ internal class ReplayTeamLossProjection(archive: MatchArchive) {
             when (val p = article.payload) {
                 is ArchivedActivePokemonSpeciesWitnessed -> if (p.side == side)
                     TeamLossObservation.Identity(article.articleId, at, p.speciesName, p.speciesId) else null
-                is ArchivedActiveHpBarMeasured -> if (p.side == side && p.filledFraction > 0f && p.filledFraction <= 1f)
+                is ArchivedActiveHpBarMeasured -> if (p.side == side && hpEvidence.supportsSurvivalAtCapture(article))
                     TeamLossObservation.Alive(article.articleId, at) else null
                 is ArchivedPlayerPokeBallCountMeasured -> if (side == "PLAYER" && p.maximumCount == 3)
                     TeamLossObservation.Count(article.articleId, at, p.visibleCount) else null

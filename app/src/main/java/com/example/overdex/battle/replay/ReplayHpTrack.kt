@@ -2,6 +2,7 @@ package com.example.overdex.battle.replay
 
 import com.example.overdex.battle.archive.ArchivedActiveHpBarBorderPulseObserved
 import com.example.overdex.battle.archive.ArchivedActiveHpBarDamageTickMeasured
+import com.example.overdex.battle.archive.ArchivedCompleteHpBarObserved
 import com.example.overdex.battle.archive.ArchivedActiveHpBarMeasured
 import com.example.overdex.battle.archive.ArchivedHpBarBorderPulse
 import com.example.overdex.battle.archive.ArchivedFastMoveUseObserved
@@ -23,6 +24,54 @@ internal class ReplayHpEvidence(
     articles: List<ArchivedRealityArticle>,
     private val contradictedEmptyIds: Set<String> = emptySet(),
 ) {
+    private val completeFrames = articles.mapNotNull { a ->
+        val p = a.payload as? ArchivedCompleteHpBarObserved ?: return@mapNotNull null
+        a.monotonicTimeNanos?.let { (p.side to it) to p }
+    }.groupBy({ it.first }, { it.second })
+
+    /** Legacy numeric readings can corroborate ownership at their own capture time.
+     * They cannot establish current terminal survival without classified live fill.
+     */
+    fun supportsSurvivalAtCapture(article: ArchivedRealityArticle): Boolean {
+        val hp = article.payload as? ArchivedActiveHpBarMeasured ?: return false
+        val at = article.monotonicTimeNanos ?: return false
+        return article.confidence?.let { it.isFinite() && it in .80f..1f } == true &&
+            hp.filledFraction.isFinite() && hp.filledFraction > 0f && hp.filledFraction <= 1f &&
+            hp.hasBarShape() && accepts(article) &&
+            (hp.fillColor == null || hp.fillColor in setOf("GREEN", "YELLOW", "RED")) &&
+            completeFrames[hp.side to at].orEmpty().all { it.status == "LIVE_COLOR" && it.liveColumns > 0 }
+    }
+
+    /** Source-time survival evidence, not an exact-HP confidence probability.
+     * A last-known display value must never be carried forward across a later hit.
+     * The caller also owns the appearance/side interval.
+     */
+    fun confirmsLiveHp(article: ArchivedRealityArticle, at: Long = article.monotonicTimeNanos ?: Long.MIN_VALUE): Boolean {
+        val hp = article.payload as? ArchivedActiveHpBarMeasured ?: return false
+        val capturedAt = article.monotonicTimeNanos ?: return false
+        if (at < capturedAt || at - capturedAt > FRESH_HP_NANOS ||
+            article.confidence?.let { it.isFinite() && it in .80f..1f } != true ||
+            !hp.filledFraction.isFinite() || hp.filledFraction <= 0f || hp.filledFraction > 1f ||
+            hp.fillColor !in setOf("GREEN", "YELLOW", "RED") || !accepts(article)) return false
+        val width = hp.sourceWidth ?: return false
+        val height = hp.sourceHeight ?: return false
+        if (hp.barLeft < 0 || hp.barTop < 0 || hp.barRight > width || hp.barBottom >= height ||
+            width <= 0 || height <= 0) return false
+        // A complete same-frame color profile can contradict the numeric fraction.
+        // Missing color support is unknown; orange is not live HP and not measured zero.
+        val newestProfileAt = completeFrames.keys.filter { it.first == hp.side && it.second in capturedAt..at }
+            .maxOfOrNull { it.second } ?: capturedAt
+        return completeFrames[hp.side to newestProfileAt].orEmpty().all {
+            it.status == "LIVE_COLOR" && it.liveColumns > 0 &&
+                it.barLeft == hp.barLeft && it.barRight == hp.barRight &&
+                it.barTop == hp.barTop && it.barBottom == hp.barBottom
+        }
+    }
+
+    companion object {
+        // Conservative presentation freshness bound; not a KO timeout.
+        const val FRESH_HP_NANOS = 500_000_000L
+    }
     private val contradictedEmptyFrames = articles.mapNotNull { article ->
         val hp = article.payload as? ArchivedActiveHpBarMeasured ?: return@mapNotNull null
         val at = article.monotonicTimeNanos ?: return@mapNotNull null
@@ -40,9 +89,15 @@ internal class ReplayHpEvidence(
     // Do not let that reading permanently pin this actor's bar to a false low.
     // Reconcile only against several nearby independent measurements of the
     // same actor; never manufacture HP from a move's expected damage.
+    private val weakFillFrames = articles.mapNotNull { a ->
+        val hp = a.payload as? ArchivedActiveHpBarMeasured ?: return@mapNotNull null
+        (hp.side to a.monotonicTimeNanos).takeIf {
+            a.confidence?.let { !it.isFinite() || it !in .80f..1f } == true
+        }
+    }.toSet()
     private val contradictedFills = buildMap<Pair<String, Long>, MutableSet<Float>> {
         val ordered = articles.filter { it.monotonicTimeNanos != null }.sortedBy { it.monotonicTimeNanos }
-        for ((side, bars) in measured.groupBy { it.first }) {
+        for ((side, bars) in measured.filter { (it.first to it.second) !in weakFillFrames }.groupBy { it.first }) {
             val identities = java.util.TreeMap<Long, String?>()
             val boundaries = java.util.TreeSet<Long>()
             var previousIdentity: String? = null
@@ -105,6 +160,11 @@ internal class ReplayHpEvidence(
     }
 
     fun accepts(article: ArchivedRealityArticle): Boolean {
+        if (article.payload is ArchivedActiveHpBarMeasured) {
+            // Legacy missing confidence can retain historical display data, but cannot
+            // pass confirmsLiveHp. Explicitly weak/invalid values cannot create damage.
+            if (article.confidence?.let { !it.isFinite() || it !in .80f..1f } == true) return false
+        }
         if (article.articleId in contradictedEmptyIds && article.payload is ArchivedActiveHpBarMeasured) return false
         val tick = article.payload as? ArchivedActiveHpBarDamageTickMeasured
         if (tick?.afterFraction == 0f && (tick.damagedSide to article.monotonicTimeNanos) in contradictedEmptyFrames) return false
@@ -174,6 +234,9 @@ internal class ReplayHpTrack(
     evidence: ReplayHpEvidence,
     fastMoveCycles: List<ReplayFastMoveCycle> = emptyList(),
 ) {
+    private val hpObservations = articles.filter { (it.payload as? ArchivedActiveHpBarMeasured)?.side == side }
+        .sortedBy { it.monotonicTimeNanos }
+    private val hpEvidence = evidence
     private data class Sample(val at: Long, val fraction: Float, val before: Float? = null, val aligned: Boolean = false)
     private data class Damage(val at: Long, val before: Float, val aligned: Boolean)
     // Damage on our bar belongs to their move, and vice versa. Each bounded
@@ -259,8 +322,18 @@ internal class ReplayHpTrack(
             filledFraction = fraction,
             damageTrailFraction = recentDamage?.before?.takeIf { it > fraction },
             borderPulse = pulse != null && cursor - pulse < BORDER_PULSE_NANOS,
-            assumedInitialFull = !measured,
+            assumedInitialFull = !measured && hpObservations.none {
+                it.monotonicTimeNanos?.let { time -> time in maxOf(current.start, matchStart ?: current.start)..cursor } == true
+            },
             damageTimingReconstructed = recentDamage?.aligned == true,
+            currentHpConfirmed = hpObservations.lastOrNull {
+                it.monotonicTimeNanos?.let { time -> time in maxOf(current.start, matchStart ?: current.start)..cursor } == true
+            }?.let { sample ->
+                hpEvidence.confirmsLiveHp(sample, cursor) && incoming.none {
+                    it.impactAtNanos > sample.monotonicTimeNanos!! && it.impactAtNanos <= cursor
+                }
+            } == true,
+
         )
     }
 
@@ -286,6 +359,8 @@ data class ReplayHpState(
     val assumedInitialFull: Boolean = false,
     /** Only the display timing is aligned; damage amounts still come from measurements. */
     val damageTimingReconstructed: Boolean = false,
+    /** The fraction can be historical; only this flag permits displaying it as current live HP. */
+    val currentHpConfirmed: Boolean = false,
 )
 
 internal data class ReplayHpAppearance(val speciesKey: String, val start: Long)

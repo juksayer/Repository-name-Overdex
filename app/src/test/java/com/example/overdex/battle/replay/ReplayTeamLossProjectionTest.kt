@@ -104,7 +104,7 @@ class ReplayTeamLossProjectionTest {
     })
 
     private fun event(id: String, payload: ArchivedTestimonyPayload, seconds: Long) = ArchivedRealityArticle(
-        id, "projection", 0, 0, "TEST", payload, emptyList(), null, null, emptyList(), seconds * SECOND)
+        id, "projection", 0, 0, "TEST", payload, emptyList(), .99f, null, emptyList(), seconds * SECOND)
 
     private companion object { const val SECOND = 1_000_000_000L }
 }

@@ -13,9 +13,10 @@ class ReplayTerminalAudioAssociationTest {
         event("shield", 8, ArchivedOpponentBattleResourceCountMeasured("SHIELDS", 0, 2)), event("result", 16, ArchivedMatchEnded("WIN")))
     private fun resolve(extra: List<ArchivedRealityArticle> = emptyList(), recovery: ReplayAudioRecovery = audio,
                         charges: List<ReplayFinishingChargeCandidate> = listOf(charge), fast: List<ReplayFastMoveCycle> = emptyList(),
-                        mirror: Boolean = false, switched: Boolean = false) = ReplayTerminalAudioAssociation.resolve(rows + extra,
+                        mirror: Boolean = false, switched: Boolean = false,
+                        acceptsHp: (ArchivedRealityArticle) -> Boolean = { true }) = ReplayTerminalAudioAssociation.resolve(rows + extra,
         recovery, charges, fast, { side, _ -> if (side == "PLAYER") ReplayCombatant("Gourgeist", if (mirror) 148 else 711, 0)
-            else ReplayCombatant("Dragonair", 148, 0) }, { _, _ -> 0 }, { _, _ -> if (switched) 14*S else null }, { true })
+            else ReplayCombatant("Dragonair", 148, 0) }, { _, _ -> 0 }, { _, _ -> if (switched) 14*S else null }, acceptsHp)
 
     @Test fun `independent final chain produces annotated association without fabricated count or replacement`() {
         val link = resolve().single()
@@ -47,6 +48,20 @@ class ReplayTerminalAudioAssociationTest {
         assertTrue(resolve(recovery = audio.copy(unavailableArtifacts = listOf("sound"))).isEmpty())
         assertTrue(resolve(listOf(event("stop", 11, ArchivedObservationSessionStoppedByUser))).isEmpty())
     }
+    @Test fun `unknown HP does not veto an independently supported ending while fresh tiny live HP does`() {
+        val live = event("hp", 14, ArchivedActiveHpBarMeasured("OPPONENT", 400, 600, 600, 617,
+            .00001f, 1080, 2400, "RED")).copy(confidence = .99f)
+        for (sample in listOf(live.copy(confidence = null), live.copy(confidence = .2f),
+            live.copy(payload = (live.payload as ArchivedActiveHpBarMeasured).copy(fillColor = null)))) {
+            val policy = ReplayHpEvidence(rows + sample)
+            assertEquals(1, resolve(listOf(sample), acceptsHp = { policy.confirmsLiveHp(it) }).size)
+        }
+        val policy = ReplayHpEvidence(rows + live)
+        assertTrue(resolve(listOf(live), acceptsHp = { policy.confirmsLiveHp(it) }).isEmpty())
+        assertTrue(resolve(listOf(live.copy(confidence = .2f)), recovery = audio.copy(cries = emptyList()),
+            acceptsHp = { false }).isEmpty())
+    }
+
     @Test fun `sound reclassification explains only unaccepted claims with exact shared source`() {
         fun sound(accepted: Boolean) = event("sound-reader", 10, ArchivedFastMoveSoundMeasured(true, onsetOffsetNanos = 100_000_000, peakAmplitude = .5f, referenceMatchAccepted = accepted))
         assertTrue(resolve(listOf(sound(false))).isEmpty())

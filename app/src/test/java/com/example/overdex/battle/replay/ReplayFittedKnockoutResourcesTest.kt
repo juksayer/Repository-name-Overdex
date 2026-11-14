@@ -110,7 +110,7 @@ class ReplayFittedKnockoutResourcesTest {
         ArchivedPlayerPokeBallCountMeasured(count, 3) else ArchivedOpponentBattleResourceCountMeasured("POKE_BALLS", count, 3)
 
     private fun event(id: String, payload: ArchivedTestimonyPayload, at: Long) = ArchivedRealityArticle(
-        id, "resources", 0, 0, "TEST", payload, emptyList(), null, null, emptyList(), at)
+        id, "resources", 0, 0, "TEST", payload, emptyList(), .99f, null, emptyList(), at)
 
     private companion object { const val SECOND = 1_000_000_000L }
 }

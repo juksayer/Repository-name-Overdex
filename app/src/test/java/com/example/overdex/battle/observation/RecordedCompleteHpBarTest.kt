@@ -41,4 +41,16 @@ class RecordedCompleteHpBarTest {
         assertFalse(sample.orangeOnly)
         assertNull(sample.hpSample)
     }
+
+    @Test fun `Swampert later hit changes red to orange without a measured empty bar`() {
+        val live = requireNotNull(read("live", "2026-11-14-swampert-fade"))
+        assertTrue(live.liveColumns > 0)
+        assertFalse(live.orangeOnly)
+        for (name in listOf("orange", "orange-later", "fading")) {
+            val sample = read(name, "2026-11-14-swampert-fade")
+            println("Swampert $name: $sample")
+            assertNotEquals("Fading is not measured depletion", HpBarFillColor.EMPTY, sample?.hpSample?.fillColor)
+            assertNull("Orange/fading pixels must not establish surviving HP", sample?.hpSample)
+        }
+    }
 }

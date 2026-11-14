@@ -165,7 +165,7 @@ class ReplayLateResourceKnockoutTest {
     }
 
     private fun event(id: String, payload: ArchivedTestimonyPayload, ms: Long) = ArchivedRealityArticle(
-        id, "late-resource", 0, 0, "TEST", payload, emptyList(), null, null, emptyList(), ms * MS)
+        id, "late-resource", 0, 0, "TEST", payload, emptyList(), .99f, null, emptyList(), ms * MS)
 
     private companion object { const val MS = 1_000_000L; const val SECOND = 1_000_000_000L }
 }
