@@ -814,6 +814,16 @@ reference waveform in these recordings; purpose came from sequence/context.
 
 ### Context-dependent cry sample requirements — proposed November 12
 
+**Partial-cry review — November 14; diagnostic, not a live acceptance rule.** If
+a retained audio window begins partway through a cry, failure to match the entire
+reference does not establish absence of that cry. In the reviewed ending,
+Dragonair's retained 600 ms tail correlates at 0.973 while the complete-reference
+comparison fails. Preserve partial coverage, reference offsets and competitors;
+do not label it a complete observed cry or infer faint purpose from it alone.
+Two separated windows matching different portions of one Seed Bomb likewise
+support one effect, not two attacks. See the
+[ending audio study](../verification/2026-11-14-ending-seed-bomb-audio.md).
+
 Trainer refinement: “mirror matches need to double the required samples”, then
 “if user A has the same lead pokemon that user B uses as a safe swap, maybe only
 3 or even 2 would be a prerequisite”. The refined proposal replaces a blanket
