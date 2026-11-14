@@ -69,11 +69,25 @@ class RecordedRockTombFaintDeviceTest {
             compose.onNodeWithContentDescription("Camerupt, fainted", useUnmergedTree = true).assertDoesNotExist()
             fun sample(at: Long, name: String) {
                 compose.runOnIdle { cursor = at }
+                // Flush the new cursor's draw before capturing; a semantics update
+                // alone can precede the renderer by one frame on a physical phone.
+                compose.mainClock.advanceTimeByFrame()
                 compose.waitForIdle()
                 File(context.cacheDir, "rock-tomb-$name.png").outputStream().use {
                     compose.onRoot().captureToImage().asAndroidBitmap().compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
                 }
             }
+            val strikeStart = model.sceneAt(impact).chargedMoveActions.single().startedAtNanos
+            val strikeDuration = impact - strikeStart
+            sample(strikeStart + (strikeDuration * .65).toLong(), "apex")
+            compose.onNodeWithContentDescription("Charging move", useUnmergedTree = true).assertIsDisplayed()
+            val apex = ReplayChargePose.at(model.sceneAt(cursor).chargedMoveActions.single(), true)
+            assertEquals(-48f, apex.risePixels, .001f)
+            sample(strikeStart + (strikeDuration * .80).toLong(), "descent")
+            projectile.assertIsDisplayed()
+            val descent = ReplayChargePose.at(model.sceneAt(cursor).chargedMoveActions.single(), true)
+            assertTrue(descent.risePixels > apex.risePixels)
+            assertEquals(apex.risePixels, descent.projectileRisePixels, .001f)
             sample(impact, "impact")
             projectile.assertIsDisplayed()
             compose.onNodeWithContentDescription("Camerupt, fainted", useUnmergedTree = true).assertExists()

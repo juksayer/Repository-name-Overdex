@@ -1,15 +1,17 @@
 package com.example.overdex.battle.replay
 
-import kotlin.math.pow
-
-/** Cursor-driven charge-up and slam, independent of Android animation settings. */
+/** Cursor-driven charge-up and throw, independent of Android animation settings. */
 data class ReplayChargePose(
     val risePixels: Float,
     val iconScale: Float,
     val projectileProgress: Float,
     val iconAlpha: Float,
+    /** Once thrown, the icon follows its own path from the apex, not the falling sprite. */
+    val projectileRisePixels: Float = risePixels,
 ) {
     companion object {
+        private const val FOCUS_RAMP_NANOS = 750_000_000.0
+        private const val APEX_PROGRESS = .65f
         /** Cursor-driven framing throughout either side's recorded charge preparation. */
         fun qteFocusAmount(action: ReplayChargedMoveAction?, cursorNanos: Long): Float {
             if (action == null || action.side !in setOf("PLAYER", "OPPONENT") ||
@@ -17,7 +19,7 @@ data class ReplayChargePose(
             // Both edges use source-time replay boundaries, so pause and reverse scrub
             // cannot retain a stale scale or position from a different charge.
             val ramp = minOf(action.elapsedNanos.toDouble(), (action.startedAtNanos - cursorNanos).toDouble())
-                .div(250_000_000.0).coerceIn(0.0, 1.0).toFloat()
+                .div(FOCUS_RAMP_NANOS).coerceIn(0.0, 1.0).toFloat()
             return ramp * ramp * (3f - 2f * ramp)
         }
 
@@ -40,14 +42,16 @@ data class ReplayChargePose(
                 0f,
                 1f,
             )
-            val height = if (progress <= 0.78f) {
-                val rise = progress / 0.78f
+            val flight = ((progress - APEX_PROGRESS) / (1f - APEX_PROGRESS)).coerceIn(0f, 1f)
+            val height = if (progress <= APEX_PROGRESS) {
+                val rise = progress / APEX_PROGRESS
                 // Continue from the preparation apex without snapping down.
                 0.75f + 0.25f * rise * rise * (3f - 2f * rise)
-            } else (1f - (progress - 0.78f) / 0.22f).pow(3)
-            val flight = ((progress - 0.78f) / 0.22f).coerceIn(0f, 1f)
+            } else 1f - flight * flight * (3f - 2f * flight)
+            // Release at the apex as descent begins. Keep the existing landing
+            // endpoint so the slower pose cannot drift away from HP or a faint.
             return ReplayChargePose(-amplitude * height, 1.3f + 0.12f * gradeGrowth,
-                flight, 1f)
+                flight, 1f, if (progress >= APEX_PROGRESS) -amplitude else -amplitude * height)
         }
     }
 }

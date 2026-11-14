@@ -24,9 +24,9 @@ class ReplayQteSpriteFocusTest {
     }
 
     @Test fun `focus ramps at both QTE edges and restores the same pose after pause or reverse scrub`() {
-        val early = 5 * SECOND + 125_000_000L
+        val early = 5 * SECOND + 375_000_000L
         val middle = 7 * SECOND
-        val late = 10 * SECOND - 125_000_000L
+        val late = 10 * SECOND - 375_000_000L
         fun scales(cursor: Long) = listOf(true, false).map {
             ReplayChargePose.qteSpriteScale(actionAt(cursor), cursor, it)
         }

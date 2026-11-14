@@ -1050,7 +1050,7 @@ internal fun ChargedMoveReplayIndicator(
             y = if (attributed) originY * (1f - flight) + targetY * flight else 0.dp)
         .graphicsLayer {
             translationY = if (attributed) {
-                (pose.risePixels + if (player) 25f else 0f) * (1f - flight) +
+                (pose.projectileRisePixels + if (player) 25f else 0f) * (1f - flight) +
                     (if (player) 0f else 25f) * flight - 18f * sin(flight * Math.PI).toFloat()
             } else 0f
             translationX = if (attributed) performerOffsetPixels * (1f - flight) + recipientOffsetPixels * flight else 0f

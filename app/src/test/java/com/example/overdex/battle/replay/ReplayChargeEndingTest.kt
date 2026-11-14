@@ -243,16 +243,16 @@ class ReplayChargeEndingTest {
         assertEquals(0f, model.sceneAt(6 * SECOND).opponentHp!!.filledFraction)
     }
 
-    @Test fun `charge poses are deterministic and land sharply`() {
+    @Test fun `charge poses are deterministic and descend smoothly`() {
         val action = ReplayChargedMoveAction("PLAYER", "Lunge", 0, 0.5f, elapsedNanos = 2 * SECOND,
             phase = ReplayChargePhase.CHARGING)
         val pose = ReplayChargePose.at(action, true)
         assertEquals(pose, ReplayChargePose.at(action, true))
         assertTrue(pose.risePixels < -20f)
-        val apex = ReplayChargePose.at(action.copy(phase = ReplayChargePhase.STRIKING, progress = 0.78f), true)
+        val apex = ReplayChargePose.at(action.copy(phase = ReplayChargePhase.STRIKING, progress = 0.65f), true)
         val landed = ReplayChargePose.at(action.copy(phase = ReplayChargePhase.STRIKING, progress = 0.95f), true)
         assertEquals(-48f, apex.risePixels, 0.001f)
-        assertTrue(landed.risePixels > -1f)
+        assertTrue(landed.risePixels in -3f..0f)
     }
 
     @Test fun `QTE growth survives expired grade text and reverse scrubbing and resets for next charge`() {
@@ -281,7 +281,7 @@ class ReplayChargeEndingTest {
         assertEquals(1, action(3 * SECOND).qteLevel) // reverse scrubbing does not retain Excellent
     }
 
-    @Test fun `milestone adds smooth persistent growth and the same icon launches only at the slam`() {
+    @Test fun `milestone adds smooth persistent growth and the same icon launches at the apex`() {
         val action = ReplayChargedMoveAction("PLAYER", "Lunge", 0, 0.5f,
             phase = ReplayChargePhase.CHARGING, type = PokemonType.BUG)
         val before = ReplayChargePose.at(action, true)
@@ -290,7 +290,7 @@ class ReplayChargeEndingTest {
         assertEquals(before.iconScale, transition.iconScale, 0.0001f)
         assertTrue(after.iconScale > before.iconScale)
         assertEquals(0f, after.projectileProgress, 0f)
-        assertEquals(0f, ReplayChargePose.at(action.copy(phase = ReplayChargePhase.STRIKING, progress = .77f), true).projectileProgress, 0f)
+        assertEquals(0f, ReplayChargePose.at(action.copy(phase = ReplayChargePhase.STRIKING, progress = .65f), true).projectileProgress, 0f)
         assertTrue(ReplayChargePose.at(action.copy(phase = ReplayChargePhase.STRIKING, progress = .89f), true).projectileProgress > 0f)
         assertNull(model(timed("ready", ArchivedGetReadyWitnessed, 1)).sceneAt(2 * SECOND).chargedMoveActions.single().type)
     }

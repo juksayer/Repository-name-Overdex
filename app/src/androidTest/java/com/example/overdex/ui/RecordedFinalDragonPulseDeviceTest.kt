@@ -138,7 +138,7 @@ class RecordedFinalDragonPulseDeviceTest {
             val restingBounds = playerBounds()
             val resting = frame("idle")
 
-            val apexAt = chargeAt + 1_200_000_000L
+            val apexAt = chargeAt + 1_170_000_000L
             compose.runOnIdle { cursor = apexAt }
             compose.waitForIdle()
             val apex = model.sceneAt(apexAt).chargedMoveActions.single { it.side == "PLAYER" }
@@ -156,7 +156,7 @@ class RecordedFinalDragonPulseDeviceTest {
 
             compose.runOnIdle { cursor = chargeAt + 1_650_000_000L }
             compose.waitForIdle()
-            assertTrue("The actual sprite slams down while the projectile travels",
+            assertTrue("The actual sprite descends while the projectile travels",
                 playerBounds().top > raisedBounds.top + 35f)
             compose.onNodeWithContentDescription("Charged move projectile", useUnmergedTree = true).assertIsDisplayed()
             frame("slam")
