@@ -42,6 +42,8 @@ internal class LiveBattlefieldHpTracker(
 ) {
     private val tracker = BattlefieldHpTracker()
     private val species = mutableMapOf<ActivePokemonSide, Pair<String, Long>>()
+    private val appearanceBoundaries = mutableMapOf<ActivePokemonSide, Long>()
+    private var latestFrameAt: Long? = null
     private var lastWideScanAt: Long? = null
     private var cachedAt: Long? = null
     private var cachedSize: Pair<Int, Int>? = null
@@ -61,6 +63,13 @@ internal class LiveBattlefieldHpTracker(
         species.remove(side)
         cachedAt = null
         lastWideScanAt = null
+    }
+
+    /** A new visit by the SAME species is also a new geometry/identity interval. */
+    @Synchronized fun appearanceBoundary(side: ActivePokemonSide, at: Long) {
+        if (at <= (appearanceBoundaries[side] ?: Long.MIN_VALUE)) return
+        appearanceBoundaries[side] = at
+        reset(side)
     }
 
     @Synchronized fun observeSpecies(side: ActivePokemonSide, name: String, at: Long) {
@@ -153,9 +162,10 @@ internal class LiveBattlefieldHpTracker(
         }
         if (cachedAt != at) {
             // Older subscribers may arrive late. Do not rewind either tracker.
-            if (cachedAt?.let { at < it } == true) {
+            if (latestFrameAt?.let { at < it } == true) {
                 return HpBarFrameDiagnostics.unavailable(HpBarLocatorOutcome.OUT_OF_ORDER_FRAME)
             }
+            latestFrameAt = at
             val regions = resolveRegions()
             if (regions.size != 2) return HpBarFrameDiagnostics.unavailable(HpBarLocatorOutcome.INVALID_CALIBRATION)
             var rawCandidates = emptyList<ActiveHpBarMeasurement>()
@@ -182,13 +192,13 @@ internal class LiveBattlefieldHpTracker(
                 // A partial narrow result is provisional when this frame will
                 // also search the full band. Do not let its home-size lock
                 // reject the real bar found by that final recovery pass.
-                tracker.assign(width, at, regions, local, commitPartial = !recoveryAllowed)
+                tracker.assign(width, at, regions, local, commitPartial = !recoveryAllowed, appearanceBoundaries = appearanceBoundaries)
             }
             var wideScanPerformed = false
             if (measurements.size < 2 && recoveryAllowed) {
                 val bounds = BattleCropBounds(0, regions.values.minOf { it.top }, width, regions.values.maxOf { it.bottom })
                 val recovered = timing.measure(HpBarLocatorStage.RECOVERY_SEARCH) { scanWindows(listOf(bounds)) }
-                measurements = timing.measure(HpBarLocatorStage.ASSIGNMENT) { tracker.assign(width, at, regions, recovered) }
+                measurements = timing.measure(HpBarLocatorStage.ASSIGNMENT) { tracker.assign(width, at, regions, recovered, appearanceBoundaries = appearanceBoundaries) }
                 lastWideScanAt = at
                 wideScanPerformed = true
             }
@@ -300,6 +310,7 @@ internal class BattlefieldHpTracker {
         regions: Map<ActivePokemonSide, BattleCropBounds>,
         measurements: List<ActiveHpBarMeasurement>,
         commitPartial: Boolean = true,
+        appearanceBoundaries: Map<ActivePokemonSide, Long> = emptyMap(),
     ): Map<ActivePokemonSide, ActiveHpBarMeasurement> {
         // A thick outline, or a white sprite behind it, can generate several
         // nested row pairs for one bar. Keep the strongest rectangle when the
@@ -311,6 +322,7 @@ internal class BattlefieldHpTracker {
             if (bars.none { sameOutline(it, candidate) || weakerOverlappingArtwork(it, candidate) }) bars += candidate
         }
         fun inBand(side: ActivePokemonSide, bar: ActiveHpBarMeasurement): Boolean {
+            if (at <= (appearanceBoundaries[side] ?: Long.MIN_VALUE)) return false
             val region = regions[side] ?: return false
             return bar.top >= region.top && bar.bottom <= region.bottom
         }

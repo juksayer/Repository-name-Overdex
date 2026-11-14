@@ -35,6 +35,7 @@ class MatchProcessingDiagnosticExportTest {
             val listeners = report.getValue("articleListeners").jsonObject
             assertEquals(64, listeners.getValue("sampleEvery").jsonPrimitive.int)
             assertTrue(listeners.getValue("listeners") is JsonObject)
+            assertEquals(64, report.getValue("preBattleArticleListeners").jsonObject.getValue("sampleEvery").jsonPrimitive.int)
         }
     }
 }

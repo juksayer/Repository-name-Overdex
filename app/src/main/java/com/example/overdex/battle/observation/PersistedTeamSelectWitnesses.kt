@@ -52,7 +52,7 @@ internal class PersistedTeamSelectPartyWitness(
             // the complete captured evidence remains in the Reality Timeline.
             // OCR itself still uses the one shared, bounded-priority model lane.
             supported.forEach { cropName -> s.launch {
-                match.articles.filter { article ->
+                match.preBattleArticles.filter { article ->
                     !accepted.get() && isEnabled() &&
                         (article.monotonicTimeNanos ?: Long.MIN_VALUE) >= match.observationAttemptStartedAtNanos &&
                         (article.payload as? CropCaptured)?.cropProvenance?.cropName == cropName
@@ -152,7 +152,7 @@ class PersistedTeamSelectLeagueWitness(
                 var accepted = false
                 var surfaceAccepted = false
                 var pendingBadge: com.example.overdex.battle.reality.RealityArticle? = null
-                match.articles.collect { article ->
+                match.preBattleArticles.collect { article ->
                     if (accepted || !isEnabled()) return@collect
                     if ((article.monotonicTimeNanos ?: Long.MIN_VALUE) < match.observationAttemptStartedAtNanos) return@collect
                     if (article.payload is TeamSelectPartyWitnessed) surfaceAccepted = true
@@ -208,7 +208,7 @@ class PersistedPlayerTeamRosterSlotWitness(
             var accepted = false
             var pendingCrop: com.example.overdex.battle.reality.RealityArticle? = null
             val knownNames = match.pokemonKnowledge.getAllSpeciesNames()
-            match.articles.collect { a ->
+            match.preBattleArticles.collect { a ->
                 if (a.payload is VsScreenWitnessed || a.payload is CountdownGlyphWitnessed || a.payload is MatchEnded || a.payload == MatchStarted) {
                     a.monotonicTimeNanos?.let(rosterWindow::close)
                 }
@@ -279,7 +279,7 @@ class PersistedPlayerTeamRosterSpriteWitness(
                 val rosterWindow = TeamSelectRosterWindow()
                 var accepted = false
                 var pending: PendingRosterSlot? = null
-                match.articles.collect { article ->
+                match.preBattleArticles.collect { article ->
                     if (article.payload is VsScreenWitnessed || article.payload is CountdownGlyphWitnessed || article.payload is MatchEnded || article.payload == MatchStarted) {
                         article.monotonicTimeNanos?.let(rosterWindow::close)
                     }

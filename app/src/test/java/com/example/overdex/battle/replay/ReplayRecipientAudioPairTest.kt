@@ -6,6 +6,37 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ReplayRecipientAudioPairTest {
+    @Test fun `completed replay uses capture alignment when recognition is much later than the effect`() {
+        for (delayMillis in listOf(1_201L, 15_000L, 60_000L)) {
+            val late = sound().copy(recordedAt = sound().recordedAt + delayMillis)
+            val source = archive(listOf(late, visual()))
+            for (input in listOf(source, source.copy(articles = source.articles.reversed()))) {
+                val model = MatchReplayModel(input)
+                val hits = actions(model).distinctBy { it.sourceArticleIds }
+                assertEquals("publication delay=$delayMillis", 1, hits.size)
+                assertTrue(hits.single().sourceArticleIds.containsAll(listOf("sound", "visual")))
+                assertFalse(model.sceneAt(nanos(2.3)).player!!.isFainted)
+            }
+        }
+    }
+
+    @Test fun `late publication never makes wrong source timing or a charge eligible`() {
+        val late = sound().copy(recordedAt = 63_000)
+        val wrongSourceTime = late.copy(monotonicTimeNanos = nanos(.1))
+        val rejected = listOf(
+            listOf(late),
+            listOf(wrongSourceTime, visual()),
+            listOf(late, visual(), event("charge", 1.8, ArchivedChargeMoveUsedAnnounced)),
+            listOf(late, visual(), event("switch", 1.95,
+                ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Camerupt", 323))),
+        )
+        for (events in rejected) {
+            val input = archive(events)
+            assertTrue(actions(MatchReplayModel(input)).isEmpty())
+            assertTrue(actions(MatchReplayModel(input.copy(articles = input.articles.reversed()))).isEmpty())
+        }
+    }
+
     @Test fun `unfused sources replay one neutral supported attack before confirmed faint without changing archive`() {
         val archive = archive(listOf(sound(), visual(), event("faint", 2.2,
             ArchivedActivePokemonFaintedWitnessed("PLAYER", "Gourgeist", 711, "EXPLICIT_TEST"))))

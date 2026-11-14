@@ -198,6 +198,9 @@ recognition completion and delivery order do not say when the sound began.
 | AUDIO-01 | A recipient visual effect occurs before a source-supported switch on either side, and the matched sound begins after that switch. | Reject that audio/visual pairing. Neither the attacker's nor the recipient's appearance boundary may be crossed to attach new audio to an earlier effect. Preserve the original evidence and times without creating a Fast Move from the rejected pair. |
 | AUDIO-02 | Audio recognition finishes or is delivered after a switch, but its reconstructed onset and the earlier effect belong to the same pre-switch exchange. | Delayed recognition alone does not reject the evidence. Within the bounded pairing allowance, check the captured/source times, both combatants' appearances, charged-move boundaries and independent side attribution. Receipt time cannot move the sound into a different exchange. |
 | AUDIO-03 | A correctly matched sound began in the same exchange as a supported impact, and only its trailing sound continues after a later switch or faint. | The ringing tail alone must not erase the supported earlier hit. Keep the original onset and impact time; the tail neither counts as a new attack nor makes a genuinely post-switch onset eligible for AUDIO-01's rejected pairing. |
+| AUDIO-04 | Fast Move sound and animation rapidly repeat during a reported stutter in the same exchange. | Treat repeated effects as potentially correlated presentation evidence, not one additional use per sound or flame. Compare source-time damage, energy and cadence before admitting extra uses; retain the original observations. Independent real damage can still support uses during stutter. Proposed evidence rule from the November 13 Pixel Camerupt/Sealeo report; exact stutter onset is unverified. See the [archive review](../verification/2026-11-13-pixel-cry-stutter-review.md). |
+| AUDIO-05 | One side has exactly one configured/eligible Fast Move, uniquely owned across the two scopes, and a complete global audio comparison passes the existing score and margin checks. | That move may supply strict audio support; another same-side alternative is not required. A separate eligible impact is still required for a use. | Configuration alone, missing/duplicate references, weak scores, shared ownership, or stale species context do not prove an attack. Reproduced with original Pixel Sealeo evidence; see [finishing-hit verification](../verification/2026-11-13-sealeo-finishing-hit.md). |
+| AUDIO-06 — completed Replay | Preserved audio onset and recipient visual effect align within the existing source-time allowance, but publication times differ by more than the live delivery budget. | Completed Replay may recover the pair using captured clocks and unchanged side, appearance, charge and deduplication guards. | This does not extend live retention, align unrelated source times, admit audio alone, or cross a switch. Publication delay cannot create another use. |
 
 The source-time guard also rejects pairing across an intervening confirmed
 faint or charged-move boundary. A sound beginning shortly after the visual
@@ -404,6 +407,109 @@ frame, an exact intermediate damage trace, or an unobserved Fast Move.
 | HP-07 — live and completed Replay | A fresh independent badge after an empty reading re-identifies the same Pokémon, with subsequent positive HP. | Retract the current HP faint, restore eligible live identity/move tracking and opponent HUD/energy, and exclude contradicted zero values and their co-timed zero damage ticks from Replay HP. Retain raw observations and correction evidence. | A repeated name without HP is not survival proof. Positive HP with only the old name may belong to an unidentified replacement. Another actor's HP or an ambiguous identity cannot revive the fainted actor. |
 | HP-08 | A live faint was inferred from verified HP, or a later count corroborates that same actor's KO. | Keep the HP inference revisable; reconcile presentation by actor and source time. Keep independent audio available, and require separate support for roster-slot retirement or assigning an unsided entry. Corroboration must not pause a replacement or count a second KO. | A faint inference is not an independent Poké Ball measurement, permanent roster disqualification, entry-side proof, or permission to stop listening after tallying five inference events. |
 | HP-09 | During a source-timed, recipient-owned charged-impact window, the recipient’s ordinary HP region touches or overlaps the charged-impact region. | Read their combined territory from the same captured frame and measure one complete outline and interior; retain the recipient, phase cues and source time. | An empty portion is not zero HP. Do not add crop percentages, stitch different capture times, include the other side’s territory, bridge disjoint boxes, extend the watch, or infer a faint from missing/clipped pixels. |
+| HP-10 — completed Replay | Independent verified red-to-empty proof and a later resolved count loss identify the same side, species and appearance. | Present one fall at the earlier verified HP time with both evidence chains. Keep the count's existing presentation time separate. | Another visit by the same species, ambiguous proof, or another actor/side cannot backdate the fall. Earlier HP proof creates neither an extra count decrease nor a finishing move. Covered by original Sealeo and controlled ownership/resource tests. |
+
+**HP-11 — proposed terminal color sequence.** If, after a source-supported Fast
+or Charged Move, the receiving Pokémon's remaining HP fill changes color and
+the bar fades away, preserve that sequence as candidate terminal evidence even
+without an empty outline or a measured final damage tick. Retain side,
+appearance, phase, geometry and capture times. Color change or fading alone
+does not confirm a KO, an observed zero, damage amount or killer assignment.
+Compare ordinary HP thresholds, damage trails, attack flashes, transparency and
+background blending, camera movement, switches and concession. Exact colors
+and the discriminating sequence require positive and negative recording checks.
+
+November 13 offline experiment: sustained orange-only fill inside a complete
+outline appeared in 12 of 13 selected KO sequences and none of 12 nonlethal
+comparison windows; the remaining KO had no confidently measurable complete
+outline. A near-lethal Sealeo hit briefly fooled the single-frame color test,
+but not the repeated-frame test. These selected-window results are exploratory,
+not a universal KO classifier. See the [complete-bar color/fade study](../verification/2026-11-13-hp-color-fade-study.md).
+
+If both rails and both end caps are not supported in the same captured frame,
+the whole-bar color/empty assessment is unknown. A surviving fragment, an
+orange-only fragment and an empty fragment can all come from one nonlethal
+bar. Use HP-09's shared capture territory; do not combine partial percentages.
+
+If complete-bar terminal color persists, it may arm a terminal watch, but must
+not itself timestamp a faint or suppress supported pending attacks. One reviewed
+Camerupt bar remained orange-only for about 13 seconds before departure.
+Retain source-timed fade/departure evidence separately; a subsequently identified
+live remainder contradicts the candidate. The offline study measured the color
+candidate automatically and reviewed fade/departure manually; it did not add a
+production faint rule or infer a missing killer move.
+
+November 13 follow-up, offline only: [complete-bar tracking and relative fading](../verification/2026-11-13-hp-tracking-relative-fade.md)
+preserved the tiny Sealeo survivor and produced no terminal candidates in 12
+nonlethal windows, two ordinary-switch windows or two screen-transition windows.
+Eight controlled variants checked isolated fade, global dimming, missing bar
+ends and camera translation. Relative brightness fading was not a reliable
+mandatory KO gate: only one correctly owned two-frame fade survived review of
+13 KO windows. This is a selected-footage result, not live acceptance.
+
+If an independently observed species/appearance boundary occurs, clear the old
+bar's pending color/fade state at the boundary's source time even when geometry
+looks continuous. The geometry-only experiment carried Sealeo's state into
+Vaporeon's entry; an independently annotated badge change at video 48.220044 s
+prevented that late confirmation. Geometry continuity alone is not actor identity.
+
+If a bar and the surrounding scene dim together, do not treat that as independent
+local-bar departure proof. If low-light geometry continues a previously complete
+bar, retain its geometry/confidence separately; missing ends still mean unknown,
+not empty. Colors visible through a fading bar may belong to the background, so
+they cannot alone establish surviving HP or revive an actor. Relative fading can
+support a terminal sequence, but its absence cannot veto other valid KO evidence.
+
+Trainer clarification, November 13: “sometimes there isnt a final damage tick.
+sometimes the bar just fades away. however, if a charge move or fast move ko's an
+opponent, the color of the HP remaining in the hp bar changes”. HP-11 records
+that observation as a testable sequence, not a validated universal color rule.
+The reviewed Cramorant orange-only remainder described above is a relevant
+existing example. Absence of a final damage-tick Article is not itself a failed
+KO test: observed damage and inferred terminal outcome have separate acceptance
+conditions.
+
+Implementation work, November 13: complete-outline color measurements have a
+separate payload from HP amounts. An orange-only interior may retain an owned
+geometry anchor; it cannot publish zero HP or a faint. Repeated samples use
+capture time, and appearance boundaries clear pending color and geometry even
+for another visit by the same species. Fading remains optional supporting
+evidence, not a required condition. See the [complete-bar implementation report](../verification/2026-11-13-complete-bar-implementation.md)
+for the current verification and device-trial boundary.
+
+November 13 controlled paired-match check: expanding the Pixel charged-impact
+territory recovered eight complete recipient-bar frames for the final Shadow
+Ball where the previous territory recovered none. The production color predicate
+still produced no sustained candidate in the selected lethal windows. If uncertain
+pixels occur in the unfilled portion of an otherwise complete bar, retain their
+location separately from the remaining fill's color: blue scenery and underlying
+artwork in that portion triggered the current global uncertainty veto. This is a
+diagnosed classification limitation and a proposed next refinement, not permission
+to ignore tiny live fill, pointer trails, uncertain fill pixels, or missing caps.
+The [expanded-territory reader comparison](../verification/2026-11-13-expanded-hp-reader-comparison.md)
+records lethal, nonlethal, switch, and recipient-camera controls. These results do
+not validate a color-only faint rule.
+
+**Candidate preprocessing checks, not validated recognition rules:** if a color
+mask is applied, retain its original source frame and the complete-bar geometry;
+masked pixels are not observed empty HP. Multiple filters of one frame are
+correlated measurements, not independent witnesses. Compare local outline
+contrast with surrounding scenery before calling a brightness change a local
+fade. Motion relative to the background may support a departure hypothesis,
+but camera cuts, attack effects, scene motion and ordinary switches must remain
+negative controls. Do not require a particular filter or motion result for a KO.
+
+November 14 implementation: after complete-outline acceptance, dim non-HP-hue
+uncertainty strictly beyond a coherent orange remainder may be excluded from
+the color test. A recognized live pixel anywhere prevents masking; dim possible
+HP, bright effects, and uncertainty before/inside the fill remain protected.
+Preserve the original pixels and publish masked/unresolved column counts.
+The mask cannot create zero HP, repair a clipped bar, or confirm a faint.
+The [background-mask comparison](../verification/2026-11-14-hp-background-mask.md)
+found eligible background exclusions but no newly sustained lethal-color
+sequence in the controlled paired match. Remaining edge colors cannot be
+discarded merely because the labeled outcome is a KO; tiny surviving HP is
+still a competing explanation.
 
 HP-09 records the trainer’s November 12 request to let the normal and charged-impact HP crops share their image when a bar crosses the boundary. The live charged reader shares capture-space territory, not historical screenshots. Complete-outline requirements remain in force. See [handoff verification](../verification/2026-11-12-shared-hp-territory.md); live device acceptance remains pending.
 
@@ -415,6 +521,67 @@ The retained Tinkaton pixel fixture supplies a positive case; the living Carbink
 recall supplies a negative case. Reprocessing video pixels in a test does not
 add missing HP measurements to an existing archive.
 | MOVE-04 | A supported Fast Move impact lacks a resolved reference duration. | Replay may show a neutral decorative flight ending at its source impact, clipped to the current appearance and ordinary-play window; an impact exactly at entry can be an impact-only marker. | The decoration cannot identify the move, assert its cadence, generate energy/extra uses, shift source HP time, or borrow flight time from a previous appearance or charge sequence. |
+
+**MOVE-05 — proposed finishing association, trainer report November 14.** If an
+existing supported move is directed at the same opposing appearance that an
+independent evidence chain establishes fainted, and source-time ordering and
+pending-hit evidence leave that move as the unambiguous cause, associate the
+existing move with the faint and retain both evidence chains. An absent empty
+outline or final damage-tick record does not by itself forbid that association.
+Do not create an extra attack, guessed damage or rewritten timestamp. Mere
+adjacency is not enough when a pending Fast Move, switch, shield or mirror-side
+ambiguity supplies a competing explanation. The trainer's Camerupt mirror case
+is [recorded for review](../verification/2026-11-14-replay-actor-and-finishing-link-report.md),
+now has a reproduced Replay actor error and a recovered Moondrop charge name;
+the Pixel finishing association remains unresolved. MOVE-02's appearance ownership
+also forbids assigning Camerupt's use to an earlier Turtonator appearance.
+
+**MOVE-03 clarification — tested diagnostic, November 14.** A border pulse and
+an HP step can describe one hit even when the step's confirming sample arrives
+more than 450 ms after its initial lower reading. The paired Pixel recording
+reproduces this duplicate presentation. However, sharing that confirmation frame
+alone does not prove sameness: a separate small or fast hit can occur then.
+Widening the general merge window can swallow genuine rapid attacks and finishing
+hits. Zero orange pixels likewise does not disprove a valid blue border flash.
+Retain the independent evidence and require additional same-occurrence support.
+See the [recorded overlap study](../verification/2026-11-14-hp-confirmation-duplication.md)
+for the three experiments and counterexamples. No production rule changed in this study.
+
+**MOVE-06 — implemented Replay reconstruction, November 14.** If an entry
+announcement is bracketed by independent badges showing exactly one side changing
+to the announced species while the other remains unchanged, Replay may assign the
+announcement to the changing side even in a mirror. The first subsequent badge
+must agree within the existing eight-second lookup window. Missing, conflicting,
+simultaneously changing or reset-spanning evidence does not establish this repair.
+Retain the announcement and badge references; leave archived attribution intact.
+
+**MOVE-07 — implemented Replay reconstruction, November 14.** A legally resolved
+charged-move announcement shared by both active species may inherit its side from
+an unambiguous Get Ready or Attack Incoming cue within the existing ten-second
+preparation window, provided neither appearance changes and no conflicting cue,
+active faint, intervening ordinary use or separate completed charge interrupts it.
+A delayed faint for a different outgoing species does not terminate the current
+preparation. This resolves move ownership/name only; it does not prove damage,
+a faint, or the finishing-move association. Pixel's missing cue in the paired
+recording remains an explicit unresolved case.
+
+**MOVE-08 — implemented Replay HP recovery, November 14.** If successive
+accepted HP samples relocate substantially, change bar size incompatibly, or
+change source dimensions, establish a fresh HP baseline. Do not infer one Fast
+Move from the difference across that discontinuity. Preserve independent pulses,
+accepted uses, source HP values, and later corroborated losses at the new position.
+This is not a claim that no damage occurred while the camera moved. Ordinary
+bobbing, tiny remaining HP, and an equal confirmation frame do not by themselves
+suppress an independently supported attack. The paired Pixel case retains three
+attacks; its first retained pulse still has delayed source timing. See the
+[repair verification](../verification/2026-11-14-hp-confirmation-repair.md).
+
+**MOVE-06 derived-evidence clarification — implemented November 14.** If the
+independent badge bracket explicitly corrects an entry to OPPONENT, a recorded
+PLAYER identity derived from that entry cannot reintroduce the rejected side in
+Replay. Preserve both original records. Missing or ambiguous bracketing does not
+justify discarding a recorded player identity. Both paired archives, reversed
+ordering, a genuine player entry, and missing-proof controls cover this repair.
 
 VIS-01: [post-charge policy](../../app/src/main/java/com/example/overdex/battle/observation/PostChargeRecipientWatchPolicy.kt)
 and [tests](../../app/src/test/java/com/example/overdex/battle/observation/PostChargeRecipientWatchPolicyTest.kt).
@@ -596,3 +763,86 @@ sequence within the selected boundary; trimming playback does not authorize
 removing source Articles, changing capture timestamps, or dropping listener work.
 Status: requested playback behavior; current implementation coverage not audited
 in this listener investigation.
+
+### Cry sequence and KO credit — proposed rules, recorded pilot November 12
+
+Trainer proposals: “the fast or charge move performed immediately preceding a
+battle cry for reason of fainting should be attributed to the KO”; two different
+opponent cries in succession should put the preceding player move under
+consideration. Subsequent refinement: “match time elapsed and number of cries
+in succession would probably tell us why a pokemon cried”.
+
+[Recorded experiment](../verification/2026-11-12-cry-sequence-experiment.md):
+two preserved audio/video recordings, eight visually reviewed faint moments,
+and ordinary player/opponent switches. This is an offline pilot, not a live
+recognition accuracy claim or implemented inference change.
+
+| Rule | If… | Permitted conclusion | Limit / counterexample |
+| --- | --- | --- | --- |
+| CRY-01 — proposed | A faint is independently established and a compatible attacker/target damage event precedes the matching victim cry. | Consider that damage-producing move for KO credit, retaining source-time and appearance evidence. | Last animation/banner alone is insufficient. Pending Fast Move damage can straddle shield/charge sequences; the cry time is not necessarily the damage time. Do not invent a missing attack. |
+| CRY-02 — shortcut contradicted | Two different opponent species cries occur close together. | Open a bounded transition/identity check. | 1605 recording: Swampert entry at 97.740 s and Abomasnow entry at 101.217 s are an ordinary switch, with Swampert later returning alive. A 3.477 s gap overlaps confirmed KO-pair gaps of 2.240–4.970 s. This pair does not itself prove a faint. |
+| CRY-03 — implemented candidate; device trial pending | Source-ordered cry history has an established active species, then its cry repeats before a different species enters. | Treat the repeated active cry as a departure/faint candidate for corroboration. Match phase can distinguish opening entries. | In the non-mirror pilot this marked four reviewed faints and did not mark the two ordinary switches. Roster-to-side mapping came from video; missed cries, mirror sides and other cry contexts remain unvalidated. A final KO need not have a replacement cry. Elapsed match time alone does not distinguish mid-battle switches from KOs. |
+
+The existing production RMS-envelope matcher was not validated by this pilot;
+the experiment compared actual waveforms against a small roster-specific
+reference pool. Cry species, cry purpose, side and finishing-move identity
+remain distinct conclusions. Same-species entry/faint matches used the same
+reference waveform in these recordings; purpose came from sequence/context.
+
+### Context-dependent cry sample requirements — proposed November 12
+
+Trainer refinement: “mirror matches need to double the required samples”, then
+“if user A has the same lead pokemon that user B uses as a safe swap, maybe only
+3 or even 2 would be a prerequisite”. The refined proposal replaces a blanket
+team-level mirror multiplier with an evidence requirement based on unresolved
+side attribution.
+
+| Rule | If… | Permitted conclusion | Limit / validation status |
+| --- | --- | --- | --- |
+| CRY-04 — proposed | Both sides could have produced a same-species cry in the relevant capture-time interval. | Require additional independent observations and evidence that distinguishes the sides before accepting side or KO attribution; retain the cry with unresolved attribution meanwhile. | Doubling samples is a candidate policy, not a validated threshold. Repeated or overlapping windows of the same cry are one occurrence, not independent samples. More samples alone do not identify the side or prove a faint. |
+| CRY-05 — proposed | Established entry, departure or survival history rules out one side as the source, even though both teams contain that species. | Reduce the additional evidence requirement according to the remaining ambiguity. A lead on one team and later safe swap on the other need not incur the same requirement as simultaneous mirrors. | Two or three independent observations may suffice, but no numeric minimum is validated. Non-overlapping appearances must be established from source-time evidence, not assumed from roster membership or recognition completion order. Cry purpose and finishing-move attribution still require their own support. |
+
+Acceptance examples to test: simultaneous same-species leads; a departed lead
+followed by the opponent's same-species safe swap; delayed/reordered evidence;
+and overlapping audio windows that must not inflate the sample count. Compare
+two- and three-observation combinations with the doubled-sample hypothesis,
+including ordinary switches as negative cases. This entry documents intent;
+it does not change runtime thresholds.
+
+
+### Repeat-cry implementation evidence (November 12)
+
+The live shared-PCM candidate path is implemented; device validation is pending.
+See [implementation and verification](../verification/2026-11-12-repeat-cry-departure-implementation.md).
+The continuous 1605 recording yields four candidates and neither ordinary switch,
+including reconstruction with archived species capture times and their delivery delays.
+A first badge reading bounds when identity became known; it is not the exact entrance
+instant. A preceding cry can belong to that appearance only within the uncertainty
+interval after the last old-species sighting. Keep both original timestamps and their
+references. An old-species sighting after the cry excludes that proposed appearance.
+A cry-derived candidate requests independent counts; it still does not assert a faint.
+
+Two distinct opening cries can overlap in duration. Their distinct localized onsets
+must not be discarded simply because the sounds overlap. Competing same-onset species
+matches remain unresolved. Correlation 0.5, margin 0.1 and 100 ms onset proximity are
+pilot acoustic parameters, not universal game rules or faint confidence thresholds.
+
+### Camera-transition pulse qualification — November 14
+
+**FM-CAMERA-01 — implemented in completed Replay; recorded-case scope.** If a
+source-timed border pulse coincides with a coherent diagonal excursion of a
+complete HP bar, continuing movement and return, stable HP within measurement
+jitter, and an independent nearby charged-move announcement within unchanged
+appearances, its border comparison is not sufficient proof of a new Fast Move.
+Retain the raw pulse and its archived derived use, and retain the qualification's
+evidence references. Remove only that border basis from Replay's attack evidence.
+Independent HP damage or matched recipient sight-and-sound support remains usable.
+
+A missing bar, zero orange, unchanged HP, one moving frame, or a crop label alone
+is insufficient. A changed HP plateau, incompatible/conflicting geometry, missing
+return/charge corroboration, faint, switch or capture boundary prevents this
+qualification. Do not suppress a whole time interval or round tiny surviving HP
+to zero. One-column jitter tolerance does not disprove a subpixel hit. Validated
+on the paired Nov 13 recording and synthetic controls; not a universal game rule
+or a live-witness change. See
+[the recorded comparison](../verification/2026-11-14-camera-transition-pulse.md).

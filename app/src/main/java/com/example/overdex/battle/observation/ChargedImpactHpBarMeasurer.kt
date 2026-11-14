@@ -52,7 +52,7 @@ internal object ChargedImpactHpBarMeasurer {
         val width = bounds.right - bounds.left
         val pixels = IntArray(width * (bounds.bottom - bounds.top))
         bitmap.getPixels(pixels, 0, width, bounds.left, bounds.top, width, bounds.bottom - bounds.top)
-        return acquire(bitmap.width, bitmap.height, reference, bounds, pixels)
+        return acquireCandidates(bitmap.width, bitmap.height, reference, bounds, pixels, false)?.hpSample
     }
 
     internal fun acquire(
@@ -69,15 +69,34 @@ internal object ChargedImpactHpBarMeasurer {
         val pixels = IntArray(regionWidth * (bounds.bottom - bounds.top))
         for (y in bounds.top until bounds.bottom) for (x in bounds.left until bounds.right)
             pixels[(y - bounds.top) * regionWidth + x - bounds.left] = pixelAt(x, y)
-        return acquire(width, height, reference, bounds, pixels)
+        return acquireCandidates(width, height, reference, bounds, pixels, false)?.hpSample
+    }
+
+    fun acquireComplete(bitmap: Bitmap, reference: ActiveHpBarMeasurement,
+        territory: BattleCropBounds? = null): CompleteHpBarSample? {
+        val bounds = searchBounds(bitmap.width, bitmap.height, reference, territory) ?: return null
+        val w = bounds.right - bounds.left
+        val pixels = IntArray(w * (bounds.bottom - bounds.top))
+        bitmap.getPixels(pixels, 0, w, bounds.left, bounds.top, w, bounds.bottom - bounds.top)
+        return acquireCandidates(bitmap.width, bitmap.height, reference, bounds, pixels, true)
+    }
+
+    internal fun acquireComplete(width: Int, height: Int, reference: ActiveHpBarMeasurement,
+        territory: BattleCropBounds? = null, pixelAt: (Int, Int) -> Int): CompleteHpBarSample? {
+        val bounds = searchBounds(width, height, reference, territory) ?: return null
+        val w = bounds.right - bounds.left
+        val pixels = IntArray(w * (bounds.bottom - bounds.top))
+        for (y in bounds.top until bounds.bottom) for (x in bounds.left until bounds.right)
+            pixels[(y - bounds.top) * w + x - bounds.left] = pixelAt(x, y)
+        return acquireCandidates(width, height, reference, bounds, pixels, true)
     }
 
     private data class Run(val y: Int, val left: Int, val right: Int, val color: Int)
 
-    private fun acquire(
+    private fun acquireCandidates(
         width: Int, height: Int, reference: ActiveHpBarMeasurement,
-        bounds: BattleCropBounds, pixels: IntArray,
-    ): TrackedTerminalHpBarSample? {
+        bounds: BattleCropBounds, pixels: IntArray, allowUnknownInterior: Boolean,
+    ): CompleteHpBarSample? {
         val regionWidth = bounds.right - bounds.left
         val flags = IntArray(pixels.size) { outline(pixels[it]) }
         val runs = mutableListOf<Run>()
@@ -118,15 +137,15 @@ internal object ChargedImpactHpBarMeasurer {
         val measured = candidates.mapNotNull { candidate ->
             // The existing terminal reader requires paired outlines, both caps,
             // and a clean interior. Orange-only, flash and absent remain unknown.
-            TrackedTerminalHpBarMeasurer.measure(width, height, candidate) { x, y ->
+            TrackedTerminalHpBarMeasurer.measureComplete(width, height, candidate, bounds) { x, y ->
                 if (x in bounds.left until bounds.right && y in bounds.top until bounds.bottom)
                     pixels[(y - bounds.top) * regionWidth + x - bounds.left] else 0
-            }
+            }?.takeIf { allowUnknownInterior || it.hpSample != null }
         }
-        val distinct = mutableListOf<TrackedTerminalHpBarSample>()
-        measured.sortedByDescending { it.measurement.confidence }.forEach { sample ->
-            if (distinct.none { abs(it.measurement.left - sample.measurement.left) <= 4 &&
-                    abs(it.measurement.top - sample.measurement.top) <= 4 }) distinct += sample
+        val distinct = mutableListOf<CompleteHpBarSample>()
+        measured.sortedByDescending { it.confidence }.forEach { sample ->
+            if (distinct.none { abs(it.bounds.left - sample.bounds.left) <= 4 &&
+                    abs(it.bounds.top - sample.bounds.top) <= 4 }) distinct += sample
         }
         return distinct.singleOrNull()
     }

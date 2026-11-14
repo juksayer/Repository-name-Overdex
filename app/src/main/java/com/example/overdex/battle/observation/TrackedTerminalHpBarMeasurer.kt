@@ -100,17 +100,44 @@ internal object TrackedTerminalHpBarMeasurer {
     // camera relocation still needs independent acquisition and ownership.
     private fun verticalMargin(height: Int) = height.coerceIn(3, 16)
 
-    private fun measureRegion(
+    fun measureComplete(bitmap: Bitmap, anchor: ActiveHpBarMeasurement, territory: BattleCropBounds? = null): CompleteHpBarSample? {
+        val bounds = pixelBounds(bitmap.width, bitmap.height, anchor, territory) ?: return null
+        val pixels = IntArray(bounds.width * bounds.height)
+        bitmap.getPixels(pixels, 0, bounds.width, bounds.left, bounds.top, bounds.width, bounds.height)
+        return completeRegion(bounds, anchor, pixels)
+    }
+
+    internal fun measureComplete(width: Int, height: Int, anchor: ActiveHpBarMeasurement,
+        territory: BattleCropBounds? = null, pixelAt: (Int, Int) -> Int): CompleteHpBarSample? {
+        val bounds = pixelBounds(width, height, anchor, territory) ?: return null
+        val pixels = IntArray(bounds.width * bounds.height)
+        for (y in bounds.top until bounds.bottom) for (x in bounds.left until bounds.right)
+            pixels[(y - bounds.top) * bounds.width + x - bounds.left] = pixelAt(x, y)
+        return completeRegion(bounds, anchor, pixels)
+    }
+
+    private fun completeRegion(bounds: Bounds, anchor: ActiveHpBarMeasurement, pixels: IntArray): CompleteHpBarSample? =
+        findOutline(bounds, anchor, pixels) { shape, flagsAt ->
+            CompleteHpBarProfile.measure(shape, BattleCropBounds(bounds.left, bounds.top, bounds.right, bounds.bottom)) { x, y ->
+                pixels[(y - bounds.top) * bounds.width + x - bounds.left]
+            }.copy(hpSample = measureInterior(shape, flagsAt))
+        }
+
+    private fun measureRegion(bounds: Bounds, anchor: ActiveHpBarMeasurement, pixels: IntArray): TrackedTerminalHpBarSample? =
+        findOutline(bounds, anchor, pixels, ::measureInterior)
+
+    private fun <T> findOutline(
         bounds: Bounds,
         anchor: ActiveHpBarMeasurement,
         pixels: IntArray,
-    ): TrackedTerminalHpBarSample? {
+        readInterior: (ActiveHpBarMeasurement, (Int, Int) -> Int) -> T?,
+    ): T? {
         // Pixel classification is linear in this tiny region, never the frame.
         val flags = IntArray(pixels.size) { classify(pixels[it]) }
         fun flagsAt(x: Int, y: Int) = flags[(y - bounds.top) * bounds.width + x - bounds.left]
         val expectedHeight = anchor.bottom - anchor.top
         val margin = verticalMargin(expectedHeight)
-        var best: TrackedTerminalHpBarSample? = null
+        var best: T? = null
         var bestScore = Float.NEGATIVE_INFINITY
         for (top in max(bounds.top + 1, anchor.top - margin)..minOf(bounds.bottom - 2, anchor.top + margin)) {
             val centerBottom = top + expectedHeight
@@ -138,16 +165,14 @@ internal object TrackedTerminalHpBarMeasurer {
                     val left = capAt(anchor.left, 1) ?: continue
                     val right = capAt(anchor.right - 1, -1) ?: continue
                     if (abs((right.first + 1 - left.first) - anchor.width) > X_MARGIN * 2) continue
-                    val shape = ActiveHpBarMeasurement(left.first, top, right.first + 1, bottom, 0f, 0f)
-                    val sample = measureInterior(shape, ::flagsAt) ?: continue
+                    val confidence = ((topSupport + bottomSupport + left.second + right.second) / 4f).coerceIn(0f, .99f)
+                    val shape = ActiveHpBarMeasurement(left.first, top, right.first + 1, bottom, 0f, confidence)
                     val score = topSupport + bottomSupport + left.second + right.second -
                         abs(top - anchor.top) * .015f - abs(bottom - top - expectedHeight) * .02f
                     if (score > bestScore) {
+                        val sample = readInterior(shape, ::flagsAt) ?: continue
                         bestScore = score
-                        best = sample.copy(measurement = sample.measurement.copy(
-                            confidence = ((topSupport + bottomSupport + left.second + right.second) / 4f)
-                                .coerceIn(0f, .99f),
-                        ))
+                        best = sample
                     }
                 }
             }

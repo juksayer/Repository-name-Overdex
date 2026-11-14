@@ -17,6 +17,7 @@ internal class ReplayKnockoutTrack(
     reconciledLosses: Map<String, TeamLossResolution> = emptyMap(),
     verifiedHpLosses: Map<String, VerifiedHpFaintResolution> = emptyMap(),
     terminalLosses: Map<String, com.example.overdex.battle.inference.TerminalChargedFaintResolution> = emptyMap(),
+    corroboratingHpLosses: Map<String, List<VerifiedHpFaintResolution>> = emptyMap(),
 ) {
     // Conflicting duplicate IDs cannot supply a unique custody link.
     private val articlesById = articles.groupBy { it.articleId }.mapValues { (_, copies) -> copies.singleOrNull() }
@@ -80,19 +81,26 @@ internal class ReplayKnockoutTrack(
             val replacement = appearances.getOrNull(index + 1)
             val start = if (replacement == null || at < replacement.atNanos) at else
                 maxOf(appearance.atNanos, replacement.atNanos - MIN_VISIBLE_KO_NANOS)
+            val earlierHp = corroboratingHpLosses[faint.side].orEmpty().singleOrNull { hp ->
+                hp.owner.appearanceAtNanos == candidate.appearanceAtNanos &&
+                    key(hp.owner.speciesName) == key(candidate.speciesName) &&
+                    hp.owner.speciesId == candidate.speciesId &&
+                    hp.atNanos > appearance.atNanos && hp.atNanos < start
+            }
             return@mapNotNull ReplayKnockout(
                 side = faint.side, speciesName = appearance.speciesName, appearanceAtNanos = appearance.atNanos,
-                recordedAtNanos = at, presentationAtNanos = start,
+                recordedAtNanos = earlierHp?.atNanos ?: at, presentationAtNanos = earlierHp?.atNanos ?: start,
                 replacementAtNanos = replacement?.atNanos,
                 sourceArticleIds = (resolution.evidenceReferences + listOfNotNull(replacement?.articleId) +
-                    replacement?.evidenceArticleIds.orEmpty()).distinct(),
+                    replacement?.evidenceArticleIds.orEmpty() + earlierHp?.evidenceReferences.orEmpty()).distinct(),
                 // An aggregate count proves a set of owners, not the count
                 // after each earlier departure. In particular, do not move a
                 // later count of one to the first faint or fabricate count two.
                 verifiedPokeBallsAfter = resolution.afterCount.takeIf {
                     resolution.beforeCount - resolution.afterCount == 1
                 },
-                basis = ReplayTeamLossProjection.BASIS,
+                basis = if (earlierHp != null) "VERIFIED_HP_WITH_COUNT_CORROBORATION" else ReplayTeamLossProjection.BASIS,
+                verifiedPokeBallsAtNanos = start,
             )
         }
         val current = appearances.indexOfLast { it.atNanos <= at }
@@ -200,6 +208,8 @@ internal data class ReplayKnockout(
     val verifiedPokeBallsAfter: Int? = null,
     /** Separate the reconstructed conclusion from the archived faint witness. */
     val basis: String? = null,
+    /** Earlier independent HP proof must not backdate a later resource count. */
+    val verifiedPokeBallsAtNanos: Long = presentationAtNanos,
 ) {
     // Leave a visible beat lying down before the next sprite replaces it.
     val finishByNanos: Long? get() = replacementAtNanos?.let {

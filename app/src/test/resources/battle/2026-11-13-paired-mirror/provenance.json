@@ -1,0 +1,19 @@
+{
+  "note": "Complete archived timeline JSON exported for reproducible Replay tests. Original records, source clocks, payloads and evidence references retained; JSON formatting and gzip packaging only. Source archives immutable. Pixel and Moondrop are opposite views of the same controlled battle, not merged testimony.",
+  "records": [
+    {
+      "device": "pixel",
+      "sourceArchive": "/mnt/overdex-backup/archives/overdex-device-backups/2026-11-13-dual-view-1834/pixel-2026-11-13_18-34-41_f9fa49c6-033e-4932-ae5e-38167d662159.odxmatch.zip",
+      "archiveSha256": "ca038de94fbfe335b00326c622d4f3a1aa869753679b4b80f3f886f5e49021ab",
+      "fixture": "pixel-timeline.json.gz",
+      "fixtureUncompressedSha256": "a692601d9adad7ceb8b6ac890a2394faf016bf95160375aa5d18b6c77a05ad53"
+    },
+    {
+      "device": "moondrop",
+      "sourceArchive": "/mnt/overdex-backup/archives/overdex-device-backups/2026-11-13-dual-view-1834/moondrop-2026-11-13_18-34-43_47519620-3434-4420-a4b7-51d89932c303.odxmatch.zip",
+      "archiveSha256": "e0e070e265c8f9e568cc961e4fcac3a51ba69b5b7aca8bc7bb11d1cf98b2a91e",
+      "fixture": "moondrop-timeline.json.gz",
+      "fixtureUncompressedSha256": "a8e509f41c1c1534cb79f11e2437f0bb54ff83f8f6bca2ce18ace84e27fface3"
+    }
+  ]
+}

@@ -75,6 +75,15 @@ class ReplayVerifiedHpFaintTest {
         val model = MatchReplayModel(input)
         assertEquals(1, model.eventMarkers.count { it.kind == ReplayEventMarkerKind.FAINT })
         assertTrue(ReplayVerifiedHpFaintProjection(input, ReplayTeamLossProjection(input).articles).resolutionsByArticleId.isEmpty())
+        for (ordered in listOf(input, input.copy(articles = input.articles.reversed()))) {
+            val replay = MatchReplayModel(ordered)
+            val marker = replay.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }
+            assertEquals(EMPTY_AT, marker.atNanos)
+            assertTrue(marker.sourceArticleIds.containsAll(listOf("identity", "red", "empty", "before", "after")))
+            assertTrue(replay.sceneAt(EMPTY_AT + 10_000_000L).opponent!!.isFainted)
+            assertEquals(1, replay.sceneAt(EMPTY_AT + 10_000_000L).opponentResources.pokeBalls)
+            assertEquals(0, replay.sceneAt(61 * S).opponentResources.pokeBalls)
+        }
     }
 
     @Test fun `charge-camera zero numeric zero unknown source and a missing bar do not produce KO`() {

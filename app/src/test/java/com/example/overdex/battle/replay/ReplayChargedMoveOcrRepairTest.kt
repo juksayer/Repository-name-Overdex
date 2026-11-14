@@ -51,13 +51,40 @@ class ReplayChargedMoveOcrRepairTest {
         for (text in listOf("Scrafty used FoulPl!", "Flareon used FouPay!", "Scrafty used FauPay!")) {
             assertTrue(text, model(archive(text)).sceneAt(CHARGE_AT).chargedMoveActions.none { it.moveName != null })
         }
-        val mirror = archive("Scrafty used FouPay!", opponent = "Scrafty")
+        val mirror = archive("Scrafty used FouPay!", opponent = "Scrafty").let { it.copy(articles = it.articles.filterNot { a -> a.articleId == "ready" }) }
         assertTrue(model(mirror).sceneAt(CHARGE_AT).chargedMoveActions.none { it.moveName != null })
         val ambiguous = MatchReplayModel(archive("Scrafty used FouPay!"), chargedMovesBySpeciesName = mapOf(
             "Scrafty" to listOf("Foul Play", "Foul Pay").map { Move(it, PokemonType.DARK, 60, 40, false) },
             "Flareon" to legalMoves("Flareon"),
         ))
         assertTrue(ambiguous.sceneAt(CHARGE_AT).chargedMoveActions.none { it.moveName != null })
+    }
+
+    @Test fun `mirror charge uses independent preparation but rejects contradictory cues and switches`() {
+        val mirror = archive("Scrafty used FouPay!", opponent = "Scrafty")
+        val action = model(mirror).sceneAt(CHARGE_AT).chargedMoveActions.single { it.moveName != null }
+        assertEquals("PLAYER", action.side)
+        assertEquals("Foul Play", action.moveName)
+        assertTrue("SIDE_FROM_INDEPENDENT_CHARGE_PREPARATION" in action.evidenceKinds)
+        val conflicting = mirror.copy(articles = mirror.articles + at("incoming", ArchivedAttackIncoming, 93 * SECOND))
+        assertTrue(model(conflicting).sceneAt(CHARGE_AT).chargedMoveActions.none { it.moveName != null })
+        val changed = mirror.copy(articles = mirror.articles + listOf(
+            at("away", ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Flareon"), 94 * SECOND),
+            at("back", ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Scrafty"), 95 * SECOND)))
+        assertTrue(model(changed).sceneAt(CHARGE_AT).chargedMoveActions.none { it.moveName != null })
+    }
+
+    @Test fun `mirror preparation expires and late unrelated faint does not change the active attacker`() {
+        val mirror = archive("Scrafty used FouPay!", opponent = "Scrafty")
+        val stale = mirror.copy(articles = mirror.articles.map {
+            if (it.articleId == "ready") it.copy(monotonicTimeNanos = 80 * SECOND) else it })
+        assertTrue(model(stale).sceneAt(CHARGE_AT).chargedMoveActions.none { it.moveName != null })
+        val unrelated = mirror.copy(articles = mirror.articles + at("late-old-faint",
+            ArchivedActivePokemonFaintedWitnessed("PLAYER", "Turtonator", basis = "BALL_COUNT"), 94 * SECOND))
+        assertEquals("Foul Play", model(unrelated).sceneAt(CHARGE_AT).chargedMoveActions.single { it.moveName != null }.moveName)
+        val active = mirror.copy(articles = mirror.articles + at("active-faint",
+            ArchivedActivePokemonFaintedWitnessed("OPPONENT", "Scrafty", basis = "BALL_COUNT"), 94 * SECOND))
+        assertTrue(model(active).sceneAt(CHARGE_AT).chargedMoveActions.none { it.moveName != null })
     }
 
     private fun model(archive: MatchArchive) = MatchReplayModel(archive, chargedMovesBySpeciesName =

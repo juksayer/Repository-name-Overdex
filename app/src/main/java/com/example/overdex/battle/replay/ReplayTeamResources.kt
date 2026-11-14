@@ -43,7 +43,7 @@ internal class ReplayResourceTrack(
             }
         }
         for (knockout in fittedCounts) {
-            if (cursor >= knockout.presentationAtNanos) {
+            if (cursor >= knockout.verifiedPokeBallsAtNanos) {
                 balls = minOf(balls ?: 3, knockout.verifiedPokeBallsAfter!!)
             }
         }

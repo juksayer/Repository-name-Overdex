@@ -377,6 +377,8 @@ private fun ArchiveArticleRow(
             is ArchivedSpeciesCheckMeasured -> "SPECIES CHECK [${p.side} ${p.status}, ${p.reason}, ${p.elapsedNanos / 1_000_000} ms / ${p.targetNanos / 1_000_000} ms target${if (p.elapsedNanos > p.targetNanos) " MISSED" else ""}, species=${p.speciesName ?: "unresolved"}]"
             is ArchivedAudioInputStatus -> "AUDIO INPUT [${p.captureSource}: ${p.state}]"
             is ArchivedAudioCaptured -> "AUDIO CAPTURED [source=${p.captureSource}, peak=${p.peakAmplitude}, cue=${p.cueKind}, ${p.sampleRateHz} Hz, ${p.channelCount} ch, ${p.durationNanos / 1_000_000} ms, sha256=${p.sha256.take(12)}…]"
+            is ArchivedBattleCryLocalized -> "CRY LOCALIZED [species=${p.speciesId}, correlation=${p.correlation}, durationNs=${p.durationNanos}]"
+            is ArchivedRepeatCryDepartureCandidate -> "DEPARTURE CANDIDATE [species=${p.speciesId}, side=${p.side ?: "UNRESOLVED"}; faint not established]"
             is ArchivedBattleCryCandidatesMeasured -> "CRY CANDIDATES [cue=${p.cueKind}, ${p.candidates.joinToString { "#${it.speciesId} ${String.format(Locale.ROOT, "%.3f", it.similarity)}" }}]"
             is ArchivedVisualCaptureGapObserved -> "VISUAL GAP [${p.durationNanos / 1_000_000} ms unobserved]"
             is ArchivedOutOfBattleMenuWitnessed -> "OUT OF BATTLE MENU WITNESSED"
@@ -391,6 +393,7 @@ private fun ArchiveArticleRow(
             is ArchivedPlayerPokeBallCountMeasured -> "PLAYER POKÉ BALLS [${p.visibleCount}/${p.maximumCount} visible]"
             is ArchivedOpponentBattleResourceCountMeasured -> "OPPONENT ${p.resource.replace('_', ' ')} [${p.visibleCount}/${p.maximumCount} visible]"
             is ArchivedHpObservationPipelineMeasured -> HpObservationDiagnosticText.summary(p)
+            is com.example.overdex.battle.archive.ArchivedCompleteHpBarObserved -> "COMPLETE HP BAR [${p.side}, ${p.status}, live columns=${p.liveColumns}, damage columns=${p.damageColumns}; color evidence, not an HP amount]"
             is ArchivedActiveHpBarMeasured -> "ACTIVE HP [side=${p.side}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%, bounds=${p.barLeft},${p.barTop},${p.barRight},${p.barBottom}]"
             is ArchivedActiveHpBarMotionCadenceMeasured -> "HP MOTION CADENCE [attacker=${p.movingSide}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s, excursion=${String.format(Locale.ROOT, "%.1f", p.verticalExcursionPixels)}px]"
             is ArchivedPlayerChargeButtonFillHeightMeasured -> "CHARGE FILL HEIGHT [button=${p.slot}, ${p.status}, fraction=${p.fillHeightFraction ?: "unknown"}, tolerance=${p.pixelTolerance}px; layer unknown]"
@@ -507,6 +510,8 @@ private fun ArticleDetailsOverlay(
                 is ArchivedSpeciesCheckMeasured -> "SPECIES CHECK [${p.side} ${p.status}, ${p.reason}, ${p.elapsedNanos / 1_000_000} ms / ${p.targetNanos / 1_000_000} ms target${if (p.elapsedNanos > p.targetNanos) " MISSED" else ""}, species=${p.speciesName ?: "unresolved"}]"
             is ArchivedAudioInputStatus -> "AUDIO INPUT [${p.captureSource}: ${p.state}]"
             is ArchivedAudioCaptured -> "AUDIO CAPTURED [source=${p.captureSource}, peak=${p.peakAmplitude}, artifact=${p.artifactPath}, sha256=${p.sha256}, bytes=${p.byteCount}, cue=${p.cueKind}, ${p.sampleRateHz} Hz, ${p.channelCount} channel(s), ${p.durationNanos / 1_000_000} ms]"
+                is ArchivedBattleCryLocalized -> "CRY LOCALIZED [species=${p.speciesId}, correlation=${p.correlation}, durationNs=${p.durationNanos}]"
+                is ArchivedRepeatCryDepartureCandidate -> "DEPARTURE CANDIDATE [species=${p.speciesId}, side=${p.side ?: "UNRESOLVED"}; faint not established]"
                 is ArchivedBattleCryCandidatesMeasured -> "CRY CANDIDATES [cue=${p.cueKind}, ${p.candidates.joinToString { "#${it.speciesId} ${String.format(Locale.ROOT, "%.3f", it.similarity)}" }}]"
             is ArchivedVisualCaptureGapObserved -> "VISUAL GAP [${p.durationNanos / 1_000_000} ms unobserved]"
             is ArchivedOutOfBattleMenuWitnessed -> "OUT OF BATTLE MENU WITNESSED"
@@ -521,6 +526,7 @@ private fun ArticleDetailsOverlay(
                 is ArchivedPlayerPokeBallCountMeasured -> "PLAYER POKÉ BALLS [${p.visibleCount}/${p.maximumCount} visible]"
                 is ArchivedOpponentBattleResourceCountMeasured -> "OPPONENT ${p.resource.replace('_', ' ')} [${p.visibleCount}/${p.maximumCount} visible]"
             is ArchivedHpObservationPipelineMeasured -> HpObservationDiagnosticText.details(p)
+            is com.example.overdex.battle.archive.ArchivedCompleteHpBarObserved -> "COMPLETE HP BAR [${p.side}, ${p.status}, live columns=${p.liveColumns}, damage columns=${p.damageColumns}; color evidence, not an HP amount]"
             is ArchivedActiveHpBarMeasured -> "ACTIVE HP [side=${p.side}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%, bounds=${p.barLeft},${p.barTop},${p.barRight},${p.barBottom}]"
             is ArchivedActiveHpBarMotionCadenceMeasured -> "HP MOTION CADENCE [attacker=${p.movingSide}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s, excursion=${String.format(Locale.ROOT, "%.1f", p.verticalExcursionPixels)}px]"
             is ArchivedPlayerChargeButtonFillHeightMeasured -> "CHARGE FILL HEIGHT [button=${p.slot}, ${p.status}, fraction=${p.fillHeightFraction ?: "unknown"}, tolerance=${p.pixelTolerance}px; layer unknown]"

@@ -33,7 +33,7 @@ class PersistedVsScreenWitness(
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
                 var accepted = false
-                match.articles
+                match.preBattleArticles
                     .filter { article ->
                         (article.payload as? CropCaptured)?.cropProvenance?.cropName ==
                             BattleCropContracts.vsScreen.cropName

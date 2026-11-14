@@ -67,7 +67,14 @@ internal fun contextualAudioChoices(
         val best = ranked.firstOrNull() ?: return@mapNotNull null
         if (pools.values.count { audioKey(best.moveName) in it } != 1) return@mapNotNull null
         val legacyStrict = legacyAccepted && best == globalBest
-        val strict = legacyStrict || (complete && ranked.size >= 2 && FastMoveReferenceMatcher.accepts(ranked))
+        // A configured/unique Fast Move has no second same-side alternative.
+        // It can still win a complete comparison against the other side's
+        // references. Require the ordinary global score/margin checks as well
+        // as unique ownership; a singleton pool by itself proves no sound.
+        val singletonGlobalStrict = legal.size == 1 && complete && referenceMatchAccepted &&
+            measured.size == candidates.size && best == globalBest && FastMoveReferenceMatcher.accepts(measured)
+        val strict = legacyStrict || singletonGlobalStrict ||
+            (complete && ranked.size >= 2 && FastMoveReferenceMatcher.accepts(ranked))
         val plausible = ranked.size >= 2 && measuredNames.containsAll(legal) &&
             best.similarity >= .85f && best.changingSimilarity >= .65f && ranked.drop(1).all {
                 best.similarity - it.similarity >= .015f && best.changingSimilarity > it.changingSimilarity

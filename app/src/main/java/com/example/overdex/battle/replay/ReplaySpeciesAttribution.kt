@@ -8,6 +8,7 @@ import com.example.overdex.battle.observation.isSideLocatedSpeciesSource
 
 /** Only repairs presentation; the original side conclusions stay in the archive. */
 internal fun archivedEntrySide(name: String, at: Long, articles: List<ArchivedRealityArticle>): String? {
+    archivedEntryTransition(name, at, articles)?.let { return it.side }
     val tracker = EntryAnnouncementSideTracker()
     articles.filter { isSideLocatedSpeciesSource(it.sourceId) &&
         (it.monotonicTimeNanos ?: Long.MAX_VALUE) <= at + ENTRY_BADGE_WINDOW }.forEach { article ->
@@ -17,6 +18,45 @@ internal fun archivedEntrySide(name: String, at: Long, articles: List<ArchivedRe
             article.monotonicTimeNanos ?: return@forEach)
     }
     return tracker.attribute(name, latestArchivedPlayerRoster(articles, at), allowRosterExclusion = true)?.side?.name
+}
+
+internal data class ReplayEntryTransition(val side: String, val evidenceArticleIds: List<String>)
+
+/** Resolve a mirror entry only when independent badges bracket one changing side.
+ * The other side must remain the same, and the first subsequent badge must agree;
+ * a later matching badge cannot skip a contradictory observation. */
+internal fun archivedEntryTransition(
+    name: String, at: Long, articles: List<ArchivedRealityArticle>,
+): ReplayEntryTransition? {
+    val ordered = articles.filter { it.monotonicTimeNanos != null }
+        .sortedWith(compareBy<ArchivedRealityArticle> { it.monotonicTimeNanos }.thenBy { it.articleId })
+    val brackets = ActivePokemonSide.entries.map { side ->
+        val badges = ordered.filter {
+            isSideLocatedSpeciesSource(it.sourceId) &&
+                (it.payload as? ArchivedActivePokemonSpeciesWitnessed)?.side == side.name
+        }
+        val before = badges.lastOrNull { it.monotonicTimeNanos!! < at } ?: return null
+        val after = badges.firstOrNull { it.monotonicTimeNanos!! >= at } ?: return null
+        if (after.monotonicTimeNanos!! - at > ENTRY_BADGE_WINDOW) return null
+        Triple(side.name, before, after)
+    }
+    val earliest = brackets.minOf { it.second.monotonicTimeNanos!! }
+    val latest = brackets.maxOf { it.third.monotonicTimeNanos!! }
+    if (ordered.any { it.monotonicTimeNanos!! in earliest..latest &&
+            (it.payload is ArchivedObservationRestartedByUser || it.payload is ArchivedScreenIgnoredByUser) }) return null
+    fun species(article: ArchivedRealityArticle) = key((article.payload as ArchivedActivePokemonSpeciesWitnessed).speciesName)
+    val changed = brackets.filter { species(it.second) != species(it.third) }
+    val candidate = changed.singleOrNull() ?: return null
+    if (species(candidate.third) != key(name)) return null
+    // Conflicting simultaneous reads cannot establish a unique transition.
+    if (brackets.any { (_, before, after) -> ordered.any {
+            isSideLocatedSpeciesSource(it.sourceId) &&
+                (it.payload as? ArchivedActivePokemonSpeciesWitnessed)?.side ==
+                (before.payload as ArchivedActivePokemonSpeciesWitnessed).side &&
+                ((it.monotonicTimeNanos == before.monotonicTimeNanos && species(it) != species(before)) ||
+                    (it.monotonicTimeNanos == after.monotonicTimeNanos && species(it) != species(after)))
+        } }) return null
+    return ReplayEntryTransition(candidate.first, brackets.flatMap { listOf(it.second.articleId, it.third.articleId) })
 }
 
 /** Current side-located badges outrank a roster inference; mirrors stay unsided. */

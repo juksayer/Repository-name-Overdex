@@ -11,10 +11,21 @@ import com.example.overdex.battle.reality.RealityArticle
 internal class ReplayPlayerFormIdentity(articles: List<ArchivedRealityArticle>) {
     private val identities = PlayerActiveIdentityInference()
     private val configuration = ArchivedPlayerTeamConfiguration(articles)
+    // A corrected parent entry must not reappear as a stale derived PLAYER
+    // identity. Require explicit independent opponent-side bracketing; missing
+    // or ambiguous proof does not invalidate a recorded identity.
+    private val correctedOpponentEntries = articles.filter { article ->
+        val species = article.payload as? ArchivedActivePokemonSpeciesWitnessed
+        species != null && article.sourceId == "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS" &&
+            article.monotonicTimeNanos?.let { at ->
+                archivedEntryTransition(species.speciesName, at, articles)?.side == "OPPONENT"
+            } == true
+    }.map { it.articleId }.toSet()
     private val recorded = java.util.TreeMap<Long, ArchivedRealityArticle>().apply {
         articles.sortedBy { it.recordedAt }.forEach { article ->
             (article.payload as? ArchivedPlayerActiveIdentityResolved)?.takeIf {
-                configuration.acceptsDerivedEvidence(article)
+                configuration.acceptsDerivedEvidence(article) &&
+                    article.predecessorIds.none { it in correctedOpponentEntries }
             }?.let { this[it.appearanceStartedAtNanos] = article }
         }
     }

@@ -17,6 +17,21 @@ class ChargedImpactHpWatchPolicyTest {
         it.seed(player, normal.copy(left = 35, right = 228), base - 500_000_000L)
     }
 
+    @Test fun `orange geometry keeps tracking without consuming the window or renewing its deadline`() {
+        val watch=seeded()
+        watch.prepare(opponent,base)
+        val at=base+3_000_000_000L
+        val request=requireNotNull(watch.request(672,1419,at))
+        assertTrue(watch.acceptGeometry(request,center,at))
+        val next=requireNotNull(watch.request(672,1419,at+33_000_000))
+        assertEquals(center,next.anchor)
+        assertTrue(watch.canCapture(at+33_000_000))
+        assertFalse(watch.acceptGeometry(next,center,at-1))
+        watch.appearanceBoundary(opponent,at+40_000_000)
+        assertFalse(watch.acceptGeometry(next,center,at+50_000_000))
+        assertNull(watch.request(672,1419,at+60_000_000))
+    }
+
     @Test fun `sparse crop window requires a prepared recipient and never advances the geometry cadence`() {
         val watch = seeded()
         assertFalse(watch.canCapture(base))

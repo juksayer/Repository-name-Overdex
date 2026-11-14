@@ -2,11 +2,41 @@ package com.example.overdex.battle.inference
 
 import com.example.overdex.battle.custody.ActivePokemonSide.*
 import com.example.overdex.battle.custody.FastMoveSoundCandidate
+import com.example.overdex.battle.custody.FastMoveSoundSearchScope
 import com.example.overdex.battle.reality.ArticleId
 import org.junit.Assert.*
 import org.junit.Test
 
 class FastMoveAudioPreferenceTrackerTest {
+    @Test fun `single configured move requires a complete accepted global comparison and unique owner`() {
+        val fighters = listOf(
+            AudioPreferenceCombatant(PLAYER, "Camerupt", 0, listOf("Incinerate")),
+            AudioPreferenceCombatant(OPPONENT, "Sealeo", 0, listOf("Water Gun", "Powder Snow")))
+        fun scopes(context: List<AudioPreferenceCombatant>) = context.map {
+            FastMoveSoundSearchScope(it.side, it.speciesName, it.legalMoveNames, emptyList()) }
+        val scores = listOf(candidate("Incinerate", .989f, .947f),
+            candidate("Water Gun", .916f, .906f), candidate("Powder Snow", .847f, .756f))
+        val chosen = contextualAudioChoices(scores, fighters, true, scopes(fighters)).single { it.side == PLAYER }
+        assertTrue(chosen.strict)
+        assertFalse(chosen.requiresImpactSupport)
+        assertEquals("Incinerate", chosen.candidate.moveName)
+        val rejectedScores = listOf(
+            scores.take(1), // A saved move alone is not acoustic evidence.
+            scores.dropLast(1), // Missing reference cannot shrink the opponent pool.
+            scores + scores.first(), // Duplicate measurements are not extra comparison evidence.
+            scores.map { if (it.moveName == "Incinerate") it.copy(similarity = .92f) else it },
+            scores.map { if (it.moveName == "Water Gun") it.copy(similarity = .995f) else it },
+            scores.map { if (it.moveName == "Incinerate") it.copy(changingSimilarity = .50f) else it },
+        )
+        for (input in rejectedScores) assertTrue(contextualAudioChoices(input, fighters, true,
+            scopes(fighters)).none { it.side == PLAYER && it.strict })
+        assertTrue(contextualAudioChoices(scores, fighters, false, scopes(fighters)).none { it.side == PLAYER && it.strict })
+        val mirrored = fighters.map { it.copy(legalMoveNames = listOf("Incinerate")) }
+        assertTrue(contextualAudioChoices(scores, mirrored, true, scopes(mirrored)).isEmpty())
+        val stale = scopes(fighters).map { if (it.side == PLAYER) it.copy(speciesName = "Turtonator") else it }
+        assertTrue(contextualAudioChoices(scores, fighters, true, stale).isEmpty())
+    }
+
     private val context = listOf(
         AudioPreferenceCombatant(PLAYER, "Dragonair", 0, listOf("Dragon Breath", "Iron Tail")),
         AudioPreferenceCombatant(OPPONENT, "Forretress", 0, listOf("Bug Bite")),

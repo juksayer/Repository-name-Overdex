@@ -1,0 +1,55 @@
+[
+  {
+    "name": "p_sealeo_nonlethal_charge-41.299011",
+    "source": "/mnt/overdex-backup/archives/overdex-device-backups/2026-11-13-hp-tracking-relative-fade/p_sealeo_nonlethal_charge-41.299011-source.png",
+    "sha256": "09d33fc28f138cf64b37ca84dc4b06fc9cf4679345bbc7b77ce2441d0c4a2b6a",
+    "capture": {
+      "pts": 3716911,
+      "timeBase": "1/90000",
+      "video": "/home/sean/Desktop/Screen_recording_20261112_111756.mp4"
+    },
+    "seconds": 41.299011,
+    "crop": [
+      281,
+      845,
+      536,
+      939
+    ],
+    "transform": "lossless ROI crop at native resolution; no filtering",
+    "expected": "surviving sliver"
+  },
+  {
+    "name": "p_sealeo_nonlethal_charge-42.905467",
+    "source": "/mnt/overdex-backup/archives/overdex-device-backups/2026-11-13-hp-tracking-relative-fade/p_sealeo_nonlethal_charge-42.905467-source.png",
+    "sha256": "8005ea0d3676920d983c6ea01db7b979e0305b97550c008ed2746724ec2113a5",
+    "capture": {
+      "pts": 3861492,
+      "timeBase": "1/90000",
+      "video": "/home/sean/Desktop/Screen_recording_20261112_111756.mp4"
+    },
+    "seconds": 42.905467,
+    "crop": [
+      461,
+      692,
+      712,
+      783
+    ],
+    "transform": "lossless ROI crop at native resolution; no filtering",
+    "expected": "surviving sliver"
+  },
+  {
+    "name": "cramorant_retained_ko-178.553633",
+    "source": "/mnt/overdex-backup/archives/overdex-device-backups/2026-11-13-hp-tracking-relative-fade/cramorant_retained_ko-178.553633-source.png",
+    "sha256": "747bd561fc2968cb28d887c61a4ec9cff02fecaff5a1974f3e4fc224def6bd75",
+    "capture": "/mnt/overdex-backup/archives/overdex-device-backups/2026-11-11-moondrop-2113-review/native-final-badge-frames/frame-16069827-178.553633.png",
+    "seconds": 178.553633,
+    "crop": [
+      281,
+      897,
+      534,
+      990
+    ],
+    "transform": "lossless ROI crop at native resolution; no filtering",
+    "expected": "orange remainder; not measured zero"
+  }
+]

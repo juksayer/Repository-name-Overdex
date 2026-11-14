@@ -337,6 +337,20 @@ data class ArchivedHpObservationPipelineMeasured(
 ) : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("complete_hp_bar_observed")
+data class ArchivedCompleteHpBarObserved(
+    val side: String,
+    val barLeft: Int, val barTop: Int, val barRight: Int, val barBottom: Int,
+    val sourceWidth: Int, val sourceHeight: Int,
+    val interiorColumns: Int, val liveColumns: Int, val damageColumns: Int,
+    val status: String, val candidateStartedAtNanos: Long?,
+    val appearanceStartedAtNanos: Long?,
+    val railBrightness: Float, val backgroundBrightness: Float?,
+    val backgroundMaskedColumns: Int = 0,
+    val unmaskedUncertainColumns: Int? = null,
+) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("active_hp_bar_measured")
 data class ArchivedActiveHpBarMeasured(
     val side: String,
@@ -588,4 +602,21 @@ data class ArchivedPlayerChargeButtonFillHeightMeasured(
     val cropHeight: Int,
     val sourceWidth: Int,
     val sourceHeight: Int
+) : ArchivedTestimonyPayload
+
+@Serializable @SerialName("battle_cry_localized")
+data class ArchivedBattleCryLocalized(
+    val speciesId: Int,
+    val referenceSha256: String,
+    val correlation: Float,
+    val durationNanos: Long,
+    val analysisVersion: String,
+) : ArchivedTestimonyPayload
+
+@Serializable @SerialName("repeat_cry_departure_candidate")
+data class ArchivedRepeatCryDepartureCandidate(
+    val speciesId: Int,
+    val side: String?,
+    val possibleAppearanceIds: List<String>,
+    val cryOccurrenceIds: List<String>,
 ) : ArchivedTestimonyPayload

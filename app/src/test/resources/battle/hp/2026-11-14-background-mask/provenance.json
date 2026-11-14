@@ -1,0 +1,15 @@
+{
+  "sourceVideo": "/home/sean/Desktop/Screen_recording_20261113_183448.mp4",
+  "videoSha256": "7e91e4e081268068d74fd20daadd0b22e630d0402fc9db53f145eb44e99242df",
+  "sourceTimeNanos": 78402311111,
+  "resampledFrame": "/mnt/overdex-backup/archives/overdex-device-backups/2026-11-13-dual-reader-comparison/p_fast_ko_turtonator/78.402311.png",
+  "resampledFrameSha256": "953ac1583180f5a821753751dd0650f4f6363c17ab36d3bee26c55e8b9390592",
+  "transform": "Existing bilinear resampling to 672x1419; exact crop only; no color changes",
+  "crop": [
+    379,
+    453,
+    591,
+    541
+  ],
+  "expected": "Most dim blue tail uncertainty is masked; possible live-color edge pixel keeps remainder unresolved; no invented empty HP"
+}

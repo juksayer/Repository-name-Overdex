@@ -175,6 +175,10 @@ object RealityArticleArchiveMapper {
                 captureSource = p.captureSource,
                 peakAmplitude = p.peakAmplitude
             )
+            is com.example.overdex.battle.custody.BattleCryLocalized -> ArchivedBattleCryLocalized(
+                p.speciesId, p.referenceSha256, p.correlation, p.durationNanos, p.analysisVersion)
+            is com.example.overdex.battle.custody.RepeatCryDepartureCandidateObserved -> ArchivedRepeatCryDepartureCandidate(
+                p.speciesId, p.side?.name, p.possibleAppearanceIds, p.cryOccurrenceIds)
             is BattleCryCandidatesMeasured -> ArchivedBattleCryCandidatesMeasured(
                 p.cueKind, p.candidates.map { ArchivedBattleCryCandidateMeasurement(it.speciesId, it.referenceSha256, it.similarity) }
             )
@@ -242,6 +246,12 @@ object RealityArticleArchiveMapper {
                 oldestPendingAgeNanos = p.oldestPendingAgeNanos,
                 latestPublicationStreamId = p.latestPublicationStreamId,
                 latestPublicationSequenceNumber = p.latestPublicationSequenceNumber,
+            )
+            is com.example.overdex.battle.custody.CompleteHpBarObserved -> ArchivedCompleteHpBarObserved(
+                p.side.name, p.barLeft, p.barTop, p.barRight, p.barBottom,
+                p.sourceWidth, p.sourceHeight, p.interiorColumns, p.liveColumns, p.damageColumns,
+                p.status, p.candidateStartedAtNanos, p.appearanceStartedAtNanos,
+                p.railBrightness, p.backgroundBrightness, p.backgroundMaskedColumns, p.unmaskedUncertainColumns,
             )
             is ActiveHpBarMeasured -> ArchivedActiveHpBarMeasured(
                 side = p.side.name,

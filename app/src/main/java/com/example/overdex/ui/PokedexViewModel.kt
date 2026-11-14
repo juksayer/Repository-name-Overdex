@@ -834,6 +834,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             )
             observationDispatcher.register(PersistedBattleCryCandidateWitness(getApplication(), getApplication<Application>().filesDir))
             observationDispatcher.register(DecisiveBattleCrySpeciesWitness())
+            observationDispatcher.register(com.example.overdex.battle.audio.LiveLocalizedCryWitness(
+                getApplication(), audioArtifactStore, teamResourceSnapshotGate::requestDepartureCheck))
             observationDispatcher.register(com.example.overdex.battle.audio.LiveFastMoveSoundWitness(
                 getApplication(), audioArtifactStore))
             observationDispatcher.register(com.example.overdex.battle.audio.StatChangeSoundWitness(

@@ -61,6 +61,10 @@ internal class ReplayVerifiedHpFaintProjection(
     val contradictedEmptyEvidence = reconciliations.values.flatMap { it.contradictedEmptyEvidence.entries }
         .associate { it.toPair() }
 
+    // A count can corroborate an earlier HP-confirmed loss. Retain that timing
+    // even when no additional synthetic faint article is needed.
+    val corroboratingFaintsBySide = reconciliations.mapValues { it.value.faints }
+
     val resolutionsByArticleId: Map<String, VerifiedHpFaintResolution> = buildMap {
         reconciliations.forEach { (side, reconciliation) ->
             reconciliation.faints.forEach { resolution ->

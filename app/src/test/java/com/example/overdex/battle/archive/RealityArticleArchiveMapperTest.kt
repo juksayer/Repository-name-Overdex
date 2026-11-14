@@ -46,6 +46,43 @@ import org.junit.Assert.fail
 import org.junit.Test
 
 class RealityArticleArchiveMapperTest {
+    @Test fun `complete bar color preserves source time and references without an hp amount`() {
+        val observation = com.example.overdex.battle.custody.CompleteHpBarObserved(
+            ActivePokemonSide.OPPONENT, 40,80,240,96,400,300,196,0,100,
+            "SUSTAINED_DAMAGE_COLOR",100L,50L,255f,100f,
+            backgroundMaskedColumns=80, unmaskedUncertainColumns=0)
+        val original = RealityArticleArchiveMapper.map(article("complete",observation,
+            monotonicTimeNanos=200L,evidenceReferences=listOf("charge-phase")))
+        val archive=MatchArchive(matchId="complete",articles=listOf(original))
+        val restored=MatchArchiveSerializer.deserialize(MatchArchiveSerializer.serialize(archive))
+        assertEquals(archive,restored)
+        assertTrue(restored.articles.single().payload is ArchivedCompleteHpBarObserved)
+        val payload = restored.articles.single().payload as ArchivedCompleteHpBarObserved
+        assertEquals(80,payload.backgroundMaskedColumns)
+        assertEquals(0,payload.unmaskedUncertainColumns)
+        val legacy = MatchArchiveSerializer.deserialize(MatchArchiveSerializer.serialize(archive)
+            .replace(Regex("[,]?\\s*\"backgroundMaskedColumns\"\\s*:\\s*80"), "")
+            .replace(Regex("[,]?\\s*\"unmaskedUncertainColumns\"\\s*:\\s*0"), ""))
+        val legacyPayload = legacy.articles.single().payload as ArchivedCompleteHpBarObserved
+        assertEquals(0,legacyPayload.backgroundMaskedColumns)
+        assertEquals(null,legacyPayload.unmaskedUncertainColumns)
+    }
+
+    @Test fun `localized cry and unresolved departure preserve timing and audio references`() {
+        val cry = com.example.overdex.battle.custody.BattleCryLocalized(776, "reference-hash", .82f, 2_072_000_000)
+        val candidate = com.example.overdex.battle.custody.RepeatCryDepartureCandidateObserved(
+            776, null, listOf("player-appearance", "opponent-appearance"), listOf("cry-a", "cry-b"))
+        val archive = MatchArchive(matchId="match-a", articles=listOf(
+            RealityArticleArchiveMapper.map(article("cry-b", cry, monotonicTimeNanos=5_000_000_000,
+                evidenceReferences=listOf("preserved-pcm"))),
+            RealityArticleArchiveMapper.map(article("candidate", candidate, monotonicTimeNanos=5_000_000_000,
+                evidenceReferences=listOf("cry-a", "cry-b", "player-appearance", "opponent-appearance")))))
+        val restored = MatchArchiveSerializer.deserialize(MatchArchiveSerializer.serialize(archive))
+        assertEquals(archive, restored)
+        assertTrue(restored.articles[0].payload is ArchivedBattleCryLocalized)
+        assertEquals(null, (restored.articles[1].payload as ArchivedRepeatCryDepartureCandidate).side)
+    }
+
     @Test fun `experimental fill height and unknown values survive archive serialization`() {
         val measured = com.example.overdex.battle.custody.PlayerChargeButtonFillHeightMeasured(
             1, "EXPERIMENTAL_SEPARATOR", 180, 140, 72, 155f, 57f/144f, 2f,

@@ -1,0 +1,22 @@
+{
+  "sourceVideo": "/home/sean/Desktop/Screen_recording_20261113_183448.mp4",
+  "sourceVideoSha256": "7e91e4e081268068d74fd20daadd0b22e630d0402fc9db53f145eb44e99242df",
+  "videoTimeNs": 152329166667,
+  "decodedSize": [
+    816,
+    1712
+  ],
+  "analysisSize": [
+    672,
+    1419
+  ],
+  "resampling": "Pillow BILINEAR; independently encoded video, not original MediaProjection pixels",
+  "crop": [
+    228,
+    850,
+    447,
+    915
+  ],
+  "pngSha256": "4b6a6edcd96beb09a40559c4459878cc3ee571f1c9f40ea016b16ff9f914c734",
+  "outcome": "KO, manually verified from both device recordings; old territory clips bottom outline"
+}

@@ -1,5 +1,8 @@
 package com.example.overdex.battle.replay
 
+import com.example.overdex.battle.archive.ArchivedObservationRestartedByUser
+import com.example.overdex.battle.archive.ArchivedScreenIgnoredByUser
+
 import com.example.overdex.battle.BattleSpeciesDisplay
 import com.example.overdex.battle.archive.ArchivedStatChangeSoundMeasured
 import com.example.overdex.battle.archive.ArchivedStatChangeObserved
@@ -166,11 +169,17 @@ class MatchReplayModel(
     private val knockoutTrack = ReplayKnockoutTrack(replayArticles, mapOf(
         "PLAYER" to playerIdentityTrack.appearances(), "OPPONENT" to opponentIdentityTrack.appearances(),
     ), teamLossProjection.resolutionsByArticleId, hpFaintProjection.resolutionsByArticleId,
-        terminalFaintProjection.resolutionsByArticleId)
+        terminalFaintProjection.resolutionsByArticleId, hpFaintProjection.corroboratingFaintsBySide)
     private val playerResourceTrack = ReplayResourceTrack(replayArticles, "PLAYER", knockoutTrack.knockouts)
     private val opponentResourceTrack = ReplayResourceTrack(replayArticles, "OPPONENT", knockoutTrack.knockouts)
     private val statChanges = ReplayStatChanges(replayArticles, ::combatantFor)
     private val hpEvidence = ReplayHpEvidence(replayArticles, hpFaintProjection.contradictedEmptyEvidence.keys)
+    private val cameraPulses = ReplayCameraTransitionPulse(replayArticles, { from, through ->
+        playerIdentityTrack.appearanceStartAt(from) == playerIdentityTrack.appearanceStartAt(through) &&
+            opponentIdentityTrack.appearanceStartAt(from) == opponentIdentityTrack.appearanceStartAt(through)
+    }, hpEvidence::accepts)
+    /** Auditable presentation qualification; original Articles and derived uses remain archived. */
+    internal val cameraTransitionPulseDecisions get() = cameraPulses.decisions
     private val chargedEffectivenessWindow = com.example.overdex.battle.inference.ChargedMoveEffectivenessWindow().apply {
         replayArticles.forEach { article ->
             val text = (article.payload as? ArchivedRawText)?.value
@@ -953,7 +962,10 @@ class MatchReplayModel(
                     .orEmpty()
             }
             val bestRank = eligible.minOfOrNull { it.third.repairRank } ?: continue
-            val candidate = eligible.filter { it.third.repairRank == bestRank }.singleOrNull() ?: continue
+            val best = eligible.filter { it.third.repairRank == bestRank }
+            val phaseProof = if (best.map { it.first }.distinct().size > 1) archivedChargeSideProof(at) else null
+            val candidate = (if (phaseProof != null) best.filter { it.first == phaseProof.first } else best)
+                .singleOrNull() ?: continue
             val move = candidate.third.move
             if (actionArticles.any {
                     val spent = it.payload as? ArchivedChargedMoveEnergySpent ?: return@any false
@@ -965,9 +977,39 @@ class MatchReplayModel(
                     sameChargeAnnouncementEpisode(it.animationAtNanos, at) }) continue
             recovered += ReplayChargedMoveUse(candidate.first, at, at, move.name, 3,
                 setOf("NAMED_CHARGED_MOVE", "ARCHIVED_ANNOUNCEMENT_AND_REFERENCE_MOVE") +
-                    listOfNotNull(candidate.third.repairBasis), articleIds = setOf(article.articleId))
+                    listOfNotNull(candidate.third.repairBasis) +
+                    if (phaseProof != null) setOf("SIDE_FROM_INDEPENDENT_CHARGE_PREPARATION") else emptySet(),
+                articleIds = setOf(article.articleId) + phaseProof?.second.orEmpty())
         }
         return recovered
+    }
+
+    /** A mirror's move name is not sided. An uninterrupted, bounded preparation
+     * can supply that missing side; opposite cues or actor changes keep it unknown. */
+    private fun archivedChargeSideProof(at: Long): Pair<String, Set<String>>? {
+        val cues = actionArticles.filter {
+            it.monotonicTimeNanos!! in (at - CHARGE_MOVE_PREPARATION_MAX_NANOS)..at &&
+                (isReplayGetReadyCue(it) || isReplayAttackIncomingCue(it))
+        }
+        val sides = cues.map { if (isReplayGetReadyCue(it)) "PLAYER" else "OPPONENT" }.distinct()
+        val side = sides.singleOrNull() ?: return null
+        val first = cues.minOf { it.monotonicTimeNanos!! }
+        if (playerIdentityTrack.appearanceStartAt(first) != playerIdentityTrack.appearanceStartAt(at) ||
+            opponentIdentityTrack.appearanceStartAt(first) != opponentIdentityTrack.appearanceStartAt(at)) return null
+        if (actionArticles.any { article ->
+                val time = article.monotonicTimeNanos!!
+                val faint = article.payload as? ArchivedActivePokemonFaintedWitnessed
+                val activeFaint = faint != null && (faint.speciesName == null ||
+                    combatantFor(faint.side, first)?.speciesName?.let {
+                        TeamRosterSpeciesAttributor.speciesKey(it) == TeamRosterSpeciesAttributor.speciesKey(faint.speciesName)
+                    } == true)
+                time > first && time < at &&
+                    (activeFaint || article.payload is ArchivedMatchEnded || article.payload is ArchivedFastMoveUseObserved ||
+                        article.payload is ArchivedObservationRestartedByUser || article.payload is ArchivedScreenIgnoredByUser ||
+                        ((article.payload is ArchivedChargeMoveUsedAnnounced || article.payload is ArchivedChargedMoveEnergySpent) &&
+                            !sameChargeAnnouncementEpisode(time, at)))
+            }) return null
+        return side to cues.map { it.articleId }.toSet()
     }
 
     private fun chargedMoveType(side: String, at: Long, name: String): PokemonType? =
@@ -1064,18 +1106,21 @@ class MatchReplayModel(
     /** Coalesce same-hit corroboration while retaining independently observed uses. */
     private fun reconstructFastMoveUses(): List<ReplayFastMoveUse> {
         val matchEnd = replayArticles.firstOrNull { it.payload is ArchivedMatchEnded }?.monotonicTimeNanos
-        val canonicalArticles = replayArticles.filter { it.payload is ArchivedFastMoveUseObserved && hpEvidence.accepts(it) }
-        val canonicalIds = canonicalArticles.map { it.articleId }.toSet()
-        val coveredEvidenceIds = canonicalArticles.flatMap { it.predecessorIds }.toSet()
         val fusedUses = replayArticles.mapNotNull { article ->
             if (!hpEvidence.accepts(article)) return@mapNotNull null
             val payload = article.payload as? ArchivedFastMoveUseObserved ?: return@mapNotNull null
             val damageSources = article.predecessorIds.mapNotNull(replayArticlesById::get)
                 .filter { it.payload is ArchivedActiveHpBarDamageTickMeasured }
+            val pulseSources = article.predecessorIds.mapNotNull(replayArticlesById::get)
+                .filter { it.payload is ArchivedHpBarBorderPulse || it.payload is ArchivedActiveHpBarBorderPulseObserved }
+            val cameraOnlyPulse = pulseSources.isNotEmpty() && pulseSources.all { cameraPulses.rejectsPulse(it.articleId) }
             val kinds = payload.evidenceKinds.toSet().let { kinds ->
                 if (damageSources.isNotEmpty() && damageSources.none(hpEvidence::acceptsSingleHit)) kinds - "HP_DAMAGE_TICK"
                 else kinds
-            }
+            }.let { if (cameraOnlyPulse) it - "HP_BORDER_PULSE" else it }
+            // Remove this basis only. A simultaneous independently measured hit still counts.
+            // If nothing establishes a use, release its predecessors for independent recovery.
+            if (cameraOnlyPulse && !FastMoveUseEvidence.establishesUse(kinds)) return@mapNotNull null
             ReplayFastMoveUse(
                 side = payload.attackingSide,
                 observedAtNanos = article.monotonicTimeNanos ?: return@mapNotNull null,
@@ -1086,6 +1131,10 @@ class MatchReplayModel(
                 sourceTimesNanos = setOf(article.monotonicTimeNanos!!),
             )
         }.filter { it.side.isBattleSide() }.sortedBy { it.observedAtNanos }
+        val retainedIds = fusedUses.flatMap { it.articleIds }.toSet()
+        val canonicalArticles = replayArticles.filter { it.payload is ArchivedFastMoveUseObserved && it.articleId in retainedIds }
+        val canonicalIds = canonicalArticles.map { it.articleId }.toSet()
+        val coveredEvidenceIds = canonicalArticles.flatMap { it.predecessorIds }.toSet()
 
         val evidence = replayArticles.mapNotNull { article ->
             if (article.articleId in coveredEvidenceIds ||
@@ -1093,6 +1142,7 @@ class MatchReplayModel(
                 return@mapNotNull null
             }
             if (!hpEvidence.acceptsSingleHit(article)) return@mapNotNull null
+            if (cameraPulses.rejectsPulse(article.articleId)) return@mapNotNull null
             val atNanos = article.monotonicTimeNanos ?: return@mapNotNull null
             when (val payload = article.payload) {
                 is ArchivedHpBarBorderPulse -> payload
@@ -1257,8 +1307,11 @@ class MatchReplayModel(
             }.toMap()
             sounds.mapNotNull soundLoop@{ (article, sound) ->
                 val soundAt = article.monotonicTimeNanos ?: return@soundLoop null
-                if (article.articleId == visual.articleId || abs(article.recordedAt - visual.recordedAt) > 1_200L)
-                    return@soundLoop null
+                // Completed Replay has both immutable sources. A live queue's
+                // delivery budget is not a causal boundary: compare captured
+                // onset/segment times and appearances below, even when one
+                // reader published seconds later than the other.
+                if (article.articleId == visual.articleId) return@soundLoop null
                 val support = FastMoveUseEvidence.recipientAudioSupport(sound, soundAt, damagedSide, at, identities)
                     ?: return@soundLoop null
                 val from = minOf(at, support.occurrenceAtNanos, support.segmentAtNanos)
@@ -1316,6 +1369,7 @@ class MatchReplayModel(
         return listOf("PLAYER", "OPPONENT").flatMap { damagedSide ->
             val detector = ActiveHpBarDamageTickDetector()
             var window: Long? = null
+            var priorGeometry: ArchivedActiveHpBarMeasured? = null
             val samples = mutableMapOf<Long, ArchivedRealityArticle>()
             buildList {
                 for (article in replayArticles) {
@@ -1324,11 +1378,13 @@ class MatchReplayModel(
                     if (hp.side != damagedSide || !hpEvidence.accepts(article)) continue
                     if (matchStartNanos != null && at < matchStartNanos) continue
                     val start = boundaries.lastOrNull { it <= at }
-                    if (start != window || fastMoveChargeWindows.any { at in it }) {
+                    if (start != window || fastMoveChargeWindows.any { at in it } ||
+                        priorGeometry?.let { !replayHpBaselineContinues(it, hp) } == true) {
                         detector.reset()
                         samples.clear()
                         window = start
                     }
+                    priorGeometry = hp
                     if (fastMoveChargeWindows.any { at in it }) continue
                     samples[at] = article
                     val tick = detector.accept(hp.filledFraction, article.confidence ?: 1f, at) ?: continue
@@ -1570,6 +1626,7 @@ class MatchReplayModel(
             val candidate = announced ?: moveUser ?: return@forEach
             val species = canonicalSpecies[normalizeSpeciesName(candidate)] ?: return@forEach
             val atNanos = article.monotonicTimeNanos ?: return@forEach
+            val entryTransition = if (announced != null) archivedEntryTransition(species.key, atNanos, replayArticles) else null
             val side = if (announced != null) {
                 archivedEntrySide(species.key, atNanos, replayArticles) ?: return@forEach
             } else {
@@ -1580,7 +1637,9 @@ class MatchReplayModel(
                 speciesName = species.key,
                 speciesId = species.value,
                 atNanos = atNanos,
-                basis = "RECONSTRUCTED FROM ARCHIVED ANNOUNCEMENT"
+                basis = "RECONSTRUCTED FROM ARCHIVED ANNOUNCEMENT",
+                articleId = article.articleId,
+                evidenceArticleIds = entryTransition?.evidenceArticleIds.orEmpty(),
             )
             val destination = if (side == "PLAYER") player else opponent
             if (destination.lastOrNull()?.speciesName != observation.speciesName) destination += observation
@@ -1680,6 +1739,8 @@ private class ReplayIdentityTrack private constructor(
                 // Repair only the unsided announcement inference, never a badge.
                 if (article.sourceId == "TEAM_SELECT_LEAD_INFERENCE" && configuredLeadContradicted(articles)) return@mapNotNull null
                 val at = article.monotonicTimeNanos ?: return@mapNotNull null
+                val entryTransition = if (article.sourceId == "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS")
+                    archivedEntryTransition(species.speciesName, at, articles) else null
                 val attributedSide = when (article.sourceId) {
                     "ANNOUNCEMENT_SPECIES_ROSTER_ATTRIBUTION_WITNESS" -> archivedNamedMoveSide(species.speciesName, at, articles)
                     "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS" -> archivedEntrySide(species.speciesName, at, articles)
@@ -1695,6 +1756,7 @@ private class ReplayIdentityTrack private constructor(
                     sourceId = article.sourceId,
                     confidence = article.confidence,
                     articleId = article.articleId,
+                    evidenceArticleIds = entryTransition?.evidenceArticleIds.orEmpty(),
                 )
             }
             val withoutBriefCryContradictions = observed.filterNot { candidate ->

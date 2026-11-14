@@ -157,17 +157,22 @@ internal class ChargedImpactHpWatchPolicy {
     }
 
     @Synchronized fun accept(request: Request, sample: TrackedTerminalHpBarSample, at: Long): Boolean {
+        if (!acceptGeometry(request, sample.measurement, at)) return false
+        if (sample.fillColor == HpBarFillColor.EMPTY) window?.consumed = true
+        return true
+    }
+
+    /** A complete outline can move while its orange/translucent interior has no valid HP amount. */
+    @Synchronized fun acceptGeometry(request: Request, geometry: ActiveHpBarMeasurement, at: Long): Boolean {
         val active = window ?: return false
-        if (active.token != request.token || active.consumed || at > active.until ||
-            boundaries[active.side]?.let { at <= it } == true) return false
-        if (!ActiveHpBarGeometry.matchesSize(sample.measurement.width,
-                sample.measurement.bottom - sample.measurement.top,
+        if (active.token != request.token || active.consumed || at > active.until || at < active.preparedAt ||
+            active.anchorAt?.let { at < it } == true || boundaries[active.side]?.let { at <= it } == true) return false
+        if (!ActiveHpBarGeometry.matchesSize(geometry.width, geometry.bottom - geometry.top,
                 active.reference.width, active.reference.bottom - active.reference.top)) return false
-        active.anchor = sample.measurement
+        active.anchor = geometry
         active.anchorAt = at
         if (active.acquiredAt == null) active.acquiredAt = at
         resetHubOnReturn += active.side
-        if (sample.fillColor == HpBarFillColor.EMPTY) active.consumed = true
         return true
     }
 

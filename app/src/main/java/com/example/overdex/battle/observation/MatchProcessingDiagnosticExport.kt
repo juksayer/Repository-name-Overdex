@@ -18,8 +18,10 @@ internal object MatchProcessingDiagnosticExport {
                 put("hits",c.hits); put("misses",c.misses); put("oversized",c.oversized)
                 put("evictions",c.evictions); put("entries",c.entries); put("retainedRows",c.retainedRows)
             }) }
-            match.articleListenerDiagnostics?.let { listeners ->
-                put("articleListeners", buildJsonObject {
+            listOf("articleListeners" to match.articleListenerDiagnostics,
+                "preBattleArticleListeners" to match.preBattleListenerDiagnostics).forEach { (key, diagnostics) ->
+                val listeners = diagnostics ?: return@forEach
+                put(key, buildJsonObject {
                     put("activeSubscriptions", listeners.activeSubscriptions)
                     put("peakSubscriptions", listeners.peakSubscriptions)
                     put("sampleEvery", 64)

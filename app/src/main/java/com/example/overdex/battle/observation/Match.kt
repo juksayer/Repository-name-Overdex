@@ -158,6 +158,17 @@ class Match(
     /** Accepted Timeline articles for downstream recognizers; the Timeline remains authoritative. */
     val articles = articleListenerDiagnostics?.wrap(_articles.asSharedFlow()) ?: _articles.asSharedFlow()
 
+    private val preBattleRoute = PreBattleArticleRoute()
+    internal val preBattleListenerDiagnostics = processingDiagnostics?.let { ArticleListenerDiagnostics() }
+    internal val preBattleArticles = preBattleListenerDiagnostics?.wrap(preBattleRoute.articles)
+        ?: preBattleRoute.articles
+
+    private fun broadcastArticle(article: RealityArticle) {
+        _articles.tryEmit(article)
+        preBattleRoute.publish(article)
+    }
+
+
     // Species OCR has one job: inspect the two purpose-specific name strips.
     // Do not make it wait behind every HP, timer, and announcement crop in the
     // general article stream.  The Timeline is appended first; this is only a
@@ -393,7 +404,7 @@ class Match(
                     monotonicTimeNanos = availability.monotonicTimeNanos
                 )
                 realityTimeline.append(article)
-                _articles.tryEmit(article)
+                broadcastArticle(article)
                 battleMemory.timeline.record(article)
                 publishedAvailabilitySequence.value = availability.sequenceNumber
             }
@@ -522,7 +533,7 @@ class Match(
                 processingSpan?.next("raw_publication.species_cues")
                 cueSpeciesChecks(article)
                 processingSpan?.next("raw_publication.article_broadcast")
-                _articles.tryEmit(article)
+                broadcastArticle(article)
                 processingSpan?.next("raw_publication.receipt_notification")
                 rawArticlePublication.published(article)
                 processingSpan?.next("identity_projection")
@@ -627,7 +638,7 @@ class Match(
                     started?.let { derivedArticle ->
                         realityTimeline.append(derivedArticle)
                         cueSpeciesChecks(derivedArticle)
-                        _articles.tryEmit(derivedArticle)
+                        broadcastArticle(derivedArticle)
                         battleMemory.timeline.record(derivedArticle)
                         matchStartRecorded = true
                         fastMoveUseInference.accept(derivedArticle)
@@ -662,7 +673,7 @@ class Match(
                 processingSpan?.next("attack_and_cues")
                 interpreter.interpretAttackIncoming(article)?.let { derivedArticle ->
                     realityTimeline.append(derivedArticle)
-                    _articles.tryEmit(derivedArticle)
+                    broadcastArticle(derivedArticle)
                     battleMemory.timeline.record(derivedArticle)
                     appendChargeMoveQteDerivation(derivedArticle)
                     appendFastMoveUseDerivations(derivedArticle)
@@ -724,7 +735,7 @@ class Match(
                             // result handlers take their archive snapshot.
                             publishHpObservationDiagnostics(HpDiagnosticSummaryReason.MATCH_END)
                         }
-                        _articles.tryEmit(derivedArticle)
+                        broadcastArticle(derivedArticle)
                         battleMemory.timeline.record(derivedArticle)
                     }
                 }
@@ -752,7 +763,7 @@ class Match(
                     monotonicTimeNanos = derivation.observedArticle.monotonicTimeNanos
                 )
                 realityTimeline.append(derivedArticle)
-                _articles.tryEmit(derivedArticle)
+                broadcastArticle(derivedArticle)
                 battleMemory.timeline.record(derivedArticle)
                 appendChargeMoveQteDerivation(derivedArticle)
                 if (derivation.payload.side == ActivePokemonSide.OPPONENT) {
@@ -777,7 +788,7 @@ class Match(
                 monotonicTimeNanos = resolution.payload.appearanceStartedAtNanos,
             )
             realityTimeline.append(derived)
-            _articles.tryEmit(derived)
+            broadcastArticle(derived)
             battleMemory.timeline.record(derived)
             val projected = resolution.speciesProjection(derived)
             // Historical label OCR can refine an old interval without rolling
@@ -807,7 +818,7 @@ class Match(
                 matchId = MatchId(matchId), monotonicTimeNanos = check.observedArticle.monotonicTimeNanos,
             )
             realityTimeline.append(derived)
-            _articles.tryEmit(derived)
+            broadcastArticle(derived)
             battleMemory.timeline.record(derived)
         }
     }
@@ -827,7 +838,7 @@ class Match(
                 monotonicTimeNanos = derivation.observedArticle.monotonicTimeNanos
             )
             realityTimeline.append(derivedArticle)
-            _articles.tryEmit(derivedArticle)
+            broadcastArticle(derivedArticle)
             battleMemory.timeline.record(derivedArticle)
             appendFastMoveEnergyDerivations(derivedArticle)
             appendFastMoveCadenceDerivations(derivedArticle)
@@ -848,7 +859,7 @@ class Match(
                 monotonicTimeNanos = derivation.observedArticle.monotonicTimeNanos
             )
             realityTimeline.append(derivedArticle)
-            _articles.tryEmit(derivedArticle)
+            broadcastArticle(derivedArticle)
             battleMemory.timeline.record(derivedArticle)
         }
     }
@@ -868,7 +879,7 @@ class Match(
                 monotonicTimeNanos = derivation.observedArticle.monotonicTimeNanos
             )
             realityTimeline.append(derivedArticle)
-            _articles.tryEmit(derivedArticle)
+            broadcastArticle(derivedArticle)
             battleMemory.timeline.record(derivedArticle)
         }
     }
@@ -965,7 +976,7 @@ class Match(
         )
         realityTimeline.append(leadArticle)
         cueSpeciesChecks(leadArticle)
-        _articles.tryEmit(leadArticle)
+        broadcastArticle(leadArticle)
         battleMemory.timeline.record(leadArticle)
         appendPlayerIdentityDerivations(leadArticle)
         speciesChecks.delivered(ActivePokemonSide.PLAYER, speciesName, leadArticle.id.value)
@@ -1014,7 +1025,7 @@ class Match(
                 monotonicTimeNanos = derivation.observedArticle.monotonicTimeNanos
             )
             realityTimeline.append(derivedArticle)
-            _articles.tryEmit(derivedArticle)
+            broadcastArticle(derivedArticle)
             battleMemory.timeline.record(derivedArticle)
             appendPlayerInformationChecks(derivedArticle)
             appendFastMoveEnergyDerivations(derivedArticle)

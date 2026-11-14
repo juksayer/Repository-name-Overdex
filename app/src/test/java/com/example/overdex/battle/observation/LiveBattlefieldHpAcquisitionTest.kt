@@ -240,6 +240,20 @@ class LiveBattlefieldHpAcquisitionTest {
         assertEquals("Acquisition and recovery never rewrite saved calibration", before, recordedRegions)
     }
 
+    @Test fun `same species reentry clears old centered ownership and rejects boundary pixels`() {
+        val tracker = LiveBattlefieldHpTracker(BattleCalibration())
+        tracker.observeSpecies(opponent, "Sealeo", 1)
+        tracker.read(2, listOf(bar(400)))
+        tracker.read(3, listOf(bar(360)))
+        tracker.read(4, listOf(bar(320)))
+        tracker.appearanceBoundary(opponent, 10)
+        tracker.observeSpecies(opponent, "Sealeo", 10)
+        assertTrue(tracker.read(9,listOf(bar(240))).measurements.isEmpty())
+        assertTrue(tracker.read(11,listOf(bar(240))).measurements.isEmpty())
+        assertEquals(bar(400),tracker.read(300_000_000,listOf(bar(400))).measurements[opponent])
+        assertTrue(tracker.read(12,listOf(bar(240))).measurements.isEmpty())
+    }
+
     private fun LiveBattlefieldHpTracker.read(
         at: Long,
         bars: List<ActiveHpBarMeasurement>,

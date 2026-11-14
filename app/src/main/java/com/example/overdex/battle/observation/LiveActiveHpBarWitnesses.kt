@@ -135,6 +135,7 @@ internal class LiveActiveHpBarWitness(
     private val lastAppearanceAt = mutableMapOf<ActivePokemonSide, Long>()
     private val stateLock = Any()
     private val terminalWatch = TerminalHpWatchPolicy()
+    private val completeTrack = CompleteHpBarTrack()
     private val chargedImpactWatch = ChargedImpactHpWatchPolicy()
     private val departureChecks = HpBarDepartureCheckPolicy()
     private val recipientWatch = PostChargeRecipientWatchPolicy()
@@ -224,6 +225,7 @@ internal class LiveActiveHpBarWitness(
                 // Ignore's last source frame is a boundary; the first newly
                 // enabled frame is eligible for fresh ordinary acquisition.
                 terminalWatch.resetAll(if (enabled) null else frame.capturedAtMonotonicTimeNanos)
+                completeTrack.resetAll(if (enabled) null else frame.capturedAtMonotonicTimeNanos)
                 chargedImpactWatch.resetAll(if (enabled) null else frame.capturedAtMonotonicTimeNanos)
                 recipientWatch.reset(frame.capturedAtMonotonicTimeNanos)
                 terminalDiagnostics.resetContinuity()
@@ -251,8 +253,48 @@ internal class LiveActiveHpBarWitness(
         }
         results.forEach { publishMeasurement(match, frame, it.side, it.sample.measurement, it.generation, true,
             fillColor = it.sample.fillColor) }
+        checkCompleteFrame(match, frame)
         checkChargedImpactFrame(match, frame)
         checkRecipientFrame(frame)
+    }
+
+    private fun recordComplete(match: Match, frame: CapturedVisualFrame, side: ActivePokemonSide,
+        sample: CompleteHpBarSample, generation: Long, cueIds: List<String> = emptyList()) = synchronized(stateLock) {
+        if (ended || !isEnabled()) return@synchronized
+        val change = completeTrack.accept(side, sample, frame.capturedAtMonotonicTimeNanos, generation)
+            ?: return@synchronized
+        val b = sample.bounds
+        match.custody.submitTestimony(SourceId("COMPLETE_${side.name}_HP_BAR_FRAME_WITNESS"),
+            com.example.overdex.battle.custody.CompleteHpBarObserved(side, b.left, b.top, b.right, b.bottom,
+                frame.bitmap.width, frame.bitmap.height, sample.interiorColumns, sample.liveColumns,
+                sample.damageColumns, change.status, change.candidateSince, lastAppearanceAt[side],
+                sample.railBrightness, sample.backgroundBrightness,
+                sample.backgroundMaskedColumns, sample.unmaskedUncertainColumns),
+            frame.capturedAtWallTimeMillis, sample.confidence, cueIds, frame.capturedAtMonotonicTimeNanos)
+    }
+
+    private fun measureCompleteFrame(frame: CapturedVisualFrame, anchor: ActiveHpBarMeasurement): CompleteHpBarSample? {
+        val started = System.nanoTime()
+        val cpuStarted = hpLocatorThreadCpuTimeNanos()
+        val sample = TrackedTerminalHpBarMeasurer.measureComplete(frame.bitmap, anchor)
+        val cpuFinished = hpLocatorThreadCpuTimeNanos()
+        terminalDiagnostics.checked(if (sample == null) "COMPLETE_UNAVAILABLE" else "COMPLETE_MEASURED",
+            System.nanoTime() - started,
+            if (cpuStarted != null && cpuFinished != null && cpuFinished >= cpuStarted) cpuFinished - cpuStarted else null)
+        return sample
+    }
+
+    private fun checkCompleteFrame(match: Match, frame: CapturedVisualFrame) {
+        completeTrack.frameSize(frame.bitmap.width, frame.bitmap.height)
+        completeTrack.requests(frame.capturedAtMonotonicTimeNanos).forEach { request ->
+            // Charge camera has its own recipient-owned acquisition and fixed window.
+            if (chargedImpactWatch.cameraCueIds(request.side, request.anchor,
+                    frame.capturedAtMonotonicTimeNanos) != null) return@forEach
+            val bounds = TrackedTerminalHpBarMeasurer.searchBounds(frame.bitmap.width, frame.bitmap.height, request.anchor)
+            if (bounds == null || !frame.canObserve(bounds)) return@forEach
+            val sample = measureCompleteFrame(frame, request.anchor) ?: return@forEach
+            recordComplete(match, frame, request.side, sample, request.generation)
+        }
     }
 
     private fun checkRecipientFrame(frame: CapturedVisualFrame) {
@@ -301,18 +343,24 @@ internal class LiveActiveHpBarWitness(
             }
         } else search
         val observable = bounds != null && frame.canObserve(bounds)
-        val sample = when {
+        val completeGeneration = completeTrack.generation(request.side)
+        val complete = when {
             !observable -> null
-            request.anchor != null -> TrackedTerminalHpBarMeasurer.measure(frame.bitmap, request.anchor, search)
-            else -> ChargedImpactHpBarMeasurer.acquire(frame.bitmap, request.reference, search)
+            request.anchor != null -> TrackedTerminalHpBarMeasurer.measureComplete(frame.bitmap, request.anchor, search)
+            else -> ChargedImpactHpBarMeasurer.acquireComplete(frame.bitmap, request.reference, search)
         }
+        val sample = complete?.hpSample
         val cpuFinished = hpLocatorThreadCpuTimeNanos()
         val kind = if (request.anchor == null) "CHARGE_ACQUIRE" else "CHARGE_TRACK"
         terminalDiagnostics.checked("${kind}_${if (!observable) "OBSCURED" else sample?.fillColor?.name ?: "UNAVAILABLE"}",
             System.nanoTime() - started,
             if (cpuStarted != null && cpuFinished != null && cpuFinished >= cpuStarted) cpuFinished - cpuStarted else null)
-        if (sample == null) return
+        if (complete == null) return
         synchronized(stateLock) {
+            if (ended || !isEnabled() || !chargedImpactWatch.current(request) ||
+                !chargedImpactWatch.acceptGeometry(request, complete.anchor(), frame.capturedAtMonotonicTimeNanos)) return
+            recordComplete(match, frame, request.side, complete, completeGeneration, request.cueArticleIds)
+            if (sample == null) return
             // Camera acquisition has its own appearance/phase token. An
             // ordinary locator finishing a real relocation must not invalidate
             // this one-frame zero merely by changing the red watch's geometry.
@@ -340,6 +388,7 @@ internal class LiveActiveHpBarWitness(
         lastAppearanceAt.clear()
         val preparationEpoch = synchronized(stateLock) {
             terminalWatch.resetAll()
+            completeTrack.resetAll()
             chargedImpactWatch.resetAll()
             departureChecks.begin()
             recipientWatch.begin()
@@ -398,7 +447,8 @@ internal class LiveActiveHpBarWitness(
                                     lastSpeciesAt[payload.side] = at
                                     if (newAppearance) lastAppearanceAt[payload.side] = appearanceAt!!
                                     if (!newAppearance && lastSpeciesNames[payload.side] == payload.speciesName) false else {
-                                        terminalWatch.reset(payload.side, at)
+                                        terminalWatch.reset(payload.side, appearanceAt ?: at)
+                                        completeTrack.reset(payload.side, appearanceAt ?: at)
                                         chargedImpactWatch.appearanceBoundary(payload.side, appearanceAt ?: at)
                                         departureChecks.reset(payload.side, at)
                                         recipientWatch.reset(at)
@@ -408,8 +458,8 @@ internal class LiveActiveHpBarWitness(
                                 }
                             }
                             if (changed) {
-                                tracker.observeSpecies(payload.side, payload.speciesName,
-                                    at)
+                                tracker.appearanceBoundary(payload.side, payload.appearanceStartedAtNanos?.takeIf { it in 0L..at } ?: at)
+                                tracker.observeSpecies(payload.side, payload.speciesName, at)
                                 match.hpObservationDiagnostics.resetContinuity(payload.side)
                             }
                         }
@@ -419,24 +469,26 @@ internal class LiveActiveHpBarWitness(
                                 if (payload.appearanceStartedAtNanos <= (lastAppearanceAt[side] ?: Long.MIN_VALUE)) false else {
                                     lastAppearanceAt[side] = payload.appearanceStartedAtNanos
                                     terminalWatch.reset(side, payload.appearanceStartedAtNanos)
+                                    completeTrack.reset(side, payload.appearanceStartedAtNanos)
                                     chargedImpactWatch.appearanceBoundary(side, payload.appearanceStartedAtNanos)
                                     departureChecks.reset(side, payload.appearanceStartedAtNanos)
                                     recipientWatch.reset(payload.appearanceStartedAtNanos)
                                     true
                                 }
                             }
-                            if (changed) tracker.reset(side)
+                            if (changed) tracker.appearanceBoundary(side, payload.appearanceStartedAtNanos)
                         }
                         is SpeciesCheckMeasured -> if (payload.status == "OPENED" &&
                             payload.reason in setOf("EMPTY_HP", "SWITCH", "FAINT")) {
                             synchronized(stateLock) {
                                 terminalWatch.reset(payload.side, article.monotonicTimeNanos)
+                                completeTrack.reset(payload.side, article.monotonicTimeNanos)
                                 chargedImpactWatch.reset(payload.side, article.monotonicTimeNanos)
                                 departureChecks.reset(payload.side, payload.triggerMonotonicNanos)
                                 recipientWatch.reset(payload.triggerMonotonicNanos)
                                 lastSpeciesNames.remove(payload.side)
                             }
-                            tracker.reset(payload.side)
+                            tracker.appearanceBoundary(payload.side, payload.triggerMonotonicNanos)
                             match.hpObservationDiagnostics.resetContinuity(payload.side)
                         }
                         is ActivePokemonFaintedWitnessed -> {
@@ -449,6 +501,7 @@ internal class LiveActiveHpBarWitness(
                                 } == true
                                 if (oldSpecies || oldAppearance) false else {
                                     terminalWatch.reset(payload.side, article.monotonicTimeNanos)
+                                    completeTrack.reset(payload.side, article.monotonicTimeNanos)
                                     chargedImpactWatch.reset(payload.side, article.monotonicTimeNanos)
                                     article.monotonicTimeNanos?.let {
                                         departureChecks.reset(payload.side, it)
@@ -457,12 +510,13 @@ internal class LiveActiveHpBarWitness(
                                     true
                                 }
                             }
-                            if (changed) tracker.reset(payload.side)
+                            if (changed) tracker.appearanceBoundary(payload.side, article.monotonicTimeNanos ?: System.nanoTime())
                         }
                         is MatchEnded -> {
                             synchronized(stateLock) {
                                 ended = true
                                 terminalWatch.resetAll(article.monotonicTimeNanos)
+                                completeTrack.resetAll(article.monotonicTimeNanos)
                                 chargedImpactWatch.resetAll(article.monotonicTimeNanos)
                                 departureChecks.stop(article.monotonicTimeNanos ?: System.nanoTime())
                                 recipientWatch.reset(article.monotonicTimeNanos ?: System.nanoTime())
@@ -495,12 +549,12 @@ internal class LiveActiveHpBarWitness(
                         }
                         ObservationRestartedByUser -> article.monotonicTimeNanos?.let { at ->
                             synchronized(stateLock) {
-                                departureChecks.begin(at); recipientWatch.reset(at); chargedImpactWatch.resetAll(at)
+                                departureChecks.begin(at); recipientWatch.reset(at); chargedImpactWatch.resetAll(at); completeTrack.resetAll(at)
                             }
                         }
                         ScreenIgnoredByUser, ObservationSessionStoppedByUser -> article.monotonicTimeNanos?.let { at ->
                             synchronized(stateLock) {
-                                departureChecks.stop(at); recipientWatch.reset(at); chargedImpactWatch.resetAll(at)
+                                departureChecks.stop(at); recipientWatch.reset(at); chargedImpactWatch.resetAll(at); completeTrack.resetAll(at)
                             }
                         }
                     }
@@ -534,6 +588,7 @@ internal class LiveActiveHpBarWitness(
                             ActivePokemonSide.entries.associateWith(terminalWatch::snapshotGeneration) to
                                 ActivePokemonSide.entries.associateWith(chargedImpactWatch::snapshotReferenceEpoch)
                         }
+                        val completeGenerations = ActivePokemonSide.entries.associateWith(completeTrack::generation)
                         val locateStartedAtNanos = System.nanoTime()
                         val located = tracker.measureFrameWithDiagnostics(frame)
                         match.hpObservationDiagnostics.onLocationCompleted(
@@ -560,6 +615,11 @@ internal class LiveActiveHpBarWitness(
                         match.observeForecastBattlefield(frame.capturedAtMonotonicTimeNanos,
                             measurements.keys.containsAll(ActivePokemonSide.entries))
                         measurements.forEach { (side, measurement) ->
+                            val completeBounds = TrackedTerminalHpBarMeasurer.searchBounds(frame.bitmap.width, frame.bitmap.height, measurement)
+                            val complete = if (completeBounds != null && frame.canObserve(completeBounds))
+                                measureCompleteFrame(frame, measurement) else null
+                            if (complete != null) recordComplete(match, frame, side, complete, completeGenerations.getValue(side),
+                                chargedImpactWatch.cameraCueIds(side, measurement, frame.capturedAtMonotonicTimeNanos).orEmpty())
                             synchronized(stateLock) {
                                 if (ended || !isEnabled()) return@forEach
                                 // A source-older identity may arrive during the locator's
@@ -591,6 +651,7 @@ internal class LiveActiveHpBarWitness(
             ended = true
             earlyPreparationEpoch++
             terminalWatch.resetAll()
+            completeTrack.resetAll()
             chargedImpactWatch.resetAll()
             departureChecks.stop(System.nanoTime())
             recipientWatch.reset(System.nanoTime())
