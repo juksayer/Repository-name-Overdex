@@ -37,16 +37,15 @@ class ReplayChargeThrowTimingTest {
 
     @Test fun `sprite growth and shrink each take three quarters of a second`() {
         val start = 1_000_000_000L
-        val release = 6_000_000_000L
+        val impact = 7_800_000_000L
         fun focus(cursor: Long): Float {
-            val action = ReplayChargedMoveAction("PLAYER", "Rock Tomb", release, 0f,
-                phase = ReplayChargePhase.CHARGING, elapsedNanos = cursor - start)
-            return ReplayChargePose.qteFocusAmount(action, cursor)
+            return ReplayChargePose.qteFocusAmount(ReplayChargeFocus(start, impact), cursor)
         }
         assertTrue(focus(start + 250_000_000L) in .2f.. .3f)
         assertEquals(1f, focus(start + 750_000_000L), 0f)
-        assertEquals(focus(start + 250_000_000L), focus(release - 250_000_000L), 0f)
-        assertEquals(0f, focus(release), 0f)
+        assertEquals(focus(start + 250_000_000L), focus(impact + 500_000_000L), 0f)
+        assertEquals(1f, focus(impact), 0f)
+        assertEquals(0f, focus(impact + 750_000_000L), 0f)
         assertEquals(0f, focus(start), 0f)
     }
 }

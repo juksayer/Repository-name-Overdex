@@ -642,9 +642,7 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val travelHalfWidth = (maxWidth / 4).coerceAtLeast(0.dp)
                 val spriteSize = minOf(130.dp * 1.15f, maxWidth / 2 + 18.dp)
-                val chargePreparation = scene.chargedMoveActions.lastOrNull {
-                    it.phase == ReplayChargePhase.CHARGING && it.side in setOf("PLAYER", "OPPONENT")
-                }
+                val chargePreparation = scene.chargeFocus
                 val playerOffset = ReplayChargePose.qteSpriteTranslationXPixels(chargePreparation, cursor, player = true)
                 val opponentOffset = ReplayChargePose.qteSpriteTranslationXPixels(chargePreparation, cursor, player = false)
                 val opponentScale = ReplayChargePose.qteSpriteScale(chargePreparation, cursor, player = false)

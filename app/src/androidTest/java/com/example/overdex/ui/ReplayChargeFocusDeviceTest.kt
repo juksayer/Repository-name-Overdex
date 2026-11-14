@@ -29,6 +29,7 @@ import coil.EventListener
 import coil.ImageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
+import com.example.overdex.battle.replay.ReplayChargeFocus
 import com.example.overdex.battle.replay.ReplayChargePose
 import com.example.overdex.battle.replay.ReplayChargePhase
 import com.example.overdex.battle.replay.ReplayChargedMoveAction
@@ -80,7 +81,8 @@ class ReplayChargeFocusDeviceTest {
 
         for (side in listOf("PLAYER", "OPPONENT")) {
             compose.runOnIdle {
-                scene = idle.copy(chargedMoveActions = listOf(ReplayChargedMoveAction(
+                scene = idle.copy(chargeFocus = ReplayChargeFocus(0L, 11_800_000_000L),
+                    chargedMoveActions = listOf(ReplayChargedMoveAction(
                     side = side, moveName = "Aqua Tail", startedAtNanos = 10_000_000_000L,
                     progress = .3f, phase = ReplayChargePhase.CHARGING,
                     elapsedNanos = 2_000_000_000L, type = PokemonType.WATER,
@@ -108,6 +110,14 @@ class ReplayChargeFocusDeviceTest {
             assertTrue("$playerName grows downward from its head", focusedPlayerArt.height > restingPlayerArt.height * 1.1f)
             assertTrue("$opponentName shrinks upward from its feet", focusedOpponentArt.height < restingOpponentArt.height * .9f)
             assertSamePixels("Paused charge framing is stable", focused, frame("$label-${side.lowercase()}-paused"))
+            compose.runOnIdle {
+                scene = scene.copy(chargedMoveActions = listOf(action.copy(
+                    phase = ReplayChargePhase.STRIKING, progress = .8f)))
+            }
+            compose.waitForIdle()
+            assertEquals("Release retains the player's enlarged frame", focusedPlayer.width, spriteBounds(playerName).width, 1f)
+            assertEquals("Release retains the opponent's smaller frame", focusedOpponent.width, spriteBounds(opponentName).width, 1f)
+
         }
         compose.runOnIdle { scene = idle }
         compose.waitForIdle()

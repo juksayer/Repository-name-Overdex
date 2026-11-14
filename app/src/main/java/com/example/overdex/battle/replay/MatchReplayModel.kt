@@ -498,6 +498,9 @@ class MatchReplayModel(
             opponentSpentEnergy = opponentSpentEnergy,
             fastMoveActions = fastMoveActions,
             chargedMoveActions = chargeMoveActions,
+            chargeFocus = chargeFocusWindows.lastOrNull {
+                monotonicTimeNanos >= it.startedAtNanos && monotonicTimeNanos < it.finishByNanos
+            },
             statChanges = statChanges.at(monotonicTimeNanos),
             countdownGlyph = countdownGlyph,
             countdownFrame = countdownFrame,
@@ -1075,6 +1078,23 @@ class MatchReplayModel(
         val name = normalizeSpeciesName((label.payload as ArchivedPlayerChargeMoveLabelRead).text)
         return possibleChargedMoves[normalizeSpeciesName(species)]
             ?.singleOrNull { MoveTextAliases.matches(name, it.name) }?.name
+    }
+
+    /** Separate framing lifetime from attack lifetime; a post-impact ease is not a move. */
+    private val chargeFocusWindows: List<ReplayChargeFocus> by lazy {
+        val boundaries = (playerIdentityTrack.hpAppearancesAt(Long.MAX_VALUE).map { it.start } +
+            opponentIdentityTrack.hpAppearancesAt(Long.MAX_VALUE).map { it.start } +
+            recordedChargedMoveUses.map { it.preparationAtNanos } +
+            replayArticles.filter { it.payload is ArchivedMatchEnded || it.payload is ArchivedMatchStarted ||
+                it.payload is ArchivedObservationRestartedByUser }.mapNotNull { it.monotonicTimeNanos }).sorted()
+        recordedChargedMoveUses.mapNotNull { use ->
+            // A bare used-move banner does not invent an earlier preparation cue.
+            if (!use.side.isBattleSide() || use.preparationAtNanos >= use.animationAtNanos ||
+                !canPerformReplayAction(use.side, use.preparationAtNanos, use.preparationAtNanos)) return@mapNotNull null
+            val settleAt = if (use.isCompleted) use.impactAtNanos else use.animationAtNanos
+            val boundary = boundaries.firstOrNull { it > use.preparationAtNanos } ?: Long.MAX_VALUE
+            ReplayChargeFocus(use.preparationAtNanos, settleAt, minOf(settleAt + 750_000_000L, boundary))
+        }
     }
 
     private fun canPerformReplayAction(side: String, startedAt: Long, cursor: Long): Boolean {
@@ -1973,6 +1993,8 @@ data class ReplayScene(
     val countdownFrame: ReplayCountdownFrame? = null,
     val decisionTimer: ReplayDecisionTimerState? = null,
     val playerChargedMoves: List<ReplayChargedMoveSlot> = emptyList(),
+    /** Camera framing can ease out after impact without extending the attack. */
+    val chargeFocus: ReplayChargeFocus? = null,
 )
 
 data class ReplayFastMoveAction(

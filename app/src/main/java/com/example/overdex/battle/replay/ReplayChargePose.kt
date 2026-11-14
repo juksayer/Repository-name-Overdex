@@ -12,23 +12,21 @@ data class ReplayChargePose(
     companion object {
         private const val FOCUS_RAMP_NANOS = 750_000_000.0
         private const val APEX_PROGRESS = .65f
-        /** Cursor-driven framing throughout either side's recorded charge preparation. */
-        fun qteFocusAmount(action: ReplayChargedMoveAction?, cursorNanos: Long): Float {
-            if (action == null || action.side !in setOf("PLAYER", "OPPONENT") ||
-                action.phase != ReplayChargePhase.CHARGING) return 0f
-            // Both edges use source-time replay boundaries, so pause and reverse scrub
-            // cannot retain a stale scale or position from a different charge.
-            val ramp = minOf(action.elapsedNanos.toDouble(), (action.startedAtNanos - cursorNanos).toDouble())
-                .div(FOCUS_RAMP_NANOS).coerceIn(0.0, 1.0).toFloat()
+        /** Framing outlives the projectile, but never constitutes another attack. */
+        fun qteFocusAmount(focus: ReplayChargeFocus?, cursorNanos: Long): Float {
+            if (focus == null || cursorNanos < focus.startedAtNanos || cursorNanos >= focus.finishByNanos) return 0f
+            val rise = (cursorNanos - focus.startedAtNanos).toDouble() / FOCUS_RAMP_NANOS
+            val fall = 1.0 - (cursorNanos - focus.settledAtNanos).coerceAtLeast(0L).toDouble() / FOCUS_RAMP_NANOS
+            val ramp = minOf(rise, fall).coerceIn(0.0, 1.0).toFloat()
             return ramp * ramp * (3f - 2f * ramp)
         }
 
-        fun qteSpriteScale(action: ReplayChargedMoveAction?, cursorNanos: Long, player: Boolean): Float =
-            1f + qteFocusAmount(action, cursorNanos) * if (player) 0.20f else -0.15f
+        fun qteSpriteScale(focus: ReplayChargeFocus?, cursorNanos: Long, player: Boolean): Float =
+            1f + qteFocusAmount(focus, cursorNanos) * if (player) 0.20f else -0.15f
 
         /** Fine positioning is measured in physical pixels, independent of device density. */
-        fun qteSpriteTranslationXPixels(action: ReplayChargedMoveAction?, cursorNanos: Long, player: Boolean): Float =
-            qteFocusAmount(action, cursorNanos) * if (player) 20f else -10f
+        fun qteSpriteTranslationXPixels(focus: ReplayChargeFocus?, cursorNanos: Long, player: Boolean): Float =
+            qteFocusAmount(focus, cursorNanos) * if (player) 20f else -10f
 
         fun at(action: ReplayChargedMoveAction, player: Boolean): ReplayChargePose {
             val amplitude = if (player) 48f else 24f
@@ -55,3 +53,10 @@ data class ReplayChargePose(
         }
     }
 }
+
+/** Display-only interval: settling is impact for completed uses, bounded expiry for open preparation. */
+data class ReplayChargeFocus(
+    val startedAtNanos: Long,
+    val settledAtNanos: Long,
+    val finishByNanos: Long = settledAtNanos + 750_000_000L,
+)

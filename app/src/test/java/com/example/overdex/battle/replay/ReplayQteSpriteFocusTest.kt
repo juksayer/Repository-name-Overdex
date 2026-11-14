@@ -1,54 +1,77 @@
 package com.example.overdex.battle.replay
 
+import com.example.overdex.battle.archive.*
 import org.junit.Assert.*
 import org.junit.Test
 
 class ReplayQteSpriteFocusTest {
-    @Test fun `either QTE or shield choice changes sprite focus and charge release restores it`() {
-        val cursor = 7 * SECOND
-        val charging = actionAt(cursor)
-        for (side in listOf("PLAYER", "OPPONENT")) {
-            val preparation = charging.copy(side = side)
-            assertEquals(1.2f, ReplayChargePose.qteSpriteScale(preparation, cursor, player = true), .00001f)
-            assertEquals(.85f, ReplayChargePose.qteSpriteScale(preparation, cursor, player = false), .00001f)
-            assertEquals(20f, ReplayChargePose.qteSpriteTranslationXPixels(preparation, cursor, player = true), 0f)
-            assertEquals(-10f, ReplayChargePose.qteSpriteTranslationXPixels(preparation, cursor, player = false), 0f)
+    @Test fun `focus eases in holds through impact then eases out without scrub state`() {
+        val focus = ReplayChargeFocus(ns(5.0), ns(11.8))
+        fun amount(t: Double) = ReplayChargePose.qteFocusAmount(focus, ns(t))
+        assertEquals(0f, amount(4.9), 0f)
+        assertEquals(0f, amount(5.0), 0f)
+        assertEquals(.5f, amount(5.375), .00001f)
+        for (t in listOf(5.75, 9.9, 10.0, 11.0, 11.8)) {
+            assertEquals(1f, amount(t), 0f)
+            assertEquals(1.2f, ReplayChargePose.qteSpriteScale(focus, ns(t), true), .00001f)
+            assertEquals(.85f, ReplayChargePose.qteSpriteScale(focus, ns(t), false), .00001f)
+            assertEquals(20f, ReplayChargePose.qteSpriteTranslationXPixels(focus, ns(t), true), 0f)
+            assertEquals(-10f, ReplayChargePose.qteSpriteTranslationXPixels(focus, ns(t), false), 0f)
         }
-        for (inactive in listOf(null, charging.copy(side = "UNKNOWN"),
-            charging.copy(phase = ReplayChargePhase.STRIKING))) {
-            assertEquals(1f, ReplayChargePose.qteSpriteScale(inactive, cursor, player = true), 0f)
-            assertEquals(1f, ReplayChargePose.qteSpriteScale(inactive, cursor, player = false), 0f)
-            assertEquals(0f, ReplayChargePose.qteSpriteTranslationXPixels(inactive, cursor, player = true), 0f)
-            assertEquals(0f, ReplayChargePose.qteSpriteTranslationXPixels(inactive, cursor, player = false), 0f)
+        assertEquals(.5f, amount(12.175), .00001f)
+        assertEquals(0f, amount(12.55), 0f)
+        assertEquals(0f, ReplayChargePose.qteFocusAmount(null, ns(8.0)), 0f)
+        assertEquals(.5f, amount(5.375), .00001f)
+        assertEquals(1f, amount(11.8), 0f)
+    }
+
+    @Test fun `Get Ready and shield choice retain framing across release without extending attacks`() {
+        for ((cue, side) in listOf(ArchivedGetReadyWitnessed to "PLAYER",
+            ArchivedRawText("Use a Protect Shield?") to "OPPONENT")) {
+            val archive = archive(at("cue", 5.0, cue, "ANNOUNCEMENT_WITNESS"),
+                at("used", 10.0, spend(side)))
+            val before = MatchArchiveSerializer.serialize(archive)
+            val model = MatchReplayModel(archive)
+            val full = model.sceneAt(ns(7.0))
+            assertEquals(1f, ReplayChargePose.qteFocusAmount(full.chargeFocus, ns(7.0)), 0f)
+            assertEquals(side, full.chargedMoveActions.single().side)
+            for (t in listOf(9.9, 10.0, 11.8)) {
+                val scene = model.sceneAt(ns(t))
+                assertEquals(1f, ReplayChargePose.qteFocusAmount(scene.chargeFocus, ns(t)), 0f)
+            }
+            val settling = model.sceneAt(ns(12.175))
+            assertTrue(settling.chargedMoveActions.isEmpty())
+            assertEquals(.5f, ReplayChargePose.qteFocusAmount(settling.chargeFocus, ns(12.175)), .00001f)
+            assertNull(model.sceneAt(ns(12.55)).chargeFocus)
+            assertEquals(full, model.sceneAt(ns(7.0)))
+            assertEquals(before, MatchArchiveSerializer.serialize(archive))
         }
     }
 
-    @Test fun `focus ramps at both QTE edges and restores the same pose after pause or reverse scrub`() {
-        val early = 5 * SECOND + 375_000_000L
-        val middle = 7 * SECOND
-        val late = 10 * SECOND - 375_000_000L
-        fun scales(cursor: Long) = listOf(true, false).map {
-            ReplayChargePose.qteSpriteScale(actionAt(cursor), cursor, it)
+    @Test fun `open preparation expires without fabricating impact and replacement or result clears framing`() {
+        val open = MatchReplayModel(archive(at("ready", 5.0, ArchivedGetReadyWitnessed)))
+        assertTrue(open.sceneAt(ns(15.2)).chargedMoveActions.isEmpty())
+        assertTrue(ReplayChargePose.qteFocusAmount(open.sceneAt(ns(15.2)).chargeFocus, ns(15.2)) > 0f)
+        assertNull(open.sceneAt(ns(15.75)).chargeFocus)
+        for (boundary in listOf(
+            ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Dragonair", 148),
+            ArchivedMatchEnded("WIN"), ArchivedObservationRestartedByUser)) {
+            val model = MatchReplayModel(archive(at("ready", 5.0, ArchivedGetReadyWitnessed),
+                at("used", 10.0, spend("PLAYER")), at("boundary", 11.9, boundary)))
+            assertNotNull(model.sceneAt(ns(11.8)).chargeFocus)
+            assertNull(model.sceneAt(ns(11.9)).chargeFocus)
         }
-        assertEquals(10f, ReplayChargePose.qteSpriteTranslationXPixels(actionAt(early), early, true), .0001f)
-        assertEquals(-5f, ReplayChargePose.qteSpriteTranslationXPixels(actionAt(late), late, false), .0001f)
-        assertEquals(0f, ReplayChargePose.qteSpriteTranslationXPixels(actionAt(10 * SECOND), 10 * SECOND, true), 0f)
-        assertEquals(listOf(1f, 1f), scales(5 * SECOND))
-        val earlyPose = scales(early)
-        val middlePose = scales(middle)
-        assertTrue(earlyPose[0] in 1f..middlePose[0])
-        assertTrue(earlyPose[1] in middlePose[1]..1f)
-        assertEquals(earlyPose, scales(late))
-        assertEquals(listOf(1f, 1f), scales(10 * SECOND))
-        assertEquals(earlyPose, scales(early))
-        assertEquals(earlyPose, scales(early))
     }
 
-    private fun actionAt(cursor: Long) = ReplayChargedMoveAction(
-        side = "PLAYER", moveName = "Foul Play", startedAtNanos = 10 * SECOND,
-        progress = (cursor - 5 * SECOND).toFloat() / (5 * SECOND),
-        phase = ReplayChargePhase.CHARGING, elapsedNanos = cursor - 5 * SECOND,
-    )
-
-    private companion object { const val SECOND = 1_000_000_000L }
+    private fun spend(side: String) = ArchivedChargedMoveEnergySpent(side,
+        if (side == "PLAYER") "Camerupt" else "Rapidash", "Earth Power", 55, "TEST")
+    private fun archive(vararg events: ArchivedRealityArticle) = MatchArchive(matchId = "focus", articles = listOf(
+        at("start", .1, ArchivedMatchStarted),
+        at("player", .2, ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Camerupt", 323)),
+        at("opponent", .2, ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Rapidash", 78)),
+    ) + events)
+    private fun at(id: String, t: Double, payload: ArchivedTestimonyPayload, source: String = "TEST") =
+        ArchivedRealityArticle(id, "focus", (t * 1000).toLong(), 99_000, source, payload,
+            emptyList(), null, null, emptyList(), ns(t))
+    private fun ns(t: Double) = (t * 1_000_000_000L).toLong()
 }
