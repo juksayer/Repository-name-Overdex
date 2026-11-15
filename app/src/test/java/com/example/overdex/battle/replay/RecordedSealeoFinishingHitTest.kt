@@ -61,12 +61,46 @@ class RecordedSealeoFinishingHitTest {
             }
             assertEquals("The supported projectile reaches its recipient", 1f, landing.progress, 0f)
             assertEquals("Incinerate", landing.moveName)
+            assertTrue("The visual/audio cue does not itself timestamp settled damage",
+                landing.damageObservationTimesNanos.isEmpty())
+            val laterRed = original.articles.filter { a ->
+                val hp = a.payload as? ArchivedActiveHpBarMeasured
+                hp?.side == "OPPONENT" && hp.fillColor == "RED" && hp.filledFraction > 0f &&
+                    a.monotonicTimeNanos?.let { it > impact && it < EMPTY_AT } == true
+            }
+            assertTrue("A later recorded living sliver makes the reconstructed impact time insufficient for KO credit", laterRed.isNotEmpty())
+            assertTrue("The original test must retain the intervening red testimony", laterRed.all { it in model.timedArticles })
             assertTrue(FastMoveUseEvidence.RECIPIENT_AUDIO_IMPACT in actions.single().evidenceKinds)
             assertEquals(0f, model.sceneAt(EMPTY_AT + 100_000_000L).opponentHp!!.filledFraction!!, .0001f)
             assertTrue("scene=${model.sceneAt(EMPTY_AT + 100_000_000L).opponent}; markers=${model.eventMarkers.filter { it.kind == ReplayEventMarkerKind.FAINT }}",
                 model.sceneAt(EMPTY_AT + 100_000_000L).opponent!!.isFainted)
         }
         assertEquals(bytesBefore, MatchArchiveSerializer.serialize(original))
+    }
+
+    @Test fun `recorded bar motion and terminal hp stay separate from KO cause`() {
+        val original = archive()
+        val before = MatchArchiveSerializer.serialize(original)
+        val visualAt = original.articles.single { it.articleId == VISUAL_ID }.monotonicTimeNanos!!
+        val rows = original.articles.filter { it.monotonicTimeNanos?.let { t ->
+            t in (visualAt - 500_000_000L)..EMPTY_AT
+        } == true }
+        val playerBars = rows.mapNotNull { a -> (a.payload as? ArchivedActiveHpBarMeasured)
+            ?.takeIf { it.side == "PLAYER" } }
+        assertTrue("Player bar moves during the exchange", playerBars.maxOf { it.barTop } - playerBars.minOf { it.barTop } >= 30)
+        val red = rows.filter { a -> (a.payload as? ArchivedActiveHpBarMeasured)?.let {
+            it.side == "OPPONENT" && it.fillColor == "RED" && it.filledFraction > 0f
+        } == true }
+        assertTrue(red.any { it.monotonicTimeNanos!! > visualAt })
+        assertTrue(rows.any { a -> (a.payload as? ArchivedActiveHpBarMeasured)?.let {
+            it.side == "OPPONENT" && it.fillColor == "EMPTY" && a.monotonicTimeNanos == EMPTY_AT
+        } == true })
+        assertTrue("The source archive has no separately published motion cadence in this interval",
+            rows.none { it.payload is ArchivedActiveHpBarMotionCadenceMeasured })
+        assertTrue("Opponent attacks remain separate competing source observations", rows.any { a ->
+            (a.payload as? ArchivedFastMoveUseObserved)?.attackingSide == "OPPONENT"
+        })
+        assertEquals(before, MatchArchiveSerializer.serialize(original))
     }
 
     companion object {

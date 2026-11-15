@@ -7,6 +7,18 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ReplayFastMoveScheduleTest {
+    @Test fun `presentation impact does not manufacture damage observation clocks`() {
+        val sourceAt = ns(2.15)
+        val withoutDamage = witness("visual", 2.0).copy(damageTicks = emptyList())
+        val withDamage = witness("damage", 2.0).copy(damageTicks =
+            listOf(ReplayFastMoveDamage(sourceAt, .2f, .1f)))
+        val visual = ReplayFastMoveSchedule.build(listOf(withoutDamage)).single()
+        val measured = ReplayFastMoveSchedule.build(listOf(withDamage)).single()
+        assertTrue(visual.actionAt(visual.impactAtNanos)!!.damageObservationTimesNanos.isEmpty())
+        assertEquals(setOf(sourceAt), measured.actionAt(measured.impactAtNanos)!!.damageObservationTimesNanos)
+        assertNotEquals(measured.impactAtNanos, sourceAt)
+    }
+
     @Test fun `Volt Switch cannot fire three times in two seconds or queue those hits into idle time`() {
         val inputs = listOf(2.0, 2.4, 3.1, 3.9, 8.0).mapIndexed { i, at -> witness("w$i", at) }
         val cycles = ReplayFastMoveSchedule.build(inputs)

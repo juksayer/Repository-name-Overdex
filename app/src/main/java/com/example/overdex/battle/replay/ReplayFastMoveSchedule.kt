@@ -47,6 +47,7 @@ internal data class ReplayFastMoveCycle(
             durationNanos = durationNanos, impactAtNanos = impactAtNanos,
             sourceArticleIds = witness.articleIds, observedAtNanos = witness.sourceTimesNanos,
             timingReconstructed = hasReferenceDuration,
+            damageObservationTimesNanos = witness.damageTicks.map { it.observedAtNanos }.toSet(),
         )
     }
 

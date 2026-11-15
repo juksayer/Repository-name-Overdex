@@ -2073,6 +2073,8 @@ data class ReplayFastMoveAction(
     val observedAtNanos: Set<Long> = emptySet(),
     /** Reference-duration presentation, not newly witnessed timing or energy. */
     val timingReconstructed: Boolean = false,
+    /** Source times of attached HP damage observations; impactAtNanos is presentation timing. */
+    val damageObservationTimesNanos: Set<Long> = emptySet(),
 )
 
 data class ReplayChargedMoveAction(
