@@ -13,6 +13,7 @@ class RecordedSealeoGapRecoveryTest {
             "red" to "795edcee1a183228fbf999cf95e6f62ceb633d19730aea97ff0b922fd828823e",
             "orange" to "22be3e002fee4830ec60bd1d0d5ecd3f1d63d133490433f65e8d21de490491ff",
             "orange-later" to "72abd5c1d91916d07110b14e17d2c239a600b1a00654f72799fcdad36eeb8ebd",
+            "background-later" to "394d108db3e43338c9c2c7ef919a30a667f821d05f1a20679bdb48e68fa71f90",
         )
         for ((name, expected) in hashes) {
             val bytes = requireNotNull(javaClass.getResourceAsStream("/battle/hp/2026-11-14-sealeo-recovered/$name.png")).readBytes()
@@ -56,6 +57,39 @@ class RecordedSealeoGapRecoveryTest {
                 assertFalse(sample.orangeOnly)
                 assertNotEquals(HpBarFillColor.EMPTY, sample.hpSample?.fillColor)
             }
+        }
+    }
+
+    @Test fun `a dim surviving pixel can match background and must stay unresolved`() {
+        val reference = ImageIO.read(requireNotNull(javaClass.getResource(
+            "/battle/hp/2026-11-14-sealeo-recovered/background-later.png")))
+        // The fitted multipliers are a diagnostic for these specific video frames,
+        // not a general classifier or evidence that this later reference was live.
+        val examples = listOf(
+            Triple("orange", 733, 0xff4f562b.toInt()) to doubleArrayOf(.50588235, .46853147, .45833333),
+            Triple("orange-later", 727, 0xff3c5a42.toInt()) to doubleArrayOf(.47311828, .48046756, .47027027),
+        )
+        for ((spec, multipliers) in examples) {
+            val (name, y, survivor) = spec
+            val referencePixel = reference.getRGB(503 - 450, y - 690)
+            for ((i, shift) in listOf(16, 8, 0).withIndex()) {
+                val observed = survivor ushr shift and 255
+                val background = (referencePixel ushr shift and 255) * multipliers[i]
+                assertTrue("Dim live color can look like background", kotlin.math.abs(observed - background) <= 20)
+            }
+            fun modified(inject: Boolean) = read(name) { x, py, original ->
+                when {
+                    x == 503 && py == y && inject -> survivor
+                    x == 503 && py in y..(y + 9) -> 0xff333333.toInt()
+                    else -> original
+                }
+            }!!
+            val cleanColumn = modified(false)
+            val survivorColumn = modified(true)
+            assertTrue("The protected one-pixel uncertainty must be retained",
+                survivorColumn.unmaskedUncertainColumns > cleanColumn.unmaskedUncertainColumns)
+            assertFalse(survivorColumn.orangeOnly)
+            assertNotEquals(HpBarFillColor.EMPTY, survivorColumn.hpSample?.fillColor)
         }
     }
 }
