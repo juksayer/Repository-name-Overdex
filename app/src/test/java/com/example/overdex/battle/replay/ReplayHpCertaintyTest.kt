@@ -63,6 +63,27 @@ class ReplayHpCertaintyTest {
         val later = track.stateAt(5*S, appearances, false, 0)
         assertFalse(later.currentHpConfirmed)
         assertEquals(.002f, later.filledFraction!!, 0f)
+        assertEquals(.002f, later.lastSeenFraction!!, 0f)
+        assertNull(track.stateAt(S - 1, appearances, false, 0).lastSeenFraction)
+        assertEquals(.002f, track.stateAt(5*S, appearances, false, 0).lastSeenFraction!!, 0f)
+    }
+
+    @Test fun `last seen display rejects weak camera and other appearance observations`() {
+        val a = row()
+        val weak = row("weak", confidence = .2f)
+        val camera = a.copy(sourceId = "CHARGED_IMPACT_OPPONENT_HP_BAR_FRAME_WITNESS")
+        for (sample in listOf(weak, camera)) {
+            val track = ReplayHpTrack(listOf(sample), "OPPONENT", ReplayHpEvidence(listOf(sample)))
+            assertNull(track.stateAt(5*S, listOf(ReplayHpAppearance("swampert", 0)), false, 0).lastSeenFraction)
+        }
+        val track = ReplayHpTrack(listOf(a), "OPPONENT", ReplayHpEvidence(listOf(a)), allowLastSeen = { false })
+        assertNull(track.stateAt(5*S, listOf(ReplayHpAppearance("swampert", 0)), false, 0).lastSeenFraction)
+        val switched = ReplayHpTrack(listOf(a), "OPPONENT", ReplayHpEvidence(listOf(a)))
+        assertNull(switched.stateAt(5*S, listOf(ReplayHpAppearance("swampert", 0),
+            ReplayHpAppearance("vaporeon", 2*S)), false, 0).lastSeenFraction)
+        val fainted = switched.stateAt(5*S, listOf(ReplayHpAppearance("swampert", 0)), true, 0)
+        assertEquals(0f, fainted.filledFraction!!, 0f)
+        assertNull(fainted.lastSeenFraction)
     }
     private companion object { const val S = 1_000_000_000L }
 }

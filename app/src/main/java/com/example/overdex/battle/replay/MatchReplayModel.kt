@@ -280,8 +280,11 @@ class MatchReplayModel(
     private val energyTrack = ReplayEnergyTrack(actionArticles.filter {
         it.payload !is ArchivedFastMoveEnergyDerived || playerTeamConfiguration.acceptsDerivedEvidence(it)
     }, ::combatantFor, fastMoveCycles)
-    private val playerHpTrack = ReplayHpTrack(replayArticles, "PLAYER", hpEvidence, fastMoveCycles)
-    private val opponentHpTrack = ReplayHpTrack(replayArticles, "OPPONENT", hpEvidence, fastMoveCycles)
+    private val allowHistoricalHp: (ArchivedRealityArticle) -> Boolean = { article ->
+        article.monotonicTimeNanos?.let { at -> fastMoveChargeWindows.none { at in it } } == true
+    }
+    private val playerHpTrack = ReplayHpTrack(replayArticles, "PLAYER", hpEvidence, fastMoveCycles, allowHistoricalHp)
+    private val opponentHpTrack = ReplayHpTrack(replayArticles, "OPPONENT", hpEvidence, fastMoveCycles, allowHistoricalHp)
     private val replayHapticEvents = buildList {
         addAll(replayQteMilestones.filter { it.hapticSupported }
             .map { ReplayHapticEvent(it.atNanos, pulseCount = 1) })

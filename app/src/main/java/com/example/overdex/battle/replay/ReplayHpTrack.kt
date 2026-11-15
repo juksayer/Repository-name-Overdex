@@ -18,6 +18,7 @@ import com.example.overdex.battle.archive.ArchivedPlayerPokeBallCountMeasured
 import com.example.overdex.battle.archive.ArchivedOpponentBattleResourceCountMeasured
 import com.example.overdex.battle.inference.TeamLossResolver
 import com.example.overdex.battle.observation.ActiveHpBarGeometry
+import com.example.overdex.battle.observation.ChargedImpactHpSource
 
 /** Reject a pulse when its own captured frame proves the tracker left the active bar. */
 internal class ReplayHpEvidence(
@@ -233,10 +234,16 @@ internal class ReplayHpTrack(
     side: String,
     evidence: ReplayHpEvidence,
     fastMoveCycles: List<ReplayFastMoveCycle> = emptyList(),
+    private val allowLastSeen: (ArchivedRealityArticle) -> Boolean = { true },
 ) {
     private val hpObservations = articles.filter { (it.payload as? ArchivedActiveHpBarMeasured)?.side == side }
         .sortedBy { it.monotonicTimeNanos }
     private val hpEvidence = evidence
+    private val lastSeenObservations = hpObservations.filter { observation ->
+        val at = observation.monotonicTimeNanos
+        at != null && !ChargedImpactHpSource.matches(observation.sourceId) &&
+            allowLastSeen(observation) && evidence.confirmsLiveHp(observation, at)
+    }
     private data class Sample(val at: Long, val fraction: Float, val before: Float? = null, val aligned: Boolean = false)
     private data class Damage(val at: Long, val before: Float, val aligned: Boolean)
     // Damage on our bar belongs to their move, and vice versa. Each bounded
@@ -333,7 +340,10 @@ internal class ReplayHpTrack(
                     it.impactAtNanos > sample.monotonicTimeNanos!! && it.impactAtNanos <= cursor
                 }
             } == true,
-
+            lastSeenFraction = lastSeenObservations.lastOrNull { observation ->
+                val at = observation.monotonicTimeNanos
+                at != null && at in maxOf(current.start, matchStart ?: current.start)..cursor
+            }?.let { (it.payload as ArchivedActiveHpBarMeasured).filledFraction },
         )
     }
 
@@ -361,6 +371,8 @@ data class ReplayHpState(
     val damageTimingReconstructed: Boolean = false,
     /** The fraction can be historical; only this flag permits displaying it as current live HP. */
     val currentHpConfirmed: Boolean = false,
+    /** Historical display only; never evidence of survival at the replay cursor. */
+    val lastSeenFraction: Float? = null,
 )
 
 internal data class ReplayHpAppearance(val speciesKey: String, val start: Long)
