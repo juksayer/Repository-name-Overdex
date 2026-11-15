@@ -73,6 +73,16 @@ the exploratory comparison does not by itself establish why the cry occurred.
 The clip is mixed with the Charged Move and shield sequence. The archive's live
 cry witness did not publish a final Vaporeon cry.
 
+Trainer clarification: Vaporeon was the opponent's last remaining Pokémon and
+the player had no Vaporeon. The trainer identifies the ending cry as its faint
+cry and proposes accepting a unique last-opponent cry with sub-full HP as a
+faint, with a full-HP cry indicating entry. This match's departure and win
+support that interpretation. The more general rule is recorded as CRY-06 for
+testing, including the important counterexample of a previously damaged Pokémon
+returning as the last survivor; low HP alone cannot establish that an entry did
+not just occur. This clarification is additional context, not a rewritten audio
+observation or an automatically recovered cry.
+
 A read-only JVM review ran the production archived-audio loader with the actual
 ZIP and packaged references, then constructed `MatchReplayModel`. It recovered
 no cries, charges or fast effects, and reported unavailable references

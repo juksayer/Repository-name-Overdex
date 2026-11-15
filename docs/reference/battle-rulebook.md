@@ -851,6 +851,18 @@ recognition accuracy claim or implemented inference change.
 | CRY-01 — proposed | A faint is independently established and a compatible attacker/target damage event precedes the matching victim cry. | Consider that damage-producing move for KO credit, retaining source-time and appearance evidence. | Last animation/banner alone is insufficient. Pending Fast Move damage can straddle shield/charge sequences; the cry time is not necessarily the damage time. Do not invent a missing attack. |
 | CRY-02 — shortcut contradicted | Two different opponent species cries occur close together. | Open a bounded transition/identity check. | 1605 recording: Swampert entry at 97.740 s and Abomasnow entry at 101.217 s are an ordinary switch, with Swampert later returning alive. A 3.477 s gap overlaps confirmed KO-pair gaps of 2.240–4.970 s. This pair does not itself prove a faint. |
 | CRY-03 — implemented candidate; device trial pending | Source-ordered cry history has an established active species, then its cry repeats before a different species enters. | Treat the repeated active cry as a departure/faint candidate for corroboration. Match phase can distinguish opening entries. | In the non-mirror pilot this marked four reviewed faints and did not mark the two ordinary switches. Roster-to-side mapping came from video; missed cries, mirror sides and other cry contexts remain unvalidated. A final KO need not have a replacement cry. Elapsed match time alone does not distinguish mid-battle switches from KOs. |
+| CRY-06 — trainer proposal, November 15 | A correctly identified non-mirror cry belongs to the opponent's independently established last remaining active Pokémon, and its source-timed HP is below full. | Test treating the cry as sufficient faint evidence for that active appearance, without requiring a zero HP outline or a second cry. If it is an entrance with full HP, test classifying it as entry. | A previously damaged Pokémon can return to the field below full HP, including as the final survivor after a teammate faints. Require the active appearance and whether an entrance is in progress to be independently resolved; stale HP, missed entry cues, uncertain cry identification, HP animation, shields/charged moves, and incomplete resource counts can all make purpose ambiguous. Full HP alone does not prove entry. The trainer-confirmed Vaporeon ending is a positive case, not universal validation or a runtime rule change. |
+
+Trainer wording: “hearing vaporeon cry when its hp is not 100% should be enough
+for a faint by itself. a cry and full hp bar would be an entrance.” Here “by
+itself” is understood in the stated context: Vaporeon is uniquely identified,
+opponent-owned, and the independently confirmed last surviving Pokémon. The
+[November 15 match](../verification/2026-11-15-vaporeon-shield-incinerate.md)
+visually shows Vaporeon's departure and a win after the shielded charge, while
+the stored sound match was not accepted by the existing reader. Compare the
+proposal with previously damaged re-entries, low-HP charged sequences that
+continue, active same-species mirrors, HP/read delays, and sound reference
+competitors before enabling automatic faint attribution.
 
 The existing production RMS-envelope matcher was not validated by this pilot;
 the experiment compared actual waveforms against a small roster-specific
