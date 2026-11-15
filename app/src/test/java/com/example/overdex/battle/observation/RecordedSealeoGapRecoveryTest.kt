@@ -60,6 +60,55 @@ class RecordedSealeoGapRecoveryTest {
         }
     }
 
+    @Test fun `one live pixel at the left of the orange trail blocks orange only`() {
+        for ((name, y) in listOf("orange" to 738, "orange-later" to 732)) {
+            for (color in listOf(0xffe84d40.toInt(), 0xffe8db40.toInt(), 0xff40e8ab.toInt())) {
+                val sample = requireNotNull(read(name) { x, py, original ->
+                    if (x == 473 && py == y) color else original
+                })
+                assertTrue("The surviving pixel on the left is retained", sample.liveColumns > 0)
+                assertTrue("The orange trail remains visible", sample.damageColumns > 0)
+                assertFalse(sample.orangeOnly)
+                assertNotEquals(HpBarFillColor.EMPTY, sample.hpSample?.fillColor)
+            }
+        }
+    }
+
+    @Test fun `nonlethal Sealeo sliver survives a stray orange column on its left`() {
+        val base = "/battle/hp/2026-11-13-complete-bar/p_sealeo_nonlethal_charge-41.299011"
+        val image = ImageIO.read(requireNotNull(javaClass.getResource("$base.png")))
+        val p = Properties().apply { load(requireNotNull(this@RecordedSealeoGapRecoveryTest.javaClass.getResourceAsStream("$base.properties"))) }
+        fun n(key: String) = p.getProperty(key).toInt()
+        val anchor = ActiveHpBarMeasurement(n("left"), n("top"), n("right"), n("bottom"), .1f, .9f)
+        fun pixel(x: Int, y: Int) = image.getRGB(x - n("cropLeft"), y - n("cropTop"))
+        val sample = requireNotNull(TrackedTerminalHpBarMeasurer.measureComplete(
+            n("sourceWidth"), n("sourceHeight"), anchor, pixelAt = ::pixel))
+        assertTrue("The real red survivor is preserved", sample.liveColumns > 0)
+        assertTrue("The real damage trail is present", sample.damageColumns > 0)
+        assertFalse("A surviving Sealeo cannot be orange-only", sample.orangeOnly)
+
+        // Reproduce the exploratory median-per-column test on the original
+        // source rectangle; a lone orange-colored column precedes the red.
+        val inset = maxOf(3, kotlin.math.round((n("bottom") - n("top")) * .15).toInt())
+        var firstLive: Int? = null
+        var firstOrange: Int? = null
+        for (x in (n("left") + inset) until (n("right") - inset)) {
+            val values = (n("top") + inset until n("bottom") - inset).map { pixel(x, it) }
+            fun median(shift: Int): Int {
+                val sorted = values.map { it ushr shift and 255 }.sorted()
+                return (sorted[(sorted.size - 1) / 2] + sorted[sorted.size / 2]) / 2
+            }
+            val hsv = java.awt.Color.RGBtoHSB(median(16), median(8), median(0), null)
+            val hue = hsv[0] * 180f
+            if (hsv[1] * 255 >= 100 && hsv[2] * 255 >= 160) {
+                if (hue >= 8f && hue < 24f && firstOrange == null) firstOrange = x
+                if ((hue < 8f || hue >= 174f || hue >= 24f && hue < 95f) && firstLive == null) firstLive = x
+            }
+        }
+        assertTrue("One orange pixel-column before live fill must not erase the survivor",
+            requireNotNull(firstOrange) < requireNotNull(firstLive))
+    }
+
     @Test fun `a dim surviving pixel can match background and must stay unresolved`() {
         val reference = ImageIO.read(requireNotNull(javaClass.getResource(
             "/battle/hp/2026-11-14-sealeo-recovered/background-later.png")))
