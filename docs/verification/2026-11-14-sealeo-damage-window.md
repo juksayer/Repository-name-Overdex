@@ -91,3 +91,33 @@ guard can also withhold a legitimate link; it is not a production algorithm.
 The archived opposing Water Gun observations concern player HP and do not
 invalidate the candidate. Missing coverage and unsided audio still prevent a
 decisive attribution or a claim that the exact landing has been recovered.
+
+## Recovering video frames inside the archive gap
+
+Three small, losslessly saved pixel crops were independently decoded from the
+original silent video (SHA-256 `830a7a578f8c6d3394ac461770c04b9451a24d85e28f2675d31f059aecdcc4d5`).
+They preserve the whole opponent bar and its surroundings at video PTS 4217277,
+4219204 and 4231067 (46.858633, 46.880044 and 47.011856 seconds, timebase
+1/90000). Their hashes and geometry are checked by `RecordedSealeoGapRecoveryTest`;
+the original video and archive remain untouched. The video clock is independent
+of the archive clock and their alignment remains approximate.
+
+In the recovered frames the original complete-bar reader finds five bright
+live-color columns in the red frame, then five damage-color columns in each
+orange frame. It does **not** claim orange-only: 92 and 14 columns respectively
+remain color-ambiguous after its conservative background mask. It yields no HP
+amount for either orange frame. Injecting a single bright red, yellow or green
+pixel into each orange frame is separately tested and must remain visible to
+the reader. These observations therefore narrow the apparent color change to
+the interval between the first two video frames without publishing a zero or
+erasing possible tiny live HP.
+
+An overview of the surrounding video shows fire effect near Sealeo before and
+through this transition, with the departure sequence afterward. This supports
+the recorded Incinerate as a candidate finishing exchange; it does not itself
+distinguish every possible separate attack, establish the exact damage clock,
+or conclusively connect that move to the faint. The source video is silent.
+Independent audio and later damage claims remain preserved; the provisional
+experiment continues to withhold a link for a competing hit. Counterexamples
+include separate-hit retention, a living recall, nonlethal recorded bars, and
+tiny survivors. No runtime recognition or Replay behavior was changed.
