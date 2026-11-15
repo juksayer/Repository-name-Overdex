@@ -103,6 +103,37 @@ class RecordedSealeoFinishingHitTest {
         assertEquals(before, MatchArchiveSerializer.serialize(original))
     }
 
+    @Test fun `original later image narrows visible orange while clipped bar cannot establish zero`() {
+        val original = archive()
+        val before = MatchArchiveSerializer.serialize(original)
+        val red = original.articles.single { it.articleId.startsWith("68a22539-") }
+        val crop = original.articles.single { it.articleId.startsWith("5ccb340b-") }
+        val payload = crop.payload as ArchivedCropCaptured
+        val lastBar = red.payload as ArchivedActiveHpBarMeasured
+        assertTrue(red.monotonicTimeNanos!! < crop.monotonicTimeNanos!!)
+        assertTrue(crop.monotonicTimeNanos!! < EMPTY_AT)
+        assertTrue("The original orange image clips the right end of the bar", payload.cropRight!! < lastBar.barRight)
+        assertEquals("812af88f91f27bd8915266184c47c7c1b2eb0570782ff93d2243130452dee532", payload.sha256)
+        val bytes = requireNotNull(javaClass.getResourceAsStream(
+            "/battle/2026-11-13-sealeo-finish/partial-orange-original.png")).readBytes()
+        val digest = java.security.MessageDigest.getInstance("SHA-256").digest(bytes)
+            .joinToString("") { "%02x".format(it) }
+        assertEquals(payload.sha256, digest)
+        val image = javax.imageio.ImageIO.read(bytes.inputStream())
+        val x = lastBar.barLeft - payload.cropLeft!! + 4
+        val y = lastBar.barTop - payload.cropTop!! + 8
+        assertTrue("Retained original crop contains orange-colored pixels near the left cap",
+            (x-4..x+5).any { px -> (y-5..y+5).any { py ->
+                val rgb = image.getRGB(px, py); val r = rgb shr 16 and 255
+                val g = rgb shr 8 and 255; val b = rgb and 255
+                r > 160 && g > 65 && r > g * 1.1 && g > b * 1.2
+            } })
+        assertTrue("A partial crop does not invent a new HP or faint article",
+            original.articles.none { it.evidenceReferences?.contains(crop.articleId) == true &&
+                it.payload is ArchivedActivePokemonFaintedWitnessed })
+        assertEquals(before, MatchArchiveSerializer.serialize(original))
+    }
+
     companion object {
         private const val VISUAL_ID = "3b4ac826-2c5b-4eb0-9b41-72d39d373919"
         private const val SOUND_ID = "ea61e2ca-6379-43e7-b5a5-483921ae1ef6"
