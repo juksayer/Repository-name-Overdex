@@ -1,6 +1,8 @@
 package com.example.overdex.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,12 +17,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.comms.*
+import com.example.overdex.battle.replay.ReplayCorrectionTransfer
 import com.example.overdex.data.TrainerRepository
 import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.PokedexViewModel
@@ -46,6 +50,7 @@ fun TrainerCommsScreen(
     onBack: () -> Unit,
 ) {
     val repository = services.repository
+    val context = LocalContext.current
     val state by repository.state.collectAsState()
     val email by services.email.collectAsState()
     val localIdentity by trainerRepository.identity.collectAsState()
@@ -70,6 +75,37 @@ fun TrainerCommsScreen(
     }
     val messages = state.visibleMessages
     val contacts = state.snapshot.contacts.sortedBy { it.displayName.lowercase() }
+    var outgoingConversationId by remember { mutableStateOf<String?>(null) }
+    var outgoingAccountId by remember { mutableStateOf<String?>(null) }
+    var fileToSave by remember { mutableStateOf<ByteArray?>(null) }
+    val saveCorrectionFile = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        val bytes = fileToSave
+        fileToSave = null
+        if (uri != null && bytes != null) {
+            runCatching { requireNotNull(context.contentResolver.openOutputStream(uri)).use { it.write(bytes) } }
+                .onSuccess { notice = "Correction file saved. Open the matching Replay to import it." }
+                .onFailure { notice = "Could not save the correction file." }
+        }
+    }
+    val attachCorrectionFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val id = outgoingConversationId
+        val accountId = outgoingAccountId
+        outgoingConversationId = null
+        outgoingAccountId = null
+        if (uri != null && id != null) {
+            scope.launch {
+                try {
+                    val message = withContext(Dispatchers.IO) {
+                        val bytes = requireNotNull(context.contentResolver.openInputStream(uri)).use { ReplayCorrectionTransfer.readBounded(it) }
+                        ReplayCorrectionTransfer.toMessage(bytes)
+                    }
+                    check(accountId != null && repository.state.value.accountId == accountId) { "Account changed while choosing a file." }
+                    withContext(Dispatchers.IO) { repository.sendText(id, message, expectedAccountId = accountId) }
+                    notice = "Correction file queued."
+                } catch (e: Exception) { if (e is CancellationException) throw e; notice = e.message ?: "Could not send the correction file." }
+            }
+        }
+    }
 
     fun work(block: suspend () -> Unit) {
         if (busy) return
@@ -169,6 +205,19 @@ fun TrainerCommsScreen(
                         withContext(Dispatchers.Main) { draft = ""; keyboard.close() }
                     }
                 },
+                CommsAction("SEND CORRECTION FILE", conversation.kind != ConversationKind.LEGACY) {
+                    outgoingConversationId = conversation.id
+                    outgoingAccountId = state.accountId
+                    attachCorrectionFile.launch(arrayOf("application/json", "application/octet-stream"))
+                },
+                CommsAction("SAVE CORRECTION FILE", selected != null && runCatching { ReplayCorrectionTransfer.fromMessage(selected.text) != null }.getOrDefault(false)) {
+                    selected?.let { item ->
+                        runCatching { ReplayCorrectionTransfer.fromMessage(item.text) }.getOrNull()?.let { bytes ->
+                            fileToSave = bytes
+                            saveCorrectionFile.launch("overdex-correction.json")
+                        }
+                    }
+                },
                 CommsAction("RETRY", selected?.status == DeliveryStatus.FAILED && selected.senderId == state.accountId) {
                     selected?.let { work { repository.retry(it.id) } }
                 },
@@ -262,7 +311,8 @@ fun TrainerCommsScreen(
                                     val mine = message.senderId == state.accountId ||
                                         (conversation.kind == ConversationKind.LEGACY && message.senderId == localIdentity?.trainerId?.toString())
                                     Text((if (mine) "YOU" else message.senderName) + " · " + messageTime(message.sentAt), color = TerminalDimGreen, fontSize = 11.sp)
-                                    Text(message.text, color = TerminalGreen, fontSize = 16.sp)
+                                    Text(if (runCatching { ReplayCorrectionTransfer.fromMessage(message.text) != null }.getOrDefault(false))
+                                        "CORRECTION FILE · select SAVE CORRECTION FILE" else message.text, color = TerminalGreen, fontSize = 16.sp)
                                     Text(when (message.status) {
                                         DeliveryStatus.PENDING -> "PENDING"
                                         DeliveryStatus.SENT -> "SENT · saved online"
@@ -283,7 +333,8 @@ fun TrainerCommsScreen(
                                     Text((if (index == selectedRow) "> " else "") + conversationTitle(item, state), color = TerminalGreen, fontSize = 18.sp)
                                     Text(if (item.kind == ConversationKind.LEGACY) "Saved local history" else "${item.memberIds.size} trainers", color = TerminalDimGreen, fontSize = 12.sp)
                                     state.snapshot.messages.lastOrNull { it.conversationId == item.id }?.let {
-                                        Text(it.text, color = TerminalDimGreen, maxLines = 2, fontSize = 13.sp)
+                                        Text(if (runCatching { ReplayCorrectionTransfer.fromMessage(it.text) != null }.getOrDefault(false))
+                                            "Correction file" else it.text, color = TerminalDimGreen, maxLines = 2, fontSize = 13.sp)
                                     }
                                 }
                             }

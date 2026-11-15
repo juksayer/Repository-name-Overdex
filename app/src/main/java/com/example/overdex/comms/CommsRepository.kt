@@ -174,9 +174,10 @@ class CommsRepository(
     }
 
     /** Queues durably before attempting a network write; UI can clear the composer afterwards. */
-    suspend fun sendText(conversationId: String, text: String) {
+    suspend fun sendText(conversationId: String, text: String, expectedAccountId: String? = null) {
         val (token, _) = session()
         val current = state.value
+        require(expectedAccountId == null || current.accountId == expectedAccountId) { "Account changed while choosing a file." }
         val profile = requireNotNull(current.snapshot.profile) { "Set your trainer name and code first." }
         val conversation = requireNotNull(current.snapshot.conversations.find { it.id == conversationId })
         require(conversation.kind != ConversationKind.LEGACY) { "Old local history is read-only." }

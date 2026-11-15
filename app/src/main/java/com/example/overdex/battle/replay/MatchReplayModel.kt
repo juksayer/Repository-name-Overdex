@@ -2155,6 +2155,8 @@ data class ReplayCombatant(
     val knockoutBasis: String? = null,
     val knockoutSourceArticleIds: List<String> = emptyList(),
     val finishingChargeAssociation: ReplayFinishingChargeAssociation? = null,
+    /** Explicit trainer attribution; not an automatically witnessed battle event. */
+    val trainerFinishingMove: String? = null,
     val playerTeamSlot: Int? = null,
 ) {
     /** Presentation only; speciesName remains the original form/reference lookup key. */

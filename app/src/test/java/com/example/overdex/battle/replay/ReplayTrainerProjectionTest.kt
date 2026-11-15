@@ -1,0 +1,76 @@
+package com.example.overdex.battle.replay
+
+import org.junit.Assert.*
+import org.junit.Test
+import java.util.UUID
+
+class ReplayTrainerProjectionTest {
+    private val start = 10_000_000_000L
+    private fun scene(opponent: String = "Vaporeon") = ReplayScene(
+        player = ReplayCombatant("Camerupt", 323, start), opponent = ReplayCombatant(opponent, 134, start),
+        observedSpeciesNames = emptyList(), candidateSpeciesId = null, candidateSimilarity = null, outcome = null,
+        playerGeneratedEnergy = 0, opponentGeneratedEnergy = 0, playerSpentEnergy = 0, opponentSpentEnergy = 0,
+        fastMoveActions = emptyList(), chargedMoveActions = emptyList(), countdownGlyph = null,
+        qteMilestone = null, qteMilestoneSide = null, latestEvidenceLabel = "source")
+    private fun entry(kind: ReplayCorrectionKind, side: ReplayCorrectionSide, species: String, offset: Long,
+                      move: String? = null, link: String? = null) = ReplayTrainerCorrection(
+        UUID.randomUUID().toString(), "match", offset, kind, side, species, move, authorName = "Trainer", createdAtMillis = 1,
+        finishingMoveId = link)
+
+    @Test fun linkedMoveLandsAndCorrectRecipientFaintsWithAttribution() {
+        val hit = entry(ReplayCorrectionKind.FAST_MOVE, ReplayCorrectionSide.PLAYER, "Camerupt", 2_000_000_000, "Incinerate")
+        val faint = entry(ReplayCorrectionKind.FAINT, ReplayCorrectionSide.OPPONENT, "Vaporeon", 2_000_000_000, link = hit.id)
+        val projection = ReplayTrainerProjection("match", start, listOf(hit, faint))
+        val inFlight = projection.apply(scene(), start + 1_650_000_000)
+        assertEquals(1, inFlight.fastMoveActions.size)
+        assertFalse(inFlight.opponent!!.isFainted)
+        val landing = projection.apply(scene(), start + 2_000_000_000)
+        assertEquals(1f, landing.fastMoveActions.single().progress)
+        assertTrue(landing.opponent!!.isFainted)
+        assertEquals(0f, landing.opponentHp!!.filledFraction!!)
+        assertEquals("Incinerate", landing.opponent!!.trainerFinishingMove)
+        val faded = projection.apply(scene(), start + 2_500_000_000)
+        assertNotNull(ReplayCombatantEndPose.at(faded.opponent, start + 2_500_000_000, player = false))
+        assertFalse(landing.player!!.isFainted)
+        assertFalse(projection.apply(scene(), start + 1_000_000_000).opponent!!.isFainted)
+        assertFalse(projection.apply(scene("Sealeo"), start + 2_000_000_000).opponent!!.isFainted)
+        val sound = projection.soundEvents(emptyList()) { scene() }.single()
+        assertEquals("Incinerate", sound.moveName)
+        assertEquals(start + 1_300_000_000, sound.atNanos)
+        assertEquals(listOf(sound), projection.soundEvents(listOf(sound)) { scene() })
+        assertTrue(projection.soundEvents(emptyList()) { scene().copy(player = ReplayCombatant("Gourgeist", 711, start)) }.isEmpty())
+    }
+
+    @Test fun unknownAndInvalidLinksNeverGetKoCredit() {
+        val hit = entry(ReplayCorrectionKind.FAST_MOVE, ReplayCorrectionSide.PLAYER, "Camerupt", 3_000_000_000, "Incinerate")
+        val earlier = entry(ReplayCorrectionKind.FAINT, ReplayCorrectionSide.OPPONENT, "Vaporeon", 2_000_000_000, link = hit.id)
+        val sameSide = earlier.copy(side = ReplayCorrectionSide.PLAYER, speciesName = "Camerupt", matchOffsetNanos = 4_000_000_000)
+        val projection = ReplayTrainerProjection("match", start, listOf(hit, earlier, sameSide))
+        assertNull(projection.creditedMove(earlier))
+        assertNull(projection.creditedMove(sameSide))
+        assertNull(projection.apply(scene(), start + 2_000_000_000).opponent!!.trainerFinishingMove)
+    }
+
+    @Test fun trainerMoveDoesNotAddFaintOrDuplicateAnExistingAttack() {
+        val hit = entry(ReplayCorrectionKind.FAST_MOVE, ReplayCorrectionSide.PLAYER, "Camerupt", 2_000_000_000, "Incinerate")
+        val projection = ReplayTrainerProjection("match", start, listOf(hit))
+        val impact = start + hit.matchOffsetNanos
+        val recorded = ReplayFastMoveAction("PLAYER", "Incinerate", null, impact - 500_000_000, 1f, impactAtNanos = impact)
+        val result = projection.apply(scene().copy(fastMoveActions = listOf(recorded)), impact)
+        assertEquals(listOf(recorded), result.fastMoveActions)
+        assertFalse(result.opponent!!.isFainted)
+        val laterAppearance = scene().copy(opponent = ReplayCombatant("Vaporeon", 134, impact + 1))
+        val faint = entry(ReplayCorrectionKind.FAINT, ReplayCorrectionSide.OPPONENT, "Vaporeon", 2_000_000_000, link = hit.id)
+        assertFalse(ReplayTrainerProjection("match", start, listOf(hit, faint)).apply(laterAppearance, impact + 5).opponent!!.isFainted)
+    }
+
+    @Test fun chargedMoveUsesTrainerTimeAndDoesNotInventFaint() {
+        val hit = entry(ReplayCorrectionKind.CHARGED_MOVE, ReplayCorrectionSide.PLAYER, "Camerupt", 2_000_000_000, "Rock Tomb")
+        val projection = ReplayTrainerProjection("match", start, listOf(hit))
+        val during = projection.apply(scene(), start + 1_650_000_000)
+        assertEquals("Rock Tomb", during.chargedMoveActions.single().moveName)
+        assertEquals(setOf("TRAINER_ENTRY"), during.chargedMoveActions.single().evidenceKinds)
+        assertFalse(during.opponent!!.isFainted)
+        assertTrue(projection.apply(scene(), start + 1_000_000_000).chargedMoveActions.isEmpty())
+    }
+}

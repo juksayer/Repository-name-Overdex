@@ -6,6 +6,8 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -290,13 +292,36 @@ fun MatchReplayScreen(
         }
         return
     }
+    val context = LocalContext.current
+    val correctionStore = remember(context) { com.example.overdex.battle.replay.ReplayTrainerCorrectionStore(context.filesDir) }
+    var corrections by remember(archive) { mutableStateOf(correctionStore.list(archive.matchId)) }
+    val trainerEnd = model.matchStartNanos?.let { start -> corrections.mapNotNull { entry ->
+        runCatching { Math.addExact(Math.addExact(start, entry.matchOffsetNanos), 1_000_000_000L) }.getOrNull()
+    }.maxOrNull() }
     val playbackStart = playbackWindow?.startNanos ?: model.startNanos
-    val playbackEnd = playbackWindow?.endNanos ?: model.endNanos
+    val playbackEnd = playbackWindow?.endNanos ?: maxOf(model.endNanos, trainerEnd ?: model.endNanos)
     val restartPosition = com.example.overdex.battle.replay.replayDefaultPosition(
         playbackStart, playbackEnd, model.matchStartNanos, playbackWindow != null)
 
-    val eventMarkers = remember(model, playbackStart, playbackEnd) {
-        model.eventMarkers.filter { it.atNanos in playbackStart..playbackEnd }
+    val eventMarkers = remember(model, playbackStart, playbackEnd, corrections) {
+        val trainerMarkers = model.matchStartNanos?.let { start ->
+            corrections.mapNotNull { entry ->
+                val at = runCatching { Math.addExact(start, entry.matchOffsetNanos) }.getOrNull()
+                    ?: return@mapNotNull null
+                val kind = when (entry.kind) {
+                    com.example.overdex.battle.replay.ReplayCorrectionKind.FAST_MOVE -> com.example.overdex.battle.replay.ReplayEventMarkerKind.FAST_MOVE
+                    com.example.overdex.battle.replay.ReplayCorrectionKind.CHARGED_MOVE -> com.example.overdex.battle.replay.ReplayEventMarkerKind.CHARGED_MOVE
+                    com.example.overdex.battle.replay.ReplayCorrectionKind.FAINT -> com.example.overdex.battle.replay.ReplayEventMarkerKind.FAINT
+                }
+                val credited = entry.finishingMoveId?.let { id -> corrections.singleOrNull { it.id == id &&
+                    it.kind != com.example.overdex.battle.replay.ReplayCorrectionKind.FAINT && it.side != entry.side &&
+                    it.matchOffsetNanos <= entry.matchOffsetNanos } }
+                ReplayEventMarker("trainer:${entry.id}", kind, at, entry.side.name,
+                    "Trainer entry · ${entry.speciesName} · ${entry.moveName ?: "faint"} · ${entry.authorName}" +
+                        (credited?.let { " · KO by ${it.moveName}" } ?: ""))
+            }
+        }.orEmpty()
+        (model.eventMarkers + trainerMarkers).filter { it.atNanos in playbackStart..playbackEnd }.sortedBy { it.atNanos }
     }
     var selectedMarkerId by remember(archive, playbackWindow) { mutableStateOf<String?>(null) }
     var cursor by remember(archive, initialCursorNanos, playbackWindow) {
@@ -317,15 +342,83 @@ fun MatchReplayScreen(
         onPlaybackSpeedChange(speed)
     }
     val currentModel by rememberUpdatedState(model)
-    val scene = model.sceneAt(cursor)
+    val trainerProjection = remember(archive, corrections, model.matchStartNanos, fastMovesBySpecies, chargedMovesBySpecies) {
+        model.matchStartNanos?.let { com.example.overdex.battle.replay.ReplayTrainerProjection(archive.matchId, it, corrections,
+            (fastMovesBySpecies.keys + chargedMovesBySpecies.keys).associateWith { name ->
+                fastMovesBySpecies[name].orEmpty() + chargedMovesBySpecies[name].orEmpty()
+            }) }
+    }
+    val scene = trainerProjection?.apply(model.sceneAt(cursor), cursor) ?: model.sceneAt(cursor)
+    val attackSoundEvents = remember(model, trainerProjection) {
+        trainerProjection?.soundEvents(model.attackSoundEvents, model::sceneAt) ?: model.attackSoundEvents
+    }
+    val currentAttackSoundEvents by rememberUpdatedState(attackSoundEvents)
     val duration = (playbackEnd - playbackStart).coerceAtLeast(1L)
     val displayedMatchStart = model.matchStartNanos ?: model.countdown?.goAtNanos
         ?.takeUnless { model.countdown?.timingBasis == com.example.overdex.battle.replay.ReplayCountdownTiming.PRESENTATION_ONLY }
     val matchStartFraction = displayedMatchStart?.takeIf { it in playbackStart..playbackEnd }?.let { matchStartNanos ->
         ((matchStartNanos - playbackStart).toFloat() / duration).coerceIn(0f, 1f)
     }
-    val context = LocalContext.current
     val saveScope = rememberCoroutineScope()
+    var addingCorrection by remember(archive) { mutableStateOf(false) }
+    var correctionStatus by remember(archive) { mutableStateOf<String?>(null) }
+    var correctionExport by remember { mutableStateOf<ByteArray?>(null) }
+    var correctionImport by remember { mutableStateOf<ByteArray?>(null) }
+    val exportCorrection = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        val bytes = correctionExport
+        correctionExport = null
+        if (uri != null && bytes != null) runCatching {
+            requireNotNull(context.contentResolver.openOutputStream(uri)).use { it.write(bytes) }
+        }.onSuccess { correctionStatus = "CORRECTION FILE SAVED" }
+            .onFailure { correctionStatus = "COULD NOT SAVE CORRECTION FILE" }
+    }
+    val importCorrection = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) runCatching {
+            requireNotNull(context.contentResolver.openInputStream(uri)).use {
+                com.example.overdex.battle.replay.ReplayCorrectionTransfer.readBounded(it)
+            }.also { com.example.overdex.battle.replay.ReplayCorrectionTransfer.decode(it) }
+        }.onSuccess { correctionImport = it }
+            .onFailure { correctionStatus = "INVALID CORRECTION FILE: ${it.message}" }
+    }
+    fun exportEntries() {
+        playing = false
+        val selected = selectedMarkerId?.takeIf { id -> id.startsWith("trainer:") && eventMarkers.any { it.id == id && it.atNanos == cursor } }?.removePrefix("trainer:")
+            ?.let { id -> corrections.singleOrNull { it.id == id } }
+        val toExport = if (selected == null) corrections else
+            listOfNotNull(selected.finishingMoveId?.let { id -> corrections.singleOrNull { it.id == id } }, selected).distinctBy { it.id }
+        runCatching { com.example.overdex.battle.replay.ReplayCorrectionTransfer.encode(
+            com.example.overdex.battle.replay.ReplayCorrectionFile(sourceMatchId = archive.matchId, entries = toExport))
+        }.onSuccess { correctionExport = it; exportCorrection.launch("overdex-correction.json") }
+            .onFailure { correctionStatus = it.message ?: "NO ENTRIES TO EXPORT" }
+    }
+    fun importEntries() { playing = false; importCorrection.launch(arrayOf("application/json", "application/octet-stream")) }
+    correctionImport?.let { bytes ->
+        val source = remember(bytes) { com.example.overdex.battle.replay.ReplayCorrectionTransfer.decode(bytes) }
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { correctionImport = null },
+            title = { Text("Import trainer entries?") },
+            text = { Text("Confirm this is the same battle. ${source.entries.size} entries from ${source.entries.map { it.authorName }.distinct().joinToString()} will use their match-relative times. Names in a file are self-reported. Choose whether the other recording uses the opposite perspective.") },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = {
+                correctionImport = null
+                saveScope.launch {
+                    try { val count = withContext(Dispatchers.IO) { correctionStore.importFile(bytes, archive.matchId, true) }
+                        corrections = withContext(Dispatchers.IO) { correctionStore.list(archive.matchId) }; correctionStatus = "IMPORTED $count ENTRIES · SIDES REVERSED"
+                    } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; correctionStatus = "IMPORT FAILED: ${e.message}" }
+                }
+            }) { Text("Opposite sides") } },
+            dismissButton = { Row {
+                androidx.compose.material3.TextButton(onClick = {
+                    correctionImport = null
+                    saveScope.launch {
+                        try { val count = withContext(Dispatchers.IO) { correctionStore.importFile(bytes, archive.matchId, false) }
+                            corrections = withContext(Dispatchers.IO) { correctionStore.list(archive.matchId) }; correctionStatus = "IMPORTED $count ENTRIES"
+                        } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; correctionStatus = "IMPORT FAILED: ${e.message}" }
+                    }
+                }) { Text("Same sides") }
+                androidx.compose.material3.TextButton(onClick = { correctionImport = null }) { Text("Cancel") }
+            } },
+        )
+    }
     var clipStart by remember(archive) { mutableStateOf<Long?>(null) }
     var clipEnd by remember(archive) { mutableStateOf<Long?>(null) }
     var savingClip by remember { mutableStateOf(false) }
@@ -338,13 +431,44 @@ fun MatchReplayScreen(
             add("MARK END + SAVE")
             if (onOpenEditor != null) add("CLIP LIBRARY")
         }
+        add("ADD EVENT")
+        add("EXPORT CORRECTIONS")
+        add("IMPORT CORRECTIONS")
         add("PREVIOUS EVENT")
         add("NEXT EVENT")
     }
     val editorActionCount = actionLabels.size
+    val addEventAction = editorActionCount - 5
+    val exportEventAction = editorActionCount - 4
+    val importEventAction = editorActionCount - 3
     val previousEventAction = editorActionCount - 2
     val nextEventAction = editorActionCount - 1
     val completion by rememberUpdatedState(onPlaybackComplete)
+    fun addEvent() {
+        playing = false
+        val start = model.matchStartNanos
+        if (start == null || cursor < start) correctionStatus = "SEEK TO A RECORDED MATCH TIME FIRST"
+        else addingCorrection = true
+    }
+    if (addingCorrection) ReplayCorrectionDialog(
+        matchId = archive.matchId,
+        offsetNanos = cursor - requireNotNull(model.matchStartNanos),
+        priorEntries = corrections,
+        onDismiss = { addingCorrection = false },
+        onSave = { correction ->
+            addingCorrection = false
+            saveScope.launch {
+                try {
+                    withContext(Dispatchers.IO) { correctionStore.add(correction) }
+                    corrections = withContext(Dispatchers.IO) { correctionStore.list(archive.matchId) }
+                    correctionStatus = "TRAINER ENTRY SAVED"
+                } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    correctionStatus = "EVENT NOT SAVED: ${e.message}"
+                }
+            }
+        },
+    )
     fun markClipStart() {
         playing = false
         clipStart = cursor
@@ -388,7 +512,7 @@ fun MatchReplayScreen(
     }
     val currentAttackSfxEnabled by rememberUpdatedState(attackSfxEnabled)
     val attackSounds = remember(context) { ReplayAttackSounds(context) }
-    LaunchedEffect(model, attackSounds) { attackSounds.prepare(model.attackSoundEvents) }
+    LaunchedEffect(attackSoundEvents, attackSounds) { attackSounds.prepare(attackSoundEvents) }
     LaunchedEffect(playing, attackSfxEnabled, playbackSpeed) { attackSounds.stop() }
     val currentEventBlipsEnabled by rememberUpdatedState(eventBlipsEnabled)
     val transportSounds = remember { ReplayTransportSounds(context) }
@@ -449,6 +573,9 @@ fun MatchReplayScreen(
             if (!savingClip && clipEnd == null) when {
                 editorAction == previousEventAction -> seekAdjacentMarker(false)
                 editorAction == nextEventAction -> seekAdjacentMarker(true)
+                editorAction == addEventAction -> addEvent()
+                editorAction == exportEventAction -> exportEntries()
+                editorAction == importEventAction -> importEntries()
                 allowClipSave && editorAction == 1 -> markClipStart()
                 allowClipSave && editorAction == 2 -> markClipEnd()
                 allowClipSave && editorAction == 3 -> { playing = false; onOpenEditor?.invoke() }
@@ -575,6 +702,16 @@ fun MatchReplayScreen(
                 MatchLcdTextButton("BACK", { if (!savingClip) { playing = false; transportSounds.stop(); onBack() } }, Modifier.weight(1f))
             }
             MatchLcdText("←/→ ${actionLabels[editorAction]}   A SELECT")
+            MatchLcdButton("ADD EVENT", { editorAction = addEventAction; addEvent() }, selected = editorAction == addEventAction)
+            MatchLcdButton("EXPORT CORRECTIONS", { editorAction = exportEventAction; exportEntries() }, selected = editorAction == exportEventAction)
+            MatchLcdText("SELECT A TRAINER MARKER TO EXPORT IT; OTHERWISE EXPORT ALL")
+            MatchLcdButton("IMPORT CORRECTIONS", { editorAction = importEventAction; importEntries() }, selected = editorAction == importEventAction)
+            correctionStatus?.let { MatchLcdText(it) }
+            corrections.forEach { entry ->
+                val credited = entry.finishingMoveId?.let { id -> corrections.firstOrNull { it.id == id } }
+                MatchLcdText("TRAINER ENTRY ${formatReplayTime(entry.matchOffsetNanos)} · ${entry.side.name} · ${entry.speciesName} · ${entry.moveName ?: "FAINT"} · ${entry.authorName}" +
+                    (credited?.let { " · KO CREDIT: ${it.moveName}" } ?: ""))
+            }
             if (allowClipSave) {
                 Column(Modifier.fillMaxWidth().bringIntoViewRequester(marksRequester)) {
                     MatchLcdText("CLIP AT ${formatReplayTime(cursor - model.startNanos)}   ↑/↓ STEP")
@@ -615,7 +752,7 @@ fun MatchReplayScreen(
             cursor = clock.positionAt(frameNanos)
             if (currentEventBlipsEnabled && currentModel.crossedArticleBoundary(previous, cursor)) transportSounds.tick()
             if (currentAttackSfxEnabled) {
-                replayAttackSoundsBetween(currentModel.attackSoundEvents, previous, cursor).forEach {
+                replayAttackSoundsBetween(currentAttackSoundEvents, previous, cursor).forEach {
                     attackSounds.play(it, playbackSpeed)
                 }
             }
