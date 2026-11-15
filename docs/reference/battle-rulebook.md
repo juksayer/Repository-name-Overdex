@@ -434,6 +434,18 @@ obscured pixels, uncertain colors and background blending remain unknown rather
 than being filled or excluded merely to reach either conclusion. See the
 [Sealeo background counterexamples](../verification/2026-11-15-sealeo-background-ambiguity.md).
 
+**Trainer-reported shield and pending Fast Move, November 15:** If a target's
+remaining HP turns orange while its Charged Move interrupts a player's Fast Move,
+keep the pending hit, charge and any shield decision as separate source-timed
+evidence. In the reviewed Vaporeon match the player shielded Water Pulse and
+Vaporeon then departed; the trainer identified Incinerate as the finishing hit.
+Do not mark the target fainted merely because the orange trail appeared before
+the shield choice, or discard a supported pending hit because a charge began.
+The trainer also proposes that, if the Charged Move instead defeats the attacker,
+the target can retain HP and the orange trail can revert. That counterfactual
+was not exercised in this recording and requires a separately observed control.
+See the [recorded exchange](../verification/2026-11-15-vaporeon-shield-incinerate.md).
+
 **Complete-bar evidence continuity, November 15:** If a readable complete bar
 retains live-colored pixels while an orange trail appears or disappears, record
 the changed color evidence at that frame's source time; it is not an HP amount,
