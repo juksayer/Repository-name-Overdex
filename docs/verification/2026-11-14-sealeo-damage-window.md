@@ -63,3 +63,31 @@ living switch, missing-frame, unsided audio, other player hit and long-move
 continuation counterexamples; it must retain the association's uncertainty and
 never backfill its evidence into the original archive. An automatic, decisive
 KO link requires independently validated guards, not just nearest-event order.
+
+## Offline provisional association experiment
+
+`SealeoProvisionalAssociationExperimentTest` evaluates a copy of the original
+timeline using the existing Replay move evidence and the independently recorded
+red, empty, and faint observations. It selects Incinerate as a **provisional
+candidate**, retaining the original source IDs and clocks and explicitly marking
+the missing frame coverage, unsided sound, and unknown exact damage time. The
+three-second limit is a fixture-specific experimental guard, not a validated
+general rule. The video and partial orange crop informed the investigation but
+are not inputs to this archive-only evaluator.
+
+Counterexamples remove the independent faint, the complete empty observation,
+or the move's audio/visual support; insert a competing player attack or later
+opponent damage tick; interrupt observation; or insert a replacement or an
+independently reidentified living Sealeo. These all prevent the candidate.
+An unowned later positive HP observation alone does not prove Sealeo survived:
+it might belong to the replacement. Reversing article order retains the same
+candidate, and the serialized original remains unchanged. The separate verified
+HP-faint suite also checks an actual living Carbink recall.
+
+One important trap surfaced: Replay can merge a later independent damage tick
+into an earlier move's source list. The experiment therefore treats that later
+tick as competing evidence even when Replay has merged it. This conservative
+guard can also withhold a legitimate link; it is not a production algorithm.
+The archived opposing Water Gun observations concern player HP and do not
+invalidate the candidate. Missing coverage and unsided audio still prevent a
+decisive attribution or a claim that the exact landing has been recovered.
