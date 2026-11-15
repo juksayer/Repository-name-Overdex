@@ -48,14 +48,17 @@ class ReplayTerminalAudioAssociationTest {
         assertTrue(resolve(recovery = audio.copy(unavailableArtifacts = listOf("sound"))).isEmpty())
         assertTrue(resolve(listOf(event("stop", 11, ArchivedObservationSessionStoppedByUser))).isEmpty())
     }
-    @Test fun `unknown HP does not veto an independently supported ending while fresh tiny live HP does`() {
+    @Test fun `unclassified positive HP withholds the link without asserting survival`() {
         val live = event("hp", 14, ArchivedActiveHpBarMeasured("OPPONENT", 400, 600, 600, 617,
             .00001f, 1080, 2400, "RED")).copy(confidence = .99f)
-        for (sample in listOf(live.copy(confidence = null), live.copy(confidence = .2f),
-            live.copy(payload = (live.payload as ArchivedActiveHpBarMeasured).copy(fillColor = null)))) {
+        for (sample in listOf(live.copy(confidence = null), live.copy(confidence = .2f))) {
             val policy = ReplayHpEvidence(rows + sample)
             assertEquals(1, resolve(listOf(sample), acceptsHp = { policy.confirmsLiveHp(it) }).size)
         }
+        val unclassified = live.copy(payload = (live.payload as ArchivedActiveHpBarMeasured).copy(fillColor = null))
+        val unknownPolicy = ReplayHpEvidence(rows + unclassified)
+        assertFalse(unknownPolicy.confirmsLiveHp(unclassified))
+        assertTrue(resolve(listOf(unclassified), acceptsHp = { unknownPolicy.confirmsLiveHp(it) }).isEmpty())
         val policy = ReplayHpEvidence(rows + live)
         assertTrue(resolve(listOf(live), acceptsHp = { policy.confirmsLiveHp(it) }).isEmpty())
         assertTrue(resolve(listOf(live.copy(confidence = .2f)), recovery = audio.copy(cries = emptyList()),

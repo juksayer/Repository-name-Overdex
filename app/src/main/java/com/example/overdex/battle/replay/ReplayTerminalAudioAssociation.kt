@@ -64,8 +64,14 @@ internal object ReplayTerminalAudioAssociation {
                     (a.payload as? ArchivedOpponentBattleResourceCountMeasured)?.let { it.resource == "POKE_BALLS" && it.visibleCount != 1 } == true) ||
                     (a.monotonicTimeNanos == shields.monotonicTimeNanos &&
                     (a.payload as? ArchivedOpponentBattleResourceCountMeasured)?.let { it.resource == "SHIELDS" && it.visibleCount != 0 } == true) }) return@mapNotNull null
+            // An unclassified positive reading is not confirmed survival, but it
+            // leaves enough uncertainty to withhold this decisive causal link.
             if (ordered.any { a -> a.monotonicTimeNanos!! in at..end && when (val p = a.payload) {
-                    is ArchivedActiveHpBarMeasured -> p.side == "OPPONENT" && p.filledFraction > 0f && a.monotonicTimeNanos >= cryAt && acceptsHp(a)
+                    is ArchivedActiveHpBarMeasured -> p.side == "OPPONENT" && p.filledFraction.isFinite() &&
+                        p.filledFraction > 0f && p.filledFraction <= 1f && a.monotonicTimeNanos >= cryAt &&
+                        (acceptsHp(a) || (p.fillColor == null && p.sourceWidth != null && p.sourceHeight != null &&
+                            p.barLeft >= 0 && p.barTop >= 0 && p.barRight > p.barLeft && p.barBottom > p.barTop &&
+                            p.barRight <= p.sourceWidth && p.barBottom < p.sourceHeight))
                     is ArchivedOpponentBattleResourceCountMeasured -> (p.resource == "SHIELDS" && p.visibleCount != 0) || (p.resource == "POKE_BALLS" && p.visibleCount !in 0..1)
                     is ArchivedActivePokemonFaintedWitnessed, is ArchivedGetReadyWitnessed, is ArchivedAttackIncoming,
                     is ArchivedObservationRestartedByUser, is ArchivedObservationSessionStoppedByUser, is ArchivedScreenIgnoredByUser -> true

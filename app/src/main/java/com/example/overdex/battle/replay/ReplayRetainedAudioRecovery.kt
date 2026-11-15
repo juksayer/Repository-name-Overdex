@@ -34,12 +34,26 @@ object ReplayRetainedAudioRecovery {
             .mapNotNull { it.monotonicTimeNanos }.minOrNull() ?: return emptyList()
         val start = archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedMatchStarted }.mapNotNull { it.monotonicTimeNanos }.minOrNull()
             ?: return emptyList()
-        return archive.articles.groupBy { it.articleId }.values.mapNotNull { it.distinct().singleOrNull() }
+        val unique = archive.articles.groupBy { it.articleId }.values.mapNotNull { it.distinct().singleOrNull() }
+        val previous = mutableMapOf<String, String>()
+        val entries = unique.sortedBy { it.monotonicTimeNanos ?: Long.MAX_VALUE }.mapNotNull { a ->
+            if (a.matchId != archive.matchId) return@mapNotNull null
+            val p = a.payload as? ArchivedActivePokemonSpeciesWitnessed ?: return@mapNotNull null
+            val t = a.monotonicTimeNanos ?: return@mapNotNull null
+            if (t !in start..end) return@mapNotNull null
+            val name = p.speciesName.trim().lowercase()
+            if (previous.put(p.side, name) == name) null else t
+        }
+        val clips = unique
             .filter { a -> val p = a.payload as? ArchivedAudioCaptured
-                a.matchId == archive.matchId && a.monotonicTimeNanos?.let { it >= start && it in (end - 40 * SECOND)..end } == true &&
-                    p != null && p.captureSource == "PLAYBACK_POKEMON_GO" && p.durationNanos in 600_000_000L..(4 * SECOND) &&
+                a.matchId == archive.matchId && a.monotonicTimeNanos?.let { it in start..end } == true &&
+                    p != null && p.captureSource == "PLAYBACK_POKEMON_GO" && p.durationNanos in 600_000_000L..(16 * SECOND) &&
                     p.byteCount in 44..1_600_044 }
-            .sortedBy { it.monotonicTimeNanos }.takeLast(64)
+            .sortedBy { it.monotonicTimeNanos }
+        val ending = clips.filter { it.monotonicTimeNanos!! >= end - 40 * SECOND }.takeLast(64)
+        val earlierEntries = clips.filter { a -> a.monotonicTimeNanos!! < end - 40 * SECOND &&
+            entries.any { kotlin.math.abs(a.monotonicTimeNanos!! - it) <= 2 * SECOND } }.takeLast(64)
+        return (earlierEntries + ending).sortedBy { it.monotonicTimeNanos }
     }
 
     fun recover(archive: MatchArchive, references: List<ReplayAudioReference>,
@@ -62,7 +76,11 @@ object ReplayRetainedAudioRecovery {
         val missing = unavailableReferences + references.filter { r -> prepared.none { it.ref.name == r.name && it.ref.speciesId == r.speciesId && it.ref.sha256 == r.sha256 } }.map { it.name }
         val hits = mutableListOf<Hit>(); val unavailable = mutableListOf<String>()
         val selected = selectedArticles(archive)
-        if (selected.size == 64) unavailable += "Ending audio selection reached its bound"
+        val end = archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedMatchEnded }
+            .mapNotNull { it.monotonicTimeNanos }.minOrNull()
+        if (end != null && (selected.count { it.monotonicTimeNanos!! < end - 40 * SECOND } >= 64 ||
+                    selected.count { it.monotonicTimeNanos!! >= end - 40 * SECOND } >= 64))
+            unavailable += "Audio selection may have reached its bound"
         for (article in selected) {
             checkCancelled()
             val p = article.payload as ArchivedAudioCaptured
@@ -73,16 +91,27 @@ object ReplayRetainedAudioRecovery {
                 abs(audio.samples.size.toLong() * SECOND / (audio.sampleRateHz * audio.channelCount) - p.durationNanos) > 1_000_000L) {
                 unavailable += article.articleId; continue
             }
-            val fits = prepared.mapNotNull { r -> r.matcher.measure(audio).firstOrNull()?.let { fit ->
-                Hit(r.ref, r.duration, ReplayAudioFragment(article.articleId, article.monotonicTimeNanos!!, p.sha256,
-                    r.ref.sha256, fit.offsetNanos, r.offsets[fit.speciesId - 1] * SECOND / 8000,
-                    fit.durationNanos, fit.correlation))
-            } }.sortedByDescending { it.fragment.correlation }
-            val best = fits.firstOrNull() ?: continue
-            val competitor = fits.firstOrNull { it.ref.name != best.ref.name || it.ref.speciesId != best.ref.speciesId }
-                ?: continue // Never force a single-option match.
-            val threshold = if (best.ref.speciesId != null) .95f else .98f
-            if (best.fragment.durationNanos >= 600_000_000L && best.fragment.correlation >= threshold && best.fragment.correlation - competitor.fragment.correlation >= .15f) hits += best.copy(fragment = best.fragment.copy(runnerUpName = competitor.ref.name, runnerUpCorrelation = competitor.fragment.correlation))
+            val mono = StatChangeSoundMatcher.mono8k(audio)
+            // A 1.2 s window keeps cached FFTs bounded for the full reference
+            // pool. Half-window overlap covers every 600 ms reference fragment.
+            val window = 9600
+            val stride = 4800
+            val starts = if (mono.size <= window) listOf(0) else
+                ((0..mono.size - window step stride).toList() + (mono.size - window)).distinct()
+            for (startSample in starts) {
+                checkCancelled()
+                val slice = mono.copyOfRange(startSample, minOf(startSample + window, mono.size))
+                val fits = prepared.mapNotNull { r -> r.matcher.measureMono8k(slice).firstOrNull()?.let { fit ->
+                    Hit(r.ref, r.duration, ReplayAudioFragment(article.articleId, article.monotonicTimeNanos!!, p.sha256,
+                        r.ref.sha256, startSample * SECOND / 8000 + fit.offsetNanos, r.offsets[fit.speciesId - 1] * SECOND / 8000,
+                        fit.durationNanos, fit.correlation))
+                } }.sortedByDescending { it.fragment.correlation }
+                val best = fits.firstOrNull() ?: continue
+                val competitor = fits.firstOrNull { it.ref.name != best.ref.name || it.ref.speciesId != best.ref.speciesId }
+                    ?: continue // Never force a single-option match.
+                val threshold = if (best.ref.speciesId != null) .95f else .98f
+                if (best.fragment.durationNanos >= 600_000_000L && best.fragment.correlation >= threshold && best.fragment.correlation - competitor.fragment.correlation >= .15f) hits += best.copy(fragment = best.fragment.copy(runnerUpName = competitor.ref.name, runnerUpCorrelation = competitor.fragment.correlation))
+            }
         }
         val charges = mutableListOf<ReplayRecoveredCharge>()
         val cries = mutableListOf<ReplayRecoveredCry>()

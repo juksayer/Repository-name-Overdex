@@ -59,6 +59,29 @@ class ReplayRetainedAudioRecoveryTest {
         assertEquals(11_600_000_000L, recovered.cries.single().estimatedOnsetNanos)
         assertTrue(recovered.charges.isEmpty())
     }
+    @Test fun `overlapping long clip windows preserve original offsets and do not duplicate cries`() {
+        val cry = ReplayAudioReference("Cry 148", false, 148, "cry", Pcm16Audio(8000, 1, effect.copyOfRange(0, 8000)))
+        val data = noise(13 * 8000, 41)
+        effect.copyInto(data, destinationOffset = 3 * 8000 + 4000, endIndex = 8000)
+        val bytes = wav(data)
+        val base = capture("long", 10*S, bytes)
+        val clip = base.copy(payload = (base.payload as ArchivedAudioCaptured).copy(durationNanos = 13*S))
+        val a = archive().copy(articles = listOf(event("start", 0, ArchivedMatchStarted), clip, event("end", 30*S, ArchivedMatchEnded("WIN"))))
+        val result = recover(a, listOf(cry, other)) { bytes }
+        assertEquals(1, result.cries.size)
+        val found = result.cries.single()
+        assertEquals(13_500_000_000L, found.estimatedOnsetNanos)
+        assertEquals("long", found.fragments.single().articleId)
+        assertEquals(10*S, found.fragments.single().captureAtNanos)
+        assertTrue(result.unavailableArtifacts.isEmpty())
+    }
+    @Test fun `early appearance permits bounded entry audio without admitting unrelated early clips`() {
+        val a = archive().copy(articles = listOf(event("start", 0, ArchivedMatchStarted),
+            event("identity", 20*S, ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Vaporeon", 134)),
+            capture("entry", 21*S, first), capture("unrelated", 30*S, first),
+            event("end", 100*S, ArchivedMatchEnded("WIN"))))
+        assertEquals(listOf("entry"), ReplayRetainedAudioRecovery.selectedArticles(a).map { it.articleId })
+    }
     private fun capture(id: String, at: Long, bytes: ByteArray) = event(id, at, ArchivedAudioCaptured(id,
         ReplayRetainedAudioRecovery.sha(bytes), bytes.size.toLong(), "audio/wav", 8000, 1, 1_200_000_000,
         "FAST_MOVE", "PLAYBACK_POKEMON_GO"))
