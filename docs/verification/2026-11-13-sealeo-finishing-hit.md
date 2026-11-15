@@ -104,3 +104,30 @@ inference, or omitted by Replay. In particular, test the relationship between
 the final damage resolution and the recovered use rather than relabeling the
 nearest animation as the killer. Latest stutter evidence has no paired external
 video; it remains a limited negative control, not visual ground truth.
+
+## Follow-up: bar geometry around Incinerate
+
+Using the original timeline and the EMPTY frame as time zero, Camerupt's
+player-side bar top is 752 px at -2.446 s, 765 px at -2.200 s, and 731 px at
+-1.262 s (source screen coordinates). The recipient visual effect used for the
+recovered Incinerate is at -2.081 s, during that excursion. The last red
+Sealeo sample is at -0.990 s; the complete EMPTY frame is at 0.000 s. These
+are different captured frame times, not a shared reconstructed image. Recorded
+opponent Water Gun uses in this interval remain independent observations.
+
+The archive contains no `ActiveHpBarMotionCadenceMeasured` Article during the
+inspected interval, so the recorded geometry cannot be described as an accepted
+motion-cadence witness. The visible motion and recipient effect are consistent
+with the same exchange, but geometry alone does not establish the cause or
+settled-damage time. The 990 ms absence of an intervening bar reading and the
+last red after Replay's current landing leave a time interval, not a measured
+zero or exact impact. A video contact sheet (`sealeo-44-50.png` in the backup
+review directory) shows the flame sequence and subsequent disappearance; video
+and archive clocks have not been independently aligned to frame accuracy.
+
+A regression now checks original player-bar displacement, later recipient RED,
+the independent EMPTY, the absence of an archived cadence observation, the
+retained opponent attack evidence, and unmodified archive serialization. The
+21 focused Replay tests passed. No KO association or timing was changed: a
+causal link needs independently supported damage timing and competing-attack
+coverage, not just a motion excursion or proximity to faint.

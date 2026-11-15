@@ -315,6 +315,7 @@ choices changes when the underlying battle event happened.
 | VIS-07 — candidate-reader constraint | An image contains a spatial cluster of bright particles with cool halos. | Preserve its source time and geometry as a possible visual component of a later, owned sequence assessment. | Particles alone do not identify a faint, receiving side, or depletion. QTE, shields, entry effects, pointer rings and ordinary attacks produce competing candidates; missed particles do not prove survival. Sparse retained images do not guarantee coverage of the brief signal. |
 | VIS-08 — final charged collapse plus result | A known last recipient has a source-ordered particle/flash contraction-and-clear sequence, or the separately visibility-checked player appearance sequence, after an independently attributed opposing charged use, followed by the matching result, without intervening play or conflicting evidence. A fully named move or CHARGE-06's qualified partial announcement can establish the charge. | Infer that recipient's terminal KO at the sequence clear clock; use the same revisable conclusion in live state and Replay and allow an inferred depleted HP endpoint. An empty HP outline and native zero-ball frame are not prerequisites. | QTE-before-hit, result alone, missing pixels, an unresolved owner, a switch, positive receiving HP, another charge phase or later independent survival must not become a final KO. Do not invent measured zero HP, intermediate damage, ball counts, move names or energy costs. |
 | VIS-09 — recorded appearance counterexample | A previously supported foreground color contracts or disappears while bright attack pixels replace it, even with a stable background. | Treat the original appearance as obscured until independent visibility returns. Preserve the source frames and the competing explanation. | Color loss is not body shrinkage or departure. A foreground territory is not automatic player ownership during charge-camera movement. The living Quagsire Brutal Swing sequence demonstrates both limits. |
+| VIS-10 — proposed charged-hit departure | A correctly sided, identified recipient is independently observed receiving a charged attack, then a different Pokémon is confirmed on that same side within the same uninterrupted battle. | Keep faint and voluntary switch as competing explanations for the departure; use independent, source-timed count, replacement, HP, shield and later-appearance evidence to resolve them. | An HP bar visible during the attack is not proof the charged attack caused a faint. No witnessed Fast Move does not prove no Fast Move occurred or was pending. A shielded attack, delayed evidence, missed transitions, identity ambiguity or replay glitches prevent attributing the departure or a KO to that charge without corroboration. |
 
 VIS-05 and VIS-06 have an [offline motion and native-HP study](../verification/2026-11-11-terminal-motion-feasibility.md).
 Its tested tracker is not connected to runtime faint inference. The living-recall
@@ -418,6 +419,30 @@ does not confirm a KO, an observed zero, damage amount or killer assignment.
 Compare ordinary HP thresholds, damage trails, attack flashes, transparency and
 background blending, camera movement, switches and concession. Exact colors
 and the discriminating sequence require positive and negative recording checks.
+
+**Trainer clarification, November 15 — proposed interpretation:** “if there is
+any green, yellow, or red to the left of the orange, then the hit is not a ko.
+if there is only orange in the hp bar, we typically have a faint”. For a
+complete, clearly readable bar belonging to the same recipient, preserve a
+visible live-color sliver to the left of the damage trail as evidence of
+surviving HP in that frame, even if it is only one pixel. A later hit or
+unfinished damage animation can change the outcome, so retain subsequent
+source-timed evidence. A complete orange-only bar is a terminal candidate, not
+an automatic faint or a measured empty bar; compare repeated frames, departure,
+count and later positive HP for the same appearance. Missing or clipped caps,
+obscured pixels, uncertain colors and background blending remain unknown rather
+than being filled or excluded merely to reach either conclusion. See the
+[Sealeo background counterexamples](../verification/2026-11-15-sealeo-background-ambiguity.md).
+
+**User-stated timing interpretation, pending validation:** In the Sealeo
+exchange, the remaining sliver's fade and disappearance represent the final
+hit's damage resolving at the end of the turn. Compare this interpretation with
+source-timed move, whole-bar and disappearance frames in independently labelled
+KO, nonlethal and living-switch recordings. Preserve the visual fade interval
+separately from any inferred damage-resolution clock; the first dim frame or
+last visible pixel is not automatically an exact turn boundary. This timing
+interpretation does not itself establish the move's identity, recipient, faint,
+or a measured zero, and it does not override an independently visible survivor.
 
 November 13 offline experiment: sustained orange-only fill inside a complete
 outline appeared in 12 of 13 selected KO sequences and none of 12 nonlethal
@@ -742,6 +767,7 @@ Source: [official 2026 battle-system explanation](https://pokemongo.com/en/news/
 | --- | --- | --- | --- |
 | TIMING-01 | Independent evidence establishes a Fast Attack already in progress across a charged sequence in a verified applicable ruleset. | Preserve its initiation separately from its eventual impact; a visible charge boundary does not by itself disprove that attack. | Do not invent a Fast Move from a later faint or assume every mode/version shares the same ordering. External timing rule is sourced; exact observation-to-impact association remains separately testable. |
 | TIMING-02 | A Pokémon disappears immediately after its own charged attack is shielded, with independently supported pending opposing Fast Move evidence. | Consider a pending Fast Move KO and perform bounded side-appropriate follow-up checks, retaining original clocks and competing explanations. | The shield, charge animation or disappearance alone does not prove zero HP, identify the finishing move, or establish the damage-resolution order. Proposed recognition scheduling; not implemented by this documentation. |
+| TIMING-03 — official 2026 battle update | The updated Trainer Battle rules apply to the match and an attack completes on a turn. | Pokémon GO describes damage resolving at the end of that turn, alongside energy; switches resolve before damage, and charged damage/effects precede Fast Attacks finishing during the charged sequence. Retain those as versioned game-rule context for attribution. | This does not timestamp a rendered HP transition, establish the exact ruleset in an older match or other mode, prove a candidate move was performed, or decide ambiguous captured events. Source: https://pokemongo.com/news/pvp-updates2026?hl=en . |
 
 Trainer observation: the November 12 11:38 Pixel recording shows Sneasel disappearing immediately after Camerupt blocks Foul Play, described as falling over from fright. Preserve that visual report separately from the trainer’s proposed damage-before-charge explanation. See [recording review](../verification/2026-11-12-pixel-1138-review.md). Future entries should record source, checked date, applicable modes/version, observable cues, permitted inference, counterexamples and implementation/test status; do not merge old mechanics guides into current rules without checking scope.
 
