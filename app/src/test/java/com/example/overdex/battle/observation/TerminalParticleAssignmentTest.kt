@@ -109,9 +109,13 @@ class TerminalParticleAssignmentTest {
         assertNull(gate.particleAssignment())
     }
 
-    @Test fun `low HP and departure do not open continuous particle work outside a charge`() {
+    @Test fun `departure opens only the bounded particle window outside a charge`() {
         gate.request(opponent, TerminalVisualTrigger.DEPARTURE, clock, listOf("departure"))
         assertNotNull(gate.captureWindow(opponent))
+        val assignment = requireNotNull(gate.particleAssignment())
+        assertEquals(opponent, assignment.side)
+        assertEquals(listOf("departure"), assignment.evidenceReferences)
+        clock += TerminalVisualCaptureGate.WINDOW_NANOS
         assertNull(gate.particleAssignment())
     }
 }

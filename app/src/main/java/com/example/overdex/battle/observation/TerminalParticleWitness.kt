@@ -10,7 +10,7 @@ import com.example.overdex.model.observation.ObservationInput
 import kotlinx.coroutines.*
 
 /**
- * Measures available frames during the existing gate's owned charge phase.
+ * Measures available frames during an owned charge phase or bounded terminal window.
  * Independent of sparse PNG encoding; no pixels survive a synchronous callback.
  * The shared gate's lifecycle/cues belong to TerminalVisualSequenceWitness.
  */

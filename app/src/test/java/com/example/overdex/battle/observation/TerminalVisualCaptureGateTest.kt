@@ -143,6 +143,63 @@ class TerminalVisualCaptureGateTest {
         assertFalse((payload as TestimonyPayload) is ActivePokemonFaintedWitnessed)
     }
 
+    @Test fun `frame local departure hint opens bounded measurement without inventing testimony`() {
+        val start = clock
+        assertTrue(gate.request(opponent, TerminalVisualTrigger.DEPARTURE, start))
+        val assignment = requireNotNull(gate.particleAssignment())
+        assertEquals(opponent, assignment.side)
+        assertEquals(start, assignment.phaseAt)
+        assertEquals(start + TerminalVisualCaptureGate.WINDOW_NANOS, assignment.until)
+        assertTrue(assignment.evidenceReferences.isEmpty())
+        preserve(opponent, "actual-crop")
+        clock += TerminalVisualCaptureGate.WINDOW_NANOS
+        assertNull(gate.particleAssignment())
+        val sequence = gate.drainCompleted().single()
+        assertEquals(listOf("actual-crop"), sequence.evidenceReferences)
+        assertEquals("DEPARTURE", sequence.payload.trigger)
+    }
+
+    @Test fun `low HP assignments provide bounded particle measurements and retire at a switch`() {
+        gate.observe(hp("low", .05f, opponent))
+        val assignment = requireNotNull(gate.particleAssignment())
+        assertEquals(opponent, assignment.side)
+        assertEquals(listOf("low"), assignment.evidenceReferences)
+        clock += 100_000_000L
+        gate.observe(article("switch", ActivePokemonSpeciesWitnessed(opponent, "Vaporeon", appearanceStartedAtNanos = clock)))
+        assertNull(gate.particleAssignment())
+        assertFalse(gate.isCapturing(opponent))
+    }
+
+    @Test fun `small complete bar color hint opens neutral window even with uncertain or surviving pixels`() {
+        val bar = CompleteHpBarObserved(opponent, 338, 650, 530, 667, 672, 1493,
+            188, 1, 11, "UNRESOLVED_COLOR", null, null, 251f, 148f,
+            unmaskedUncertainColumns = 21)
+        val raw = article("color", bar).copy(sourceId = SourceId("COMPLETE_OPPONENT_HP_BAR_FRAME_WITNESS"))
+        gate.observe(raw)
+        assertEquals(TerminalVisualTrigger.COMPLETE_BAR_DAMAGE_HINT, gate.captureWindow(opponent)?.trigger)
+        assertEquals(listOf("color"), gate.particleAssignment()?.evidenceReferences)
+        preserve(opponent, "frame")
+        val deadline = requireNotNull(gate.captureWindow(opponent)).until
+        clock += 1_000_000_000L
+        gate.observe(article("repeat-color", bar).copy(sourceId = raw.sourceId))
+        assertEquals(deadline, gate.captureWindow(opponent)?.until)
+        gate.endSession()
+        val seq = gate.drainCompleted().single()
+        assertEquals(listOf("color", "frame"), seq.evidenceReferences)
+        assertFalse((seq.payload as TestimonyPayload) is ActivePokemonFaintedWitnessed)
+    }
+
+    @Test fun `large fill malformed geometry and wrong source do not open color hint windows`() {
+        val bar = CompleteHpBarObserved(opponent, 338, 650, 530, 667, 672, 1493,
+            188, 100, 11, "DAMAGE_COLOR", null, null, 251f, 148f)
+        val source = SourceId("COMPLETE_OPPONENT_HP_BAR_FRAME_WITNESS")
+        gate.observe(article("large", bar).copy(sourceId = source))
+        gate.observe(article("bad-geometry", bar.copy(liveColumns = 0, barRight = 900)).copy(sourceId = source))
+        gate.observe(article("wrong-source", bar.copy(liveColumns = 0)))
+        assertNull(gate.captureWindow(opponent))
+        assertNull(gate.particleAssignment())
+    }
+
     @Test fun `duplicate source trigger cannot reopen a window after cooldown`() {
         assertTrue(request())
         clock += 4_000_000_000L

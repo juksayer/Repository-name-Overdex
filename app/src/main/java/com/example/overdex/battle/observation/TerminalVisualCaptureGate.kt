@@ -6,7 +6,7 @@ import com.example.overdex.battle.reality.RealityArticle
 /** Attention reasons only. None asserts a disappearance, a zero bar, or a knockout. */
 enum class TerminalVisualTrigger {
     LOW_HP_TRANSITION, FAST_MOVE_WITH_LOW_HP, INDEPENDENT_IMPACT_WITH_LOW_HP,
-    CHARGED_IMPACT, CHARGED_RETURN, DEPARTURE, PLAYER_QTE_PROGRESS,
+    CHARGED_IMPACT, CHARGED_RETURN, DEPARTURE, PLAYER_QTE_PROGRESS, COMPLETE_BAR_DAMAGE_HINT,
 }
 
 internal data class TerminalVisualCaptureWindow(
@@ -98,7 +98,9 @@ class TerminalVisualCaptureGate(private val now: () -> Long = System::nanoTime) 
         val hp = lowHp[side]?.takeIf { sourceAt - it.at in 0..LOW_HP_FRESH_NANOS }
         if (trigger in LOW_HP_REQUIRED && hp == null) return false
         val refs = (evidenceReferences + listOfNotNull(hp?.articleId)).filter { it.isNotBlank() }.distinct()
-        if (refs.isEmpty()) return false
+        // The frame-local missing-bar callback is a scheduling hint, not an
+        // Article. Its subsequent crops are the evidence; do not invent an ID.
+        if (refs.isEmpty() && trigger != TerminalVisualTrigger.DEPARTURE) return false
         val key = "$side:$trigger:${evidenceReferences.sorted().joinToString(",").ifEmpty { sourceAt.toString() }}"
         if (!triggerKeys.add(key)) return false
         while (triggerKeys.size > 128) triggerKeys.remove(triggerKeys.first())
@@ -148,13 +150,21 @@ class TerminalVisualCaptureGate(private val now: () -> Long = System::nanoTime) 
      */
     @Synchronized internal fun particleAssignment(): TerminalParticleAssignment? {
         if (!accepting) return null
-        val phase = charge ?: return null
-        val until = minOf(phase.at + MAX_CHARGE_PHASE_NANOS,
-            phase.qteAt?.plus(QTE_WINDOW_NANOS) ?: Long.MAX_VALUE,
-            phase.impactAt?.plus(2 * WINDOW_NANOS) ?: Long.MAX_VALUE)
-        if (now() !in phase.at until until) return null
-        return TerminalParticleAssignment(phase.recipient, phase.at, until,
-            listOfNotNull(phase.articleId, phase.qteArticleId, phase.impactArticleId).distinct())
+        val phase = charge
+        if (phase != null) {
+            val until = minOf(phase.at + MAX_CHARGE_PHASE_NANOS,
+                phase.qteAt?.plus(QTE_WINDOW_NANOS) ?: Long.MAX_VALUE,
+                phase.impactAt?.plus(2 * WINDOW_NANOS) ?: Long.MAX_VALUE)
+            if (now() in phase.at until until) return TerminalParticleAssignment(phase.recipient, phase.at, until,
+                listOfNotNull(phase.articleId, phase.qteArticleId, phase.impactArticleId).distinct())
+        }
+        expire()
+        // Reuse the bounded low-HP/departure assignment and the same frame
+        // feed. A measured visual sequence is not itself a faint or a switch.
+        val window = windows.values.lastOrNull {
+            !it.closed && now() in it.from until it.until && it.trigger in PARTICLE_WINDOW_TRIGGERS
+        } ?: return null
+        return TerminalParticleAssignment(window.side, window.from, window.until, window.refs)
     }
 
     /** A new coordinate space retires all older attention; old frames cannot change it back. */
@@ -334,6 +344,20 @@ class TerminalVisualCaptureGate(private val now: () -> Long = System::nanoTime) 
             }
             is FastMoveUseObserved -> request(payload.damagedSide, TerminalVisualTrigger.FAST_MOVE_WITH_LOW_HP,
                 at, listOf(article.id.value))
+            is CompleteHpBarObserved -> {
+                // A small visible color span can be obscured or nonlethal. It
+                // only opens an acquisition window, even when pixels are unknown.
+                val area = payload.interiorColumns
+                val valid = article.sourceId.id == "COMPLETE_${payload.side.name}_HP_BAR_FRAME_WITNESS" &&
+                    payload.sourceWidth > 0 && payload.sourceHeight > 0 && payload.barLeft >= 0 &&
+                    payload.barTop >= 0 && payload.barRight <= payload.sourceWidth &&
+                    payload.barBottom <= payload.sourceHeight && payload.barRight > payload.barLeft &&
+                    payload.barBottom > payload.barTop && area in 1..(payload.barRight - payload.barLeft) &&
+                    payload.liveColumns in 0..area && payload.damageColumns in 1..area &&
+                    payload.liveColumns.toLong() + payload.damageColumns <= area / 4 &&
+                    payload.status in setOf("DAMAGE_COLOR", "SUSTAINED_DAMAGE_COLOR", "UNRESOLVED_COLOR")
+                if (valid) request(payload.side, TerminalVisualTrigger.COMPLETE_BAR_DAMAGE_HINT, at, listOf(article.id.value))
+            }
             else -> Unit
         }
     }
@@ -366,6 +390,9 @@ class TerminalVisualCaptureGate(private val now: () -> Long = System::nanoTime) 
         private const val PUBLICATION_GRACE_NANOS = 2_000_000_000L
         private const val MAX_CHARGE_PHASE_NANOS = 20_000_000_000L
         private const val LOW_HP_FRACTION = .25f
+        private val PARTICLE_WINDOW_TRIGGERS = setOf(TerminalVisualTrigger.LOW_HP_TRANSITION,
+            TerminalVisualTrigger.FAST_MOVE_WITH_LOW_HP, TerminalVisualTrigger.INDEPENDENT_IMPACT_WITH_LOW_HP,
+            TerminalVisualTrigger.DEPARTURE, TerminalVisualTrigger.COMPLETE_BAR_DAMAGE_HINT)
         private val player = ActivePokemonSide.PLAYER
         private val opponent = ActivePokemonSide.OPPONENT
         private val LOW_HP_REQUIRED = setOf(TerminalVisualTrigger.LOW_HP_TRANSITION,

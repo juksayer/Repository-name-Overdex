@@ -422,6 +422,15 @@ Compare ordinary HP thresholds, damage trails, attack flashes, transparency and
 background blending, camera movement, switches and concession. Exact colors
 and the discriminating sequence require positive and negative recording checks.
 
+**HP-11 acquisition, November 15.** A source-located complete-bar reading with a
+small visible live/damage-color span may request a fixed three-second terminal
+visual and particle sampling window, including when other columns are unknown.
+The bar and later frame measurements remain independent source-timed evidence.
+This is attention only: the visible span is not necessarily all remaining HP,
+and a nonlethal hit or living recall can trigger the same acquisition. A
+frame-local missing-bar hint may likewise request a window without inventing an
+Article for the hint; only actual preserved crops and measurements are cited.
+
 **Trainer clarification, November 15 — proposed interpretation:** “if there is
 any green, yellow, or red to the left of the orange, then the hit is not a ko.
 if there is only orange in the hp bar, we typically have a faint”. For a
