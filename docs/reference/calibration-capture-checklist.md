@@ -174,7 +174,7 @@ belong to `BattleCalibration`. Quoted labels match the current LCD strings.
 | 36 `PLAYER_CHARGE_MOVE_EFFECTIVENESS_RIGHT` | Charged Button Effectiveness - Right → `playerChargeMoveEffectivenessRightRegion` | Leaf: `PlayerChargeMoveEffectivenessRightCrop` | S05 |
 | 37 `TRAINER_INACTIVE_POKEMON` | Inactive Cards: Upper / Lower → `trainerInactivePokemonRegion` | Shared: upper/lower sprite and HP views plus initial/cooldown timer views, detailed below | S03, S05, S12 |
 | 38 `MATCH_OUTCOME` | Match Outcome → `matchOutcomeRegion` | Leaf: `MatchOutcomeCrop`; current YOU WIN and GOOD EFFORT readers share it | S15, S16 |
-| 39 `OPPONENT_TRAINER_HAND` | Opponent Hand / Poké Ball → `opponentTrainerHandRegion` | Experiment: `OpponentTrainerHandCrop`; manual bounded samples, no automatic recall/faint/send-out claim | S14, S19 if available |
+| 39 `OPPONENT_TRAINER_HAND` | Opponent Hand / Poké Ball → `opponentTrainerHandRegion` | `OpponentTrainerHandCrop`: manual samples and short raw samples following eligible opponent missing-bar hints; no automatic recall/faint/send-out claim | S14, S19 if available |
 | 40 `CHARGED_IMPACT_HP` | Charged Impact HP → `chargedImpactHpRegion` | Shared centered-recipient search territory: `ChargedImpactHpCrop`; phase-bounded geometry/fill/color measurements, independently saved from normal side HP | S21 |
 
 ## Shared and derived views: no extra independent Draggy Boxes

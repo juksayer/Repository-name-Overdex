@@ -1035,12 +1035,20 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         )
         observationDispatcher.register(FirstLiveCombatRouter(session))
         val battlefieldHpTracker = com.example.overdex.battle.observation.LiveBattlefieldHpTracker(calibration)
+        val opponentHandSampling = com.example.overdex.battle.observation.QteTypeIconSampling(
+            savedRegion = { calibrationManager.load().opponentTrainerHandRegion },
+            followsQte = false, sampleLimit = 100, settleNanos = 150_000_000L,
+            observerId = ObserverId("OPPONENT_HAND_SAMPLE_GATE", ObserverSource.SCREEN_CAPTURE),
+            name = "Opponent Hand Sample Gate",
+        )
         val activeHpBarWitness = LiveActiveHpBarWitness(
             input, battlefieldHpTracker, activeHpEvidenceLive, playerHpFrameHub, opponentHpFrameHub,
             onDepartureCheck = { side, at ->
                 teamResourceSnapshotGate.requestDepartureCheck(side, at)
                 if (side == com.example.overdex.battle.custody.ActivePokemonSide.PLAYER)
                     forcedReplacementAttention.request(at)
+                if (side == com.example.overdex.battle.custody.ActivePokemonSide.OPPONENT)
+                    opponentHandSampling.requestDepartureSample(at)
                 terminalVisualGate.request(side, com.example.overdex.battle.observation.TerminalVisualTrigger.DEPARTURE, at)
             },
             chargedImpactHpRegion = calibration.chargedImpactHpRegion,
@@ -1200,14 +1208,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             name = "QTE Type Icons Capture",
             onCaptured = { _, _, at -> qteSampling.captured(at) }
         ))
-        // User-requested raw samples can include the pre-GO send-out. They do
-        // not wake on battle events or run continuously once the box is added.
-        val opponentHandSampling = com.example.overdex.battle.observation.QteTypeIconSampling(
-            savedRegion = { calibrationManager.load().opponentTrainerHandRegion },
-            followsQte = false, sampleLimit = 100, settleNanos = 150_000_000L,
-            observerId = ObserverId("OPPONENT_HAND_SAMPLE_GATE", ObserverSource.SCREEN_CAPTURE),
-            name = "Opponent Hand Sample Gate",
-        )
+        // Manual calibration remains available. A frame-local opponent
+        // departure hint can also request a short, neutral raw sample.
         DroidballService.opponentHandSampling.value = opponentHandSampling
         observationDispatcher.register(opponentHandSampling)
         observationDispatcher.register(CropCaptureWitness(input, calibration,

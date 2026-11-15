@@ -41,6 +41,10 @@ class QteTypeIconSampling(
     private var until = Long.MIN_VALUE
     private var lastReady = Long.MIN_VALUE
     private var lastClosedAt = Long.MIN_VALUE
+    private var lastDeparture = Long.MIN_VALUE
+    private var activeLimit = sampleLimit
+    private var activeCadence = 0L
+    private var lastCapturedAt: Long? = null
     @Volatile var region: AnchorRegion? = null
         private set
     private val _status = MutableStateFlow(QteIconSamplingStatus())
@@ -54,19 +58,34 @@ class QteTypeIconSampling(
     }
 
     @Synchronized fun isEnabled(): Boolean {
-        val enabled = accepting && now() < until && _status.value.saved < sampleLimit
+        val enabled = accepting && now() < until && _status.value.saved < activeLimit
         if (_status.value.sampling != enabled) _status.value = _status.value.copy(sampling = enabled)
         return enabled
     }
 
     /** Reject a replayed source frame from before the request, even if it arrives later. */
     @Synchronized fun acceptsFrame(capturedAt: Long): Boolean =
-        isEnabled() && capturedAt >= from && capturedAt < until
+        isEnabled() && capturedAt >= from && capturedAt < until &&
+            lastCapturedAt?.let { capturedAt - it >= activeCadence } != false
 
     @Synchronized fun captured(at: Long) {
-        if (at < from || at >= until) return
+        if (at < from || at >= until || _status.value.saved >= activeLimit ||
+            lastCapturedAt?.let { at - it < activeCadence } == true) return
+        lastCapturedAt = at
         _status.value = _status.value.copy(saved = _status.value.saved + 1)
         isEnabled()
+    }
+
+    /** Frame-local scheduling hint only; this does not testify to a faint or recall. */
+    @Synchronized fun requestDepartureSample(observedAt: Long): Boolean {
+        if (!accepting || now() - observedAt !in 0..DEPARTURE_MAX_AGE_NANOS ||
+            observedAt <= lastClosedAt ||
+            (lastDeparture != Long.MIN_VALUE && observedAt - lastDeparture < DEPARTURE_WINDOW_NANOS) ||
+            isEnabled()) return false
+        lastDeparture = observedAt
+        open(observedAt, savedRegion(), duration = DEPARTURE_WINDOW_NANOS,
+            limit = minOf(sampleLimit, DEPARTURE_MAX_SAMPLES), cadence = DEPARTURE_INTERVAL_NANOS, settle = 0L)
+        return true
     }
 
     @Synchronized internal fun ready(observedAt: Long) {
@@ -92,6 +111,8 @@ class QteTypeIconSampling(
         until = Long.MIN_VALUE
         lastReady = Long.MIN_VALUE
         lastClosedAt = Long.MIN_VALUE
+        lastDeparture = Long.MIN_VALUE
+        activeLimit = sampleLimit; activeCadence = 0L; lastCapturedAt = null
         region = null
         _status.value = QteIconSamplingStatus()
     }
@@ -103,9 +124,11 @@ class QteTypeIconSampling(
         _status.value = _status.value.copy(sampling = false)
     }
 
-    private fun open(at: Long, area: AnchorRegion) {
-        from = at + settleNanos
-        until = at + WINDOW_NANOS
+    private fun open(at: Long, area: AnchorRegion, duration: Long = WINDOW_NANOS,
+        limit: Int = sampleLimit, cadence: Long = 0L, settle: Long = settleNanos) {
+        from = at + settle
+        until = at + duration
+        activeLimit = limit; activeCadence = cadence; lastCapturedAt = null
         region = area
         _status.value = QteIconSamplingStatus(sampling = true)
         expiry?.cancel()
@@ -147,5 +170,9 @@ class QteTypeIconSampling(
         const val WINDOW_NANOS = 10_000_000_000L
         const val CAPTURE_INTERVAL_NANOS = 125_000_000L
         const val MAX_SAMPLES = 80
+        internal const val DEPARTURE_WINDOW_NANOS = 3_000_000_000L
+        internal const val DEPARTURE_INTERVAL_NANOS = 400_000_000L
+        internal const val DEPARTURE_MAX_AGE_NANOS = 500_000_000L
+        internal const val DEPARTURE_MAX_SAMPLES = 4
     }
 }

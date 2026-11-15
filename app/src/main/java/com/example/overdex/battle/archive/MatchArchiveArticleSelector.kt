@@ -19,7 +19,8 @@ object MatchArchiveArticleSelector {
         // retained observation explicitly cites them as evidence. The bounded,
         // explicitly named QTE/hand/charged-HP calibration samples and a bounded real-battle
         // LCD preview are retained independently of successful recognition. Hand
-        // samples are raw manual experiments, not recall/send-out testimony.
+        // samples are raw calibration or bounded departure-hint captures, not
+        // recall/send-out testimony.
         articles.filter { !isRawArtifact(it) || isCalibrationSample(it) || it.articleId in previewIds }.forEach { article ->
             retainedIds += article.articleId
             article.referencedArticleIds().forEach(pendingIds::addLast)

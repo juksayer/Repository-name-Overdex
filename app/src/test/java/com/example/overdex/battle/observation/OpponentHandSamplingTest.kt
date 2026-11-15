@@ -64,4 +64,37 @@ class OpponentHandSamplingTest {
         assertEquals(100, gate.status.value.saved)
         assertFalse(gate.isEnabled())
     }
+
+    @Test fun `opponent departure hint opens a short bounded neutral sample`() {
+        gate.beginSession()
+        val start = now
+        assertTrue(gate.requestDepartureSample(start))
+        assertEquals(BattleCalibration().opponentTrainerHandRegion, gate.region)
+        repeat(4) { index ->
+            now = start + index * QteTypeIconSampling.DEPARTURE_INTERVAL_NANOS
+            assertTrue(gate.acceptsFrame(now))
+            gate.captured(now)
+            assertFalse(gate.acceptsFrame(now))
+        }
+        assertEquals(4, gate.status.value.saved)
+        assertFalse(gate.isEnabled())
+        assertFalse(gate.requestDepartureSample(now))
+        now = start + QteTypeIconSampling.DEPARTURE_WINDOW_NANOS
+        assertTrue(gate.requestDepartureSample(now))
+        assertTrue(gate.isEnabled())
+        gate.observe(MatchEnded(BattleResult.WIN), now)
+        assertFalse(gate.isEnabled())
+    }
+
+    @Test fun `stale departure cues cannot wake sampling or replace a manual draft`() {
+        gate.beginSession()
+        assertFalse(gate.requestDepartureSample(now - QteTypeIconSampling.DEPARTURE_MAX_AGE_NANOS - 1))
+        assertFalse(gate.requestDepartureSample(now + 1))
+        val draft = BattleCalibration().opponentTrainerHandRegion.copy(x = .72f)
+        assertTrue(gate.sample(draft))
+        assertFalse(gate.requestDepartureSample(now))
+        assertEquals(draft, gate.region)
+        gate.endSession()
+        assertFalse(gate.requestDepartureSample(now))
+    }
 }

@@ -195,7 +195,7 @@ Sources: [audio capture](../../app/src/main/java/com/example/overdex/battle/audi
 | Capture / experiment | Current box | Actual status |
 | --- | --- | --- |
 | QTE type icons | QTE Type Icons | Bounded raw crops. No moving-glyph/type classifier is currently enabled. |
-| Opponent arm / Poké Ball | Opponent Hand / Poké Ball | Manual bounded raw crops. No automatic hand-open, entrance, recall or faint classifier. |
+| Opponent arm / Poké Ball | Opponent Hand / Poké Ball | Manual calibration samples and bounded raw crops after an eligible opponent missing-bar hint. No automatic hand-open, entrance, recall or faint classifier. |
 | Charge execution scene | Charge-Move Execution | Registered raw retention; no dedicated consumer recognizing execution from this crop found. |
 | Initial inactive timer | Inactive Cards: Upper / Lower | InactiveMatchStartTimerCrop raw capture. Distinct from the working shading-clearance reader. |
 | Switch lockout timer | Inactive Cards: Upper / Lower | SwitchLockoutTimerCrop raw capture. No active dial/remaining-seconds recognizer consuming it found. |

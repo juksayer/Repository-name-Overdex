@@ -386,6 +386,16 @@ recover every final KO. Existing individual capture guards are unchanged. See
 the [recording review](../verification/2026-11-11-moondrop-2113-review.md) and
 [native badge visibility review](../verification/2026-11-11-final-native-badge-visibility.md).
 
+**Trainer-animation scope, November 15.** Blanche's hand and Poké Ball appear
+in the saved Moondrop hand region during the reviewed Vaporeon departure. An
+eligible frame-local opponent missing-bar hint now requests at most four raw
+hand crops within three seconds. The hint does not prove that a Pokémon left;
+the crops are not a hand-gesture, switch, or faint classification. Trainer
+reports that leaders, Rocket opponents and player poses may use different
+animations; that remains to be checked against separate examples. Living
+recalls, entrances, camera changes, and obscured regions are required controls
+before using a gesture as supporting evidence.
+
 Trainer clarification, November 12: “we dont get to see an empty hp bar for the
 final ko if it is a charge move.” This is a recognition requirement: do not make
 an empty-outline frame a prerequisite for that finish, or describe the whole
