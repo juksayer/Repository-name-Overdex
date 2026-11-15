@@ -23,7 +23,9 @@ data class ReplayAudioRecovery(val charges: List<ReplayRecoveredCharge> = emptyL
     val cries: List<ReplayRecoveredCry> = emptyList(), val unavailableReferences: List<String> = emptyList(),
     val unavailableArtifacts: List<String> = emptyList(),
     val referenceCandidateNames: List<String> = emptyList(),
-    val fastEffects: List<ReplayRecoveredFastEffect> = emptyList())
+    val fastEffects: List<ReplayRecoveredFastEffect> = emptyList(),
+    /** Unconfirmed multi-sound candidates; never substitute for an impact or faint. */
+    val mixedCandidates: List<ReplayMixedAudioCandidate> = emptyList())
 
 /** Bounded completed-archive study path. No writes, original Article mutations or live submissions. */
 object ReplayRetainedAudioRecovery {
@@ -51,8 +53,12 @@ object ReplayRetainedAudioRecovery {
                     p.byteCount in 44..1_600_044 }
             .sortedBy { it.monotonicTimeNanos }
         val ending = clips.filter { it.monotonicTimeNanos!! >= end - 40 * SECOND }.takeLast(64)
+        val departureCandidates = unique.mapNotNull { a ->
+            a.monotonicTimeNanos.takeIf { a.payload is ArchivedRepeatCryDepartureCandidate }
+        }
         val earlierEntries = clips.filter { a -> a.monotonicTimeNanos!! < end - 40 * SECOND &&
-            entries.any { kotlin.math.abs(a.monotonicTimeNanos!! - it) <= 2 * SECOND } }.takeLast(64)
+            (entries.any { kotlin.math.abs(a.monotonicTimeNanos!! - it) <= 2 * SECOND } ||
+                departureCandidates.any { a.monotonicTimeNanos!! in (it - 3 * SECOND)..(it + SECOND) }) }.takeLast(64)
         return (earlierEntries + ending).sortedBy { it.monotonicTimeNanos }
     }
 
@@ -75,6 +81,11 @@ object ReplayRetainedAudioRecovery {
             unavailableReferences = listOf("Reference fragments exceed recovery memory bound"))
         val missing = unavailableReferences + references.filter { r -> prepared.none { it.ref.name == r.name && it.ref.speciesId == r.speciesId && it.ref.sha256 == r.sha256 } }.map { it.name }
         val hits = mutableListOf<Hit>(); val unavailable = mutableListOf<String>()
+        val mixed = mutableListOf<ReplayMixedAudioCandidate>()
+        val soundsByCaptureTime = archive.articles.mapNotNull { a ->
+            val sound = a.payload as? ArchivedFastMoveSoundMeasured ?: return@mapNotNull null
+            a.monotonicTimeNanos?.let { it to sound }
+        }.groupBy({ it.first }, { it.second })
         val selected = selectedArticles(archive)
         val end = archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedMatchEnded }
             .mapNotNull { it.monotonicTimeNanos }.minOrNull()
@@ -92,6 +103,15 @@ object ReplayRetainedAudioRecovery {
                 unavailable += article.articleId; continue
             }
             val mono = StatChangeSoundMatcher.mono8k(audio)
+            if (article.sourceId == "FAST_MOVE_STREAM_AUDIO_CAPTURE" && mono.size <= 4 * 8000) {
+                val names = soundsByCaptureTime[article.monotonicTimeNanos].orEmpty()
+                    .flatMap { it.referenceCandidates }.filter { it.similarity >= .85f }
+                    .map { it.moveName.uppercase().filter(Char::isLetterOrDigit) }.toSet()
+                val eligible = references.filter { !it.charged && it.speciesId == null &&
+                    it.name.uppercase().filter(Char::isLetterOrDigit) in names }
+                if (eligible.size <= 8) mixed += ReplayMixedAudioRecovery.measure(audio, article.articleId,
+                    article.monotonicTimeNanos!!, p.sha256, eligible)
+            }
             // A 1.2 s window keeps cached FFTs bounded for the full reference
             // pool. Half-window overlap covers every 600 ms reference fragment.
             val window = 9600
@@ -133,7 +153,18 @@ object ReplayRetainedAudioRecovery {
                     } }) charges += ReplayRecoveredCharge(first.ref.name, onset, first.duration, fragments)
             }
         }
-        return ReplayAudioRecovery(charges, cries, missing.distinct(), unavailable, prepared.map { it.ref.name }.distinct().sorted(), fastEffects)
+        val groupedMixed = mutableListOf<ReplayMixedAudioCandidate>()
+        mixed.groupBy { it.moveName }.values.forEach { group ->
+            val pending = group.sortedBy { it.estimatedOnsetNanos }.toMutableList()
+            while (pending.isNotEmpty()) {
+                val cluster = pending.takeWhile { it.estimatedOnsetNanos - pending.first().estimatedOnsetNanos <= 80_000_000L }
+                pending.removeAll(cluster.toSet())
+                val onset = cluster.map { it.estimatedOnsetNanos }.sorted()[cluster.size / 2]
+                groupedMixed += ReplayMixedAudioCandidate(cluster.first().moveName, onset,
+                    cluster.flatMap { it.fragments }.distinctBy { Triple(it.articleId, it.referenceOffsetNanos, it.queryOffsetNanos) })
+            }
+        }
+        return ReplayAudioRecovery(charges, cries, missing.distinct(), unavailable, prepared.map { it.ref.name }.distinct().sorted(), fastEffects, groupedMixed)
     }
     fun sha(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
 }

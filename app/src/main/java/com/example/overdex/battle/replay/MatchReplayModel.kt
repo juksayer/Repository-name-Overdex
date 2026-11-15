@@ -275,6 +275,13 @@ class MatchReplayModel(
             { side, at -> identityTrackFor(side).nextAppearanceAfter(at) }, { hpEvidence.confirmsLiveHp(it) }, ::audioReferencesMissingAt)
     }
 
+    /** A source-linked Fast Move and independent faint must both already be supported. */
+    val finishingFastMoveAssociations: List<ReplayFinishingFastAssociation> by lazy {
+        ReplayFinishingFastAssociator.resolve(replayArticles, audioRecovery.mixedCandidates,
+            fastMoveCycles, knockoutTrack.knockouts, ::combatantFor,
+            { side, at -> identityTrackFor(side).appearanceStartAt(at) }, { hpEvidence.confirmsLiveHp(it) })
+    }
+
     private fun identityTrackFor(side: String) = if (side == "PLAYER") playerIdentityTrack else opponentIdentityTrack
 
     private val energyTrack = ReplayEnergyTrack(actionArticles.filter {
@@ -364,7 +371,13 @@ class MatchReplayModel(
                     sourceAtNanos = use.sourceAtNanos,
                     sourceArticleIds = association?.evidenceArticleIds ?: use.articleIds.sorted()))
             }
-            addAll(ReplayEventMarkers.fastMoves(fastMoveCycles))
+            addAll(ReplayEventMarkers.fastMoves(fastMoveCycles).map { marker ->
+                val link = finishingFastMoveAssociations.singleOrNull {
+                    it.attackingSide == marker.side && it.impactAtNanos == marker.atNanos
+                }
+                if (link == null) marker else marker.copy(label = marker.label + " · KO",
+                    sourceArticleIds = (link.moveArticleIds + link.audioArticleIds + link.faintArticleIds).distinct())
+            })
             knockoutTrack.knockouts.forEach { knockout ->
                 val combatant = ReplayCombatant(knockout.speciesName, null, knockout.appearanceAtNanos,
                     isFainted = true, faintedAtNanos = knockout.recordedAtNanos,
@@ -421,10 +434,10 @@ class MatchReplayModel(
             monotonicTimeNanos - milestone.atNanos in 0 until QTE_MILESTONE_VISUAL_NANOS
         }
         // The prebuilt tracks choose the correct known identity interval.
-        val player = alignKnockoutPose("PLAYER", applyFinishingChargeAssociation("PLAYER",
-            applyFaintState("PLAYER", playerIdentityTrack.combatantAt(monotonicTimeNanos), monotonicTimeNanos), monotonicTimeNanos))
-        val opponent = alignKnockoutPose("OPPONENT", applyFinishingChargeAssociation("OPPONENT",
-            applyFaintState("OPPONENT", opponentIdentityTrack.combatantAt(monotonicTimeNanos), monotonicTimeNanos), monotonicTimeNanos))
+        val player = applyFinishingFastAssociation("PLAYER", alignKnockoutPose("PLAYER", applyFinishingChargeAssociation("PLAYER",
+            applyFaintState("PLAYER", playerIdentityTrack.combatantAt(monotonicTimeNanos), monotonicTimeNanos), monotonicTimeNanos)))
+        val opponent = applyFinishingFastAssociation("OPPONENT", alignKnockoutPose("OPPONENT", applyFinishingChargeAssociation("OPPONENT",
+            applyFaintState("OPPONENT", opponentIdentityTrack.combatantAt(monotonicTimeNanos), monotonicTimeNanos), monotonicTimeNanos)))
         // A ranked cry candidate stays measurable evidence only. It cannot
         // create a replay combatant or sprite without an identity article.
 
@@ -452,7 +465,10 @@ class MatchReplayModel(
         // IDs/times remain available; no original testimony is retimed or replaced.
         val fastMoveActions = fastMoveCycles.mapNotNull { cycle ->
             val action = cycle.actionAt(monotonicTimeNanos) ?: return@mapNotNull null
-            action.takeIf { canPerformReplayAction(it.side, it.startedAtNanos, monotonicTimeNanos) }
+            action.takeIf { canPerformReplayAction(it.side, it.startedAtNanos, monotonicTimeNanos) }?.copy(
+                finishingAssociation = finishingFastMoveAssociations.singleOrNull {
+                    it.attackingSide == action.side && it.impactAtNanos == action.impactAtNanos
+                })
         }.groupBy { it.side }.values.flatMap { actions ->
             // Hold the arriving icon briefly before drawing that side's next
             // cycle. Unknown-duration archives retain independently observed hits.
@@ -782,6 +798,17 @@ class MatchReplayModel(
         is ArchivedDeviceMotionPulseMeasured -> "DEVICE MOTION PULSE"
         is ArchivedChargeMoveQteVibrationPatternInferred -> "CHARGE MOVE QTE: ${payload.pulseCount} PULSES"
         else -> payload::class.simpleName.orEmpty().replace("Archived", "")
+    }
+
+    private fun applyFinishingFastAssociation(side: String, combatant: ReplayCombatant?): ReplayCombatant? {
+        combatant ?: return null
+        if (!combatant.isFainted) return combatant
+        val link = finishingFastMoveAssociations.singleOrNull {
+            it.recipientSide == side && it.faintSourceAtNanos == combatant.faintedAtNanos &&
+                TeamRosterSpeciesAttributor.speciesKey(it.recipientSpeciesName) ==
+                    TeamRosterSpeciesAttributor.speciesKey(combatant.speciesName)
+        } ?: return combatant
+        return combatant.copy(finishingFastMoveAssociation = link)
     }
 
     private fun applyFaintState(
@@ -2078,6 +2105,7 @@ data class ReplayFastMoveAction(
     val timingReconstructed: Boolean = false,
     /** Source times of attached HP damage observations; impactAtNanos is presentation timing. */
     val damageObservationTimesNanos: Set<Long> = emptySet(),
+    val finishingAssociation: ReplayFinishingFastAssociation? = null,
 )
 
 data class ReplayChargedMoveAction(
@@ -2158,6 +2186,7 @@ data class ReplayCombatant(
     val knockoutBasis: String? = null,
     val knockoutSourceArticleIds: List<String> = emptyList(),
     val finishingChargeAssociation: ReplayFinishingChargeAssociation? = null,
+    val finishingFastMoveAssociation: ReplayFinishingFastAssociation? = null,
     /** Explicit trainer attribution; not an automatically witnessed battle event. */
     val trainerFinishingMove: String? = null,
     val playerTeamSlot: Int? = null,

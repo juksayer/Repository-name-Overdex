@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import java.io.File
@@ -38,6 +39,14 @@ class RecordedMoondropSliverVideoReplayReviewTest {
         val model = MatchReplayModel(archive, pokemon.associate { it.speciesName to it.dex },
             fastMovesBySpeciesName = fast, chargedMovesBySpeciesName = charged, audioRecovery = audio)
         val start = requireNotNull(model.matchStartNanos)
+        for (second in listOf(84.812, 135.896)) {
+            assertTrue("Retained overlapping audio should preserve the Incinerate candidate at $second",
+                audio.mixedCandidates.any { it.moveName == "Incinerate" &&
+                    kotlin.math.abs(it.estimatedOnsetNanos - start - (second * 1e9).toLong()) < 100_000_000L })
+        }
+        assertTrue("Recovered sound alone cannot create the missing hit or final faint",
+            model.finishingFastMoveAssociations.none { it.moveName == "Incinerate" &&
+                (it.recipientSpeciesName == "Sealeo" || it.recipientSpeciesName == "Vaporeon") })
         for (second in listOf(83.856, 85.402, 137.376)) {
             val hp = requireNotNull(model.sceneAt(start + (second * 1e9).toLong()).opponentHp)
             assertFalse("Historical HP must remain unconfirmed", hp.currentHpConfirmed)
