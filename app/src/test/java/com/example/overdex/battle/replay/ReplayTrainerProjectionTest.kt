@@ -86,6 +86,41 @@ class ReplayTrainerProjectionTest {
         assertNull(conflicting.apply(formScene, start + 2_000_000_000).fastMoveActions.single().type)
     }
 
+    @Test fun reviewedKoDoesNotDuplicateAnAutomaticallyRecoveredAttackOrSound() {
+        val hit = entry(ReplayCorrectionKind.FAST_MOVE, ReplayCorrectionSide.PLAYER, "Camerupt", 2_000_000_000, "Incinerate")
+        val faint = entry(ReplayCorrectionKind.FAINT, ReplayCorrectionSide.OPPONENT, "Vaporeon", 2_500_000_000, link = hit.id)
+        val link = ReplayFinishingFastAssociation("PLAYER", "Camerupt", "OPPONENT", "Vaporeon", start,
+            "Incinerate", start + 2_700_000_000, start + 2_700_000_000, start + 5_000_000_000,
+            listOf("hit"), listOf("audio"), listOf("count"))
+        val automatic = ReplayFastMoveAction("PLAYER", "Incinerate", PokemonType.FIRE, start, .7f,
+            impactAtNanos = link.impactAtNanos, finishingAssociation = link)
+        val p = ReplayTrainerProjection("match", start, listOf(hit, faint))
+        val at = start + hit.matchOffsetNanos
+        val result = p.apply(scene().copy(fastMoveActions = listOf(automatic)), at)
+        assertEquals(1, result.fastMoveActions.size)
+        assertEquals(setOf("TRAINER_ENTRY"), result.fastMoveActions.single().evidenceKinds)
+        val sound = ReplayAttackSoundEvent(start, "Incinerate", false, "PLAYER", link)
+        assertEquals(1, p.soundEvents(listOf(sound)) { scene().copy(fastMoveActions = listOf(automatic)) }.size)
+        assertTrue(p.soundEvents(listOf(sound)) { scene().copy(fastMoveActions = listOf(automatic)) }.single().finishingAssociation == null)
+    }
+
+    @Test fun reviewedKoDoesNotDuplicateTheColorRecoveredAttackOrSound() {
+        val hit = entry(ReplayCorrectionKind.FAST_MOVE, ReplayCorrectionSide.PLAYER, "Camerupt", 2_000_000_000, "Incinerate")
+        val faint = entry(ReplayCorrectionKind.FAINT, ReplayCorrectionSide.OPPONENT, "Vaporeon", 3_000_000_000, link = hit.id)
+        val impact = start + 2_080_000_000
+        val kinds = setOf("MIXED_AUDIO_COMPLETE_BAR_COLOR_CHANGE")
+        val automatic = ReplayFastMoveAction("PLAYER", "Incinerate", PokemonType.FIRE, start, .9f,
+            evidenceKinds = kinds, impactAtNanos = impact)
+        val p = ReplayTrainerProjection("match", start, listOf(hit, faint))
+        val source = scene().copy(fastMoveActions = listOf(automatic))
+        val result = p.apply(source, start + hit.matchOffsetNanos)
+        assertEquals(1, result.fastMoveActions.size)
+        assertEquals(setOf("TRAINER_ENTRY"), result.fastMoveActions.single().evidenceKinds)
+        val sound = ReplayAttackSoundEvent(start, "Incinerate", false, "PLAYER", evidenceKinds = kinds, impactAtNanos = impact)
+        assertEquals(1, p.soundEvents(listOf(sound)) { source }.size)
+        assertTrue(p.soundEvents(listOf(sound)) { source }.single().evidenceKinds.isEmpty())
+    }
+
     @Test fun chargedMoveUsesTrainerTimeAndDoesNotInventFaint() {
         val hit = entry(ReplayCorrectionKind.CHARGED_MOVE, ReplayCorrectionSide.PLAYER, "Camerupt", 2_000_000_000, "Rock Tomb")
         val projection = ReplayTrainerProjection("match", start, listOf(hit))

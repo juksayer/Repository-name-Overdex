@@ -26,7 +26,7 @@ data class ReplayEventMarker(
 
 enum class ReplayEventMarkerKind(val shortLabel: String) {
     MATCH_START("GO"), CHARGED_MOVE("CM"), FAINT("KO"),
-    BUFF("↑"), DEBUFF("↓"), ACTIVE_CHANGE("↔"), SHIELD("SH"), FAST_MOVE("FM"),
+    BUFF("↑"), DEBUFF("↓"), ACTIVE_CHANGE("↔"), SHIELD("SH"), FAST_MOVE("FM"), POSSIBLE_CRY("CR?"),
 }
 
 /** Pure cursor navigation also keeps different events at the same instant reachable. */
@@ -59,7 +59,8 @@ internal object ReplayEventMarkers {
             kind = ReplayEventMarkerKind.FAST_MOVE,
             atNanos = cycle.impactAtNanos,
             side = use.side,
-            label = "Fast move · ${use.moveName ?: "name unknown"}",
+            label = "Fast move · ${use.moveName ?: "name unknown"}" +
+                (if ("REPLAY_CONFIRMED_FAINT_AUDIO_MOTION" in use.evidenceKinds) " · landing estimated from cry" else ""),
             sourceAtNanos = use.observedAtNanos,
             sourceArticleIds = use.articleIds.sorted(),
         )

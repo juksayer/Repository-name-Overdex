@@ -44,9 +44,40 @@ class RecordedMoondropSliverVideoReplayReviewTest {
                 audio.mixedCandidates.any { it.moveName == "Incinerate" &&
                     kotlin.math.abs(it.estimatedOnsetNanos - start - (second * 1e9).toLong()) < 100_000_000L })
         }
-        assertTrue("Recovered sound alone cannot create the missing hit or final faint",
-            model.finishingFastMoveAssociations.none { it.moveName == "Incinerate" &&
-                (it.recipientSpeciesName == "Sealeo" || it.recipientSpeciesName == "Vaporeon") })
+        assertTrue("The preserved terminal clip should retain the partial Vaporeon cry as a candidate",
+            audio.partialCryCandidates.any { it.speciesId == 134 &&
+                kotlin.math.abs(it.estimatedOnsetNanos - start - (138.497 * 1e9).toLong()) < 100_000_000L &&
+                it.fragments.size >= 2 && it.fragments.all { fragment ->
+                    fragment.articleId == "68fc1d27-7778-4865-a0dd-bca408e84a73"
+                } })
+        assertTrue(model.eventMarkers.any { it.kind == ReplayEventMarkerKind.POSSIBLE_CRY &&
+            it.label.contains("Vaporeon") && it.side == null &&
+            "68fc1d27-7778-4865-a0dd-bca408e84a73" in it.sourceArticleIds })
+        val recoveredHit = model.sceneAt(start + (137.376 * 1e9).toLong()).fastMoveActions
+            .single { it.side == "PLAYER" && it.moveName == "Incinerate" }
+        assertEquals(1f, recoveredHit.progress)
+        assertTrue("The recovered hit must cite the source color transition",
+            "d5390588-c98b-45d6-8714-acc9ab0611af" in recoveredHit.sourceArticleIds)
+        assertTrue("The final faint is still not established by a cry or result alone",
+            model.finishingFastMoveAssociations.none { it.recipientSpeciesName == "Vaporeon" })
+        val sealeoKo = model.finishingFastMoveAssociations.singleOrNull {
+            it.recipientSpeciesName == "Sealeo" && it.moveName == "Incinerate"
+        }
+        assertNotNull("The recovered move and independently resolved Sealeo loss should be linked", sealeoKo)
+        val sealeoImpact = requireNotNull(sealeoKo).impactAtNanos
+        val automaticSealeo = model.sceneAt(sealeoImpact)
+        assertFalse("Reverse seeking must restore the living Sealeo before the inferred impact",
+            model.sceneAt(sealeoImpact - 10_000_000L).opponent!!.isFainted)
+        assertTrue(automaticSealeo.opponent!!.isFainted)
+        assertEquals("Sealeo", automaticSealeo.opponent!!.displayName)
+        assertTrue(automaticSealeo.fastMoveActions.any { it.side == "PLAYER" && it.moveName == "Incinerate" &&
+            it.progress == 1f && it.finishingAssociation?.recipientSpeciesName == "Sealeo" })
+        assertEquals(sealeoKo.faintSourceAtNanos, automaticSealeo.opponent!!.faintedAtNanos)
+        val afterSealeo = model.sceneAt(sealeoImpact + 500_000_000L)
+        assertTrue("A confirmed faint must not start another attack", afterSealeo.fastMoveActions.none {
+            it.side == "OPPONENT" && it.startedAtNanos >= sealeoImpact
+        })
+        println("AUTO_FAST_KOS=" + model.finishingFastMoveAssociations)
         System.getenv("OVERDEX_REVIEWED_CORRECTIONS")?.let { path ->
             val correctionFile = ReplayCorrectionTransfer.decode(File(path).readBytes())
             assertEquals(archive.matchId, correctionFile.sourceMatchId)
@@ -61,6 +92,8 @@ class RecordedMoondropSliverVideoReplayReviewTest {
                     it.side == "PLAYER" && it.moveName == "Incinerate" && it.type == PokemonType.FIRE &&
                         it.progress == 1f && "TRAINER_ENTRY" in it.evidenceKinds
                 })
+                assertEquals("An automatic recovery and its reviewed correction are one attack", 1,
+                    landing.fastMoveActions.count { it.side == "PLAYER" && it.moveName == "Incinerate" })
                 val faint = start + (faintAt * 1e9).toLong()
                 val down = projection.apply(model.sceneAt(faint), faint)
                 assertTrue("Reviewed recipient must faint", down.opponent!!.isFainted)

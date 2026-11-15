@@ -12,12 +12,14 @@ import kotlin.math.abs
 object FastMoveUseEvidence {
     const val RECIPIENT_AUDIO_IMPACT = "RECIPIENT_VISUAL_ARTIFACT_WITH_MATCHED_AUDIO"
     const val MATCHED_AUDIO = "SIDE_ATTRIBUTED_AUDIO_REFERENCE"
+    /** Completed Replay only: source-time sound, motion, repeat cry and an independently resolved loss. */
+    const val CONFIRMED_FAINT_AUDIO_MOTION = "REPLAY_CONFIRMED_FAINT_AUDIO_MOTION"
 
     fun isImpact(kind: String): Boolean = kind == "HP_BORDER_PULSE" || kind == "HP_DAMAGE_TICK" ||
-        kind == RECIPIENT_AUDIO_IMPACT
+        kind == RECIPIENT_AUDIO_IMPACT || kind == CONFIRMED_FAINT_AUDIO_MOTION
 
     fun establishesUse(kinds: Collection<String>): Boolean =
-        kinds.any { it == "HP_BORDER_PULSE" || it == "HP_DAMAGE_TICK" } ||
+        kinds.any { it == "HP_BORDER_PULSE" || it == "HP_DAMAGE_TICK" || it == CONFIRMED_FAINT_AUDIO_MOTION } ||
             (RECIPIENT_AUDIO_IMPACT in kinds && MATCHED_AUDIO in kinds)
 
     /**

@@ -183,4 +183,5 @@ private fun replayMarkerColor(kind: ReplayEventMarkerKind): Color = when (kind) 
     ReplayEventMarkerKind.DEBUFF -> Color(0xFFFF80AB)
     ReplayEventMarkerKind.ACTIVE_CHANGE -> Color(0xFF80DEEA)
     ReplayEventMarkerKind.SHIELD -> Color(0xFF90B6FF)
+    ReplayEventMarkerKind.POSSIBLE_CRY -> Color(0xFFCE93D8)
 }

@@ -25,7 +25,9 @@ data class ReplayAudioRecovery(val charges: List<ReplayRecoveredCharge> = emptyL
     val referenceCandidateNames: List<String> = emptyList(),
     val fastEffects: List<ReplayRecoveredFastEffect> = emptyList(),
     /** Unconfirmed multi-sound candidates; never substitute for an impact or faint. */
-    val mixedCandidates: List<ReplayMixedAudioCandidate> = emptyList())
+    val mixedCandidates: List<ReplayMixedAudioCandidate> = emptyList(),
+    /** Partial cry fits retain their limits; they do not identify side, departure or a faint. */
+    val partialCryCandidates: List<ReplayPartialCryCandidate> = emptyList())
 
 /** Bounded completed-archive study path. No writes, original Article mutations or live submissions. */
 object ReplayRetainedAudioRecovery {
@@ -82,6 +84,7 @@ object ReplayRetainedAudioRecovery {
         val missing = unavailableReferences + references.filter { r -> prepared.none { it.ref.name == r.name && it.ref.speciesId == r.speciesId && it.ref.sha256 == r.sha256 } }.map { it.name }
         val hits = mutableListOf<Hit>(); val unavailable = mutableListOf<String>()
         val mixed = mutableListOf<ReplayMixedAudioCandidate>()
+        val partialCries = mutableListOf<ReplayPartialCryCandidate>()
         val soundsByCaptureTime = archive.articles.mapNotNull { a ->
             val sound = a.payload as? ArchivedFastMoveSoundMeasured ?: return@mapNotNull null
             a.monotonicTimeNanos?.let { it to sound }
@@ -104,6 +107,10 @@ object ReplayRetainedAudioRecovery {
             }
             val mono = StatChangeSoundMatcher.mono8k(audio)
             if (article.sourceId == "FAST_MOVE_STREAM_AUDIO_CAPTURE" && mono.size <= 4 * 8000) {
+                if (end != null && article.monotonicTimeNanos!! >= end - 20 * SECOND) {
+                    partialCries += ReplayPartialCryRecovery.measure(audio, article.articleId,
+                        article.monotonicTimeNanos!!, p.sha256, references)
+                }
                 val names = soundsByCaptureTime[article.monotonicTimeNanos].orEmpty()
                     .flatMap { it.referenceCandidates }.filter { it.similarity >= .85f }
                     .map { it.moveName.uppercase().filter(Char::isLetterOrDigit) }.toSet()
@@ -164,7 +171,20 @@ object ReplayRetainedAudioRecovery {
                     cluster.flatMap { it.fragments }.distinctBy { Triple(it.articleId, it.referenceOffsetNanos, it.queryOffsetNanos) })
             }
         }
-        return ReplayAudioRecovery(charges, cries, missing.distinct(), unavailable, prepared.map { it.ref.name }.distinct().sorted(), fastEffects, groupedMixed)
+        val groupedPartial = mutableListOf<ReplayPartialCryCandidate>()
+        partialCries.groupBy { it.speciesId }.values.forEach { group ->
+            val pending = group.sortedBy { it.estimatedOnsetNanos }.toMutableList()
+            while (pending.isNotEmpty()) {
+                val cluster = pending.takeWhile { it.estimatedOnsetNanos - pending.first().estimatedOnsetNanos <= 80_000_000L }
+                pending.removeAll(cluster.toSet())
+                groupedPartial += ReplayPartialCryCandidate(cluster.first().speciesId,
+                    cluster.map { it.estimatedOnsetNanos }.sorted()[cluster.size / 2],
+                    cluster.flatMap { it.fragments }.distinctBy { Triple(it.articleId, it.referenceOffsetNanos, it.queryOffsetNanos) },
+                    cluster.maxOf { it.competingScore })
+            }
+        }
+        return ReplayAudioRecovery(charges, cries, missing.distinct(), unavailable,
+            prepared.map { it.ref.name }.distinct().sorted(), fastEffects, groupedMixed, groupedPartial)
     }
     fun sha(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
 }

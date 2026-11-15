@@ -23,6 +23,26 @@ internal class ReplayTrainerProjection(
             TeamRosterSpeciesAttributor.speciesKey(a) == TeamRosterSpeciesAttributor.speciesKey(b)
     }
 
+    private fun reviewed(link: ReplayFinishingFastAssociation): Boolean = entries.any { faint ->
+        if (faint.kind != ReplayCorrectionKind.FAINT || faint.side.name != link.recipientSide ||
+            !sameName(faint.speciesName, link.recipientSpeciesName)) return@any false
+        val move = creditedMove(faint) ?: return@any false
+        val impact = at(move) ?: return@any false
+        move.side.name == link.attackingSide && sameName(move.speciesName, link.attackerSpeciesName) &&
+            sameName(move.moveName.orEmpty(), link.moveName) && kotlin.math.abs(impact - link.impactAtNanos) <= REVIEWED_KO_WINDOW
+    }
+
+    private fun reviewedColor(side: String, name: String?, impact: Long, scene: ReplayScene): Boolean = entries.any { faint ->
+        val move = creditedMove(faint) ?: return@any false
+        val time = at(move) ?: return@any false
+        val actor = if (move.side == ReplayCorrectionSide.PLAYER) scene.player else scene.opponent
+        val recipient = if (faint.side == ReplayCorrectionSide.PLAYER) scene.player else scene.opponent
+        move.side.name == side && sameName(move.moveName.orEmpty(), name.orEmpty()) &&
+            actor?.let { sameName(it.speciesName, move.speciesName) } == true &&
+            recipient?.let { sameName(it.speciesName, faint.speciesName) } == true &&
+            kotlin.math.abs(time - impact) <= DUPLICATE_WINDOW
+    }
+
     /** Only an explicit, internally consistent link conveys trainer-asserted KO credit. */
     fun creditedMove(faint: ReplayTrainerCorrection): ReplayTrainerCorrection? {
         if (faint.kind != ReplayCorrectionKind.FAINT) return null
@@ -32,6 +52,12 @@ internal class ReplayTrainerProjection(
     }
 
     fun soundEvents(recorded: List<ReplayAttackSoundEvent>, sceneAt: (Long) -> ReplayScene): List<ReplayAttackSoundEvent> {
+        val retained = recorded.filterNot { event ->
+            event.finishingAssociation?.let(::reviewed) == true ||
+                ("MIXED_AUDIO_COMPLETE_BAR_COLOR_CHANGE" in event.evidenceKinds && event.impactAtNanos?.let {
+                    reviewedColor(event.side, event.moveName, it, sceneAt(it))
+                } == true)
+        }
         val additional = entries.mapNotNull { entry ->
             if (entry.kind == ReplayCorrectionKind.FAINT) return@mapNotNull null
             val impact = at(entry) ?: return@mapNotNull null
@@ -41,20 +67,26 @@ internal class ReplayTrainerProjection(
             if (actor == null || !sameName(actor.speciesName, entry.speciesName) || actor.identityEstablishedAtNanos > impact)
                 return@mapNotNull null
             val charged = entry.kind == ReplayCorrectionKind.CHARGED_MOVE
-            if (!charged && scene.fastMoveActions.any { it.side == entry.side.name &&
+            if (!charged && scene.fastMoveActions.any { it.finishingAssociation?.let(::reviewed) != true &&
+                    !("MIXED_AUDIO_COMPLETE_BAR_COLOR_CHANGE" in it.evidenceKinds && reviewedColor(it.side, it.moveName, it.impactAtNanos, scene)) && it.side == entry.side.name &&
                     kotlin.math.abs(it.impactAtNanos - impact) <= DUPLICATE_WINDOW &&
                     (it.moveName == null || sameName(it.moveName, entry.moveName.orEmpty())) }) return@mapNotNull null
             if (charged && scene.chargedMoveActions.any { it.side == entry.side.name &&
                     (it.moveName == null || sameName(it.moveName, entry.moveName.orEmpty())) }) return@mapNotNull null
-            if (recorded.any { it.side == entry.side.name && it.charged == charged &&
+            if (retained.any { it.side == entry.side.name && it.charged == charged &&
                     kotlin.math.abs(it.atNanos - start) <= DUPLICATE_WINDOW && sameName(it.moveName, entry.moveName.orEmpty()) })
                 return@mapNotNull null
             ReplayAttackSoundEvent(start, entry.moveName!!, charged, entry.side.name)
         }
-        return (recorded + additional).sortedBy { it.atNanos }
+        return (retained + additional).sortedBy { it.atNanos }
     }
 
     fun apply(scene: ReplayScene, cursor: Long): ReplayScene {
+        val retainedFast = scene.fastMoveActions.filterNot { action ->
+            action.finishingAssociation?.let(::reviewed) == true ||
+                ("MIXED_AUDIO_COMPLETE_BAR_COLOR_CHANGE" in action.evidenceKinds &&
+                    reviewedColor(action.side, action.moveName, action.impactAtNanos, scene))
+        }
         fun actor(side: ReplayCorrectionSide) = if (side == ReplayCorrectionSide.PLAYER) scene.player else scene.opponent
         fun applyFaint(side: ReplayCorrectionSide, combatant: ReplayCombatant?): ReplayCombatant? {
             combatant ?: return null
@@ -92,7 +124,7 @@ internal class ReplayTrainerProjection(
         }
         val fast = additions.filter { it.first.kind == ReplayCorrectionKind.FAST_MOVE }.mapNotNull { (entry, move, progress) ->
             val impact = at(entry)!!
-            if (scene.fastMoveActions.any { it.side == entry.side.name &&
+            if (retainedFast.any { it.side == entry.side.name &&
                     kotlin.math.abs(it.impactAtNanos - impact) <= DUPLICATE_WINDOW &&
                     (it.moveName == null || sameName(it.moveName, entry.moveName.orEmpty())) }) return@mapNotNull null
             val start = (impact - VISUAL_NANOS).coerceAtLeast(matchStartNanos)
@@ -111,8 +143,8 @@ internal class ReplayTrainerProjection(
         return scene.copy(player = player, opponent = opponent,
             playerHp = if (player?.knockoutBasis == "TRAINER_ENTRY") ReplayHpState(0f) else scene.playerHp,
             opponentHp = if (opponent?.knockoutBasis == "TRAINER_ENTRY") ReplayHpState(0f) else scene.opponentHp,
-            fastMoveActions = scene.fastMoveActions + fast, chargedMoveActions = scene.chargedMoveActions + charged)
+            fastMoveActions = retainedFast + fast, chargedMoveActions = scene.chargedMoveActions + charged)
     }
 
-    private companion object { const val VISUAL_NANOS = 700_000_000L; const val HOLD_NANOS = 100_000_000L; const val DUPLICATE_WINDOW = 450_000_000L }
+    private companion object { const val VISUAL_NANOS = 700_000_000L; const val HOLD_NANOS = 100_000_000L; const val DUPLICATE_WINDOW = 450_000_000L; const val REVIEWED_KO_WINDOW = 1_500_000_000L }
 }

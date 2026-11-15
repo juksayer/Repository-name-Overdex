@@ -329,7 +329,9 @@ class MatchReplayModel(
         (fastMoveCycles.mapNotNull { cycle ->
             val name = cycle.witness.moveName ?: return@mapNotNull null
             if (!canPerformReplayAction(cycle.witness.side, cycle.startedAtNanos, cycle.startedAtNanos)) return@mapNotNull null
-            ReplayAttackSoundEvent(cycle.startedAtNanos, name, false, cycle.witness.side)
+            ReplayAttackSoundEvent(cycle.startedAtNanos, name, false, cycle.witness.side,
+                finishingFastMoveAssociations.singleOrNull { it.attackingSide == cycle.witness.side &&
+                    it.impactAtNanos == cycle.impactAtNanos }, cycle.witness.evidenceKinds, cycle.impactAtNanos)
         } + recordedChargedMoveUses.mapNotNull { use ->
             val name = use.moveName ?: return@mapNotNull null
             if (matchEndNanos != null && use.animationAtNanos > matchEndNanos) return@mapNotNull null
@@ -384,18 +386,32 @@ class MatchReplayModel(
                     knockoutPresentationAtNanos = knockout.presentationAtNanos)
                 val association = finishingChargeAssociations.singleOrNull { it.recipientSide == knockout.side &&
                     it.recipientAppearanceAtNanos == knockout.appearanceAtNanos }
-                val poseAt = association?.presentationImpactAtNanos ?: alignKnockoutPose(knockout.side, combatant)?.knockoutPresentationAtNanos
+                val fastAssociation = finishingFastMoveAssociations.singleOrNull { it.recipientSide == knockout.side &&
+                    it.recipientAppearanceAtNanos == knockout.appearanceAtNanos }
+                val poseAt = association?.presentationImpactAtNanos ?: fastAssociation?.impactAtNanos ?: alignKnockoutPose(knockout.side, combatant)?.knockoutPresentationAtNanos
                     ?: knockout.presentationAtNanos
                 add(ReplayEventMarker("faint:${knockout.side}:${knockout.appearanceAtNanos}",
-                    ReplayEventMarkerKind.FAINT, poseAt, knockout.side, "Faint · ${BattleSpeciesDisplay.name(knockout.speciesName)}",
+                    ReplayEventMarkerKind.FAINT, poseAt, knockout.side, "Faint · ${BattleSpeciesDisplay.name(knockout.speciesName)}" +
+                        (fastAssociation?.let { " · KO by ${it.moveName}" } ?: ""),
                     sourceAtNanos = knockout.recordedAtNanos,
-                    sourceArticleIds = association?.evidenceArticleIds ?: knockout.sourceArticleIds))
+                    sourceArticleIds = association?.evidenceArticleIds ?: fastAssociation?.let {
+                        (it.moveArticleIds + it.audioArticleIds + it.faintArticleIds).distinct()
+                    } ?: knockout.sourceArticleIds))
             }
             finishingChargeAssociations.filter { it.replacementAtNanos == null }.forEach { link ->
                 add(ReplayEventMarker("recovered-faint:${link.recipientSide}:${link.recipientAppearanceAtNanos}",
                     ReplayEventMarkerKind.FAINT, link.presentationImpactAtNanos, link.recipientSide,
                     "Faint · ${BattleSpeciesDisplay.name(link.recipientSpeciesName)} · audio reconstruction",
                     sourceAtNanos = link.faintSourceAtNanos, sourceArticleIds = link.evidenceArticleIds))
+            }
+            audioRecovery.partialCryCandidates.forEach { cry ->
+                val actors = listOfNotNull(combatantFor("PLAYER", cry.estimatedOnsetNanos),
+                    combatantFor("OPPONENT", cry.estimatedOnsetNanos)).filter { it.speciesId == cry.speciesId }
+                val label = actors.singleOrNull()?.displayName ?: "#${cry.speciesId}"
+                add(ReplayEventMarker("partial-cry:${cry.speciesId}:${cry.estimatedOnsetNanos}",
+                    ReplayEventMarkerKind.POSSIBLE_CRY, cry.estimatedOnsetNanos, null,
+                    "Possible cry · $label · purpose unknown", sourceAtNanos = cry.fragments.minOf { it.captureAtNanos },
+                    sourceArticleIds = cry.fragments.map { it.articleId }.distinct()))
             }
             addAll(ReplayEventMarkers.activeChanges(mapOf("PLAYER" to playerIdentityTrack.appearances(),
                 "OPPONENT" to opponentIdentityTrack.appearances()), knockoutTrack.knockouts, replayArticlesById))
@@ -435,9 +451,9 @@ class MatchReplayModel(
         }
         // The prebuilt tracks choose the correct known identity interval.
         val player = applyFinishingFastAssociation("PLAYER", alignKnockoutPose("PLAYER", applyFinishingChargeAssociation("PLAYER",
-            applyFaintState("PLAYER", playerIdentityTrack.combatantAt(monotonicTimeNanos), monotonicTimeNanos), monotonicTimeNanos)))
+            applyFaintState("PLAYER", playerIdentityTrack.combatantAt(monotonicTimeNanos), monotonicTimeNanos), monotonicTimeNanos)), monotonicTimeNanos)
         val opponent = applyFinishingFastAssociation("OPPONENT", alignKnockoutPose("OPPONENT", applyFinishingChargeAssociation("OPPONENT",
-            applyFaintState("OPPONENT", opponentIdentityTrack.combatantAt(monotonicTimeNanos), monotonicTimeNanos), monotonicTimeNanos)))
+            applyFaintState("OPPONENT", opponentIdentityTrack.combatantAt(monotonicTimeNanos), monotonicTimeNanos), monotonicTimeNanos)), monotonicTimeNanos)
         // A ranked cry candidate stays measurable evidence only. It cannot
         // create a replay combatant or sprite without an identity article.
 
@@ -465,6 +481,9 @@ class MatchReplayModel(
         // IDs/times remain available; no original testimony is retimed or replaced.
         val fastMoveActions = fastMoveCycles.mapNotNull { cycle ->
             val action = cycle.actionAt(monotonicTimeNanos) ?: return@mapNotNull null
+            val actor = if (action.side == "PLAYER") player else opponent
+            val faintAt = actor?.knockoutPresentationAtNanos
+            if (actor?.isFainted == true && faintAt != null && action.startedAtNanos >= faintAt) return@mapNotNull null
             action.takeIf { canPerformReplayAction(it.side, it.startedAtNanos, monotonicTimeNanos) }?.copy(
                 finishingAssociation = finishingFastMoveAssociations.singleOrNull {
                     it.attackingSide == action.side && it.impactAtNanos == action.impactAtNanos
@@ -800,15 +819,22 @@ class MatchReplayModel(
         else -> payload::class.simpleName.orEmpty().replace("Archived", "")
     }
 
-    private fun applyFinishingFastAssociation(side: String, combatant: ReplayCombatant?): ReplayCombatant? {
+    private fun applyFinishingFastAssociation(side: String, combatant: ReplayCombatant?, cursor: Long): ReplayCombatant? {
         combatant ?: return null
-        if (!combatant.isFainted) return combatant
         val link = finishingFastMoveAssociations.singleOrNull {
-            it.recipientSide == side && it.faintSourceAtNanos == combatant.faintedAtNanos &&
+            it.recipientSide == side && cursor >= it.impactAtNanos &&
+                identityTrackFor(side).appearanceStartAt(cursor) == it.recipientAppearanceAtNanos &&
                 TeamRosterSpeciesAttributor.speciesKey(it.recipientSpeciesName) ==
                     TeamRosterSpeciesAttributor.speciesKey(combatant.speciesName)
         } ?: return combatant
-        return combatant.copy(finishingFastMoveAssociation = link)
+        val knockout = knockoutTrack.knockouts.singleOrNull { it.side == side &&
+            it.appearanceAtNanos == link.recipientAppearanceAtNanos && it.recordedAtNanos == link.faintSourceAtNanos &&
+            (it.replacementAtNanos == null || cursor < it.replacementAtNanos) } ?: return combatant
+        return combatant.copy(isFainted = true, faintedAtNanos = knockout.recordedAtNanos,
+            knockoutPresentationAtNanos = link.impactAtNanos, knockoutFinishByNanos = knockout.finishByNanos,
+            knockoutBasis = "INFERRED_FAST_MOVE_WITH_CONFIRMED_LOSS",
+            knockoutSourceArticleIds = (link.moveArticleIds + link.audioArticleIds + link.faintArticleIds).distinct(),
+            finishingFastMoveAssociation = link)
     }
 
     private fun applyFaintState(
@@ -1372,7 +1398,46 @@ class MatchReplayModel(
         // that same use. It must not erase an uncovered use elsewhere in the
         // match merely because at least one fused article survived archiving.
         val represented = fusedUses + evidence + recoverMeasuredHpSteps()
-        return (represented + recoverRecipientAudioUses(represented, coveredEvidenceIds))
+        val paired = recoverRecipientAudioUses(represented, coveredEvidenceIds)
+        val occupied = represented + paired
+        val mixedColorHits = ReplayMixedColorHitRecovery.recover(replayArticles, audioRecovery.mixedCandidates,
+            { at -> identifiedMoveFor("PLAYER", at) },
+            { move, at ->
+                val species = combatantFor("OPPONENT", at)?.speciesName
+                val possible = species?.let { possibleFastMoves[normalizeSpeciesName(it)] }
+                possible?.takeIf { it.isNotEmpty() }?.let { moves -> moves.any { normalizeSpeciesName(it.name) == normalizeSpeciesName(move) } }
+            }, ::sameFastMoveExchange).filterNot { recovered ->
+                occupied.any { existing -> existing.side == "PLAYER" &&
+                    FastMoveUseEvidence.establishesUse(existing.evidenceKinds) &&
+                    abs(existing.observedAtNanos - recovered.atNanos) <= FAST_MOVE_WITNESS_MERGE_NANOS &&
+                    sameFastMoveExchange(existing.observedAtNanos, recovered.atNanos) }
+            }.map { recovered ->
+                ReplayFastMoveUse("PLAYER", recovered.atNanos, recovered.moveName,
+                    setOf(FastMoveUseEvidence.RECIPIENT_AUDIO_IMPACT, FastMoveUseEvidence.MATCHED_AUDIO,
+                        "MIXED_AUDIO_COMPLETE_BAR_COLOR_CHANGE"),
+                    articleIds = recovered.articleIds, sourceTimesNanos = recovered.sourceTimesNanos)
+            }
+        val cryHits = ReplayConfirmedCryHitRecovery.recover(replayArticles, audioRecovery.mixedCandidates,
+            knockoutTrack.knockouts, { at ->
+                val name = identifiedMoveFor("PLAYER", at)
+                val duration = name?.let { possibleMoveFor("PLAYER", at, it)?.turns?.toLong()?.times(REPLAY_TURN_NANOS) }
+                if (name != null && duration != null) name to duration else null
+            }, { move, at ->
+                val species = combatantFor("OPPONENT", at)?.speciesName
+                species?.let { possibleFastMoves[normalizeSpeciesName(it)] }
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.let { moves -> moves.any { normalizeSpeciesName(it.name) == normalizeSpeciesName(move) } }
+            }, ::combatantFor, { side, at -> identityTrackFor(side).appearanceStartAt(at) }, ::sameFastMoveExchange)
+            .filterNot { recovered -> (occupied + mixedColorHits).any { existing ->
+                existing.side == "PLAYER" && FastMoveUseEvidence.establishesUse(existing.evidenceKinds) &&
+                    abs(existing.observedAtNanos - recovered.atNanos) <= FAST_MOVE_WITNESS_MERGE_NANOS &&
+                    sameFastMoveExchange(existing.observedAtNanos, recovered.atNanos)
+            } }.map { recovered ->
+                ReplayFastMoveUse("PLAYER", recovered.atNanos, recovered.moveName,
+                    setOf(FastMoveUseEvidence.CONFIRMED_FAINT_AUDIO_MOTION),
+                    articleIds = recovered.articleIds, sourceTimesNanos = recovered.sourceTimesNanos)
+            }
+        return (occupied + mixedColorHits + cryHits)
             .groupBy { it.side }
             .values
             .flatMap { sideEvidence ->

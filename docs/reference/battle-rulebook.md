@@ -202,6 +202,7 @@ recognition completion and delivery order do not say when the sound began.
 | AUDIO-05 | One side has exactly one configured/eligible Fast Move, uniquely owned across the two scopes, and a complete global audio comparison passes the existing score and margin checks. | That move may supply strict audio support; another same-side alternative is not required. A separate eligible impact is still required for a use. | Configuration alone, missing/duplicate references, weak scores, shared ownership, or stale species context do not prove an attack. Reproduced with original Pixel Sealeo evidence; see [finishing-hit verification](../verification/2026-11-13-sealeo-finishing-hit.md). |
 | AUDIO-06 — completed Replay | Preserved audio onset and recipient visual effect align within the existing source-time allowance, but publication times differ by more than the live delivery budget. | Completed Replay may recover the pair using captured clocks and unchanged side, appearance, charge and deduplication guards. | This does not extend live retention, align unrelated source times, admit audio alone, or cross a switch. Publication delay cannot create another use. |
 | AUDIO-07 — completed Replay candidate | Two nonoverlapping segments of a sound reference align to one source-time occurrence while another move is audible. | Keep the segments and competing sound as possible shared-time occurrences; investigate ownership and any separately supported impact. | Multiple segments or overlapping captures are not multiple moves, and a sound is not a faint. The first low-threshold experiment matched Hidden Power incorrectly; the candidate-only matcher rejects that example, but broader calibration is still required. See [mixed-audio review](../verification/2026-11-15-incinerate-mixed-audio-review.md) and [Replay implementation](../verification/2026-11-15-mixed-audio-replay.md). |
+| AUDIO-08 — completed Replay candidate | Two nonoverlapping portions of a cry reference align to the same estimated onset in preserved audio and exceed the competing-reference margin. | Show a possible cry with its original clip references and estimated onset. | The clip may start after the estimated onset. Species, side and purpose are not independently confirmed by this candidate, and it cannot by itself establish a faint. |
 
 The source-time guard also rejects pairing across an intervening confirmed
 faint or charged-move boundary. A sound beginning shortly after the visual
@@ -594,6 +595,18 @@ Pixel's unresolved mirror performer, aggregate losses and the unrecorded final
 Gourgeist faint remain outside this path. Live inference is unchanged. MOVE-02's
 appearance ownership also forbids assigning Camerupt's use to an earlier
 Turtonator appearance.
+
+**MOVE-05 — mixed-audio additions; completed Replay, November 15.** A uniquely
+owned mixed-audio candidate, independently supported recipient effect, and
+compatible complete-bar color change may recover a hit without deciding whether
+it was lethal. Separately, a uniquely owned mixed-audio candidate with compatible
+attacker motion, an independently localized repeat cry, and a uniquely resolved
+team loss may support a finishing association when the appearances and phase
+remain consistent and no competing attack intervenes. A landing displayed at
+the cry is an estimate for presentation, not a measured damage time. Preserve
+all original clocks and testimony; missing loss evidence, a living switch,
+ambiguous ownership, or a competing attack must not create a KO. See the
+[recorded verification](../verification/2026-11-15-automatic-finishing-recovery.md).
 
 **MOVE-05 review proposal — November 14, not implemented.** If native evidence
 has established zero shields for a side in the same Match, consider carrying

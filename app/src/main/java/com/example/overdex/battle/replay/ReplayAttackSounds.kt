@@ -17,6 +17,9 @@ data class ReplayAttackSoundEvent(
     val moveName: String,
     val charged: Boolean,
     val side: String,
+    val finishingAssociation: ReplayFinishingFastAssociation? = null,
+    val evidenceKinds: Set<String> = emptySet(),
+    val impactAtNanos: Long? = null,
 )
 
 internal data class ReplayAttackSoundMix(val left: Float, val right: Float)
