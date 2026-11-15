@@ -83,6 +83,14 @@ returning as the last survivor; low HP alone cannot establish that an entry did
 not just occur. This clarification is additional context, not a rewritten audio
 observation or an automatically recovered cry.
 
+The trainer further identifies the opponent's successive Vaporeon cries as
+its entrance and its faint, with no intervening cry from another opponent.
+That sequence addresses the damaged-re-entry alternative for the second cry,
+provided the cries and uninterrupted appearance are independently established.
+The existing archive reader has not accepted those two Vaporeon cries, so this
+is trainer-supplied context to evaluate against the retained audio and controls,
+not a claim that the current reader already counted them.
+
 A read-only JVM review ran the production archived-audio loader with the actual
 ZIP and packaged references, then constructed `MatchReplayModel`. It recovered
 no cries, charges or fast effects, and reported unavailable references

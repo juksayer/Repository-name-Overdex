@@ -864,6 +864,17 @@ proposal with previously damaged re-entries, low-HP charged sequences that
 continue, active same-species mirrors, HP/read delays, and sound reference
 competitors before enabling automatic faint attribution.
 
+**Successive-cry refinement:** The trainer identifies two successive opponent
+Vaporeon cries in this match: its entrance and its later faint, with no other
+opponent cry between them. When both are independently identified and the
+same appearance remains active, this sequence adds context beyond a single
+low-HP cry: a damaged re-entry can explain the first cry but does not by itself
+explain a separate subsequent cry. Keep the two source intervals distinct and
+check for missed cries, overlapping clips of the same sound, re-entry, and other
+cry-producing events before treating the second as an automatic faint. This is
+a trainer-labelled positive case; current archived recognition has not yet
+accepted both cries and the sequence has not been validated as a universal rule.
+
 The existing production RMS-envelope matcher was not validated by this pilot;
 the experiment compared actual waveforms against a small roster-specific
 reference pool. Cry species, cry purpose, side and finishing-move identity
