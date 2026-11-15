@@ -291,8 +291,12 @@ internal class LiveActiveHpBarWitness(
             if (chargedImpactWatch.cameraCueIds(request.side, request.anchor,
                     frame.capturedAtMonotonicTimeNanos) != null) return@forEach
             val bounds = TrackedTerminalHpBarMeasurer.searchBounds(frame.bitmap.width, frame.bitmap.height, request.anchor)
-            if (bounds == null || !frame.canObserve(bounds)) return@forEach
-            val sample = measureCompleteFrame(frame, request.anchor) ?: return@forEach
+            val sample = if (bounds != null && frame.canObserve(bounds))
+                measureCompleteFrame(frame, request.anchor) else null
+            if (sample == null) {
+                completeTrack.unavailable(request.side, frame.capturedAtMonotonicTimeNanos, request.generation)
+                return@forEach
+            }
             recordComplete(match, frame, request.side, sample, request.generation)
         }
     }
@@ -355,7 +359,13 @@ internal class LiveActiveHpBarWitness(
         terminalDiagnostics.checked("${kind}_${if (!observable) "OBSCURED" else sample?.fillColor?.name ?: "UNAVAILABLE"}",
             System.nanoTime() - started,
             if (cpuStarted != null && cpuFinished != null && cpuFinished >= cpuStarted) cpuFinished - cpuStarted else null)
-        if (complete == null) return
+        if (complete == null) {
+            synchronized(stateLock) {
+                if (!ended && isEnabled() && chargedImpactWatch.current(request))
+                    completeTrack.unavailable(request.side, frame.capturedAtMonotonicTimeNanos, completeGeneration)
+            }
+            return
+        }
         synchronized(stateLock) {
             if (ended || !isEnabled() || !chargedImpactWatch.current(request) ||
                 !chargedImpactWatch.acceptGeometry(request, complete.anchor(), frame.capturedAtMonotonicTimeNanos)) return

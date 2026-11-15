@@ -16,8 +16,46 @@ class CompleteHpBarTrackTest {
             else -> 0xff202020.toInt()
         }
     }
-    private fun sample(live: Int = 0) = requireNotNull(
-        TrackedTerminalHpBarMeasurer.measureComplete(400, 300, anchor, pixelAt = pixels(live)))
+    private fun sample(live: Int = 0, damage: Int = 100) = requireNotNull(
+        TrackedTerminalHpBarMeasurer.measureComplete(400, 300, anchor, pixelAt = pixels(live, damage)))
+
+    @Test fun `live damage trail changes are published without a faint or empty hp`() {
+        val track = CompleteHpBarTrack()
+        assertEquals("LIVE_COLOR", track.accept(side, sample(live = 1, damage = 0), 1, 0)?.status)
+        val damage = requireNotNull(track.accept(side, sample(live = 1), 50_000_001, 0))
+        assertEquals("LIVE_COLOR", damage.status)
+        assertEquals(1, damage.sample.liveColumns)
+        assertTrue(damage.sample.damageColumns > 0)
+        assertNull(damage.candidateSince)
+        assertNotEquals(HpBarFillColor.EMPTY, damage.sample.hpSample?.fillColor)
+        assertNull(track.accept(side, sample(live = 1), 60_000_001, 0))
+        assertEquals("LIVE_COLOR", track.accept(side, sample(live = 1, damage = 0), 70_000_001, 0)?.status)
+    }
+
+    @Test fun `unavailable frame breaks a color run without inventing a measurement`() {
+        val track = CompleteHpBarTrack()
+        track.accept(side, sample(), 1, 0)
+        track.accept(side, sample(), 50_000_001, 0)
+        track.unavailable(side, 75_000_001, 0)
+        val restarted = requireNotNull(track.accept(side, sample(), 100_000_001, 0))
+        assertEquals("DAMAGE_COLOR", restarted.status)
+        assertEquals(100_000_001L, restarted.candidateSince)
+        assertNull(track.accept(side, sample(), 150_000_001, 0))
+        assertEquals("SUSTAINED_DAMAGE_COLOR", track.accept(side, sample(), 200_000_001, 0)?.status)
+    }
+
+    @Test fun `delayed sample cannot bridge a later unavailable frame`() {
+        val track = CompleteHpBarTrack()
+        track.accept(side, sample(), 1, 0)
+        track.unavailable(side, 80_000_001, 0)
+        track.accept(side, sample(), 50_000_001, 0)
+        val restarted = requireNotNull(track.accept(side, sample(), 100_000_001, 0))
+        assertEquals("DAMAGE_COLOR", restarted.status)
+        assertEquals(100_000_001L, restarted.candidateSince)
+        track.unavailable(side, 110_000_001, -1)
+        track.accept(side, sample(), 150_000_001, 0)
+        assertEquals("SUSTAINED_DAMAGE_COLOR", track.accept(side, sample(), 200_000_001, 0)?.status)
+    }
 
     @Test fun `whole orange remainder retains geometry but never reports zero hp`() {
         val sample = sample()

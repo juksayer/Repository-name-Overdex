@@ -86,6 +86,13 @@ class RecordedSealeoGapRecoveryTest {
         assertTrue("The real red survivor is preserved", sample.liveColumns > 0)
         assertTrue("The real damage trail is present", sample.damageColumns > 0)
         assertFalse("A surviving Sealeo cannot be orange-only", sample.orangeOnly)
+        val tracker = CompleteHpBarTrack()
+        val side = com.example.overdex.battle.custody.ActivePokemonSide.OPPONENT
+        tracker.accept(side, sample.copy(damageColumns = 0), 1, 0)
+        val mixed = requireNotNull(tracker.accept(side, sample, 50_000_001, 0))
+        assertEquals("LIVE_COLOR", mixed.status)
+        assertTrue(mixed.sample.liveColumns > 0 && mixed.sample.damageColumns > 0)
+        assertNull("Damage color does not start an orange-only candidate", mixed.candidateSince)
 
         // Reproduce the exploratory median-per-column test on the original
         // source rectangle; a lone orange-colored column precedes the red.

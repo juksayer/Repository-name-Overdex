@@ -434,6 +434,14 @@ obscured pixels, uncertain colors and background blending remain unknown rather
 than being filled or excluded merely to reach either conclusion. See the
 [Sealeo background counterexamples](../verification/2026-11-15-sealeo-background-ambiguity.md).
 
+**Complete-bar evidence continuity, November 15:** If a readable complete bar
+retains live-colored pixels while an orange trail appears or disappears, record
+the changed color evidence at that frame's source time; it is not an HP amount,
+confirmed hit or faint. An unreadable sampled frame interrupts a pending
+orange-only persistence run without creating an empty measurement or discarding
+the last usable geometry. A dropped or never-delivered frame remains a separate
+capture limitation. See the [reader verification](../verification/2026-11-15-hp-reader-update.md).
+
 **User-stated timing interpretation, pending validation:** In the Sealeo
 exchange, the remaining sliver's fade and disappearance represent the final
 hit's damage resolving at the end of the turn. Compare this interpretation with
