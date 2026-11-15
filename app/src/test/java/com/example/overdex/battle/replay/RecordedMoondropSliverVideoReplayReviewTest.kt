@@ -47,6 +47,33 @@ class RecordedMoondropSliverVideoReplayReviewTest {
         assertTrue("Recovered sound alone cannot create the missing hit or final faint",
             model.finishingFastMoveAssociations.none { it.moveName == "Incinerate" &&
                 (it.recipientSpeciesName == "Sealeo" || it.recipientSpeciesName == "Vaporeon") })
+        System.getenv("OVERDEX_REVIEWED_CORRECTIONS")?.let { path ->
+            val correctionFile = ReplayCorrectionTransfer.decode(File(path).readBytes())
+            assertEquals(archive.matchId, correctionFile.sourceMatchId)
+            val projection = ReplayTrainerProjection(archive.matchId, start, correctionFile.entries, fast)
+            for ((recipient, hitAt, faintAt) in listOf(Triple("Sealeo", 85.63, 86.42),
+                Triple("Vaporeon", 137.30, 139.40))) {
+                val hit = start + (hitAt * 1e9).toLong()
+                val landing = projection.apply(model.sceneAt(hit), hit)
+                assertEquals("Gourgeist", landing.player?.displayName)
+                assertEquals(recipient, landing.opponent?.displayName)
+                assertTrue("Reviewed Incinerate must land", landing.fastMoveActions.any {
+                    it.side == "PLAYER" && it.moveName == "Incinerate" && it.type == PokemonType.FIRE &&
+                        it.progress == 1f && "TRAINER_ENTRY" in it.evidenceKinds
+                })
+                val faint = start + (faintAt * 1e9).toLong()
+                val down = projection.apply(model.sceneAt(faint), faint)
+                assertTrue("Reviewed recipient must faint", down.opponent!!.isFainted)
+                assertEquals("Incinerate", down.opponent!!.trainerFinishingMove)
+                val earlier = start + ((hitAt - 1.0) * 1e9).toLong()
+                val reversed = projection.apply(model.sceneAt(earlier), earlier)
+                assertFalse("Reverse seek must not retain the later faint", reversed.opponent!!.isFainted)
+            }
+            val otherMatch = ReplayTrainerProjection("different-match", start, correctionFile.entries, fast)
+            val hit = start + (85.63 * 1e9).toLong()
+            assertFalse("Corrections cannot affect another match", otherMatch.apply(model.sceneAt(hit), hit)
+                .fastMoveActions.any { "TRAINER_ENTRY" in it.evidenceKinds })
+        }
         for (second in listOf(83.856, 85.402, 137.376)) {
             val hp = requireNotNull(model.sceneAt(start + (second * 1e9).toLong()).opponentHp)
             assertFalse("Historical HP must remain unconfirmed", hp.currentHpConfirmed)

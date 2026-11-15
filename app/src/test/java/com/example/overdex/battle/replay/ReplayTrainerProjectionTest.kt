@@ -3,6 +3,8 @@ package com.example.overdex.battle.replay
 import org.junit.Assert.*
 import org.junit.Test
 import java.util.UUID
+import com.example.overdex.model.Move
+import com.example.overdex.model.PokemonType
 
 class ReplayTrainerProjectionTest {
     private val start = 10_000_000_000L
@@ -62,6 +64,26 @@ class ReplayTrainerProjectionTest {
         val laterAppearance = scene().copy(opponent = ReplayCombatant("Vaporeon", 134, impact + 1))
         val faint = entry(ReplayCorrectionKind.FAINT, ReplayCorrectionSide.OPPONENT, "Vaporeon", 2_000_000_000, link = hit.id)
         assertFalse(ReplayTrainerProjection("match", start, listOf(hit, faint)).apply(laterAppearance, impact + 5).opponent!!.isFainted)
+    }
+
+    @Test fun bareSpeciesCanMatchAFormWithoutAssumingItAndDifferentFormsStayDistinct() {
+        val hit = entry(ReplayCorrectionKind.FAST_MOVE, ReplayCorrectionSide.PLAYER, "Gourgeist", 2_000_000_000, "Incinerate")
+        val bare = ReplayTrainerProjection("match", start, listOf(hit))
+        val formScene = scene().copy(player = ReplayCombatant("Gourgeist (Average)", 711, start))
+        assertEquals("Incinerate", bare.apply(formScene, start + 2_000_000_000).fastMoveActions.single().moveName)
+        val explicit = ReplayTrainerProjection("match", start, listOf(hit.copy(speciesName = "Gourgeist (Super)")))
+        assertTrue(explicit.apply(formScene, start + 2_000_000_000).fastMoveActions.isEmpty())
+    }
+
+    @Test fun trainerMoveUsesUnambiguousReferenceTypeEvenWhenAbsentFromSpeciesCatalogue() {
+        val hit = entry(ReplayCorrectionKind.FAST_MOVE, ReplayCorrectionSide.PLAYER, "Gourgeist", 2_000_000_000, "Incinerate")
+        val fire = Move("Incinerate", PokemonType.FIRE, 1, 1, true)
+        val formScene = scene().copy(player = ReplayCombatant("Gourgeist (Average)", 711, start))
+        val projection = ReplayTrainerProjection("match", start, listOf(hit), mapOf("Camerupt" to listOf(fire)))
+        assertEquals(PokemonType.FIRE, projection.apply(formScene, start + 2_000_000_000).fastMoveActions.single().type)
+        val conflicting = ReplayTrainerProjection("match", start, listOf(hit),
+            mapOf("Camerupt" to listOf(fire), "Other" to listOf(fire.copy(type = PokemonType.WATER))))
+        assertNull(conflicting.apply(formScene, start + 2_000_000_000).fastMoveActions.single().type)
     }
 
     @Test fun chargedMoveUsesTrainerTimeAndDoesNotInventFaint() {

@@ -1,6 +1,7 @@
 package com.example.overdex.battle.replay
 
 import com.example.overdex.model.Move
+import com.example.overdex.battle.observation.TeamRosterSpeciesAttributor
 
 /** Presentation of separately retained trainer statements. Does not modify archive testimony. */
 internal class ReplayTrainerProjection(
@@ -14,7 +15,13 @@ internal class ReplayTrainerProjection(
     }.distinctBy { it.id }
     private fun at(entry: ReplayTrainerCorrection): Long? =
         runCatching { Math.addExact(matchStartNanos, entry.matchOffsetNanos) }.getOrNull()
-    private fun sameName(a: String, b: String) = a.filter(Char::isLetterOrDigit).equals(b.filter(Char::isLetterOrDigit), true)
+    private fun sameName(a: String, b: String): Boolean {
+        if (a.filter(Char::isLetterOrDigit).equals(b.filter(Char::isLetterOrDigit), true)) return true
+        // A source without a form label does not assert a particular form or size.
+        // Two explicitly different forms must still remain distinct.
+        return ('(' !in a || '(' !in b) &&
+            TeamRosterSpeciesAttributor.speciesKey(a) == TeamRosterSpeciesAttributor.speciesKey(b)
+    }
 
     /** Only an explicit, internally consistent link conveys trainer-asserted KO credit. */
     fun creditedMove(faint: ReplayTrainerCorrection): ReplayTrainerCorrection? {
@@ -71,8 +78,14 @@ internal class ReplayTrainerProjection(
             val combatant = actor(entry.side) ?: return@mapNotNull null
             if (!sameName(combatant.speciesName, entry.speciesName) || combatant.identityEstablishedAtNanos > impact)
                 return@mapNotNull null
-            val move = moves.entries.firstOrNull { sameName(it.key, entry.speciesName) }?.value
-                ?.firstOrNull { sameName(it.name, entry.moveName.orEmpty()) }
+            val isFast = entry.kind == ReplayCorrectionKind.FAST_MOVE
+            val scoped = moves.entries.firstOrNull { sameName(it.key, entry.speciesName) }?.value
+                ?.firstOrNull { it.isFast == isFast && sameName(it.name, entry.moveName.orEmpty()) }
+            // The trainer may supply a valid move absent from the species' current
+            // catalogue. A unique type from the match's other references can still
+            // color the icon; it does not establish legality or create an attack.
+            val global = moves.values.flatten().filter { it.isFast == isFast && sameName(it.name, entry.moveName.orEmpty()) }
+            val move = scoped ?: global.takeIf { it.map(Move::type).distinct().size == 1 }?.firstOrNull()
             val duration = (impact - start).coerceAtLeast(1)
             val progress = ((cursor - start).toFloat() / duration).coerceIn(0f, 1f)
             Triple(entry, move, progress)
