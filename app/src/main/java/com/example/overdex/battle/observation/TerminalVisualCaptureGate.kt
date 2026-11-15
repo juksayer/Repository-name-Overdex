@@ -6,7 +6,7 @@ import com.example.overdex.battle.reality.RealityArticle
 /** Attention reasons only. None asserts a disappearance, a zero bar, or a knockout. */
 enum class TerminalVisualTrigger {
     LOW_HP_TRANSITION, FAST_MOVE_WITH_LOW_HP, INDEPENDENT_IMPACT_WITH_LOW_HP,
-    CHARGED_IMPACT, CHARGED_RETURN, DEPARTURE, PLAYER_QTE_PROGRESS, COMPLETE_BAR_DAMAGE_HINT,
+    CHARGED_IMPACT, CHARGED_RETURN, DEPARTURE, PLAYER_QTE_PROGRESS, COMPLETE_BAR_DAMAGE_HINT, FRAME_COLOR_HINT,
 }
 
 internal data class TerminalVisualCaptureWindow(
@@ -86,10 +86,14 @@ class TerminalVisualCaptureGate(private val now: () -> Long = System::nanoTime) 
     @Synchronized fun request(
         side: ActivePokemonSide, trigger: TerminalVisualTrigger, sourceAt: Long,
         evidenceReferences: List<String> = emptyList(),
-    ): Boolean {
+    ): Boolean = requestInternal(side, trigger, sourceAt, evidenceReferences, false)
+
+    private fun requestInternal(side: ActivePokemonSide, trigger: TerminalVisualTrigger, sourceAt: Long,
+        evidenceReferences: List<String>, validatedFrame: Boolean): Boolean {
         expire()
         if (!accepting || !triggerFresh(sourceAt) || sourceAt < sessionAt ||
             sourceAt <= (boundaries[side] ?: Long.MIN_VALUE)) return false
+        if (trigger == TerminalVisualTrigger.FRAME_COLOR_HINT && !validatedFrame) return false
         // Return has one owned-phase budget and must use the checked helper.
         if (trigger == TerminalVisualTrigger.CHARGED_RETURN || trigger == TerminalVisualTrigger.PLAYER_QTE_PROGRESS) return false
         if (trigger == TerminalVisualTrigger.CHARGED_IMPACT &&
@@ -98,9 +102,9 @@ class TerminalVisualCaptureGate(private val now: () -> Long = System::nanoTime) 
         val hp = lowHp[side]?.takeIf { sourceAt - it.at in 0..LOW_HP_FRESH_NANOS }
         if (trigger in LOW_HP_REQUIRED && hp == null) return false
         val refs = (evidenceReferences + listOfNotNull(hp?.articleId)).filter { it.isNotBlank() }.distinct()
-        // The frame-local missing-bar callback is a scheduling hint, not an
-        // Article. Its subsequent crops are the evidence; do not invent an ID.
-        if (refs.isEmpty() && trigger != TerminalVisualTrigger.DEPARTURE) return false
+        // These direct callbacks precede Article publication. Their later
+        // crops are evidence; do not invent an Article ID for the cue.
+        if (refs.isEmpty() && trigger !in setOf(TerminalVisualTrigger.DEPARTURE, TerminalVisualTrigger.FRAME_COLOR_HINT)) return false
         val key = "$side:$trigger:${evidenceReferences.sorted().joinToString(",").ifEmpty { sourceAt.toString() }}"
         if (!triggerKeys.add(key)) return false
         while (triggerKeys.size > 128) triggerKeys.remove(triggerKeys.first())
@@ -108,6 +112,12 @@ class TerminalVisualCaptureGate(private val now: () -> Long = System::nanoTime) 
             sourceAt < (cooldownUntil[side] ?: Long.MIN_VALUE)) return false
         openWindow(side, trigger, sourceAt, refs)
         return true
+    }
+
+    /** Accepted complete-bar measurement can schedule work before Timeline publication. */
+    @Synchronized internal fun requestFrameColorHint(payload: CompleteHpBarObserved, sourceAt: Long): Boolean {
+        if (now() - sourceAt !in 0..MAX_SOURCE_AGE_NANOS || !isCompleteBarAttentionHint(payload)) return false
+        return requestInternal(payload.side, TerminalVisualTrigger.FRAME_COLOR_HINT, sourceAt, emptyList(), true)
     }
 
     private fun openWindow(side: ActivePokemonSide, trigger: TerminalVisualTrigger, sourceAt: Long, refs: List<String>,
@@ -347,16 +357,9 @@ class TerminalVisualCaptureGate(private val now: () -> Long = System::nanoTime) 
             is CompleteHpBarObserved -> {
                 // A small visible color span can be obscured or nonlethal. It
                 // only opens an acquisition window, even when pixels are unknown.
-                val area = payload.interiorColumns
-                val valid = article.sourceId.id == "COMPLETE_${payload.side.name}_HP_BAR_FRAME_WITNESS" &&
-                    payload.sourceWidth > 0 && payload.sourceHeight > 0 && payload.barLeft >= 0 &&
-                    payload.barTop >= 0 && payload.barRight <= payload.sourceWidth &&
-                    payload.barBottom <= payload.sourceHeight && payload.barRight > payload.barLeft &&
-                    payload.barBottom > payload.barTop && area in 1..(payload.barRight - payload.barLeft) &&
-                    payload.liveColumns in 0..area && payload.damageColumns in 1..area &&
-                    payload.liveColumns.toLong() + payload.damageColumns <= area / 4 &&
-                    payload.status in setOf("DAMAGE_COLOR", "SUSTAINED_DAMAGE_COLOR", "UNRESOLVED_COLOR")
-                if (valid) request(payload.side, TerminalVisualTrigger.COMPLETE_BAR_DAMAGE_HINT, at, listOf(article.id.value))
+                if (article.sourceId.id == "COMPLETE_${payload.side.name}_HP_BAR_FRAME_WITNESS" &&
+                    isCompleteBarAttentionHint(payload))
+                    request(payload.side, TerminalVisualTrigger.COMPLETE_BAR_DAMAGE_HINT, at, listOf(article.id.value))
             }
             else -> Unit
         }
@@ -392,10 +395,22 @@ class TerminalVisualCaptureGate(private val now: () -> Long = System::nanoTime) 
         private const val LOW_HP_FRACTION = .25f
         private val PARTICLE_WINDOW_TRIGGERS = setOf(TerminalVisualTrigger.LOW_HP_TRANSITION,
             TerminalVisualTrigger.FAST_MOVE_WITH_LOW_HP, TerminalVisualTrigger.INDEPENDENT_IMPACT_WITH_LOW_HP,
-            TerminalVisualTrigger.DEPARTURE, TerminalVisualTrigger.COMPLETE_BAR_DAMAGE_HINT)
+            TerminalVisualTrigger.DEPARTURE, TerminalVisualTrigger.COMPLETE_BAR_DAMAGE_HINT,
+            TerminalVisualTrigger.FRAME_COLOR_HINT)
         private val player = ActivePokemonSide.PLAYER
         private val opponent = ActivePokemonSide.OPPONENT
         private val LOW_HP_REQUIRED = setOf(TerminalVisualTrigger.LOW_HP_TRANSITION,
             TerminalVisualTrigger.FAST_MOVE_WITH_LOW_HP, TerminalVisualTrigger.INDEPENDENT_IMPACT_WITH_LOW_HP)
     }
+}
+
+internal fun isCompleteBarAttentionHint(payload: CompleteHpBarObserved): Boolean {
+    val area = payload.interiorColumns
+    return payload.sourceWidth > 0 && payload.sourceHeight > 0 && payload.barLeft >= 0 &&
+        payload.barTop >= 0 && payload.barRight <= payload.sourceWidth &&
+        payload.barBottom <= payload.sourceHeight && payload.barRight > payload.barLeft &&
+        payload.barBottom > payload.barTop && area in 1..(payload.barRight - payload.barLeft) &&
+        payload.liveColumns in 0..area && payload.damageColumns in 1..area &&
+        payload.liveColumns.toLong() + payload.damageColumns <= area / 4 &&
+        payload.status in setOf("DAMAGE_COLOR", "SUSTAINED_DAMAGE_COLOR", "UNRESOLVED_COLOR")
 }

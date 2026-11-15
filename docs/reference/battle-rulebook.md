@@ -441,6 +441,18 @@ and a nonlethal hit or living recall can trigger the same acquisition. A
 frame-local missing-bar hint may likewise request a window without inventing an
 Article for the hint; only actual preserved crops and measurements are cited.
 
+**Terminal capture priority, November 15.** When a fresh, complete-bar color
+measurement or a frame-local missing-bar hint requests terminal attention, a
+fixed three-second priority window can pause new routine charged-button label
+and effectiveness captures and sparse diagnostic HP image capture. The HP,
+attack and cry audio, species, shield, ball-count, announcement, result and
+terminal readers remain active. Already captured OCR work may finish. Repeated
+hints cannot extend the window; timeout resumes routine capture even when a
+Pokémon survives or a switch remains unresolved. This is scheduling, not a
+hit, faint, zero HP or result; the accepted bar testimony retains its original
+source clock. Direct frame-local attention can precede Timeline publication;
+only real captured crop Articles are cited by a direct visual sequence.
+
 **Trainer clarification, November 15 — proposed interpretation:** “if there is
 any green, yellow, or red to the left of the orange, then the hit is not a ko.
 if there is only orange in the hp bar, we typically have a faint”. For a

@@ -681,6 +681,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val inactiveBenchSnapshotGate = InactiveBenchSnapshotGate(inactiveBenchCrops)
         val forcedReplacementAttention = com.example.overdex.battle.observation.ForcedReplacementCaptureGate()
         val terminalVisualGate = com.example.overdex.battle.observation.TerminalVisualCaptureGate()
+        val terminalWorkPriority = com.example.overdex.battle.observation.TerminalWorkPriority()
         val teamResourceCrops = setOf(
             BattleWitnessContracts.playerPokeBallsCapture.crop.cropName,
             BattleWitnessContracts.opponentPokeBallsCapture.crop.cropName,
@@ -1008,7 +1009,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 calibration = calibration,
                 contract = BattleWitnessContracts.opponentHpEvidenceCapture,
                 artifactStore = cropArtifactStore,
-                isEnabled = activeHpEvidenceLive,
+                isEnabled = { activeHpEvidenceLive() && !terminalWorkPriority.isActive() },
                 captureIntervalNanos = hpArtifactIntervalNanos,
                 captureDispatcher = combatCaptureDispatcher,
                 // One sparse whole-frame filmstrip supplies match context. All
@@ -1045,6 +1046,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             input, battlefieldHpTracker, activeHpEvidenceLive, playerHpFrameHub, opponentHpFrameHub,
             onDepartureCheck = { side, at ->
                 teamResourceSnapshotGate.requestDepartureCheck(side, at)
+                terminalWorkPriority.request(at)
                 if (side == com.example.overdex.battle.custody.ActivePokemonSide.PLAYER)
                     forcedReplacementAttention.request(at)
                 if (side == com.example.overdex.battle.custody.ActivePokemonSide.OPPONENT)
@@ -1055,6 +1057,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             onBattlefieldReturn = { at ->
                 com.example.overdex.battle.custody.ActivePokemonSide.entries.forEach { side ->
                     terminalVisualGate.requestChargedReturn(side, at)
+                }
+            },
+            onCompleteColorCaptured = { payload, at ->
+                if (com.example.overdex.battle.observation.isCompleteBarAttentionHint(payload)) {
+                    terminalVisualGate.requestFrameColorHint(payload, at)
+                    terminalWorkPriority.request(at)
                 }
             },
         )
@@ -1135,13 +1143,16 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 },
                 slot = slot,
                 controlLayout = playerChargeControlLayout,
+                captureAllowed = { slot == 0 || !terminalWorkPriority.isActive() },
             ))
         }
         (1..2).forEach { slot ->
             observationDispatcher.register(com.example.overdex.battle.observation.LivePlayerControlTextWitness(
-                input, calibration, cropArtifactStore, isEnabled = battleEvidenceLive,
+                input, calibration, cropArtifactStore,
+                isEnabled = battleEvidenceLive,
                 slot = slot, effectiveness = true,
                 controlLayout = playerChargeControlLayout,
+                captureAllowed = { !terminalWorkPriority.isActive() },
             ))
         }
         val battlePhaseTextSampling = com.example.overdex.battle.observation.BattlePhaseTextSampling()
@@ -1155,7 +1166,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         ).forEach { (contract, name) ->
             observationDispatcher.register(CropCaptureWitness(input, calibration, contract, cropArtifactStore,
                 isEnabled = when (contract) {
-                    BattleWitnessContracts.playerHpEvidenceCapture -> activeHpEvidenceLive
+                    BattleWitnessContracts.playerHpEvidenceCapture -> { { activeHpEvidenceLive() && !terminalWorkPriority.isActive() } }
                     // Real combat can admit phase text even when GO was missed;
                     // its observation never fabricates the Match start clock.
                     BattleWitnessContracts.qteProgressTextCapture -> { { battlePhaseTextSampling.isEnabled() } }

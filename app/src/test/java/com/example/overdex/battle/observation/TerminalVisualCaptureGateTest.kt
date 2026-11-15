@@ -200,6 +200,37 @@ class TerminalVisualCaptureGateTest {
         assertNull(gate.particleAssignment())
     }
 
+    @Test fun `accepted source frame opens acquisition before article publication without inventing a reference`() {
+        val sourceAt = clock
+        val bar = CompleteHpBarObserved(opponent, 338, 650, 530, 667, 672, 1493,
+            188, 0, 11, "UNRESOLVED_COLOR", null, null, 251f, 148f,
+            unmaskedUncertainColumns = 21)
+        clock += 300_000_000L
+        assertTrue(gate.requestFrameColorHint(bar, sourceAt))
+        assertEquals(TerminalVisualTrigger.FRAME_COLOR_HINT, gate.captureWindow(opponent)?.trigger)
+        assertTrue(requireNotNull(gate.particleAssignment()).evidenceReferences.isEmpty())
+        preserve(opponent, "source-crop")
+        gate.endSession()
+        val saved = gate.drainCompleted().single()
+        assertEquals(listOf("source-crop"), saved.evidenceReferences)
+        assertFalse((saved.payload as TestimonyPayload) is ActivePokemonFaintedWitnessed)
+        // The original complete-bar Article can still arrive later; it cannot
+        // backdate a new window or become a fabricated zero HP observation.
+        clock += 8_000_000_000L
+        gate.observe(article("late-bar", bar, sourceAt).copy(sourceId = SourceId("COMPLETE_OPPONENT_HP_BAR_FRAME_WITNESS")))
+        assertFalse(gate.isCapturing(opponent))
+    }
+
+    @Test fun `invalid or stale frame hints do not open direct capture`() {
+        val bar = CompleteHpBarObserved(opponent, 338, 650, 530, 667, 672, 1493,
+            188, 0, 11, "UNRESOLVED_COLOR", null, null, 251f, 148f)
+        assertFalse(gate.request(opponent, TerminalVisualTrigger.FRAME_COLOR_HINT, clock))
+        assertFalse(gate.requestFrameColorHint(bar.copy(liveColumns = 80), clock))
+        assertFalse(gate.requestFrameColorHint(bar, clock - 500_000_001L))
+        assertFalse(gate.requestFrameColorHint(bar, clock + 1))
+        assertNull(gate.captureWindow(opponent))
+    }
+
     @Test fun `duplicate source trigger cannot reopen a window after cooldown`() {
         assertTrue(request())
         clock += 4_000_000_000L

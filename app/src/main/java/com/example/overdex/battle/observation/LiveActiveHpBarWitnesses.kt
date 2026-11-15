@@ -122,6 +122,7 @@ internal class LiveActiveHpBarWitness(
     private val onDepartureCheck: (ActivePokemonSide, Long) -> Unit = { _, _ -> },
     private val chargedImpactHpRegion: AnchorRegion = com.example.overdex.data.BattleCalibration().chargedImpactHpRegion,
     private val onBattlefieldReturn: (Long) -> Unit = {},
+    private val onCompleteColorCaptured: (com.example.overdex.battle.custody.CompleteHpBarObserved, Long) -> Unit = { _, _ -> },
 ) : Observer {
     override val observerId = ObserverId("ACTIVE_HP_BARS_FRAME_WITNESS", ObserverSource.SCREEN_CAPTURE)
     override val name = "Active HP Bars Frame"
@@ -264,13 +265,16 @@ internal class LiveActiveHpBarWitness(
         val change = completeTrack.accept(side, sample, frame.capturedAtMonotonicTimeNanos, generation)
             ?: return@synchronized
         val b = sample.bounds
-        match.custody.submitTestimony(SourceId("COMPLETE_${side.name}_HP_BAR_FRAME_WITNESS"),
-            com.example.overdex.battle.custody.CompleteHpBarObserved(side, b.left, b.top, b.right, b.bottom,
+        val payload = com.example.overdex.battle.custody.CompleteHpBarObserved(side, b.left, b.top, b.right, b.bottom,
                 frame.bitmap.width, frame.bitmap.height, sample.interiorColumns, sample.liveColumns,
                 sample.damageColumns, change.status, change.candidateSince, lastAppearanceAt[side],
                 sample.railBrightness, sample.backgroundBrightness,
-                sample.backgroundMaskedColumns, sample.unmaskedUncertainColumns),
+                sample.backgroundMaskedColumns, sample.unmaskedUncertainColumns)
+        match.custody.submitTestimony(SourceId("COMPLETE_${side.name}_HP_BAR_FRAME_WITNESS"), payload,
             frame.capturedAtWallTimeMillis, sample.confidence, cueIds, frame.capturedAtMonotonicTimeNanos)
+        // Scheduling only; the accepted testimony still follows the normal
+        // ledger path with its original source time and independent evidence.
+        onCompleteColorCaptured(payload, frame.capturedAtMonotonicTimeNanos)
     }
 
     private fun measureCompleteFrame(frame: CapturedVisualFrame, anchor: ActiveHpBarMeasurement): CompleteHpBarSample? {

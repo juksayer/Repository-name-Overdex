@@ -52,6 +52,8 @@ internal class LivePlayerControlTextWitness(
     private val slot: Int,
     private val effectiveness: Boolean = false,
     private val controlLayout: PlayerChargeControlLayout = PlayerChargeControlLayout(),
+    /** Pauses new capture without discarding an already queued OCR input. */
+    private val captureAllowed: () -> Boolean = { true },
 ) : Observer {
     init { require(slot in 0..2 && (!effectiveness || slot != 0)) }
     override val observerId = ObserverId(if (slot == 0) "PLAYER_CHARGE_BUTTON_TOUCH_WITNESS"
@@ -80,7 +82,7 @@ internal class LivePlayerControlTextWitness(
                         val at = frame.capturedAtMonotonicTimeNanos
                         val singleCentered = controlLayout.centerAt(at) != null
                         val crop = PlayerChargeControlLayout.textCrop(slot, effectiveness, singleCentered)
-                        val enabled = isEnabled() && (slot != 0 ||
+                        val enabled = isEnabled() && captureAllowed() && (slot != 0 ||
                             (frame.displayWidth != null && frame.displayHeight != null)) && crop != null
                         if (enabled != available) {
                             match.custody.submitAvailability(source, enabled, frame.capturedAtWallTimeMillis)

@@ -16,9 +16,40 @@ import org.junit.Test
 import java.io.File
 import javax.imageio.ImageIO
 import java.util.zip.ZipFile
+import java.security.MessageDigest
 
 /** Video-derived pictures exercise measurement only; their test clocks are simulated. */
 class RecordedFastDepartureCaptureTest {
+    @Test fun `new vaporeon observation can schedule before its eight second publication delay`() {
+        val path = System.getenv("OVERDEX_PRIORITY_ARCHIVE")
+        assumeTrue(!path.isNullOrBlank())
+        val file = File(requireNotNull(path))
+        fun sha() = MessageDigest.getInstance("SHA-256").digest(file.readBytes()).joinToString("") { "%02x".format(it) }
+        val before = sha()
+        assertEquals("f0609c30d6e5970ee6cc4561774701264522359224f202d90150ac90199d2258", before)
+        val archive = ZipFile(file).use { zip -> MatchArchiveSerializer.deserialize(
+            zip.getInputStream(zip.getEntry("timeline.json")).bufferedReader().readText()) }
+        val row = archive.articles.single { it.articleId == "68e77694-4a6e-4c19-ae63-0e6207825632" }
+        val p = row.payload as ArchivedCompleteHpBarObserved
+        val source = requireNotNull(row.monotonicTimeNanos)
+        val reading = CompleteHpBarObserved(ActivePokemonSide.OPPONENT,
+            p.barLeft,p.barTop,p.barRight,p.barBottom,p.sourceWidth,p.sourceHeight,p.interiorColumns,
+            p.liveColumns,p.damageColumns,p.status,p.candidateStartedAtNanos,p.appearanceStartedAtNanos,
+            p.railBrightness,p.backgroundBrightness,p.backgroundMaskedColumns,p.unmaskedUncertainColumns)
+        var now = source + 300_000_000L // controlled timely reader, not a measured delivery latency
+        val gate = TerminalVisualCaptureGate { now }.also { it.beginSession(source - 1_000_000_000L) }
+        val priority = TerminalWorkPriority { now }
+        assertTrue(gate.requestFrameColorHint(reading, source))
+        assertTrue(priority.request(source))
+        assertEquals(TerminalVisualTrigger.FRAME_COLOR_HINT, gate.captureWindow(ActivePokemonSide.OPPONENT)?.trigger)
+        assertTrue(priority.isActive())
+        now = source + (row.recordedAt - row.perceivedAt) * 1_000_000L
+        assertTrue(now - source > 8_000_000_000L)
+        assertFalse(priority.isActive())
+        assertFalse(gate.requestFrameColorHint(reading, source))
+        assertEquals(before, sha())
+    }
+
     @Test fun `recorded vaporeon bar opens a window spanning the reviewed departure`() {
         val path = System.getenv("OVERDEX_SLIVER_VIDEO_ARCHIVE")
         assumeTrue(!path.isNullOrBlank())
