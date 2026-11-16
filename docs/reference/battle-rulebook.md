@@ -274,6 +274,7 @@ for the verified scope and remaining final-hit capture gap.
 | OBS-06 | A resource assignment obtains its first usable candidate image, captured within that assignment. | Permit one three-second confirmation tail, capped at six seconds from opening; retire the assignment after a usable confirmed count. First GO or first side identity can retry an expired, still-missing baseline once. | Scheduling feedback is not a count, switch, recall or faint. Old/future images and repeated candidates cannot extend the deadline. This resource-specific tail does not extend every reader's assignment. |
 | OBS-07 | Two source-ordered independent resource images agree within six seconds, with native badge visibility and pixel guards satisfied. | Publish the stable count and both image references; a changed count retains the first capture time. | A duplicate image observation at the same capture time, distant matching images, missing badge, or single candidate cannot establish a loss. Video-derived test evidence is not automatically original archive testimony. |
 | OBS-08 | A delayed ENTRY cue is strictly older than an already accepted native species-badge image from the same side and observation attempt. | Reuse that image to cover the entry's species-reading assignment, cite cue and crop, and leave other pending assignments intact. | Recognition completion time, implicit clocks, configured rosters, uncertain reads and the other side's badge cannot supply coverage. Equal/newer entry cues and faint, cry, switch and charge assignments retain their checks. This is scheduling, not a new identity or faint. |
+| OBS-09 — trainer proposal, unvalidated | Frame-processing backlog approaches a measured overload threshold. | Test temporarily reducing new optional recognition work to protect HP capture and other evidence needed for the active exchange; recover normal rates when pressure subsides. | Do not discard already accepted observations or disable essential identity, switch, charged-move, audio, terminal or result evidence indiscriminately. Queue pressure is not evidence of a battle event, and reducing unrelated work cannot guarantee throughput if the HP worker itself remains too slow. |
 
 OBS-08 is implemented in the [species coordinator](../../app/src/main/java/com/example/overdex/battle/observation/SpeciesCheckCoordinator.kt)
 and covered by [recorded delayed-entry regression](../../app/src/test/java/com/example/overdex/battle/observation/RecordedDelayedEntrySpeciesTest.kt).
@@ -304,6 +305,20 @@ bounded confirmation tail; cue identity/order remains source-timed. Replacement-
 timer assignments have source-time hard deadlines. None of these scheduling
 choices changes when the underlying battle event happened.
 
+### Trainer-proposed Replay faint-time estimate
+
+The trainer proposes placing a clearly labeled estimated Replay faint near the
+end of the last supported move or charge sequence, even when a faint itself is
+only a plausible hypothesis. Keep that hypothesis separate from an independently
+established faint whose exact time is missing. A guessed faint or time, an inferred faint and a
+directly witnessed faint should be visually distinguishable, for example by an
+indicator on the CRT. Preserve the original event clocks and evidence; an
+estimated time must never become a witnessed timestamp, a confirmed loss, or
+establish the move's KO credit by itself. Fast Move start versus impact, queued damage, QTE/shield
+delays, switches, competing attacks and missing observations can move the true
+faint away from a simple move-start-plus-duration formula. This is a proposal,
+not an implemented or validated attribution or Replay rule.
+
 ### Pixels, moves and energy
 
 | Rule | If… | Then… | Does not establish… |
@@ -318,6 +333,7 @@ choices changes when the underlying battle event happened.
 | VIS-08 — final charged collapse plus result | A known last recipient has a source-ordered particle/flash contraction-and-clear sequence, or the separately visibility-checked player appearance sequence, after an independently attributed opposing charged use, followed by the matching result, without intervening play or conflicting evidence. A fully named move or CHARGE-06's qualified partial announcement can establish the charge. | Infer that recipient's terminal KO at the sequence clear clock; use the same revisable conclusion in live state and Replay and allow an inferred depleted HP endpoint. An empty HP outline and native zero-ball frame are not prerequisites. | QTE-before-hit, result alone, missing pixels, an unresolved owner, a switch, positive receiving HP, another charge phase or later independent survival must not become a final KO. Do not invent measured zero HP, intermediate damage, ball counts, move names or energy costs. |
 | VIS-09 — recorded appearance counterexample | A previously supported foreground color contracts or disappears while bright attack pixels replace it, even with a stable background. | Treat the original appearance as obscured until independent visibility returns. Preserve the source frames and the competing explanation. | Color loss is not body shrinkage or departure. A foreground territory is not automatic player ownership during charge-camera movement. The living Quagsire Brutal Swing sequence demonstrates both limits. |
 | VIS-10 — proposed charged-hit departure | A correctly sided, identified recipient is independently observed receiving a charged attack, then a different Pokémon is confirmed on that same side within the same uninterrupted battle. | Keep faint and voluntary switch as competing explanations for the departure; use independent, source-timed count, replacement, HP, shield and later-appearance evidence to resolve them. | An HP bar visible during the attack is not proof the charged attack caused a faint. No witnessed Fast Move does not prove no Fast Move occurred or was pending. A shielded attack, delayed evidence, missed transitions, identity ambiguity or replay glitches prevent attributing the departure or a KO to that charge without corroboration. |
+| VIS-11 — trainer proposal, unvalidated | A white burst appears near a Pokémon's departure. | Test the source-timed burst and its surrounding sequence as a possible departure cue, including a bounded follow-up check. | A burst alone cannot distinguish a living recall, faint or entrance from attack, shield, QTE, camera or other effects; establish side and visibility separately. Preserve the original pixels and conflicting evidence. |
 
 VIS-05 and VIS-06 have an [offline motion and native-HP study](../verification/2026-11-11-terminal-motion-feasibility.md).
 Its tested tracker is not connected to runtime faint inference. The living-recall
