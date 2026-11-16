@@ -62,6 +62,7 @@ fun MatchArchiveDirectoryScreen(
     val reader = remember(context) { BattleRecordStore(context.applicationContext) }
     var selectedUri by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedMatchId by rememberSaveable { mutableStateOf<String?>(null) }
+    var userSelected by rememberSaveable { mutableStateOf(selectedUri != null || selectedMatchId != null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var initialLoading by remember { mutableStateOf(true) }
     var matches by remember { mutableStateOf(emptyList<MatchHistoryItem>()) }
@@ -72,33 +73,48 @@ fun MatchArchiveDirectoryScreen(
     // Internal publication/recovery may finish while History remains open. Cache
     // unchanged metadata, read only references on I/O, and never decode a crop.
     LaunchedEffect(archiveDirectoryManager, reader) {
-        val cache = mutableMapOf<String, Pair<ArchiveDirectoryManager.ArchiveEntry, MatchHistoryItem>>()
+        val failures = mutableMapOf<String, Pair<ArchiveDirectoryManager.ArchiveEntry, MatchHistoryItem>>()
         while (isActive) {
             try {
-                val current = withContext(Dispatchers.IO) {
-                    val entries = archiveDirectoryManager.listArchives()
-                        .filter { isSavedMatchHistoryArchive(it.name) }
-                    val presentUris = entries.mapTo(hashSetOf()) { it.uri.toString() }
-                    cache.keys.retainAll(presentUris)
-                    entries.map { entry ->
-                        ensureActive()
-                        val uri = entry.uri.toString()
-                        cache[uri]?.takeIf { it.first == entry }?.second ?: run {
-                            val item = try {
-                                MatchHistoryItem(uri, entry.name, reader.readArchive(entry.uri).summarize())
-                            } catch (error: Exception) {
-                                if (error is CancellationException) throw error
-                                MatchHistoryItem(uri, entry.name, null,
-                                    error.message ?: "This recording could not be read.")
-                            }
-                            cache[uri] = entry to item
-                            item
-                        }
-                    }.distinctRecordedMatches().newestMatchFirst()
+                val entries = withContext(Dispatchers.IO) {
+                    archiveDirectoryManager.listArchives().filter { isSavedMatchHistoryArchive(it.name) }
                 }
-                matches = current
-                selectedUri = selectedMatchHistoryUri(current, selectedUri, selectedMatchId)
-                selectedMatchId = current.firstOrNull { it.sourceUri == selectedUri }?.summary?.matchId
+                val items = linkedMapOf<String, MatchHistoryItem>()
+                fun publish() {
+                    val current = items.values.toList().distinctRecordedMatches().newestMatchFirst()
+                    matches = current
+                    selectedUri = if (userSelected) selectedMatchHistoryUri(current, selectedUri, selectedMatchId)
+                        else current.firstOrNull()?.sourceUri
+                    selectedMatchId = current.firstOrNull { it.sourceUri == selectedUri }?.summary?.matchId
+                    initialLoading = false
+                }
+                // Show matching in-memory summaries immediately, then add uncached
+                // archives one at a time; a slow archive cannot hide earlier rows.
+                entries.forEach { entry ->
+                    val uri = entry.uri.toString()
+                    val cached = MatchHistorySummaryCache.get(uri, entry.byteCount, entry.lastModified)
+                        ?: failures[uri]?.takeIf { it.first == entry }?.second
+                    cached?.let { items[uri] = it }
+                }
+                failures.keys.retainAll(entries.mapTo(hashSetOf()) { it.uri.toString() })
+                if (items.isNotEmpty() || entries.isEmpty()) publish()
+                for (entry in entries) {
+                    ensureActive()
+                    val uri = entry.uri.toString()
+                    if (uri in items) continue
+                    val item = withContext(Dispatchers.IO) {
+                        try {
+                            MatchHistoryItem(uri, entry.name, reader.readArchive(entry.uri).summarize())
+                        } catch (error: Exception) {
+                            if (error is CancellationException) throw error
+                            MatchHistoryItem(uri, entry.name, null, error.message ?: "This recording could not be read.")
+                        }
+                    }
+                    MatchHistorySummaryCache.put(uri, entry.byteCount, entry.lastModified, item)
+                    if (item.readError != null) failures[uri] = entry to item else failures.remove(uri)
+                    items[uri] = item
+                    publish()
+                }
             } catch (error: Exception) {
                 if (error is CancellationException) throw error
                 errorMessage = "Unable to read saved matches: ${error.message ?: "storage unavailable"}"
@@ -118,6 +134,7 @@ fun MatchArchiveDirectoryScreen(
     fun teamLabel(species: List<String>?): String = species?.takeIf { it.isNotEmpty() }?.joinToString(" · ") ?: "Not observed"
     fun openSelected() {
         if (busy) return
+        userSelected = true
         errorMessage = null
         val entry = selectedEntry ?: return
         if (entry.readError != null) {
@@ -144,6 +161,7 @@ fun MatchArchiveDirectoryScreen(
     SideEffect {
         onUp {
             if (!busy && matches.isNotEmpty()) {
+                userSelected = true
                 selectedUri = matches[(selectedIndex - 1).coerceAtLeast(0)].sourceUri
                 selectedMatchId = matches.firstOrNull { it.sourceUri == selectedUri }?.summary?.matchId
                 errorMessage = null
@@ -151,6 +169,7 @@ fun MatchArchiveDirectoryScreen(
         }
         onDown {
             if (!busy && matches.isNotEmpty()) {
+                userSelected = true
                 selectedUri = matches[(selectedIndex + 1).coerceAtMost(matches.lastIndex)].sourceUri
                 selectedMatchId = matches.firstOrNull { it.sourceUri == selectedUri }?.summary?.matchId
                 errorMessage = null

@@ -19,7 +19,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivityResultRegistryOwner
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.navigation.NavType
@@ -61,7 +63,7 @@ import org.junit.Test
 
 /** Real ZIP packages and production screens, isolated from the emulator's saved matches. */
 class MatchHistoryNavigationDeviceTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val base = InstrumentationRegistry.getInstrumentation().targetContext
     // Keep the fixture below the real FileProvider root while giving its manager an isolated directory.
     private val root = File(base.filesDir, "match_archives/history-navigation-${UUID.randomUUID()}")
@@ -174,7 +176,7 @@ class MatchHistoryNavigationDeviceTest {
 
     @Composable
     private fun NavigationHarness(source: MatchArchiveSource, initiallySelected: Uri? = null) {
-        CompositionLocalProvider(LocalContext provides context) {
+        CompositionLocalProvider(LocalContext provides context, LocalActivityResultRegistryOwner provides compose.activity) {
             val nav = rememberNavController()
             val activeEntry by nav.currentBackStackEntryAsState()
             val directory = remember { ArchiveDirectoryManager(context) }

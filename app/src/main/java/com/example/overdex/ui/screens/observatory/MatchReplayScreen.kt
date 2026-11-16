@@ -1222,12 +1222,11 @@ internal fun ChargedMoveReplayIndicator(
 }
 
 @Composable
-private fun ReplayHpBar(hp: ReplayHpState, label: String, modifier: Modifier = Modifier) {
-    val current = hp.filledFraction.takeIf {
-        hp.currentHpConfirmed || hp.assumedInitialFull || it == 0f
-    }
-    val lastSeen = current == null && hp.lastSeenFraction != null
-    val fraction = current ?: hp.lastSeenFraction
+internal fun ReplayHpBar(hp: ReplayHpState, label: String, modifier: Modifier = Modifier) {
+    // Display the existing per-Pokémon reconstructed bar continuously. Freshness
+    // remains separate evidence and must not turn this display into a survival veto.
+    val fraction = hp.filledFraction
+    val lastSeen = fraction != null && !hp.currentHpConfirmed && !hp.assumedInitialFull && fraction != 0f
     val fillColor = when {
         fraction == null -> Color.Transparent
         fraction <= 0.2f -> Color(0xFFEF5350)
@@ -1247,16 +1246,11 @@ private fun ReplayHpBar(hp: ReplayHpState, label: String, modifier: Modifier = M
         val innerHeight = (size.height - inset * 2).coerceAtLeast(0f)
         drawRoundRect(Color.Black.copy(alpha = 0.55f), cornerRadius = CornerRadius(inset))
         if (fraction != null) {
-            drawRect(fillColor.copy(alpha = if (lastSeen) 0.55f else 1f), Offset(inset, inset), Size(innerWidth * fraction, innerHeight))
-            hp.damageTrailFraction?.takeUnless { lastSeen }?.let { trail ->
+            drawRect(fillColor, Offset(inset, inset), Size(innerWidth * fraction, innerHeight))
+            hp.damageTrailFraction?.let { trail ->
                 drawRect(orange, Offset(inset + innerWidth * fraction, inset),
                     Size(innerWidth * (trail - fraction).coerceAtLeast(0f), innerHeight))
             }
-        } else {
-            // A small dash distinguishes an unmeasured bar from a witnessed empty bar.
-            drawLine(Color.White.copy(alpha = 0.55f),
-                Offset(size.width * 0.46f, size.height / 2),
-                Offset(size.width * 0.54f, size.height / 2), 1.dp.toPx())
         }
         drawRoundRect(
             if (hp.borderPulse) orange else Color.White,
@@ -1266,8 +1260,6 @@ private fun ReplayHpBar(hp: ReplayHpState, label: String, modifier: Modifier = M
             style = Stroke(1.5.dp.toPx()),
         )
       }
-      if (lastSeen) Text("?", color = Color.White, fontSize = 9.sp, lineHeight = 9.sp,
-          modifier = Modifier.align(Alignment.CenterEnd).padding(end = 3.dp))
     }
 }
 

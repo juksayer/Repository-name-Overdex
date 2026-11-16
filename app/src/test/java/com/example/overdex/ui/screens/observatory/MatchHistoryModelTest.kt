@@ -9,6 +9,16 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class MatchHistoryModelTest {
+    @Test fun `cached summaries are reused only for unchanged archive metadata and errors are retried`() {
+        val saved = item("cache-test-unique", 42)
+        MatchHistorySummaryCache.put(saved.sourceUri, 200, 10, saved)
+        assertEquals(saved, MatchHistorySummaryCache.get(saved.sourceUri, 200, 10))
+        assertNull(MatchHistorySummaryCache.get(saved.sourceUri, 201, 10))
+        assertNull(MatchHistorySummaryCache.get(saved.sourceUri, 200, 11))
+        val broken = MatchHistoryItem("cache-broken-unique", "broken", null, "temporary failure")
+        MatchHistorySummaryCache.put(broken.sourceUri, 1, 1, broken)
+        assertNull(MatchHistorySummaryCache.get(broken.sourceUri, 1, 1))
+    }
     @Test fun `late export and recovery names do not reorder recorded matches`() {
         val older = item("older", 1_700_000_000_000, "2099-recovered.odxmatch.zip")
         val newer = item("newer", 1_800_000_000_000, "2000-completed.odxmatch.zip")
