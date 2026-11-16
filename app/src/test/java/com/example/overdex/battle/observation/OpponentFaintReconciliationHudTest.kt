@@ -19,6 +19,28 @@ class OpponentFaintReconciliationHudTest {
     @Before fun resetBefore() = presentation.reset()
     @After fun resetAfter() = presentation.reset()
 
+    @Test fun `trainer reminder toggles without changing automatic faints resources or moves and resets for next match`() {
+        presentation.beginEnergyForecast("first")
+        species("Carbink", 703, 100)
+        val before = presentation.opponentSpecies.value
+        val moves = presentation.activeOpponentMovePossibilities.value
+        val resources = presentation.opponentResources.value
+
+        presentation.toggleTrainerFaintReminder("Carbink")
+        assertTrue(presentation.trainerReportedFaints.value.isNotEmpty())
+        assertEquals(before, presentation.opponentSpecies.value)
+        assertEquals(moves, presentation.activeOpponentMovePossibilities.value)
+        assertEquals(resources, presentation.opponentResources.value)
+        presentation.reconcileOpponentFaints(emptySet(), 110)
+        assertTrue(presentation.trainerReportedFaints.value.isNotEmpty())
+        presentation.toggleTrainerFaintReminder("Carbink")
+        assertTrue(presentation.trainerReportedFaints.value.isEmpty())
+
+        presentation.toggleTrainerFaintReminder("Carbink")
+        presentation.beginEnergyForecast("next")
+        assertTrue(presentation.trainerReportedFaints.value.isEmpty())
+    }
+
     @Test fun `corrected faint restores active moves and transfers the faded cell without changing resources`() {
         species("Talonflame", 663, 100)
         species("Carbink", 703, 200)

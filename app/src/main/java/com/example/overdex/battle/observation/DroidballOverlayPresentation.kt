@@ -81,6 +81,7 @@ object DroidballOverlayPresentation {
     @Synchronized fun beginEnergyForecast(matchId: String) {
         energyForecastMatchId = matchId
         _opponentEnergyEstimate.value = null
+        _trainerReportedFaints.value = emptySet()
     }
 
     @Synchronized fun setOpponentEnergyEstimate(matchId: String, estimate: OpponentEnergyEstimate?) {
@@ -122,6 +123,16 @@ object DroidballOverlayPresentation {
     private val _opponentSpecies = MutableStateFlow<List<ObservedOpponentSpecies>>(emptyList())
     /** First-seen opponent identities for the three HUD cells. */
     val opponentSpecies = _opponentSpecies.asStateFlow()
+    private val _trainerReportedFaints = MutableStateFlow<Set<String>>(emptySet())
+    val trainerReportedFaints = _trainerReportedFaints.asStateFlow()
+
+    /** A trainer's temporary visual reminder never changes battle evidence. */
+    @Synchronized fun toggleTrainerFaintReminder(speciesName: String) {
+        val key = TeamLossResolver.speciesKey(speciesName)
+        if (key.isBlank()) return
+        _trainerReportedFaints.value = if (key in _trainerReportedFaints.value)
+            _trainerReportedFaints.value - key else _trainerReportedFaints.value + key
+    }
     private val _inferredPlayerTeam = MutableStateFlow<List<String?>>(List(3) { null })
     val inferredPlayerTeam = _inferredPlayerTeam.asStateFlow()
     private val _playerTeamConfirmed = MutableStateFlow(false)
@@ -280,6 +291,7 @@ object DroidballOverlayPresentation {
         opponentAudioFavoredMoveName = null
         confirmedChargedMovesBySpecies.clear()
         faintedSpeciesNames.clear()
+        _trainerReportedFaints.value = emptySet()
     }
 
     fun recordInferredPlayerRosterSlot(slot: Int, speciesName: String) {

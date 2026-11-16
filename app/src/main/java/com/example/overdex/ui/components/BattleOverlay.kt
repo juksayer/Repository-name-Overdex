@@ -276,6 +276,7 @@ private fun OverlayPanel(
     val chargeTextProtected by DroidballOverlayPresentation.chargeTextProtected.collectAsState()
     val handBoxRequested by DroidballService.opponentHandBoxRequested.collectAsState()
     val isBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
+    val trainerFaints by DroidballOverlayPresentation.trainerReportedFaints.collectAsState()
     if (!isBattleHud) {
         FieldBattleMenu(mode, inferredPlayerTeam, playerTeamConfirmed, configuredPlayerTeam,
             teamEditingAllowed, fieldMenuWidthPx, fieldMenuHeightPx, fieldBody)
@@ -302,7 +303,14 @@ private fun OverlayPanel(
             Column(Modifier.fillMaxWidth().battleHudBadgeBackground()
                 .padding(start = 8.dp, end = 8.dp, top = jointDepth + 2.dp, bottom = 2.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
-                    repeat(3) { index -> OpponentSpeciesCell(opponentSpecies.getOrNull(index)) }
+                    repeat(3) { index ->
+                        val observed = opponentSpecies.getOrNull(index)
+                        val reported = observed != null && com.example.overdex.battle.inference.TeamLossResolver.speciesKey(observed.speciesName) in trainerFaints
+                        OpponentSpeciesCell(observed, reported) {
+                            if (observed != null && !observed.isFainted)
+                                DroidballOverlayPresentation.toggleTrainerFaintReminder(observed.speciesName)
+                        }
+                    }
                 }
             }
             // Charge toasts and QTE grades use this same screen territory. Yield
@@ -336,7 +344,7 @@ private fun OverlayPanel(
 }
 
 @Composable
-private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
+private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?, trainerReminder: Boolean = false, onClick: () -> Unit = {}) {
     val context = LocalContext.current
     val assets = context.assets
     val spriteUrl = remember(assets, species?.speciesId) {
@@ -351,6 +359,7 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
     }
     Box(
         modifier = Modifier.weight(1f).height(36.dp)
+            .clickable(enabled = species != null && !species.isFainted, role = Role.Button, onClick = onClick)
             .background(Color(0x18005E5B), RoundedCornerShape(6.dp))
             .border(1.dp, Color(0x55005E5B), RoundedCornerShape(6.dp)),
         contentAlignment = Alignment.Center
@@ -363,15 +372,15 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
             AsyncImage(
                 model = spriteRequest,
                 contentDescription = "${BattleSpeciesDisplay.name(species.speciesName)} sprite",
-                modifier = Modifier.size(36.dp).alpha(if (species.isFainted) 0.35f else 1f)
-                    .semantics { stateDescription = if (species.isFainted) "Fainted" else "Not fainted" },
+                modifier = Modifier.size(36.dp).alpha(if (species.isFainted || trainerReminder) 0.35f else 1f)
+                    .semantics { stateDescription = when { species.isFainted -> "Fainted"; trainerReminder -> "Trainer marked fainted; tap to undo"; else -> "Not fainted; tap to mark" } },
                 contentScale = ContentScale.Fit,
-                colorFilter = if (species.isFainted) {
+                colorFilter = if (species.isFainted || trainerReminder) {
                     ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
                 } else null
             )
         }
-        if (species?.isFainted == true) {
+        if (species?.isFainted == true || trainerReminder) {
             Text(
                 "×",
                 color = Color(0xFFD32F2F),
