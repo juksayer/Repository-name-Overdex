@@ -53,6 +53,28 @@ class ActiveHpBarMeasurerTest {
         assertTrue(result.isEmpty())
     }
 
+    @Test fun `contrast keeps gapped bars connected to scenery while ignoring localized highlights`() {
+        for (outline in listOf(0xffeeeeee.toInt(), 0xff3388ee.toInt())) {
+            fun measure(highlights: Boolean) = ActiveHpBarMeasurer.measureAll(240, 120, 200) { x, y ->
+                when {
+                    highlights && y in 8..22 && x in 4..14 -> outline
+                    // Scenery joins the entire top and bottom outline rows,
+                    // but is also present on both sides of them vertically.
+                    // Only the contrast run can recover the complete bar.
+                    (y in 37..43 || y in 59..65) && (x < 20 || x >= 220) -> outline
+                    (y == 40 || y == 62) && x in 20 until 220 && x !in 100..102 -> outline
+                    (x == 20 || x == 219) && y in 40..62 -> outline
+                    x in 23 until 150 && y in 44..58 -> 0xff1effbc.toInt()
+                    else -> 0xff182825.toInt()
+                }
+            }
+            val result = measure(false)
+            assertTrue("Contrast did not retain the full bar for $outline", result.isNotEmpty())
+            assertEquals(.65f, result.first().filledFraction, .03f)
+            assertEquals("Localized highlights changed candidate order for $outline", result, measure(true))
+        }
+    }
+
     @Test
     fun `blue scenery on one displaced horizontal edge cannot become a hit`() {
         val bar = ActiveHpBarMeasurement(38, 706, 230, 724, .7446808f, .9f)

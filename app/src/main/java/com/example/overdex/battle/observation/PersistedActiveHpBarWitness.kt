@@ -270,27 +270,30 @@ internal object ActiveHpBarMeasurer {
             val contrastMasks = intArrayOf(1, 8)
             val inset = ((expectedBarWidth ?: width) / 64).coerceIn(2, 4)
             for (y in 0 until height) {
+                var whiteCanSpanBar = false
+                var blueCanSpanBar = false
                 // White outline plus adjacent orange Pokémon art is not one
                 // long outline. Keep the two border states separate geometrically.
                 for (colorMask in colorMasks) {
                     if (!pixelAt.rowHasColor(y, colorMask)) continue
-                    addAll(findRuns(width, maxGap) { x ->
-                        pixelAt(x, y) and colorMask != 0
-                    }.filter { (left, right) -> right - left in minBarWidth..maxBarWidth }
-                        .map { (left, right) -> OutlineRun(y, left, right, colorMask) })
+                    val canSpanBar = pixelAt.forEachOutlineRun(y, height, colorMask, maxGap, minBarWidth, maxBarWidth, inset, false) { left, right ->
+                        add(OutlineRun(y, left, right, colorMask))
+                    }
+                    if (colorMask == 1) whiteCanSpanBar = canSpanBar
+                    if (colorMask == 8) blueCanSpanBar = canSpanBar
                 }
                 // White Pokémon art or blue sky can join an outline to the
                 // background. Its interior still provides a contrast boundary.
                 // Recover that boundary without relaxing width, gaps, paired
                 // colors, real end caps, or the left-aligned saturated fill.
                 for (colorMask in contrastMasks) {
-                    if (!pixelAt.rowHasColor(y, colorMask)) continue
-                    addAll(findRuns(width, maxGap) { x ->
-                        pixelAt(x, y) and colorMask != 0 &&
-                            ((y >= inset && pixelAt(x, y - inset) and colorMask == 0) ||
-                                (y + inset < height && pixelAt(x, y + inset) and colorMask == 0))
-                    }.filter { (left, right) -> right - left in minBarWidth..maxBarWidth }
-                        .map { (left, right) -> OutlineRun(y, left, right, colorMask) })
+                    // Contrast pixels are a subset of this same color. If its
+                    // first-to-last span cannot reach the minimum bar width,
+                    // no contrast run can satisfy the existing width rule.
+                    if (colorMask == 1 && !whiteCanSpanBar || colorMask == 8 && !blueCanSpanBar) continue
+                    pixelAt.forEachOutlineRun(y, height, colorMask, maxGap, minBarWidth, maxBarWidth, inset, true) { left, right ->
+                        add(OutlineRun(y, left, right, colorMask))
+                    }
                 }
             }
         }
@@ -530,24 +533,6 @@ internal object ActiveHpBarMeasurer {
         return ActiveHpBarMeasurement(left, top, right, bottom, fraction, confidence)
     }
 
-    private inline fun findRuns(width: Int, allowedGap: Int, predicate: (Int) -> Boolean): List<Pair<Int, Int>> {
-        val runs = mutableListOf<Pair<Int, Int>>()
-        var start = -1
-        var lastMatch = -1
-        for (x in 0 until width) {
-            if (predicate(x)) {
-                if (start < 0) start = x
-                lastMatch = x
-            } else if (start >= 0 && x - lastMatch > allowedGap) {
-                runs += start to (lastMatch + 1)
-                start = -1
-                lastMatch = -1
-            }
-        }
-        if (start >= 0) runs += start to (lastMatch + 1)
-        return runs
-    }
-
     private inline fun longestRun(start: Int, endExclusive: Int, predicate: (Int) -> Boolean): Int {
         var longest = 0
         var current = 0
@@ -595,6 +580,48 @@ internal object ActiveHpBarMeasurer {
         // Reuse classification instead of scanning the same empty row again.
         fun rowHasColor(y: Int, colorMask: Int): Boolean = rowColors[y] and colorMask != 0
         operator fun invoke(x: Int, y: Int): Int = flags[y * width + x].toInt()
+
+        // Scan a classified row directly, avoiding temporary runs, pairs and
+        // filtered lists for the many highlights that cannot be HP outlines.
+        // Both the exclusive right edge and the original scan order matter to
+        // candidate selection when multiple outlines have equal confidence.
+        inline fun forEachOutlineRun(
+            y: Int, height: Int, colorMask: Int, allowedGap: Int,
+            minWidth: Int, maxWidth: Int, inset: Int, contrast: Boolean,
+            emit: (Int, Int) -> Unit,
+        ): Boolean {
+            val row = y * width
+            val above = if (y >= inset) (y - inset) * width else -1
+            val below = if (y + inset < height) (y + inset) * width else -1
+            var start = -1
+            var lastMatch = -1
+            var firstInRow = -1
+            var lastInRow = -1
+            for (x in 0 until width) {
+                val matches = flags[row + x].toInt() and colorMask != 0 &&
+                    (!contrast || (above >= 0 && flags[above + x].toInt() and colorMask == 0) ||
+                        (below >= 0 && flags[below + x].toInt() and colorMask == 0))
+                if (matches) {
+                    if (start < 0) {
+                        start = x
+                        if (firstInRow < 0) firstInRow = x
+                    }
+                    lastMatch = x
+                } else if (start >= 0 && x - lastMatch > allowedGap) {
+                    lastInRow = lastMatch
+                    val right = lastMatch + 1
+                    if (right - start in minWidth..maxWidth) emit(start, right)
+                    start = -1
+                    lastMatch = -1
+                }
+            }
+            if (start >= 0) {
+                lastInRow = lastMatch
+                val right = lastMatch + 1
+                if (right - start in minWidth..maxWidth) emit(start, right)
+            }
+            return firstInRow >= 0 && lastInRow - firstInRow + 1 >= minWidth
+        }
     }
 
     private fun isTrackableOutline(flags: Int) = flags and 11 != 0
