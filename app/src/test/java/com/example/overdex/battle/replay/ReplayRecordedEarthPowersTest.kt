@@ -91,6 +91,36 @@ class ReplayRecordedEarthPowersTest {
         assertEquals(original, MatchArchiveSerializer.serialize(archive))
     }
 
+    @Test fun repeatedClippedConfiguredMoveNamesTheFinalCharge() {
+        val archive = MatchArchiveSerializer.deserialize(checkNotNull(
+            javaClass.getResource("/replay/nov18-camerupt-clipped.json")).readText())
+        val at = 47399157157978L
+        val replay = model(archive)
+        val action = replay.sceneAt(at).chargedMoveActions.single()
+        assertEquals("Earth Power", action.moveName)
+        assertEquals(PokemonType.GROUND, action.type)
+        assertTrue("REPEATED_CONFIGURED_MOVE_PREFIX" in action.evidenceKinds)
+        val sounds = replay.attackSoundEvents.filter { it.charged && it.atNanos >= at }
+        assertEquals(listOf("Earth Power"), sounds.map { it.moveName })
+        assertEquals(at, sounds.single().atNanos)
+
+        val rows = archive.articles
+        fun hasEarthPower(rowsToRead: List<ArchivedRealityArticle>) =
+            model(archive.copy(articles = rowsToRead)).attackSoundEvents.any { it.charged && it.moveName == "Earth Power" }
+        val secondRead = rows.single { it.monotonicTimeNanos == 47400010837285L && it.sourceId == "ANNOUNCEMENT_WITNESS" }
+        assertFalse(hasEarthPower(rows - secondRead))
+        val newPreparation = rows.first { it.payload is ArchivedGetReadyWitnessed }
+            .copy(articleId = "new-preparation", monotonicTimeNanos = at + 1)
+        assertFalse("A later charge cannot corroborate this banner", hasEarthPower(rows + newPreparation))
+        val unequipped = rows.map { row ->
+            val slot = row.payload as? ArchivedPlayerTeamSlotConfigured
+            if (slot?.speciesName == "Camerupt") row.copy(payload = slot.copy(chargedMoveNames = listOf("Rock Tomb")))
+            else row
+        }
+        assertFalse("A legal move also needs support in the saved team", hasEarthPower(unequipped))
+        assertTrue(hasEarthPower(rows.reversed()))
+    }
+
     private fun model(archive: MatchArchive): MatchReplayModel {
         val species = listOf("Turtonator", "Camerupt", "Swampert", "Quagsire", "Obstagoon")
         return MatchReplayModel(archive, chargedMovesBySpeciesName = species.associateWith(::legalMoves))

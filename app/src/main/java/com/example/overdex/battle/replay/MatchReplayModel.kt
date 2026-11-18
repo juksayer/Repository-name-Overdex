@@ -1305,8 +1305,29 @@ class MatchReplayModel(
                 candidates.takeIf { bothKnown && performer !in canonicalSpecies && performer !in possibleChargedMoves }
                     .orEmpty()
             }
-            val bestRank = eligible.minOfOrNull { it.third.repairRank } ?: continue
-            val best = eligible.filter { it.third.repairRank == bestRank }
+            var corroboration: ArchivedRealityArticle? = null
+            val supported = if (eligible.isEmpty() && namedSides == setOf("PLAYER")) {
+                val configured = configuredPlayerMembers.singleOrNull {
+                    normalizeSpeciesName(it.speciesName) == performer
+                } ?: continue
+                val reading = normalizeSpeciesName(match.groupValues[2])
+                val move = possibleChargedMoves[performer].orEmpty().filter {
+                    val name = normalizeSpeciesName(it.name)
+                    reading.length >= 7 && name.length == reading.length + 1 && name.startsWith(reading)
+                }.distinctBy { it.name }.singleOrNull() ?: continue
+                if (configured.chargedMoveNames.none { MoveTextAliases.matches(it, move.name) }) continue
+                corroboration = actionArticles.firstOrNull { other ->
+                    val otherAt = other.monotonicTimeNanos ?: return@firstOrNull false
+                    other.sourceId == article.sourceId && otherAt > at && sameChargeAnnouncementEpisode(at, otherAt) &&
+                        (other.payload as? ArchivedRawText)?.value?.lineSequence()?.any {
+                            it.trim().equals(text.trim(), ignoreCase = true)
+                        } == true
+                } ?: continue
+                listOf(Triple("PLAYER", combatants.single { it.first == "PLAYER" }.second,
+                    com.example.overdex.battle.inference.LegalChargedMoveTextResolver.Match(move, 1, "REPEATED_CONFIGURED_MOVE_PREFIX")))
+            } else eligible
+            val bestRank = supported.minOfOrNull { it.third.repairRank } ?: continue
+            val best = supported.filter { it.third.repairRank == bestRank }
             val phaseProof = if (best.map { it.first }.distinct().size > 1) archivedChargeSideProof(at) else null
             val candidate = (if (phaseProof != null) best.filter { it.first == phaseProof.first } else best)
                 .singleOrNull() ?: continue
@@ -1323,7 +1344,7 @@ class MatchReplayModel(
                 setOf("NAMED_CHARGED_MOVE", "ARCHIVED_ANNOUNCEMENT_AND_REFERENCE_MOVE") +
                     listOfNotNull(candidate.third.repairBasis) +
                     if (phaseProof != null) setOf("SIDE_FROM_INDEPENDENT_CHARGE_PREPARATION") else emptySet(),
-                articleIds = setOf(article.articleId) + phaseProof?.second.orEmpty())
+                articleIds = setOf(article.articleId) + phaseProof?.second.orEmpty() + listOfNotNull(corroboration?.articleId))
         }
         return recovered
     }
