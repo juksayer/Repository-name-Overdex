@@ -7,6 +7,19 @@ import org.junit.Test
 
 class TeamLossResolverTest {
     @Test
+    fun `later surviving teammates resolve the first loss despite a pre-identity opening badge`() {
+        val rows = listOf(count("start", 1, 3), id("first", 2, "Torchic"), id("second", 3, "Camerupt"),
+            count("two", 4, 2), alive("second-hp", 5), id("third", 6, "Darmanitan"),
+            count("one", 7, 1), alive("third-hp", 8))
+        for (order in listOf(rows, rows.reversed())) {
+            val losses = TeamLossResolver.resolve(order)
+            assertEquals(listOf("Torchic", "Camerupt"), losses.map { it.resolved?.speciesName })
+            assertTrue(losses.first().evidenceReferences.containsAll(listOf("second-hp", "third-hp", "third")))
+        }
+        assertNull(TeamLossResolver.resolve(rows.dropLast(1)).first().resolved)
+    }
+
+    @Test
     fun `first observed reduced count is a baseline and not a faint`() {
         assertTrue(resolve(id("a", 1, "A"), count("two", 2, 2)).isEmpty())
     }

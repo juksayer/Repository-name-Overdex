@@ -160,8 +160,22 @@ object TeamLossResolver {
             // distinct team members by this loss exhausts that uncertainty without backdating an identity.
             val initialGap = before.atNanos < (appearances.firstOrNull()?.at ?: Long.MAX_VALUE)
             val knownTeamSize = appearances.filter { it.at <= count.atNanos }.mapNotNull { it.key }.distinct().size
+            // The first species may have been read after the opening badge. Later proof of
+            // both other members being alive accounts for all slots in a three-member team.
+            val otherSurvivors = if (initialGap && knownTeamSize < 3 && before.count == 3 &&
+                count.count == 2 && candidates.size == 1 && appearances.all { it.key != null } &&
+                appearances.map { it.key }.distinct().size == 3) {
+                val lostKey = speciesKey(candidates.single().speciesName)
+                alive.filterKeys { it != lostKey }.values.mapNotNull { proofs ->
+                    proofs.firstOrNull { it.at > count.atNanos }
+                }
+            } else emptyList()
+            if (otherSurvivors.size == 2) otherSurvivors.forEach { proof ->
+                evidence += proof.articleId
+                evidence += proof.identityIds
+            }
             losses += Loss(before, count, candidates,
-                (initialGap && knownTeamSize != 3) || interval.any { it.key == null } ||
+                (initialGap && knownTeamSize != 3 && otherSurvivors.size != 2) || interval.any { it.key == null } ||
                     conflictingCountTimes.any { it > before.atNanos && it <= count.atNanos },
                 survivingAfterZero != null,
                 evidence)
