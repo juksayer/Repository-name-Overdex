@@ -5,7 +5,7 @@ import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.model.observation.OcrTextEvidence
 
 internal enum class AcceptedChargeCaptureCueKind { GET_READY, ATTACK_INCOMING, PLAYER_QTE_PROGRESS }
-internal enum class AcceptedChargeCaptureConsumer { HP, TERMINAL_VISUAL }
+internal enum class AcceptedChargeCaptureConsumer { HP, TERMINAL_VISUAL, HUD }
 
 /** A reader scheduling hint, not testimony of a move, impact, HP loss, or faint. */
 internal data class AcceptedChargeCaptureCue(
@@ -102,17 +102,23 @@ internal class AcceptedChargeCapturePreparation(private val matchId: String) {
             // the canonical witnesses. They do not emit a scheduling hint themselves.
             val ready = !incomingOnly && getReady.accept(readerSourceId, acceptedText, at)
             val attack = incoming.accept(acceptedText, at, readerSourceId)
-            val grade = readerSourceId == "QTE_PROGRESS_TEXT_WITNESS" &&
-                isPlayerQteGradeText(acceptedText) &&
+            val gradeLane = readerSourceId == "QTE_PROGRESS_TEXT_WITNESS"
+            val exactGrade = gradeLane && isPlayerQteGradeText(acceptedText)
+            val grade = exactGrade &&
                 lastQteCaptureAt?.let { at > it } != false
             if (grade) lastQteCaptureAt = at
+            // The game's grade may share this crop with our own move names.
+            // Only presentation can use a grade on a separate line.
+            val hudGrade = gradeLane && !exactGrade && acceptedText.lineSequence().any(::isPlayerQteGradeText)
             val kind = when {
                 ready -> AcceptedChargeCaptureCueKind.GET_READY
                 attack -> AcceptedChargeCaptureCueKind.ATTACK_INCOMING
-                grade -> AcceptedChargeCaptureCueKind.PLAYER_QTE_PROGRESS
+                grade || hudGrade -> AcceptedChargeCaptureCueKind.PLAYER_QTE_PROGRESS
                 else -> return
             }
-            targets to AcceptedChargeCaptureCue(kind, crop.id.value, at, recognizedAtNanos, crop.perceivedAt)
+            val recipients = if (hudGrade && kind == AcceptedChargeCaptureCueKind.PLAYER_QTE_PROGRESS)
+                listOfNotNull(subscribers[AcceptedChargeCaptureConsumer.HUD]) else targets
+            recipients to AcceptedChargeCaptureCue(kind, crop.id.value, at, recognizedAtNanos, crop.perceivedAt)
         }
         // Never acquire a reader's state lock while holding this handoff lock. Detach/close
         // reject pending callbacks where possible; the reader's own generation and lifecycle guards

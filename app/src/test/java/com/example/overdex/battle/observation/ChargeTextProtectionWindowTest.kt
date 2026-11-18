@@ -8,6 +8,49 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ChargeTextProtectionWindowTest {
+    @Test fun `a grade on its own line can hide HUD text but HUD labels alone cannot`() {
+        val window = ChargeTextProtectionWindow()
+        val source = "QTE_PROGRESS_TEXT_WITNESS"
+        listOf("Liquidation", "Great League", "NICE WATER GUN").forEach {
+            window.observe(article(RawTestimony(it), 36, source), 38 * SECOND)
+        }
+        assertFalse(window.isProtected(38 * SECOND))
+        window.observe(article(RawTestimony("GREAT\nLqutdation"), 36, source), 40 * SECOND)
+        assertTrue(window.isProtected(40 * SECOND))
+        window.battlefieldReturned(41 * SECOND, 41 * SECOND)
+        assertFalse(window.isProtected(41 * SECOND))
+        window.observe(article(RawTestimony("GREAT!"), 39, source), 42 * SECOND)
+        assertFalse(window.isProtected(42 * SECOND))
+    }
+
+    @Test fun `only fresh same-frame motion of both whole bars hides the move list`() {
+        fun bar(player: Boolean, x: Int, y: Int = 710) = CompleteHpBarObserved(
+            if (player) ActivePokemonSide.PLAYER else ActivePokemonSide.OPPONENT,
+            x, y, x + 192, y + 17, 672, 1493, 188, 141, 0, "LIVE_COLOR", null, null, 220f, null)
+        val window = ChargeTextProtectionWindow()
+        fun pair(at: Long, p: Int, o: Int) {
+            window.observeBar(bar(false, o), at, at)
+            window.observeBar(bar(true, p), at, at)
+        }
+        pair(SECOND, 38, 395)
+        window.observeBar(bar(true, 125), SECOND + 1, SECOND + 1)
+        window.observeBar(bar(false, 441), SECOND + 2, SECOND + 2)
+        assertFalse(window.isProtected(SECOND + 2))
+        window.observeBar(bar(true, 38, 790), SECOND + 3, SECOND + 3)
+        window.observeBar(bar(false, 395, 640), SECOND + 3, SECOND + 3)
+        pair(2 * SECOND, 38, 441) // A single bar moves on an ordinary entrance.
+        assertFalse(window.isProtected(2 * SECOND))
+        pair(8 * SECOND, 125, 441) // The old neutral pair expired.
+        assertFalse(window.isProtected(8 * SECOND))
+        pair(9 * SECOND, 38, 395)
+        pair(10 * SECOND, 125, 441)
+        assertTrue(window.isProtected(18 * SECOND))
+        window.battlefieldReturned(8 * SECOND, 18 * SECOND)
+        assertTrue(window.isProtected(18 * SECOND))
+        window.battlefieldReturned(19 * SECOND, 19 * SECOND)
+        assertFalse(window.isProtected(19 * SECOND))
+    }
+
     @Test fun `late preparation protects only the remaining source timed window`() {
         val window = ChargeTextProtectionWindow()
         window.observe(article(GetReadyWitnessed, 10), 15 * SECOND)

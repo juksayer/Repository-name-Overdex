@@ -217,28 +217,44 @@ class AcceptedChargeCapturePreparationTest {
     }
 
     @Test
-    fun `replacing either consumer preserves the other and old detach cannot remove replacements`() {
+    fun `replacing a consumer preserves all the others and old detach cannot remove replacements`() {
         AcceptedChargeCaptureConsumer.entries.forEach { replaced ->
             val handoff = AcceptedChargeCapturePreparation(MATCH)
             val old = mutableListOf<AcceptedChargeCaptureCue>()
             val replacement = mutableListOf<AcceptedChargeCaptureCue>()
-            val other = mutableListOf<AcceptedChargeCaptureCue>()
-            val remaining = AcceptedChargeCaptureConsumer.entries.single { it != replaced }
+            val others = AcceptedChargeCaptureConsumer.entries.filter { it != replaced }
+                .associateWith { mutableListOf<AcceptedChargeCaptureCue>() }
             val detachOld = handoff.attach(replaced, old::add)
-            handoff.attach(remaining, other::add)
+            others.forEach { (consumer, cues) -> handoff.attach(consumer, cues::add) }
             val detachReplacement = handoff.attach(replaced, replacement::add)
             detachOld()
             offer(handoff, crop("ready", 10), "Get Ready")
             assertTrue(old.isEmpty())
             assertEquals(listOf("ready"), replacement.map { it.cropArticleId })
-            assertEquals(replacement, other)
+            others.values.forEach { assertEquals(replacement, it) }
 
             detachReplacement()
             detachOld()
             offer(handoff, crop("incoming", 11), "Attack incoming")
             assertEquals(listOf("ready"), replacement.map { it.cropArticleId })
-            assertEquals(listOf("ready", "incoming"), other.map { it.cropArticleId })
+            others.values.forEach { cues -> assertEquals(listOf("ready", "incoming"), cues.map { it.cropArticleId }) }
         }
+    }
+
+    @Test
+    fun `a separate grade line hides the HUD without arming readers or consuming the canonical grade`() {
+        val handoff = AcceptedChargeCapturePreparation(MATCH)
+        val calls = AcceptedChargeCaptureConsumer.entries.associateWith { mutableListOf<AcceptedChargeCaptureCue>() }
+        calls.forEach { (slot, cues) -> handoff.attach(slot, cues::add) }
+        offer(handoff, crop("mixed", 10, QTE), "GREAT\nLqutdation", QTE)
+        val hud = calls.getValue(AcceptedChargeCaptureConsumer.HUD)
+        assertEquals(listOf("mixed"), hud.map { it.cropArticleId })
+        calls.filterKeys { it != AcceptedChargeCaptureConsumer.HUD }.values.forEach { assertTrue(it.isEmpty()) }
+        offer(handoff, crop("grade", 10, QTE), "GREAT!", QTE)
+        calls.values.forEach { assertEquals("grade", it.last().cropArticleId) }
+        offer(handoff, crop("wrong-lane", 11), "Great!\nLast Resort")
+        offer(handoff, crop("unrelated", 12, QTE), "Great League\nLast Resort", QTE)
+        assertEquals(listOf("mixed", "grade"), hud.map { it.cropArticleId })
     }
 
     @Test
@@ -345,6 +361,7 @@ class AcceptedChargeCapturePreparationTest {
             calls += AcceptedChargeCaptureConsumer.TERMINAL_VISUAL
             throw second
         }
+        handoff.attach(AcceptedChargeCaptureConsumer.HUD) { calls += AcceptedChargeCaptureConsumer.HUD }
         val thrown = runCatching { offer(handoff, crop("ready", 10), "Get Ready") }.exceptionOrNull()
         assertEquals(AcceptedChargeCaptureConsumer.entries.toList(), calls)
         assertSame(first, thrown)

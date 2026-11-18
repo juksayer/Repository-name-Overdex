@@ -1042,6 +1042,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             observerId = ObserverId("OPPONENT_HAND_SAMPLE_GATE", ObserverSource.SCREEN_CAPTURE),
             name = "Opponent Hand Sample Gate",
         )
+        val chargeTextProtection = com.example.overdex.battle.observation.ChargeTextOverlayProtection()
         val activeHpBarWitness = LiveActiveHpBarWitness(
             input, battlefieldHpTracker, activeHpEvidenceLive, playerHpFrameHub, opponentHpFrameHub,
             onDepartureCheck = { side, at ->
@@ -1055,11 +1056,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             },
             chargedImpactHpRegion = calibration.chargedImpactHpRegion,
             onBattlefieldReturn = { at ->
+                chargeTextProtection.battlefieldReturned(at)
                 com.example.overdex.battle.custody.ActivePokemonSide.entries.forEach { side ->
                     terminalVisualGate.requestChargedReturn(side, at)
                 }
             },
             onCompleteColorCaptured = { payload, at ->
+                chargeTextProtection.observeBar(payload, at)
                 if (com.example.overdex.battle.observation.isCompleteBarAttentionHint(payload)) {
                     terminalVisualGate.requestFrameColorHint(payload, at)
                     terminalWorkPriority.request(at)
@@ -1156,7 +1159,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             ))
         }
         val battlePhaseTextSampling = com.example.overdex.battle.observation.BattlePhaseTextSampling()
-        observationDispatcher.register(com.example.overdex.battle.observation.ChargeTextOverlayProtection())
+        observationDispatcher.register(chargeTextProtection)
         observationDispatcher.register(battlePhaseTextSampling)
         listOf(
             BattleWitnessContracts.playerHpEvidenceCapture to "Player HP Evidence Capture",

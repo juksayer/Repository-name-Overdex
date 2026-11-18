@@ -1122,3 +1122,9 @@ If complete, aligned views of the same opponent HP bar change from a verified re
 A matching departure cry and a count-confirmed replacement, or a last-opponent count followed by a win, can support the faint independently. A living return or even one verified surviving HP column after the proposed reception vetoes that finish. A competing attack leaves credit open. Earlier red HP supplies the lower time bound and the first matched cry fragment can bound the departure. An uncertain bar interior never establishes an observed zero.
 
 Implemented in completed Replay and checked against the November 18 Pixel Sealeo and Vaporeon finishes and the living-switch controls.
+
+### Live HUD during a charged move
+
+When both complete HP bars pan right together from their ordinary positions in the same captured frame, the live HUD can hide the opponent’s move list before the announcement or grade is read. A trusted Get Ready or incoming-attack prompt can also start this window. A complete grade on its own line can keep the list hidden even if a second line contains HUD text. The camera cue and mixed grade guide only the display.
+
+Keep the roster sprites in place through the charged exchange. Restore the list when the battlefield returns after impact or the phase ends. If the ending is missed, expire the window using the original cue time. A single bar moving on a switch and vertical Fast Move movement do not trigger this camera rule.
