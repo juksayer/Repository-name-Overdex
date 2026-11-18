@@ -683,6 +683,25 @@ reception records earlier HP. A supported attack without a resolved name
 can display its move kind. A result alone leaves the cause unresolved. Keep
 all original testimony and times.
 
+**TEAM-01 and MOVE-05 — one faint signal and the last possible recipient.**
+Each side has one live faint witness. Its signal goes to custody once for a
+resolved loss. The HP frame, cry, badge decrease and other corroboration retain
+their own clocks and evidence IDs. Restarting the witness does not renew its
+allowance. At the capture instant a trusted badge with three, two, one or zero
+balls permits zero, one, two or three cumulative losses respectively. A fresh
+departure after that instant may establish another loss. The winning side can
+announce at most two faints. The losing side can announce at most three. If two
+have already been announced while the outcome is open, keep a third supported
+decision pending. A result alone cannot supply a victim, attack, or cause.
+
+When the opposing side has a single possible recipient, a uniquely owned attack
+and an independently resolved faint close together can establish an inferred
+finishing link. Require the same recipient appearance, a completed unshielded
+charge or supported Fast Move, and no conflicting attack, intervening switch or
+subsequent live HP. The Replay faint marker for a credited finish marks the start
+of that attack. Show impact and departure at their separate presentation times.
+Keep the source-time faint observation and any measured reception for review.
+
 **MOVE-05 — shield bracket for a count-resolved charged finish, November 18.**
 If an independently count-confirmed faint follows one named player charge, a
 nearby pre-QTE shield reading can bracket that exchange with an unchanged

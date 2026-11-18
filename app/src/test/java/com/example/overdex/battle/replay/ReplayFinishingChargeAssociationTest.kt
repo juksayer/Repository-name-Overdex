@@ -30,7 +30,8 @@ class ReplayFinishingChargeAssociationTest {
             assertEquals("Gourgeist", model.sceneAt(requireNotNull(link.replacementAtNanos)).opponent!!.speciesName)
             assertFalse(model.sceneAt(requireNotNull(link.replacementAtNanos)).opponent!!.isFainted)
             assertEquals(impact, model.sceneAt(link.presentationImpactAtNanos)) // reverse scrub
-            val marker = model.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT && it.atNanos == link.presentationImpactAtNanos }
+            val marker = model.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT && it.finishingAttribution == link }
+            assertTrue(marker.atNanos <= link.moveSourceAtNanos)
             assertEquals(link.faintSourceAtNanos, marker.sourceAtNanos)
             assertEquals(link.evidenceArticleIds, marker.sourceArticleIds)
             val chargeMarker = model.eventMarkers.single { it.kind == ReplayEventMarkerKind.CHARGED_MOVE &&

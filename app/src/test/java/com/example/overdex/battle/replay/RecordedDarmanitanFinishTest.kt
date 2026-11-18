@@ -42,7 +42,8 @@ class RecordedDarmanitanFinishTest {
         val lastAlive = requireNotNull(window.after)
         assertEquals(93_444L, (lastAlive.atNanos - go) / 1_000_000L)
         assertEquals(93_982L, (window.by.atNanos - go) / 1_000_000L)
-        assertEquals(go + 93_982_125_006L, marker.atNanos)
+        assertEquals(go + 93_982_125_006L, window.by.atNanos)
+        assertEquals(link.moveSourceAtNanos, marker.atNanos)
         assertEquals(data.cryId, window.by.articleId)
         assertTrue(lastAlive.articleId in link.evidenceArticleIds)
         assertEquals("KO window 1:33–1:34 from GO",

@@ -44,7 +44,10 @@ class AggregateLiveFaintConsumersTest {
         val first = inputs.flatMap(tracker::acceptAll)
         assertEquals(listOf("Turtonator"), first.map { it.speciesName })
         // This delayed image was captured before the final count and proves B survived the earlier interval.
-        val next = tracker.acceptAll(hp("b-before-zero", 13))
+        val second = tracker.acceptAll(hp("b-before-zero", 13))
+        assertEquals(listOf("Camerupt"), second.map { it.speciesName })
+        val third = tracker.acceptAll(article("won", 16, MatchEnded(com.example.overdex.model.BattleResult.WIN)))
+        val next = second + third
         assertEquals(setOf("Camerupt", "Gourgeist"), next.map { it.speciesName }.toSet())
         assertEquals("one", next.single { it.speciesName == "Camerupt" }.sourceArticle.id.value)
         assertEquals("zero", next.single { it.speciesName == "Gourgeist" }.sourceArticle.id.value)

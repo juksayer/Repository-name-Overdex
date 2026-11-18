@@ -60,6 +60,8 @@ class RecordedPixelIncinerateDeviceTest {
             projectile.assertIsDisplayed()
             fallen.assertDoesNotExist()
             compose.runOnIdle { cursor = faint.atNanos }
+            fallen.assertDoesNotExist()
+            compose.runOnIdle { cursor = (faint.faintTiming as ReplayFaintTiming.Window).by.atNanos }
             fallen.assertExists()
             compose.runOnIdle { cursor = link.landingAtNanos }
             projectile.assertIsDisplayed()

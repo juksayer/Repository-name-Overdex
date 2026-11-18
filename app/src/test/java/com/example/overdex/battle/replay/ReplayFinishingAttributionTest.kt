@@ -103,6 +103,53 @@ class ReplayFinishingAttributionTest {
         assertEquals(1, MatchReplayModel(match(fastRows() + faint)).finishingAttributions.size)
     }
 
+    @Test fun `last opponent receives the only completed unshielded charge without an invented HP frame`() {
+        val charge = chargeRows().filter { it.articleId in setOf("ready", "typed", "spent", "no-shields") }
+        val badge = row("last-ball", 2*S, ArchivedOpponentBattleResourceCountMeasured("POKE_BALLS", 1, 3))
+        val win = row("result", 8*S, ArchivedMatchEnded("WIN"))
+        val original = match(charge + badge + faint + win)
+        for (input in listOf(original, original.copy(articles = original.articles.reversed()))) {
+            val replay = MatchReplayModel(input)
+            val link = replay.finishingChargeAssociations.single()
+            assertEquals(ReplayFinishingEvidence.LAST_RECIPIENT_BASIS, link.basis)
+            assertEquals("Earth Power", link.moveName)
+            assertEquals("Sealeo", link.recipientSpeciesName)
+            assertTrue("last-ball" in link.evidenceArticleIds)
+            assertNull(link.reception)
+            val marker = replay.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }
+            assertEquals(3*S, marker.atNanos)
+            assertEquals(7*S, marker.sourceAtNanos)
+        }
+        val laterAttack = row("later-use", 6*S + S/2, ArchivedFastMoveUseObserved("new", "OPPONENT", "PLAYER",
+            attackerSpeciesName = "Sealeo", evidenceKinds = listOf("HP_BORDER_PULSE"), basis = "test"))
+        val switched = row("switch", 6*S, ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Vaporeon", 134))
+        val shield = row("blocked", 5*S, ArchivedRawText("Blocked!"), "ANNOUNCEMENT_WITNESS")
+        for (events in listOf(charge + badge + win, charge + badge + faint + win + laterAttack,
+            charge + badge + faint + win + switched, charge + badge + faint + win + shield,
+            charge + badge + faint + win + hp("living", 6*S + S/2, .001f, "RED"))) {
+            assertTrue(MatchReplayModel(match(events)).finishingAttributions.isEmpty())
+        }
+    }
+
+    @Test fun `last recipient fast use requires an independently resolved faint and unique attack`() {
+        val badge = row("last-ball", S, ArchivedOpponentBattleResourceCountMeasured("POKE_BALLS", 1, 3))
+        val use = row("use", HIT, ArchivedFastMoveUseObserved("unique", "PLAYER", "UNKNOWN",
+            attackerSpeciesName = "Camerupt", evidenceKinds = listOf("HP_BORDER_PULSE"), basis = "test"))
+        val won = row("win", 8*S, ArchivedMatchEnded("WIN"))
+        val replay = MatchReplayModel(match(listOf(badge, use, faint, won)))
+        val link = replay.finishingFastMoveAssociations.single()
+        assertEquals(ReplayFinishingEvidence.LAST_RECIPIENT_BASIS, link.basis)
+        assertEquals("Camerupt", link.attackerSpeciesName)
+        assertNull(link.reception)
+        assertEquals(link, replay.sceneAt(link.landingAtNanos).fastMoveActions.single().finishingAssociation)
+        val marker = replay.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }
+        assertTrue(marker.atNanos < link.landingAtNanos)
+        assertEquals(7*S, marker.sourceAtNanos)
+        val second = use.copy(articleId = "rival", payload = (use.payload as ArchivedFastMoveUseObserved).copy(useId = "other"))
+        assertTrue(MatchReplayModel(match(listOf(badge, use, second, faint, won))).finishingAttributions.isEmpty())
+        assertTrue(MatchReplayModel(match(listOf(badge, use, won))).finishingAttributions.isEmpty())
+    }
+
     @Test fun `orange pending damage can revert to red when the recipient knocks out the attacker`() {
         val orange = (profile.payload as ArchivedCompleteHpBarObserved).copy(
             status = "DAMAGE_COLOR", liveColumns = 0, damageColumns = 3)

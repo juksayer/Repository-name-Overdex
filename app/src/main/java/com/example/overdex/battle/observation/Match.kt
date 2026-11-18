@@ -163,7 +163,19 @@ class Match(
     internal val preBattleArticles = preBattleListenerDiagnostics?.wrap(preBattleRoute.articles)
         ?: preBattleRoute.articles
 
+    internal val faintSignals = MatchFaintSignals(custody,
+        com.example.overdex.battle.inference.LiveTeamLossHistory(ActivePokemonSide.OPPONENT, rebuildCounter("hud_faints"), faintHistoryCache),
+        realityTimeline::getArticles)
+
     private fun broadcastArticle(article: RealityArticle) {
+        faintSignals.observe(article)
+        if (article.payload is MatchEnded) faintSignals.takeOpponentHudUpdate()?.let { names ->
+            DroidballOverlayPresentation.reconcileOpponentFaints(names, article.monotonicTimeNanos ?: 0L)
+        }
+        publishToArticleStreams(article)
+    }
+
+    private fun publishToArticleStreams(article: RealityArticle) {
         _articles.tryEmit(article)
         preBattleRoute.publish(article)
     }
@@ -204,7 +216,6 @@ class Match(
     private val playerRosterArticleBySlot = ConcurrentHashMap<Int, ArticleId>()
     private val configuredRosterArticleBySlot = ConcurrentHashMap<Int, ArticleId>()
     private val entrySideTracker = EntryAnnouncementSideTracker()
-    private val opponentTeamLossHistory = com.example.overdex.battle.inference.LiveTeamLossHistory(ActivePokemonSide.OPPONENT, rebuildCounter("hud_faints"), faintHistoryCache)
     @Volatile private var playerRosterContradicted = false
     private val openingCrySideGate = OpeningCrySideGate()
     val speciesChecks = SpeciesCheckCoordinator { measurement, refs ->
@@ -533,7 +544,7 @@ class Match(
                 processingSpan?.next("raw_publication.species_cues")
                 cueSpeciesChecks(article)
                 processingSpan?.next("raw_publication.article_broadcast")
-                broadcastArticle(article)
+                publishToArticleStreams(article)
                 processingSpan?.next("raw_publication.receipt_notification")
                 rawArticlePublication.published(article)
                 processingSpan?.next("identity_projection")
@@ -593,12 +604,13 @@ class Match(
                     }
                 }
                 processingSpan?.next("faint_reconciliation")
+                faintSignals.observe(article)
                 // A count conclusion may have been made before delayed identities
                 // arrived. Render the current source-evidence resolution, never
                 // accumulate names from potentially superseded faint conclusions.
-                if (opponentTeamLossHistory.accept(article)) {
+                faintSignals.takeOpponentHudUpdate()?.let { names ->
                     DroidballOverlayPresentation.reconcileOpponentFaints(
-                        opponentTeamLossHistory.currentFaints.map { it.first.speciesName }.toSet(),
+                        names,
                         article.monotonicTimeNanos ?: 0L,
                     )
                 }

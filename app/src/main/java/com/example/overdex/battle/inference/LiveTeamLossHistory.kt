@@ -13,15 +13,32 @@ internal class LiveTeamLossHistory(private val side: ActivePokemonSide,
     private val sources = mutableMapOf<String, RealityArticle>()
     private val hpHistory = LiveVerifiedHpFaintHistory(side, onRebuild, cache)
     private val terminalHistory = LiveTerminalChargedFaintHistory(side, onRebuild, cache)
+    private val limits = TeamFaintLimits(side == ActivePokemonSide.PLAYER)
+    private var countsChanged = false
+    fun faintLimits(): TeamFaintLimits {
+        if (countsChanged) {
+            limits.updateCounts(observations.values.filterIsInstance<TeamLossObservation.Count>(),
+                conflictingObservations.filterIsInstance<TeamLossObservation.Count>().map { it.atNanos }.toSet())
+            countsChanged = false
+        }
+        return limits
+    }
+
     private var attemptFrom = Long.MIN_VALUE
     var resolutions: List<TeamLossResolution> = emptyList()
         private set
     val hpReconciliation get() = hpHistory.reconciliation
     val terminalFaints get() = terminalHistory.resolutions
     fun terminalReturnProof(identityId: String) = terminalHistory.hasIndependentReturnProof(identityId)
-    val currentFaints get() = resolutions.flatMap { loss ->
+    private val candidates get() = resolutions.flatMap { loss ->
         loss.resolvedCandidates.map { it to loss.sourceAtNanos }
     } + hpReconciliation.faints.map { it.owner to it.atNanos } + terminalFaints.map { it.owner to it.atNanos }
+
+    val currentFaints get() = candidates.let { all ->
+        if (all.isEmpty()) emptyList() else faintLimits().select(
+            all.sortedBy { it.second }.distinctBy { TeamLossResolver.speciesKey(it.first.speciesName) }
+        ) { it.second }
+    }
 
     fun source(articleId: String): RealityArticle? = sources[articleId] ?: hpHistory.source(articleId) ?: terminalHistory.source(articleId)
 
@@ -29,8 +46,10 @@ internal class LiveTeamLossHistory(private val side: ActivePokemonSide,
         val at = article.monotonicTimeNanos ?: return false
         if (at < attemptFrom) return false
         val terminalChanged = terminalHistory.accept(article)
-        val hpChanged = hpHistory.accept(article) || terminalChanged
+        val resultChanged = (article.payload as? MatchEnded)?.let { limits.result(it.result) } == true
+        val hpChanged = hpHistory.accept(article) || terminalChanged || resultChanged
         if (article.payload == ObservationRestartedByUser || article.payload == ScreenIgnoredByUser) {
+            countsChanged = true
             attemptFrom = at
             observations.clear(); conflictingIds.clear(); conflictingObservations.clear(); sources.clear()
             val changed = resolutions.isNotEmpty()
@@ -55,6 +74,7 @@ internal class LiveTeamLossHistory(private val side: ActivePokemonSide,
             else -> null
         } ?: return hpChanged
         if (id in conflictingIds || observations[id] == observation) return hpChanged
+        val wasCount = observations[id] is TeamLossObservation.Count
         if (observations.containsKey(id)) {
             conflictingIds += id
             conflictingObservations += requireNotNull(observations.remove(id))
@@ -68,6 +88,7 @@ internal class LiveTeamLossHistory(private val side: ActivePokemonSide,
             if (observation is TeamLossObservation.Alive && resolutions.isEmpty()) return true
         }
         val input = observations.values.toList() + conflictingObservations
+        if (wasCount || observation is TeamLossObservation.Count) countsChanged = true
         val compute = {
             onRebuild?.invoke("team_loss_${side.name}", input.size)
             TeamLossResolver.resolve(input)

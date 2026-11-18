@@ -106,6 +106,52 @@ class OpponentFaintTrackerTest {
         assertEquals("Sealeo", tracker.accept(article("balls-2", 5, balls(2)))?.speciesName)
     }
 
+    @Test fun `one custody destination per side survives detaching and replaying the ledger`() {
+        val custody = com.example.overdex.battle.custody.InMemoryTestimonyCustody()
+        val ledger = mutableListOf<RealityArticle>()
+        val route = MatchFaintSignals(custody) { ledger.toList() }
+        val side = ActivePokemonSide.OPPONENT
+        val first = PokemonFaintWitness(side)
+        val other = PokemonFaintWitness(side)
+        val source = SourceId("faint-only")
+        route.attach(side, first, source)
+        org.junit.Assert.assertThrows(IllegalStateException::class.java) { route.attach(side, other, source) }
+        ledger += article("target", 1, ActivePokemonSpeciesWitnessed(side, "Sealeo", 364))
+        ledger += article("before", 2, balls(3))
+        ledger += article("after", 3, balls(2))
+        ledger.forEach(route::observe)
+        route.detach(side, first)
+        route.attach(side, other, source)
+        ledger.forEach(route::observe)
+        val record = custody.getRecords().single() as com.example.overdex.battle.custody.TestimonyRecord
+        assertEquals(source, record.sourceId)
+        assertEquals("Sealeo", (record.payload as com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed).speciesName)
+        assertEquals(3_000_000_000L, record.monotonicTimeNanos)
+    }
+
+    @Test fun `winner has at most two signals and only a resolved loss can use the third slot`() {
+        for (side in ActivePokemonSide.entries) {
+            fun count(id: String, time: Long, n: Int) = article(id, time, if (side == ActivePokemonSide.PLAYER)
+                com.example.overdex.battle.custody.PlayerPokeBallCountMeasured(n) else balls(n))
+            val events = listOf(count("three", 1, 3), article("a", 1, ActivePokemonSpeciesWitnessed(side, "Sealeo", 364)),
+                count("two", 2, 2), article("b", 3, ActivePokemonSpeciesWitnessed(side, "Camerupt", 323)),
+                count("two-again", 4, 2), count("one", 5, 1),
+                article("c", 6, ActivePokemonSpeciesWitnessed(side, "Vaporeon", 134)),
+                count("one-again", 7, 1), count("zero", 8, 0))
+            for (result in listOf(com.example.overdex.model.BattleResult.WIN, com.example.overdex.model.BattleResult.LOSS)) {
+                val tracker = TeamFaintTracker(side)
+                assertEquals(listOf("Sealeo", "Camerupt"), events.flatMap(tracker::acceptAll).map { it.speciesName })
+                val ending = article("result", 12, com.example.overdex.battle.custody.MatchEnded(result))
+                val lost = (side == ActivePokemonSide.PLAYER) == (result == com.example.overdex.model.BattleResult.LOSS)
+                val final = tracker.acceptAll(ending)
+                assertEquals(if (lost) listOf("Vaporeon") else emptyList(), final.map { it.speciesName })
+                if (lost) assertEquals("zero", final.single().sourceArticle.id.value)
+                assertTrue((events + ending).flatMap(tracker::acceptAll).isEmpty())
+                assertTrue(TeamFaintTracker(side).acceptAll(ending).isEmpty())
+            }
+        }
+    }
+
     private fun balls(count: Int) = OpponentBattleResourceCountMeasured(
         OpponentBattleResource.POKE_BALLS,
         count,

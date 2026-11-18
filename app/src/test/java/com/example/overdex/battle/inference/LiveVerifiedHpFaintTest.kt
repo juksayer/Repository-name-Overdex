@@ -210,6 +210,15 @@ class LiveVerifiedHpFaintTest {
         } finally { hud.reset() }
     }
 
+    @Test fun `a three-ball badge covers its capture time but cannot veto a later empty bar`() {
+        fun full(at: Long) = article("three", at,
+            OpponentBattleResourceCountMeasured(OpponentBattleResource.POKE_BALLS, 3, 3))
+        val earlier = TeamFaintTracker(side)
+        assertEquals(1, (listOf(full(redAt)) + evidence()).flatMap(earlier::acceptAll).size)
+        val current = TeamFaintTracker(side)
+        assertTrue((listOf(full(emptyAt)) + evidence()).flatMap(current::acceptAll).isEmpty())
+    }
+
     @Test fun `count corroboration and repeated observations yield one replay and summary knockout`() {
         val input = evidence()
         val before = article("balls-before", 56 * second,
@@ -231,7 +240,7 @@ class LiveVerifiedHpFaintTest {
             val archive = RealityArticleArchiveMapper.createArchive(match, delivered + published)
             assertEquals(1, archive.summarize().opponent.faintCount)
             assertEquals(1, MatchReplayModel(archive).eventMarkers.count { it.kind == ReplayEventMarkerKind.FAINT })
-            assertTrue(published.size <= 2) // independent HP and count conclusions, never extra team losses
+            assertEquals(1, published.size)
         }
     }
 

@@ -30,6 +30,14 @@ internal class ReplayTeamLossProjection(archive: MatchArchive) {
             }
         }
     }
+    val faintLimits = observationsBySide.mapValues { (side, rows) ->
+        com.example.overdex.battle.inference.TeamFaintLimits(side == "PLAYER").also { limits ->
+            limits.updateCounts(rows.filterIsInstance<TeamLossObservation.Count>())
+            uniqueSources.values.mapNotNull { (it.payload as? ArchivedMatchEnded)?.result }
+                .mapNotNull { name -> com.example.overdex.model.BattleResult.entries.find { it.name == name } }
+                .forEach(limits::result)
+        }
+    }
     private val reconciledSides = observationsBySide.filterValues { observations ->
         observations.filterIsInstance<TeamLossObservation.Count>().map { it.articleId }.distinct().size >= 2
     }.keys

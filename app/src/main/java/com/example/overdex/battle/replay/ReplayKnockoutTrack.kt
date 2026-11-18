@@ -18,6 +18,7 @@ internal class ReplayKnockoutTrack(
     verifiedHpLosses: Map<String, VerifiedHpFaintResolution> = emptyMap(),
     terminalLosses: Map<String, com.example.overdex.battle.inference.TerminalChargedFaintResolution> = emptyMap(),
     corroboratingHpLosses: Map<String, List<VerifiedHpFaintResolution>> = emptyMap(),
+    private val limits: Map<String, com.example.overdex.battle.inference.TeamFaintLimits> = emptyMap(),
 ) {
     // Conflicting duplicate IDs cannot supply a unique custody link.
     private val articlesById = articles.groupBy { it.articleId }.mapValues { (_, copies) -> copies.singleOrNull() }
@@ -142,7 +143,12 @@ internal class ReplayKnockoutTrack(
             timing = ReplayFaintTiming.Window(null,
                 replacementBound(faint.side, replacement)?.takeIf { it.atNanos < at } ?: ReplayTimeBound(at, article.articleId)),
         )
-    }.distinctBy { it.side to it.appearanceAtNanos }
+    }.distinctBy { it.side to it.appearanceAtNanos }.let(::bounded)
+
+    fun bounded(items: List<ReplayKnockout>): List<ReplayKnockout> =
+        items.groupBy { it.side }.flatMap { (side, rows) ->
+            limits[side]?.select(rows) { it.recordedAtNanos } ?: rows
+        }.sortedBy { it.presentationAtNanos }
 
     /** A named actor alone cannot attach an arbitrarily delayed faint to a voluntary switch. */
     private fun citedResourceDrop(

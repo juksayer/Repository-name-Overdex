@@ -33,8 +33,10 @@ class RecordedZubatFinishingHitTest {
         val action = landing.chargedMoveActions.single { it.moveName == "Dragon Claw" }
         assertEquals(link, action.finishingAssociation)
         assertEquals(1f, ReplayChargePose.at(action, true).projectileProgress, 0f)
-        assertEquals(listOf(ReplayEventMarkerKind.CHARGED_MOVE, ReplayEventMarkerKind.FAINT),
-            model.eventMarkers.filter { it.finishingAttribution == link }.map { it.kind })
+        val markers = model.eventMarkers.filter { it.finishingAttribution == link }
+        assertEquals(2, markers.size)
+        assertEquals(setOf(ReplayEventMarkerKind.CHARGED_MOVE, ReplayEventMarkerKind.FAINT), markers.map { it.kind }.toSet())
+        assertTrue(markers.single { it.kind == ReplayEventMarkerKind.FAINT }.atNanos <= action.startedAtNanos)
         assertEquals("Faint · Zubat · Dragon Claw by Turtonator",
             model.eventMarkers.single { it.finishingAttribution == link && it.kind == ReplayEventMarkerKind.FAINT }.label)
         model.sceneAt(model.endNanos)

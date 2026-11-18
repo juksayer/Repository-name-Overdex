@@ -98,8 +98,84 @@ internal class ReplayFinishingEvidence(
 
     fun observed(knockouts: List<ReplayKnockout>): List<ReplayFinishingAttribution> =
         knockouts.filter { it.sourceArticleIds.isNotEmpty() }.flatMap { faint ->
-            (fast + pendingFastCycles).mapNotNull { directFast(faint, it) } + charges.mapNotNull { directCharge(faint, it) }
+            val direct = (fast + pendingFastCycles).mapNotNull { directFast(faint, it) } +
+                charges.mapNotNull { directCharge(faint, it) }
+            if (direct.isNotEmpty()) direct else lastRecipient(faint)
         }
+
+    /** A confirmed loss plus a one-ball badge can identify the only recipient even if
+     * there is no terminal damage frame. The landing remains a presentation estimate. */
+    private fun lastRecipient(faint: ReplayKnockout): List<ReplayFinishingAttribution> {
+        if (faint.side !in SIDES || faint.replacementAtNanos != null) return emptyList()
+        val side = if (faint.side == "PLAYER") "OPPONENT" else "PLAYER"
+        val end = faint.recordedAtNanos
+        val knownResult = articles.mapNotNull { (it.payload as? ArchivedMatchEnded)?.result }.distinct()
+        if ((if (faint.side == "PLAYER") "WIN" else "LOSS") in knownResult) return emptyList()
+        val counts = articles.mapNotNull { a ->
+            val count = when (val p = a.payload) {
+                is ArchivedPlayerPokeBallCountMeasured -> p.visibleCount.takeIf { faint.side == "PLAYER" && p.maximumCount == 3 }
+                is ArchivedOpponentBattleResourceCountMeasured -> p.visibleCount.takeIf {
+                    faint.side == "OPPONENT" && p.resource == "POKE_BALLS" && p.maximumCount == 3 }
+                else -> null
+            }
+            count?.takeIf { it in 0..3 && reliable(a) }?.let { a to it }
+        }
+        fun badgeFor(start: Long, landing: Long, ids: Set<String>): String? {
+            if (end - landing !in 0..LAST_RECIPIENT_CONFIRMATION || start > landing ||
+                appearanceAt(faint.side, start) != faint.appearanceAtNanos) return null
+            val badge = counts.lastOrNull { it.first.monotonicTimeNanos!! <= start } ?: return null
+            val at = badge.first.monotonicTimeNanos!!
+            if (badge.second != 1 || counts.any { (a, n) ->
+                    val t = a.monotonicTimeNanos!!
+                    (t in at..landing && n != 1 && !(t == landing && n == 0)) ||
+                        (t in landing..end && n > 1) || (t < at && n == 0)
+                }) return null
+            // An uncited later hit (including one from the supposed victim) or an
+            // observation break makes the sequence incomplete. Publication order is irrelevant.
+            if (claims.any { it.atNanos > landing && it.atNanos <= end && it.articleId !in ids } ||
+                articles.any { it.monotonicTimeNanos!! in start until end &&
+                    (it.payload is ArchivedMatchEnded || it.payload is ArchivedScreenIgnoredByUser ||
+                        it.payload is ArchivedObservationRestartedByUser || it.payload is ArchivedObservationSessionStoppedByUser) })
+                return null
+            return badge.first.articleId
+        }
+
+        val fastLinks = fast.mapNotNull { cycle ->
+            val use = cycle.witness
+            if (use.side != side || !FastMoveUseEvidence.establishesUse(use.evidenceKinds)) return@mapNotNull null
+            val sources = use.articleIds.mapNotNull(byId::get).filter { it.fastOccurrenceId() != null }
+            if (sources.map { it.fastOccurrenceId() }.distinct().size != 1) return@mapNotNull null
+            val source = sources.first()
+            val at = source.monotonicTimeNanos!!
+            val actor = actorAt(side, at) ?: return@mapNotNull null
+            val owner = appearanceAt(side, at)
+            if (sources.any { a ->
+                    val p = a.payload as ArchivedFastMoveUseObserved
+                    return@any !reliable(a) || p.attackingSide != side || (p.damagedSide in SIDES && p.damagedSide != faint.side) ||
+                        p.attackerSpeciesName?.let { speciesKey(it) != speciesKey(actor.speciesName) } == true ||
+                        p.appearanceId?.let { byId[it]?.monotonicTimeNanos?.let { t -> appearanceAt(side, t) != owner } } == true
+                } || !sameExchange(side, owner, faint, cycle.startedAtNanos, cycle.impactAtNanos)) return@mapNotNull null
+            val badge = badgeFor(at, cycle.impactAtNanos, use.articleIds) ?: return@mapNotNull null
+            ReplayFinishingFastAssociation(side, actor.speciesName, faint.side, faint.speciesName, faint.appearanceAtNanos,
+                use.moveName, cycle.impactAtNanos, at, end, use.articleIds.sorted(), emptyList(),
+                (faint.sourceArticleIds + badge).distinct(), owner, basis = LAST_RECIPIENT_BASIS)
+        }
+        val chargeLinks = charges.mapNotNull { charge ->
+            if (charge.side != side || !charge.completed || !charge.uniquelyOwned) return@mapNotNull null
+            val proof = chargeEvidence.getValue(charge)
+            if (proof.isEmpty()) return@mapNotNull null
+            val owner = appearanceAt(side, charge.sourceAtNanos)
+            val actor = actorAt(side, charge.sourceAtNanos) ?: return@mapNotNull null
+            if (!sameExchange(side, owner, faint, charge.preparationAtNanos, charge.impactAtNanos)) return@mapNotNull null
+            val ids = proof + charge.articleIds
+            val badge = badgeFor(charge.sourceAtNanos, charge.impactAtNanos, ids) ?: return@mapNotNull null
+            val shields = unshielded(charge, faint) ?: return@mapNotNull null
+            ReplayFinishingChargeAssociation(side, actor.speciesName, owner, faint.side, faint.speciesName,
+                faint.appearanceAtNanos, charge.moveName, charge.sourceAtNanos, end, charge.impactAtNanos, null,
+                ids.sorted(), (faint.sourceArticleIds + badge).distinct(), shields, LAST_RECIPIENT_BASIS)
+        }
+        return fastLinks + chargeLinks
+    }
 
     /** Preparation custody and an empty-looking outline corroborate a count-resolved loss.
      * An uncertain interior cannot supply a measured reception through this path.
@@ -425,6 +501,8 @@ internal class ReplayFinishingEvidence(
     private fun opposes(side: String, recipient: String) = side in SIDES && recipient in SIDES && side != recipient
 
     companion object {
+        internal const val LAST_RECIPIENT_BASIS = "UNCONTESTED_ATTACK_ON_LAST_RECIPIENT"
+        private const val LAST_RECIPIENT_CONFIRMATION = 2_500_000_000L
         private val SIDES = setOf("PLAYER", "OPPONENT")
         private val USED_MOVE = Regex("(.+?) used .+[!.]?", RegexOption.IGNORE_CASE)
         private const val HP_CONFIRMATION_TAIL = 350_000_000L

@@ -89,7 +89,9 @@ class RecordedPixelIncinerateFinishesTest {
             assertEquals(1f, landed.progress, .001f)
             assertTrue(at.chargedMoveActions.isEmpty())
             assertEquals(false, at.opponent?.isFainted)
-            assertEquals(true, model.sceneAt(faint.atNanos).opponent?.isFainted)
+            assertEquals(landed.startedAtNanos, faint.atNanos)
+            assertEquals(false, model.sceneAt(faint.atNanos).opponent?.isFainted)
+            assertEquals(true, model.sceneAt(bounds.by.atNanos).opponent?.isFainted)
             assertEquals(at, model.sceneAt(attack.atNanos))
         }
         assertTrue(links.last().faintArticleIds.any { rows[it]?.payload is ArchivedMatchEnded })
