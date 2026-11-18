@@ -61,6 +61,8 @@ class RecordedSealeoFinishingHitTest {
             }
             assertEquals("The supported projectile reaches its recipient", 1f, landing.progress, 0f)
             assertEquals("Incinerate", landing.moveName)
+            assertNull("An earlier Incinerate with a surviving sliver cannot receive KO credit", landing.finishingAssociation)
+            assertTrue(model.finishingAttributions.none { it.recipientSpeciesName == "Sealeo" && it.landingAtNanos == impact })
             assertTrue("The visual/audio cue does not itself timestamp settled damage",
                 landing.damageObservationTimesNanos.isEmpty())
             val laterRed = original.articles.filter { a ->

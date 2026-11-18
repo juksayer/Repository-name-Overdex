@@ -15,6 +15,7 @@ data class ReplayEventMarker(
     /** The unchanged event clock when presentation has fitted an animation before a replacement. */
     val sourceAtNanos: Long = atNanos,
     val sourceArticleIds: List<String> = emptyList(),
+    val finishingAttribution: ReplayFinishingAttribution? = null,
 ) {
     val sideLabel: String get() = when (side) {
         "PLAYER" -> "YOU"

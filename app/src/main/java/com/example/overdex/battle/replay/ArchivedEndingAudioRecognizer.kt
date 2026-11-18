@@ -14,14 +14,18 @@ import kotlin.coroutines.coroutineContext
 /** Reads original ZIP entries in place. No extracted or synthetic media is persisted. */
 object ArchivedEndingAudioRecognizer {
     suspend fun recognize(archive: MatchArchive, moves: List<Move>, speciesIds: Set<Int>,
-                          openArchive: () -> InputStream?, readAsset: (String) -> ByteArray): ReplayAudioRecovery = withContext(Dispatchers.Default) {
+                          openArchive: () -> InputStream?, readAsset: (String) -> ByteArray): ReplayAudioRecovery =
+        recognize(archive, moves, speciesIds, openArchive, null, readAsset)
+
+    suspend fun recognize(archive: MatchArchive, moves: List<Move>, speciesIds: Set<Int>,
+                          openArchive: () -> InputStream?, captureWindow: LongRange?, readAsset: (String) -> ByteArray): ReplayAudioRecovery = withContext(Dispatchers.Default) {
         if (ReplayRetainedAudioRecovery.selectedArticles(archive).isEmpty()) return@withContext ReplayAudioRecovery()
         if (!archive.mediaIncluded) return@withContext ReplayAudioRecovery(unavailableArtifacts = listOf("Archive has no audio media"))
         val missing = mutableListOf<String>()
         fun key(s: String) = s.uppercase().filter(Char::isLetterOrDigit)
         val wanted = moves.map { key(it.name) }.toMutableSet()
         // A configured or recorded move is still a candidate even when reference legality disagrees.
-        archive.articles.forEach { a -> when (val p = a.payload) {
+        if (captureWindow == null) archive.articles.forEach { a -> when (val p = a.payload) {
             is ArchivedPlayerTeamSlotConfigured -> wanted.addAll((p.chargedMoveNames + p.fastMoveName).map(::key))
             is ArchivedFastMoveIdentified -> wanted.add(key(p.moveName))
             is ArchivedChargedMoveEnergySpent -> wanted.add(key(p.moveName))
@@ -48,7 +52,7 @@ object ArchivedEndingAudioRecognizer {
             if (id in speciesIds) reference("Cry $id", false, id, r.getValue("assetPath").jsonPrimitive.content, r.getValue("sha256").jsonPrimitive.content)
         }
         missing += speciesIds.filter { id -> references.none { it.speciesId == id } }.map { "Cry $it" }
-        val targets = ReplayRetainedAudioRecovery.selectedArticles(archive).map { it.payload as ArchivedAudioCaptured }.associateBy { it.artifactPath }
+        val targets = ReplayRetainedAudioRecovery.selectedArticles(archive).filter { captureWindow == null || it.monotonicTimeNanos in captureWindow }.map { it.payload as ArchivedAudioCaptured }.associateBy { it.artifactPath }
         val bytes = mutableMapOf<String, ByteArray>()
         val seen = mutableSetOf<String>()
         openArchive()?.use { input -> ZipInputStream(input).use { zip ->
@@ -73,6 +77,6 @@ object ArchivedEndingAudioRecognizer {
             }
         } }
         val context = coroutineContext
-        ReplayRetainedAudioRecovery.recover(archive, references, missing, { context.ensureActive() }) { bytes[it.artifactPath] }
+        ReplayRetainedAudioRecovery.recover(archive, references, missing, { context.ensureActive() }, captureWindow) { bytes[it.artifactPath] }
     }
 }

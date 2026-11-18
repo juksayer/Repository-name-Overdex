@@ -655,6 +655,61 @@ all original clocks and testimony; missing loss evidence, a living switch,
 ambiguous ownership, or a competing attack must not create a KO. See the
 [recorded verification](../verification/2026-11-15-automatic-finishing-recovery.md).
 
+**MOVE-05 — finishing-hit ownership in completed Replay, November 17.** If a
+supported, sided Fast Move cites a qualified recipient tick to zero and separate
+loss evidence resolves the recipient's faint, credit that use to the attacker
+that was active at the exchange. A uniquely owned, completed Charged Move can
+receive credit from a complete recipient impact linked to that completion and
+a separately resolved faint, or from a terminal-faint decision that explicitly
+cites that charge. Record the source move, any measured reception, and the
+faint with separate references and clocks. Count and audio inference retain
+their own basis and may leave measured reception empty.
+
+Use one decision per fainted appearance for the attack marker, projectile
+landing and faint marker. A later identity change does not transfer credit to
+the incoming Pokémon. Merge corroboration for one occurrence, including a
+typed banner that cites its named announcement. Check pending and unscheduled
+uses by source time across both move kinds. Withhold credit when distinct
+attacks could explain the faint, ownership conflicts, the relevant charge was
+shielded, the recipient switched while alive, or qualified surviving HP is
+seen at or after the proposed finishing reception. A tiny live sliver before
+reception records earlier HP. A supported attack without a resolved name
+can display its move kind. A result alone leaves the cause unresolved. Keep
+all original testimony and times.
+
+**MOVE-05 — shield bracket for a count-resolved charged finish, November 18.**
+If an independently count-confirmed faint follows one named player charge, a
+nearby pre-QTE shield reading can bracket that exchange with an unchanged
+post-replacement reading. Require the same appearances, no intervening charge
+or observation boundary, and a reliable full-outline sample during impact
+that cites a crop from this QTE. The pre-QTE reading may precede preparation
+by up to four seconds in this path. The empty-looking outline corroborates the
+exchange while the independent team loss establishes the faint. Its uncertain
+interior supplies no measured reception timestamp. A surviving sliver after
+the sample, a living switch, or another plausible attack withholds credit.
+
+**MOVE-05 — retained finishing announcement.** A full frame whose calibrated
+HP crop exactly matches a unique source-timed crop can restore a missing
+announcement for completed Replay. A named player charge, an opponent damage
+trail and a native win can support credit when the last opponent's departure
+has two independent cues among a qualified cry, a localized departure burst and
+a native 1-to-0 ball count. Multiple clips of the same cry corroborate one cue. Use the
+first supported impact frame for the projectile and the cleared frame for the
+faint. Uncertain interior pixels leave the measured damage time and zero HP
+unknown. A living return, surviving HP, shield, competing use or unresolved
+ownership withholds credit. File modification time only narrows the image search.
+
+**MOVE-05 — lethal-damage feasibility, proposed November 18.** If the
+recipient has a reliable exact 1 HP immediately before a confirmed damaging
+hit reaches that appearance, a hit that removes at least 1 HP is lethal.
+Use a qualified damage bound to exclude a candidate that could not have
+finished the target. A displayed HP fraction or one visible fill column
+does not establish exact HP, and base move power does not establish damage
+dealt. A Poké Ball count decrease resolves a loss through the appearance
+history. Credit the previous opposing hit only when it reached that
+appearance and no other hit can explain the loss. This proposal does not
+supply missing hit, HP, or owner evidence.
+
 **MOVE-05 review proposal — November 14, not implemented.** If native evidence
 has established zero shields for a side in the same Match, consider carrying
 that zero forward for finishing-hit association rather than requiring a fresh

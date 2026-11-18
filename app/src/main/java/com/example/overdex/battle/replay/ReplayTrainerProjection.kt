@@ -29,7 +29,7 @@ internal class ReplayTrainerProjection(
         val move = creditedMove(faint) ?: return@any false
         val impact = at(move) ?: return@any false
         move.side.name == link.attackingSide && sameName(move.speciesName, link.attackerSpeciesName) &&
-            sameName(move.moveName.orEmpty(), link.moveName) && kotlin.math.abs(impact - link.impactAtNanos) <= REVIEWED_KO_WINDOW
+            sameName(move.moveName.orEmpty(), link.moveName.orEmpty()) && kotlin.math.abs(impact - link.impactAtNanos) <= REVIEWED_KO_WINDOW
     }
 
     private fun reviewedColor(side: String, name: String?, impact: Long, scene: ReplayScene): Boolean = entries.any { faint ->

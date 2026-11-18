@@ -4,23 +4,26 @@ import com.example.overdex.battle.archive.*
 
 /** A completed-archive causal projection. Neither source clock is an impact measurement. */
 data class ReplayFinishingChargeAssociation(
-    val attackingSide: String,
-    val attackerSpeciesName: String,
-    val attackerAppearanceAtNanos: Long,
-    val recipientSide: String,
-    val recipientSpeciesName: String,
-    val recipientAppearanceAtNanos: Long,
-    val moveName: String,
-    val moveSourceAtNanos: Long,
-    val faintSourceAtNanos: Long,
+    override val attackingSide: String,
+    override val attackerSpeciesName: String,
+    override val attackerAppearanceAtNanos: Long,
+    override val recipientSide: String,
+    override val recipientSpeciesName: String,
+    override val recipientAppearanceAtNanos: Long,
+    override val moveName: String?,
+    override val moveSourceAtNanos: Long,
+    override val faintSourceAtNanos: Long,
     val presentationImpactAtNanos: Long,
     val replacementAtNanos: Long?,
-    val moveArticleIds: List<String>,
-    val faintArticleIds: List<String>,
+    override val moveArticleIds: List<String>,
+    override val faintArticleIds: List<String>,
     val shieldArticleIds: List<String>,
-    val basis: String = "UNCONTESTED_CHARGE_TO_RESOLVED_COUNT_FAINT",
-) {
-    val evidenceArticleIds: List<String> get() = (moveArticleIds + faintArticleIds + shieldArticleIds).distinct().sorted()
+    override val basis: String = "UNCONTESTED_CHARGE_TO_RESOLVED_COUNT_FAINT",
+    override val reception: ReplayFinishingReception? = null,
+    val impactSupportArticleIds: List<String> = emptyList(),
+) : ReplayFinishingAttribution {
+    override val landingAtNanos get() = presentationImpactAtNanos
+    override val corroboratingArticleIds get() = shieldArticleIds + impactSupportArticleIds
 }
 
 internal data class ReplayFinishingChargeCandidate(
@@ -31,6 +34,7 @@ internal data class ReplayFinishingChargeCandidate(
     val impactAtNanos: Long,
     val articleIds: Set<String>,
     val completed: Boolean,
+    val uniquelyOwned: Boolean = true,
 )
 
 /** Deliberately scoped to one resolved team loss followed by a known replacement.
@@ -39,6 +43,7 @@ internal data class ReplayFinishingChargeCandidate(
 internal object ReplayFinishingChargeAssociator {
     private const val DEPARTURE_WINDOW = 8_000_000_000L
     private const val SHIELD_CONFIRMATION_TAIL = 2_000_000_000L
+    private const val PREPARATION_SHIELD_LOOKBACK = 4_000_000_000L
 
     fun resolve(
         articles: List<ArchivedRealityArticle>,
@@ -49,6 +54,7 @@ internal object ReplayFinishingChargeAssociator {
         appearanceAt: (String, Long) -> Long,
         nextAppearance: (String, Long) -> Long?,
         acceptsHp: (ArchivedRealityArticle) -> Boolean,
+        countImpactSupport: (ReplayFinishingChargeCandidate, ReplayKnockout) -> List<String> = { _, _ -> emptyList() },
     ): List<ReplayFinishingChargeAssociation> {
         val ordered = articles.filter { it.monotonicTimeNanos != null }.sortedBy { it.monotonicTimeNanos }
         return knockouts.mapNotNull { ko ->
@@ -56,7 +62,7 @@ internal object ReplayFinishingChargeAssociator {
             if (ko.basis != ReplayTeamLossProjection.BASIS || ko.verifiedPokeBallsAfter == null ||
                 ko.verifiedPokeBallsAfter !in 1..2 || ko.recordedAtNanos < replacement) return@mapNotNull null
             val candidates = charges.filter { charge ->
-                charge.completed && charge.moveName != null && charge.side in setOf("PLAYER", "OPPONENT") &&
+                charge.completed && charge.uniquelyOwned && charge.moveName != null && charge.side in setOf("PLAYER", "OPPONENT") &&
                     charge.side != ko.side && charge.articleIds.isNotEmpty() &&
                     replacement - charge.sourceAtNanos in 1..DEPARTURE_WINDOW &&
                     charge.impactAtNanos < replacement
@@ -99,8 +105,21 @@ internal object ReplayFinishingChargeAssociator {
                     }
                 }) return@mapNotNull null
             val shields = ordered.mapNotNull { a -> shieldCount(a, ko.side)?.let { Triple(a.monotonicTimeNanos!!, it, a.articleId) } }
-            val before = shields.lastOrNull { it.first in charge.preparationAtNanos..charge.sourceAtNanos }
-                ?: return@mapNotNull null
+            val before = shields.lastOrNull { it.first <= charge.sourceAtNanos } ?: return@mapNotNull null
+            val impactSupport = if (before.first < charge.preparationAtNanos) {
+                if (charge.preparationAtNanos - before.first > PREPARATION_SHIELD_LOOKBACK ||
+                    before.first < maxOf(attackerAppearance, targetAppearance) ||
+                    ordered.any { article ->
+                        article.monotonicTimeNanos!! in before.first until charge.preparationAtNanos &&
+                            (isReplayPlayerChargeCue(article) || isReplayAttackIncomingCue(article) ||
+                                article.payload is ArchivedChargeMoveUsedAnnounced ||
+                                article.payload is ArchivedChargedMoveEnergySpent ||
+                                article.payload is ArchivedObservationRestartedByUser ||
+                                article.payload is ArchivedObservationSessionStoppedByUser ||
+                                article.payload is ArchivedScreenIgnoredByUser || article.payload is ArchivedMatchEnded)
+                    }) return@mapNotNull null
+                countImpactSupport(charge, ko).takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            } else emptyList()
             val after = shields.firstOrNull { it.first in replacement..(replacement + SHIELD_CONFIRMATION_TAIL) }
                 ?: return@mapNotNull null
             val bracket = shields.filter { it.first in before.first..after.first }
@@ -112,7 +131,8 @@ internal object ReplayFinishingChargeAssociator {
             ReplayFinishingChargeAssociation(charge.side, attacker.speciesName, attackerAppearance,
                 ko.side, ko.speciesName, ko.appearanceAtNanos, requireNotNull(charge.moveName),
                 charge.sourceAtNanos, ko.recordedAtNanos, charge.impactAtNanos, replacement,
-                charge.articleIds.sorted(), ko.sourceArticleIds.sorted(), bracket.map { it.third })
+                charge.articleIds.sorted(), ko.sourceArticleIds.sorted(), bracket.map { it.third },
+                impactSupportArticleIds = impactSupport)
         }
     }
 

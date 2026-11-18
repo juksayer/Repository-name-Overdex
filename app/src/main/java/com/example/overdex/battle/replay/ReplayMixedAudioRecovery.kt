@@ -17,24 +17,24 @@ data class ReplayMixedAudioCandidate(
 internal object ReplayMixedAudioRecovery {
     private const val RATE = 8_000
     private const val FRAGMENT = 3_200
-    private const val STRIDE = 1_600
     private const val MIN_SCORE = .20f
     private const val STRONG_SCORE = .30f
     private const val ONSET_TOLERANCE = 5_000_000L
 
     fun measure(audio: Pcm16Audio, articleId: String, capturedAtNanos: Long, audioSha256: String,
-                references: List<ReplayAudioReference>): List<ReplayMixedAudioCandidate> {
+                references: List<ReplayAudioReference>, shortFragments: Boolean = false): List<ReplayMixedAudioCandidate> {
+        val length = if (shortFragments) RATE / 5 else FRAGMENT
         val query = StatChangeSoundMatcher.mono8k(audio)
-        if (query.size !in FRAGMENT..(RATE * 4) || articleId.isBlank() || audioSha256.isBlank()) return emptyList()
+        if (query.size !in length..(RATE * 4) || articleId.isBlank() || audioSha256.isBlank()) return emptyList()
         return references.asSequence().filter { !it.charged && it.speciesId == null }
             .distinctBy { it.name to it.sha256 }.mapNotNull { reference ->
                 val samples = StatChangeSoundMatcher.mono8k(reference.audio)
-                if (samples.size !in (FRAGMENT * 2)..(RATE * 8)) return@mapNotNull null
-                val offsets = (0..samples.size - FRAGMENT step STRIDE).toList()
+                if (samples.size !in (length * 2)..(RATE * 8)) return@mapNotNull null
+                val offsets = (0..samples.size - length step (length / 2)).toList()
                 if (offsets.size > CryWaveformMatcher.MAX_REFERENCES) return@mapNotNull null
                 val matcher = CryWaveformMatcher(offsets.mapIndexed { i, off ->
                     CryWaveformReference(i + 1, reference.sha256,
-                        Pcm16Audio(RATE, 1, samples.copyOfRange(off, off + FRAGMENT)))
+                        Pcm16Audio(RATE, 1, samples.copyOfRange(off, off + length)))
                 })
                 val fragments = matcher.measureMono8k(query).map { fit ->
                     ReplayAudioFragment(articleId, capturedAtNanos, audioSha256, reference.sha256,

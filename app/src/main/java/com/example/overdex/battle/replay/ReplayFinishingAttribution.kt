@@ -1,0 +1,73 @@
+package com.example.overdex.battle.replay
+
+import com.example.overdex.battle.archive.ArchivedFastMoveUseObserved
+import com.example.overdex.battle.archive.ArchivedRealityArticle
+
+data class ReplayFinishingReception(val atNanos: Long, val articleIds: List<String>)
+
+/** One conclusion about a supported occurrence. Landing is a Replay clock, independent of reception. */
+sealed interface ReplayFinishingAttribution {
+    val attackingSide: String
+    val attackerSpeciesName: String
+    val attackerAppearanceAtNanos: Long
+    val recipientSide: String
+    val recipientSpeciesName: String
+    val recipientAppearanceAtNanos: Long
+    val moveName: String?
+    val moveSourceAtNanos: Long
+    val landingAtNanos: Long
+    val faintSourceAtNanos: Long
+    val moveArticleIds: List<String>
+    val faintArticleIds: List<String>
+    val corroboratingArticleIds: List<String>
+    val reception: ReplayFinishingReception?
+    val basis: String
+    val evidenceArticleIds: List<String>
+        get() = (moveArticleIds + reception?.articleIds.orEmpty() + faintArticleIds +
+            corroboratingArticleIds).distinct().sorted()
+}
+
+internal object ReplayFinishingAttributions {
+    fun resolve(
+        candidates: List<ReplayFinishingAttribution>,
+        permits: (ReplayFinishingAttribution) -> Boolean,
+    ): List<ReplayFinishingAttribution> =
+        candidates.groupBy { it.recipientSide to it.recipientAppearanceAtNanos }.values.mapNotNull { links ->
+            // A second path to the same occurrence corroborates it. A second occurrence competes.
+            val first = links.first()
+            if (links.any { it::class != first::class || it.attackingSide != first.attackingSide ||
+                    it.attackerAppearanceAtNanos != first.attackerAppearanceAtNanos ||
+                    it.moveSourceAtNanos != first.moveSourceAtNanos ||
+                    it.moveArticleIds.intersect(first.moveArticleIds.toSet()).isEmpty() ||
+                    (it.moveName != null && first.moveName != null && it.moveName != first.moveName) }) return@mapNotNull null
+            if (links.mapNotNull { it.moveName }.distinct().size > 1) return@mapNotNull null
+            val receptions = links.mapNotNull { it.reception }
+            if (receptions.map { it.atNanos }.distinct().size > 1) return@mapNotNull null
+            val preferred = links.firstOrNull { it.reception != null } ?: first
+            val merged = merge(preferred, links, receptions)
+            merged.takeIf(permits)
+        }.sortedWith(compareBy<ReplayFinishingAttribution> { it.landingAtNanos }.thenBy { it.recipientSide })
+
+    private fun merge(
+        preferred: ReplayFinishingAttribution,
+        links: List<ReplayFinishingAttribution>,
+        receptions: List<ReplayFinishingReception>,
+    ): ReplayFinishingAttribution {
+        val moveIds = links.flatMap { it.moveArticleIds }.distinct().sorted()
+        val faintIds = links.flatMap { it.faintArticleIds }.distinct().sorted()
+        val support = links.flatMap { it.corroboratingArticleIds }.distinct().sorted()
+        val reception = receptions.firstOrNull()?.copy(articleIds = receptions.flatMap { it.articleIds }.distinct().sorted())
+        val name = links.firstNotNullOfOrNull { it.moveName }
+        return when (preferred) {
+            is ReplayFinishingFastAssociation -> preferred.copy(moveName = name, moveArticleIds = moveIds,
+                faintArticleIds = faintIds, audioArticleIds = support, reception = reception)
+            is ReplayFinishingChargeAssociation -> preferred.copy(moveName = name, moveArticleIds = moveIds,
+                faintArticleIds = faintIds, reception = reception,
+                shieldArticleIds = links.filterIsInstance<ReplayFinishingChargeAssociation>().flatMap { it.shieldArticleIds }.distinct().sorted(),
+                impactSupportArticleIds = links.filterIsInstance<ReplayFinishingChargeAssociation>().flatMap { it.impactSupportArticleIds }.distinct().sorted())
+        }
+    }
+}
+
+internal fun ArchivedRealityArticle.fastOccurrenceId(): String? =
+    (payload as? ArchivedFastMoveUseObserved)?.useId

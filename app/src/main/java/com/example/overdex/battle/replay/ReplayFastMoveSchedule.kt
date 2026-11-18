@@ -36,8 +36,10 @@ internal data class ReplayFastMoveCycle(
     val visibleUntilNanos get() = minOf(witness.windowEndNanos,
         impactAtNanos + IMPACT_HOLD_NANOS)
 
-    fun actionAt(cursor: Long): ReplayFastMoveAction? {
-        if (cursor !in startedAtNanos until visibleUntilNanos) return null
+    fun actionAt(cursor: Long, includeTerminalImpact: Boolean = false): ReplayFastMoveAction? {
+        val visibleUntil = if (includeTerminalImpact) maxOf(visibleUntilNanos, impactAtNanos + IMPACT_HOLD_NANOS)
+            else visibleUntilNanos
+        if (cursor !in startedAtNanos until visibleUntil) return null
         return ReplayFastMoveAction(
             side = witness.side, moveName = witness.moveName, type = witness.type,
             startedAtNanos = startedAtNanos,

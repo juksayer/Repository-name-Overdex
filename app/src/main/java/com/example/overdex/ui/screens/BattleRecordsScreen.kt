@@ -43,6 +43,7 @@ fun BattleRecordsScreen(viewModel: PokedexViewModel, ownedId: String? = null, on
     var selected by remember { mutableIntStateOf(0) }
     var opening by remember { mutableStateOf(false) }
     var replay by remember { mutableStateOf<MatchArchive?>(null) }
+    var replayUri by remember { mutableStateOf<Uri?>(null) }
     var replayAt by remember { mutableStateOf<Long?>(null) }
     val keyboard = rememberTerminalKeyboardController()
     var replayUp by remember { mutableStateOf<() -> Unit>({}) }
@@ -87,7 +88,9 @@ fun BattleRecordsScreen(viewModel: PokedexViewModel, ownedId: String? = null, on
         opening = true; error = null
         scope.launch {
             try {
-                replay = withContext(Dispatchers.IO) { store.readArchive(Uri.parse(choice.first.archiveUri)) }
+                val uri = Uri.parse(choice.first.archiveUri)
+                replay = withContext(Dispatchers.IO) { store.readArchive(uri) }
+                replayUri = uri
                 replayAt = choice.second.atNanos - 2_000_000_000L
             } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; error = e.message }
             finally { opening = false }
@@ -130,7 +133,7 @@ fun BattleRecordsScreen(viewModel: PokedexViewModel, ownedId: String? = null, on
         val activeReplay = replay
         if (activeReplay != null) MatchReplayScreen(activeReplay, onBack = { replay = null },
             onUp = { replayUp = it }, onDown = { replayDown = it }, onA = { replayA = it }, onB = { replayB = it },
-            onLcdContentUpdate = { replayLcd = it }, initialCursorNanos = replayAt,
+            onLcdContentUpdate = { replayLcd = it }, initialCursorNanos = replayAt, impactArchiveUri = replayUri,
             resolveSpeciesId = { viewModel.getPokemonByName(it)?.id },
             resolveSpeciesTypes = { viewModel.getPokemonByName(it)?.types.orEmpty() },
             resolveFastMoves = { viewModel.getPokemonByName(it)?.fastMoves.orEmpty() },

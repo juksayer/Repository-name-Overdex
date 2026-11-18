@@ -65,7 +65,7 @@ object ReplayRetainedAudioRecovery {
     }
 
     fun recover(archive: MatchArchive, references: List<ReplayAudioReference>,
-                unavailableReferences: List<String> = emptyList(), checkCancelled: () -> Unit = {}, read: (ArchivedAudioCaptured) -> ByteArray?): ReplayAudioRecovery {
+                unavailableReferences: List<String> = emptyList(), checkCancelled: () -> Unit = {}, captureWindow: LongRange? = null, read: (ArchivedAudioCaptured) -> ByteArray?): ReplayAudioRecovery {
         if (references.size > 128) return ReplayAudioRecovery(unavailableReferences = listOf("Reference pool exceeds recovery bound"))
         data class Prepared(val ref: ReplayAudioReference, val offsets: List<Int>, val duration: Long, val matcher: CryWaveformMatcher)
         data class Hit(val ref: ReplayAudioReference, val duration: Long, val fragment: ReplayAudioFragment)
@@ -89,7 +89,7 @@ object ReplayRetainedAudioRecovery {
             val sound = a.payload as? ArchivedFastMoveSoundMeasured ?: return@mapNotNull null
             a.monotonicTimeNanos?.let { it to sound }
         }.groupBy({ it.first }, { it.second })
-        val selected = selectedArticles(archive)
+        val selected = selectedArticles(archive).filter { captureWindow == null || it.monotonicTimeNanos in captureWindow }
         val end = archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedMatchEnded }
             .mapNotNull { it.monotonicTimeNanos }.minOrNull()
         if (end != null && (selected.count { it.monotonicTimeNanos!! < end - 40 * SECOND } >= 64 ||
@@ -116,8 +116,17 @@ object ReplayRetainedAudioRecovery {
                     .map { it.moveName.uppercase().filter(Char::isLetterOrDigit) }.toSet()
                 val eligible = references.filter { !it.charged && it.speciesId == null &&
                     it.name.uppercase().filter(Char::isLetterOrDigit) in names }
-                if (eligible.size <= 8) mixed += ReplayMixedAudioRecovery.measure(audio, article.articleId,
-                    article.monotonicTimeNanos!!, p.sha256, eligible)
+                if (captureWindow == null && eligible.size <= 8) mixed += ReplayMixedAudioRecovery.measure(audio,
+                    article.articleId, article.monotonicTimeNanos!!, p.sha256, eligible)
+            }
+            if (captureWindow != null && mono.size <= 4 * 8000) {
+                // The caller has already bounded this comparison to the two active species and
+                // the terminal exchange. A mixed-in cry can obscure part of a longer effect.
+                val pool = references.filter { !it.charged && it.speciesId == null }
+                if (pool.size <= 16 && pool.distinctBy { it.name }.size <= 8) {
+                    mixed += ReplayMixedAudioRecovery.measure(audio, article.articleId,
+                        article.monotonicTimeNanos!!, p.sha256, pool, shortFragments = true)
+                }
             }
             // A 1.2 s window keeps cached FFTs bounded for the full reference
             // pool. Half-window overlap covers every 600 ms reference fragment.

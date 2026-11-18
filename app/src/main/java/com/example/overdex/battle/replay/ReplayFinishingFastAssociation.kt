@@ -6,19 +6,25 @@ import kotlin.math.abs
 
 /** Projection only; the move, clip and faint keep their original evidence and clocks. */
 data class ReplayFinishingFastAssociation(
-    val attackingSide: String,
-    val attackerSpeciesName: String,
-    val recipientSide: String,
-    val recipientSpeciesName: String,
-    val recipientAppearanceAtNanos: Long,
-    val moveName: String,
+    override val attackingSide: String,
+    override val attackerSpeciesName: String,
+    override val recipientSide: String,
+    override val recipientSpeciesName: String,
+    override val recipientAppearanceAtNanos: Long,
+    override val moveName: String?,
     val impactAtNanos: Long,
-    val moveSourceAtNanos: Long,
-    val faintSourceAtNanos: Long,
-    val moveArticleIds: List<String>,
+    override val moveSourceAtNanos: Long,
+    override val faintSourceAtNanos: Long,
+    override val moveArticleIds: List<String>,
     val audioArticleIds: List<String>,
-    val faintArticleIds: List<String>,
-)
+    override val faintArticleIds: List<String>,
+    override val attackerAppearanceAtNanos: Long = Long.MIN_VALUE,
+    override val reception: ReplayFinishingReception? = null,
+    override val basis: String = "INFERRED_FAST_MOVE_WITH_CONFIRMED_LOSS",
+) : ReplayFinishingAttribution {
+    override val landingAtNanos get() = impactAtNanos
+    override val corroboratingArticleIds get() = audioArticleIds
+}
 
 /** Links independently supported uses and faints; candidate sound does not create either. */
 internal object ReplayFinishingFastAssociator {
@@ -83,7 +89,8 @@ internal object ReplayFinishingFastAssociator {
                 ReplayFinishingFastAssociation(side, attacker.speciesName, ko.side, ko.speciesName,
                     ko.appearanceAtNanos, cycle.witness.moveName!!, cycle.impactAtNanos, sourceAt,
                     ko.recordedAtNanos, cycle.witness.articleIds.sorted(), audio.fragments.map { it.articleId }.distinct().sorted(),
-                    (ko.sourceArticleIds + listOfNotNull(cry?.articleId)).distinct().sorted())
+                    (ko.sourceArticleIds + listOfNotNull(cry?.articleId)).distinct().sorted(),
+                    attackerAppearanceAtNanos = appearanceAt(side, sourceAt))
             }
             possible.singleOrNull()
         }

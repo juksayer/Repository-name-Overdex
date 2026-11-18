@@ -38,8 +38,8 @@ class RecordedMixedLivingSwitchControlTest {
         val returned = model.sceneAt(start + 85_000_000_000L)
         assertEquals("Swampert", returned.opponent?.displayName)
         assertFalse("The returning Swampert survived its earlier switch", returned.opponent!!.isFainted)
-        assertTrue("The earlier living switch cannot receive finishing credit", model.finishingFastMoveAssociations.none {
-            it.recipientSpeciesName == "Swampert" && it.impactAtNanos < start + 84_092_000_000L
+        assertTrue("The earlier living switch cannot receive finishing credit", model.finishingAttributions.none {
+            it.recipientSpeciesName == "Swampert" && it.landingAtNanos < start + 84_092_000_000L
         })
         assertEquals(before, MatchArchiveSerializer.serialize(archive))
         assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))

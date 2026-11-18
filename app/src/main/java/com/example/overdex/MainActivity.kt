@@ -1845,6 +1845,7 @@ fun PokedexApp(
                                 resolveChargedMoves = { speciesName ->
                                     viewModel.getPokemonByName(speciesName)?.chargedMoves.orEmpty()
                                 },
+                                impactArchiveUri = sourceUri,
                                 resolveArchivedAudio = { selectedArchive, moves, ids ->
                                     com.example.overdex.battle.replay.ArchivedEndingAudioRecognizer.recognize(
                                         selectedArchive, moves, ids,

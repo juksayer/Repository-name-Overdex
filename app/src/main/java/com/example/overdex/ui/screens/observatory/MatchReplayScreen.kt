@@ -132,6 +132,7 @@ fun MatchReplayScreen(
     resolveChargedMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
     resolveFastMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
     resolveChargedMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
+    impactArchiveUri: android.net.Uri? = null,
     resolveArchivedAudio: suspend (MatchArchive, List<Move>, Set<Int>) -> com.example.overdex.battle.replay.ReplayAudioRecovery = { _, _, _ -> com.example.overdex.battle.replay.ReplayAudioRecovery() },
     resolveArchivedSpeciesCrops: suspend (MatchArchive, (ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() },
     initialCursorNanos: Long? = null,
@@ -205,10 +206,12 @@ fun MatchReplayScreen(
     }
     val modelInputsReady = speciesResolved && fastMoveTypesResolved && fastMovesResolved &&
         chargedMoveTypesResolved && chargedMovesResolved && archivedCropIdentities != null
+    val replayContext = LocalContext.current
     val preparedModel by produceState<MatchReplayModel?>(
         null,
         archive,
         modelInputsReady,
+        impactArchiveUri,
         speciesIds,
         archivedCropIdentities,
         fastMoveTypes,
@@ -229,6 +232,31 @@ fun MatchReplayScreen(
               catch (error: Exception) {
                 com.example.overdex.battle.replay.ReplayAudioRecovery(unavailableArtifacts = listOf("Audio recovery failed: ${error.message}"))
             }
+            val impact = try {
+                impactArchiveUri?.let { uri -> com.example.overdex.battle.replay.ReplayImpactFinish.read(archive,
+                    java.io.File(replayContext.filesDir, "artifacts/frames/sha256"),
+                    (allFast.keys + allCharged.keys).associateWith {
+                    allFast[it].orEmpty() + allCharged[it].orEmpty()
+                    }, recoveredAudio, { replayContext.contentResolver.openInputStream(uri) },
+                    { path -> replayContext.assets.open(path).use { it.readBytes() } })
+                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+              catch (error: Exception) {
+                android.util.Log.w("REPLAY_IMPACT", "Retained impact frame unavailable", error)
+                null
+            }
+            val fastFinish = try {
+                impactArchiveUri?.let { uri ->
+                    com.example.overdex.battle.replay.ReplayLastOpponentFastFinish.read(archive,
+                        com.example.overdex.data.GameMasterLoader(replayContext),
+                        { replayContext.contentResolver.openInputStream(uri) },
+                        { path -> replayContext.assets.open(path).use { it.readBytes() } })
+                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+              catch (error: Exception) {
+                android.util.Log.w("REPLAY_FAST", "Ending evidence unavailable", error)
+                null
+            }
             value = withContext(Dispatchers.Default) {
                 MatchReplayModel(
                     archive,
@@ -238,7 +266,7 @@ fun MatchReplayScreen(
                     allFast,
                     chargedMoveTypes,
                     allCharged,
-                    recoveredAudio,
+                    recoveredAudio, impact, fastFinish,
                 )
             }
         }
