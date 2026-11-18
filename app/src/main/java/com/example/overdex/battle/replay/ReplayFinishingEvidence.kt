@@ -26,6 +26,52 @@ internal class ReplayFinishingEvidence(
     private val hpByFrame = articles.filter { it.payload is ArchivedActiveHpBarMeasured }
         .groupBy { (it.payload as ArchivedActiveHpBarMeasured).side to it.monotonicTimeNanos }
 
+    /** Project uncertainty only after the appearance's faint has been resolved. */
+    fun faintTiming(
+        knockout: ReplayKnockout?, link: ReplayFinishingAttribution?,
+    ): ReplayFaintTiming {
+        link?.reception?.let { hit ->
+            hit.articleIds.firstOrNull { byId[it]?.monotonicTimeNanos == hit.atNanos }?.let { id ->
+                return ReplayFaintTiming.ZeroHp(ReplayTimeBound(hit.atNanos, id))
+            }
+        }
+        val timing = knockout?.timing
+        if (timing is ReplayFaintTiming.ZeroHp) return timing
+        val countWindow = timing as? ReplayFaintTiming.Window
+        val by = listOfNotNull(countWindow?.by, link?.departedBy).minByOrNull { it.atNanos }
+            ?: return ReplayFaintTiming.Unknown
+        val side = knockout?.side ?: link?.recipientSide ?: return ReplayFaintTiming.Unknown
+        val appearance = knockout?.appearanceAtNanos ?: link?.recipientAppearanceAtNanos ?: return ReplayFaintTiming.Unknown
+        val live = lastLiveBar(side, appearance)
+        val after = listOfNotNull(countWindow?.after, live).maxByOrNull { it.atNanos }
+        return ReplayFaintTiming.window(after, by)
+    }
+
+    private fun lastLiveBar(side: String, appearance: Long): ReplayTimeBound? {
+        val matchEnd = articles.firstOrNull { it.monotonicTimeNanos!! >= appearance &&
+            it.payload is ArchivedMatchEnded }?.monotonicTimeNanos ?: Long.MAX_VALUE
+        for (article in articles.asReversed()) {
+            val at = article.monotonicTimeNanos!!
+            if (at < appearance) break
+            if (at > matchEnd) continue
+            val live = when (val p = article.payload) {
+                is ArchivedActiveHpBarMeasured -> p.side == side
+                is ArchivedCompleteHpBarObserved -> p.side == side && p.status == "LIVE_COLOR" &&
+                    p.liveColumns in 1..p.interiorColumns && reliable(article) && complete(p)
+                else -> false
+            }
+            if (!live || appearanceAt(side, at) != appearance) continue
+            val key = side to at
+            if (profiles[key].orEmpty().any { row ->
+                    val p = row.payload as ArchivedCompleteHpBarObserved
+                    p.status != "LIVE_COLOR" || p.liveColumns !in 1..p.interiorColumns ||
+                        !complete(p) || !belongsToAppearance(p, at, appearance)
+                } || hpByFrame[key].orEmpty().any { !hp.confirmsLiveHp(it) }) continue
+            return ReplayTimeBound(at, article.articleId)
+        }
+        return null
+    }
+
     // A phase can suppress decorative scheduling while a canonical incoming hit still
     // has an original recipient tick. Promote only the selected direct finish into Replay.
     val pendingFastCycles: List<ReplayFastMoveCycle> by lazy {

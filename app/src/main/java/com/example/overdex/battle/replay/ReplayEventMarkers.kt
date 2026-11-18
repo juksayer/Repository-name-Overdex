@@ -16,6 +16,7 @@ data class ReplayEventMarker(
     val sourceAtNanos: Long = atNanos,
     val sourceArticleIds: List<String> = emptyList(),
     val finishingAttribution: ReplayFinishingAttribution? = null,
+    val faintTiming: ReplayFaintTiming? = null,
 ) {
     val sideLabel: String get() = when (side) {
         "PLAYER" -> "YOU"

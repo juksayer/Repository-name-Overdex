@@ -21,6 +21,7 @@ data class ReplayFinishingChargeAssociation(
     override val basis: String = "UNCONTESTED_CHARGE_TO_RESOLVED_COUNT_FAINT",
     override val reception: ReplayFinishingReception? = null,
     val impactSupportArticleIds: List<String> = emptyList(),
+    override val departedBy: ReplayTimeBound? = null,
 ) : ReplayFinishingAttribution {
     override val landingAtNanos get() = presentationImpactAtNanos
     override val corroboratingArticleIds get() = shieldArticleIds + impactSupportArticleIds

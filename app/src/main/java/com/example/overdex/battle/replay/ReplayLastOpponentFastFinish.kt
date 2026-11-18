@@ -145,7 +145,8 @@ internal object ReplayLastOpponentFastFinish {
             move.name,at,start,at,refs, (cryMatch.fragments.map { it.articleId } + matched.map { it.second.articleId } +
             matched.flatMap { (use, _) -> use.fragments.map { it.articleId } } + previousHp.map { it.articleId } + sliver.articleId).distinct(),
             (listOf(badge.articleId, cry.articleId, result.articleId) +
-                departureBurstReferences(rows, bar, start, minOf(at + 2*S, end))).distinct(), ownerSince, basis = BASIS)
+                departureBurstReferences(rows, bar, start, minOf(at + 2*S, end))).distinct(), ownerSince, basis = BASIS,
+            departedBy = ReplayTimeBound(at, cry.articleId))
     }
 
     // An optional visual corroboration of departure. Phase assignment alone cannot locate

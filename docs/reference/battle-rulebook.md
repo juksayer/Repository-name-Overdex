@@ -307,6 +307,12 @@ choices changes when the underlying battle event happened.
 
 ### Trainer-proposed Replay faint-time estimate
 
+When a faint is resolved but its frame is missing, the Replay KO marker shows the interval
+from the last supported living HP for that appearance (or its preceding verified team count)
+to the first evidence establishing the loss. Displayed bounds round outward. With only an
+upper bound, show “KO by”. A measured zero-HP frame and a trainer's timestamp each get
+their own label. The animation's seek point supplies neither bound nor KO credit.
+
 The trainer proposes placing a clearly labeled estimated Replay faint near the
 end of the last supported move or charge sequence, even when a faint itself is
 only a plausible hypothesis. Keep that hypothesis separate from an independently

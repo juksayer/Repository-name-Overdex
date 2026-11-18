@@ -67,6 +67,8 @@ internal class ReplayKnockoutTrack(
                 replacement?.let { it.atNanos <= at } == true) return@mapNotNull null
             return@mapNotNull ReplayKnockout(faint.side, appearance.speciesName, appearance.atNanos,
                 at, at, replacement?.atNanos, hpResolution?.evidenceReferences ?: terminalResolution!!.evidenceReferences,
+                timing = hpResolution?.let { ReplayFaintTiming.ZeroHp(ReplayTimeBound(it.atNanos, it.emptyArticleId)) }
+                    ?: ReplayFaintTiming.Window(null, ReplayTimeBound(at, terminalResolution!!.sourceArticleId)),
                 basis = if (hpResolution != null) VerifiedHpFaintResolver.BASIS else
                     com.example.overdex.battle.inference.TerminalChargedFaintResolver.BASIS)
         }
@@ -87,6 +89,12 @@ internal class ReplayKnockoutTrack(
                     hp.owner.speciesId == candidate.speciesId &&
                     hp.atNanos > appearance.atNanos && hp.atNanos < start
             }
+            val countBefore = resolution.evidenceReferences.mapNotNull { articlesById[it]?.pokeBallCount(faint.side) }
+                .filter { it.count == resolution.beforeCount && it.at < resolution.sourceAtNanos }
+                .maxByOrNull { it.at }
+            val countAfter = ReplayTimeBound(resolution.sourceAtNanos, resolution.lossId)
+            val by = replacementBound(faint.side, replacement)?.takeIf { it.atNanos < countAfter.atNanos } ?: countAfter
+            val after = countBefore?.let { ReplayTimeBound(it.at, it.articleId) }
             return@mapNotNull ReplayKnockout(
                 side = faint.side, speciesName = appearance.speciesName, appearanceAtNanos = appearance.atNanos,
                 recordedAtNanos = earlierHp?.atNanos ?: at, presentationAtNanos = earlierHp?.atNanos ?: start,
@@ -101,6 +109,8 @@ internal class ReplayKnockoutTrack(
                 },
                 basis = if (earlierHp != null) "VERIFIED_HP_WITH_COUNT_CORROBORATION" else ReplayTeamLossProjection.BASIS,
                 verifiedPokeBallsAtNanos = start,
+                timing = earlierHp?.let { ReplayFaintTiming.ZeroHp(ReplayTimeBound(it.atNanos, it.emptyArticleId)) }
+                    ?: ReplayFaintTiming.window(after, by),
             )
         }
         val current = appearances.indexOfLast { it.atNanos <= at }
@@ -129,6 +139,8 @@ internal class ReplayKnockoutTrack(
             sourceArticleIds = (listOf(article.articleId) + listOfNotNull(replacement?.articleId) +
                 replacement?.evidenceArticleIds.orEmpty() + resourceEvidence?.articleIds.orEmpty()).distinct(),
             verifiedPokeBallsAfter = resourceEvidence?.remainingBalls,
+            timing = ReplayFaintTiming.Window(null,
+                replacementBound(faint.side, replacement)?.takeIf { it.atNanos < at } ?: ReplayTimeBound(at, article.articleId)),
         )
     }.distinctBy { it.side to it.appearanceAtNanos }
 
@@ -168,6 +180,15 @@ internal class ReplayKnockoutTrack(
     }
 
     private data class ResourceDrop(val articleIds: List<String>, val remainingBalls: Int)
+
+    /** A replacement bounds an already resolved outgoing loss at its own capture time. */
+    private fun replacementBound(side: String, replacement: ReplayIdentityObservation?): ReplayTimeBound? {
+        val article = replacement?.articleId?.let(articlesById::get) ?: return null
+        val species = article.payload as? ArchivedActivePokemonSpeciesWitnessed ?: return null
+        if (species.side != side || key(species.speciesName) != key(replacement.speciesName) ||
+            article.monotonicTimeNanos != replacement.atNanos || article.confidence?.let { it in .80f..1f } != true) return null
+        return ReplayTimeBound(replacement.atNanos, article.articleId)
+    }
 
     private data class BallCount(val articleId: String, val at: Long, val count: Int)
 
@@ -210,6 +231,7 @@ internal data class ReplayKnockout(
     val basis: String? = null,
     /** Earlier independent HP proof must not backdate a later resource count. */
     val verifiedPokeBallsAtNanos: Long = presentationAtNanos,
+    val timing: ReplayFaintTiming = ReplayFaintTiming.Unknown,
 ) {
     // Leave a visible beat lying down before the next sprite replaces it.
     val finishByNanos: Long? get() = replacementAtNanos?.let {

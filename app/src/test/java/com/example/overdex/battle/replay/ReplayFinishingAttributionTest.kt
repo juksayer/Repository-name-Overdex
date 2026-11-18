@@ -36,6 +36,10 @@ class ReplayFinishingAttributionTest {
         val markers = normal.eventMarkers.filter { it.finishingAttribution == link }
         assertEquals(setOf(ReplayEventMarkerKind.FAST_MOVE, ReplayEventMarkerKind.FAINT), markers.map { it.kind }.toSet())
         assertEquals("Faint · Sealeo · Incinerate by Camerupt", markers.single { it.kind == ReplayEventMarkerKind.FAINT }.label)
+        val faintTime = markers.single { it.kind == ReplayEventMarkerKind.FAINT }.faintTiming as ReplayFaintTiming.ZeroHp
+        assertEquals(HIT, faintTime.frame.atNanos)
+        assertTrue(faintTime.frame.articleId in link.reception.articleIds)
+        assertEquals(faintTime, delayed.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }.faintTiming)
         assertEquals(before, MatchArchiveSerializer.serialize(archive))
     }
 
@@ -59,6 +63,8 @@ class ReplayFinishingAttributionTest {
         assertEquals(2, replay.eventMarkers.count { it.finishingAttribution == link })
         assertEquals("Faint · Sealeo · Earth Power by Camerupt",
             replay.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }.label)
+        assertEquals(HIT, (replay.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }
+            .faintTiming as ReplayFaintTiming.ZeroHp).frame.atNanos)
         replay.sceneAt(8*S)
         assertEquals(atLanding, replay.sceneAt(link.landingAtNanos))
         val delayed = MatchReplayModel(match(source.reversed().map { it.copy(recordedAt = 100_000L - it.perceivedAt) }))
@@ -207,6 +213,26 @@ class ReplayFinishingAttributionTest {
         }
         assertEquals(original, MatchArchiveSerializer.serialize(archive))
         assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
+    }
+
+    @Test fun `only living HP captured for the fainted visit narrows the window`() {
+        val lastAlive = hp("last-alive", 3*S, .001f, "RED")
+        val away = row("switch", 4*S, ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Vaporeon", 134))
+        val back = row("return", 6*S, ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Sealeo", 364))
+        val foreign = lastAlive.copy(articleId = "foreign", matchId = "other", monotonicTimeNanos = 6*S + S/10)
+        val otherSide = hp("other-side", 6*S + S/4, .5f, "GREEN").let {
+            it.copy(payload = (it.payload as ArchivedActiveHpBarMeasured).copy(side = "PLAYER"))
+        }
+        val events = listOf(lastAlive, away, hp("switch-hp", 5*S, .9f, "GREEN"), back, foreign, otherSide,
+            hp("uncertain", 6*S + S/3, .02f, "RED").copy(confidence = .5f),
+            hp("orange", 6*S + S/2, .01f, "ORANGE"))
+        fun time(events: List<ArchivedRealityArticle>) = MatchReplayModel(match(events + faint))
+            .eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }.faintTiming
+        val by = ReplayTimeBound(7*S, "faint")
+        assertEquals(ReplayFaintTiming.Window(null, by), time(events))
+        val live = hp("one-pixel", 6*S + 10, .001f, "RED")
+        assertEquals(ReplayFaintTiming.Window(ReplayTimeBound(6*S + 10, "one-pixel"), by), time(events + live))
+        assertEquals(ReplayFaintTiming.Unknown, time(events + live.copy(monotonicTimeNanos = 7*S)))
     }
 
     private fun match(events: List<ArchivedRealityArticle>) = MatchArchive(matchId = "test",

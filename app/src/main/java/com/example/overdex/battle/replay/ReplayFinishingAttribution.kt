@@ -21,6 +21,8 @@ sealed interface ReplayFinishingAttribution {
     val faintArticleIds: List<String>
     val corroboratingArticleIds: List<String>
     val reception: ReplayFinishingReception?
+    /** First source establishing departure by this time for a recovered faint. */
+    val departedBy: ReplayTimeBound?
     val basis: String
     val evidenceArticleIds: List<String>
         get() = (moveArticleIds + reception?.articleIds.orEmpty() + faintArticleIds +
@@ -58,11 +60,13 @@ internal object ReplayFinishingAttributions {
         val support = links.flatMap { it.corroboratingArticleIds }.distinct().sorted()
         val reception = receptions.firstOrNull()?.copy(articleIds = receptions.flatMap { it.articleIds }.distinct().sorted())
         val name = links.firstNotNullOfOrNull { it.moveName }
+        val departedBy = links.mapNotNull { it.departedBy }
+            .minWithOrNull(compareBy<ReplayTimeBound> { it.atNanos }.thenBy { it.articleId })
         return when (preferred) {
             is ReplayFinishingFastAssociation -> preferred.copy(moveName = name, moveArticleIds = moveIds,
-                faintArticleIds = faintIds, audioArticleIds = support, reception = reception)
+                faintArticleIds = faintIds, audioArticleIds = support, reception = reception, departedBy = departedBy)
             is ReplayFinishingChargeAssociation -> preferred.copy(moveName = name, moveArticleIds = moveIds,
-                faintArticleIds = faintIds, reception = reception,
+                faintArticleIds = faintIds, reception = reception, departedBy = departedBy,
                 shieldArticleIds = links.filterIsInstance<ReplayFinishingChargeAssociation>().flatMap { it.shieldArticleIds }.distinct().sorted(),
                 impactSupportArticleIds = links.filterIsInstance<ReplayFinishingChargeAssociation>().flatMap { it.impactSupportArticleIds }.distinct().sorted())
         }

@@ -473,7 +473,8 @@ class MatchReplayModel(
                         (association?.let { " · ${it.creditLabel()}" } ?: ""),
                     sourceAtNanos = association?.faintSourceAtNanos ?: knockout.recordedAtNanos,
                     sourceArticleIds = association?.evidenceArticleIds ?: knockout.sourceArticleIds,
-                    finishingAttribution = association))
+                    finishingAttribution = association,
+                    faintTiming = finishingEvidence.faintTiming(knockout, association)))
             }
             finishingFastMoveAssociations.filter { it.basis == ReplayLastOpponentFastFinish.BASIS &&
                 knockoutTrack.knockouts.none { ko -> ko.side == it.recipientSide && ko.appearanceAtNanos == it.recipientAppearanceAtNanos }
@@ -481,7 +482,8 @@ class MatchReplayModel(
                 add(ReplayEventMarker("recovered-faint:${link.recipientSide}:${link.recipientAppearanceAtNanos}",
                     ReplayEventMarkerKind.FAINT, link.faintSourceAtNanos, link.recipientSide,
                     "Faint · ${link.recipientSpeciesName} · ${link.creditLabel()} · inferred",
-                    sourceAtNanos = link.faintSourceAtNanos, sourceArticleIds = link.evidenceArticleIds, finishingAttribution = link))
+                    sourceAtNanos = link.faintSourceAtNanos, sourceArticleIds = link.evidenceArticleIds, finishingAttribution = link,
+                    faintTiming = finishingEvidence.faintTiming(null, link)))
             }
             finishingChargeAssociations.filter { it.basis in setOf(ReplayTerminalAudioAssociation.BASIS, ReplayImpactFinish.BASIS) &&
                 knockoutTrack.knockouts.none { ko -> ko.side == it.recipientSide && ko.appearanceAtNanos == it.recipientAppearanceAtNanos }
@@ -491,7 +493,7 @@ class MatchReplayModel(
                     "Faint · ${BattleSpeciesDisplay.name(link.recipientSpeciesName)} · ${link.creditLabel()}" +
                         if (link.basis == ReplayTerminalAudioAssociation.BASIS) " · audio reconstruction" else "",
                     sourceAtNanos = link.faintSourceAtNanos, sourceArticleIds = link.evidenceArticleIds,
-                    finishingAttribution = link))
+                    finishingAttribution = link, faintTiming = finishingEvidence.faintTiming(null, link)))
             }
             audioRecovery.partialCryCandidates.forEach { cry ->
                 val actors = listOfNotNull(combatantFor("PLAYER", cry.estimatedOnsetNanos),

@@ -87,6 +87,7 @@ internal object ReplayImpactFinish {
             f.move, f.at, clear, f.landing, null, listOf(f.announcementCropId, f.frameSha256),
             f.departureIds + (cry?.fragments.orEmpty() + partial?.fragments.orEmpty()).map { it.articleId } +
                 listOfNotNull(count.articleId, emptyBadge?.articleId, result.articleId),
-            emptyList(), BASIS, impactSupportArticleIds = listOf(f.profileId))
+            emptyList(), BASIS, impactSupportArticleIds = listOf(f.profileId),
+            departedBy = ReplayTimeBound(clear, if (burstAt != null) f.departureIds.last() else requireNotNull(emptyBadge).articleId))
     }
 }

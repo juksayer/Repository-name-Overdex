@@ -346,7 +346,9 @@ fun MatchReplayScreen(
                     it.matchOffsetNanos <= entry.matchOffsetNanos } }
                 ReplayEventMarker("trainer:${entry.id}", kind, at, entry.side.name,
                     "Trainer entry · ${entry.speciesName} · ${entry.moveName ?: "faint"} · ${entry.authorName}" +
-                        (credited?.let { " · KO by ${it.moveName}" } ?: ""))
+                        (credited?.let { " · KO by ${it.moveName}" } ?: ""),
+                    faintTiming = if (entry.kind == com.example.overdex.battle.replay.ReplayCorrectionKind.FAINT)
+                        com.example.overdex.battle.replay.ReplayFaintTiming.TrainerMark(at) else null)
             }
         }.orEmpty()
         (model.eventMarkers + trainerMarkers).filter { it.atNanos in playbackStart..playbackEnd }.sortedBy { it.atNanos }
@@ -668,7 +670,8 @@ fun MatchReplayScreen(
             }
             ReplayEventMarkerControls(eventMarkers, cursor, selectedMarkerId, playbackStart, ::seekMarker,
                 previousSelected = editorAction == previousEventAction,
-                nextSelected = editorAction == nextEventAction)
+                nextSelected = editorAction == nextEventAction,
+                matchStartNanos = model.matchStartNanos, archiveStartNanos = model.startNanos)
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 MatchLcdTextButton("BACK", { scrubBy(-SCRUB_STEP_NANOS) },
                     Modifier.weight(1f).semantics { contentDescription = "Step backward one second" })

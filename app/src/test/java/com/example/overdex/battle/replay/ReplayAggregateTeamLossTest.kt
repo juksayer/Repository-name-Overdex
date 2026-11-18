@@ -20,6 +20,10 @@ class ReplayAggregateTeamLossTest {
             val faints = replay.eventMarkers.filter { it.kind == ReplayEventMarkerKind.FAINT }
             assertEquals(2, faints.size)
             assertTrue(faints.all { it.sourceAtNanos == 22 * SECOND && it.side == side })
+            val beforeCount = ReplayTimeBound(5 * SECOND, "before")
+            assertEquals(mapOf("Faint · Turtonator" to ReplayFaintTiming.Window(beforeCount, ReplayTimeBound(10 * SECOND, "second")),
+                "Faint · Gourgeist" to ReplayFaintTiming.Window(beforeCount, ReplayTimeBound(20 * SECOND, "last"))),
+                faints.associate { it.label to it.faintTiming })
             for (at in listOf(10, 19, 20, 21, 22, 25, 10)) {
                 val scene = replay.sceneAt(at * SECOND)
                 val resources = if (side == "PLAYER") scene.playerResources else scene.opponentResources

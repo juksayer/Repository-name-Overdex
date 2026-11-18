@@ -31,6 +31,7 @@ import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.battle.replay.ReplayEventMarker
 import com.example.overdex.battle.replay.ReplayEventMarkerKind
 import com.example.overdex.battle.replay.ReplayEventMarkerNavigation
+import com.example.overdex.battle.replay.ReplayFaintTiming
 
 /** Stable renderer for the separate LCD surface; its content follows screen state. */
 @Composable
@@ -146,6 +147,8 @@ internal fun ReplayEventMarkerControls(
     modifier: Modifier = Modifier,
     previousSelected: Boolean = false,
     nextSelected: Boolean = false,
+    matchStartNanos: Long? = null,
+    archiveStartNanos: Long = startNanos,
 ) {
     val currentIndex = ReplayEventMarkerNavigation.currentIndex(markers, cursorNanos, selectedId)
     val current = markers.getOrNull(currentIndex)
@@ -166,11 +169,37 @@ internal fun ReplayEventMarkerControls(
                     contentDescription = "Replay event details"
                     stateDescription = current?.description ?: "No event selected"
                 })
-            current?.let { MatchLcdText(formatReplayTime(it.atNanos - startNanos)) }
+            current?.let { marker ->
+                val time = if (marker.kind == ReplayEventMarkerKind.FAINT)
+                    formatReplayFaintTime(marker.faintTiming, matchStartNanos, archiveStartNanos)
+                else formatReplayTime(marker.atNanos - startNanos)
+                MatchLcdText(time)
+            }
         }
         MatchLcdTextButton("›", { next?.let(onSeek) },
             Modifier.width(36.dp).heightIn(min = 40.dp).semantics { contentDescription = "Next replay event" },
             selected = nextSelected, enabled = next != null)
+    }
+}
+
+internal fun formatReplayFaintTime(timing: ReplayFaintTiming?, matchStart: Long?, archiveStart: Long): String {
+    val origin = matchStart ?: archiveStart
+    val clock = if (matchStart != null) "from GO" else "from Replay start"
+    fun bound(at: Long, upper: Boolean): String {
+        val delta = at - origin
+        val sec = if (upper) -Math.floorDiv(-delta, 1_000_000_000L) else Math.floorDiv(delta, 1_000_000_000L)
+        val magnitude = kotlin.math.abs(sec)
+        return (if (sec < 0) "−" else "") + "%d:%02d".format(magnitude / 60, magnitude % 60)
+    }
+    fun measured(at: Long) = (if (at < origin) "−" else "") + formatReplayTime(kotlin.math.abs(at - origin))
+    return when (timing) {
+        is ReplayFaintTiming.ZeroHp -> "0 HP at ${measured(timing.frame.atNanos)} $clock"
+        is ReplayFaintTiming.TrainerMark -> "Trainer mark ${measured(timing.atNanos)} $clock"
+        is ReplayFaintTiming.Window -> {
+            val by = bound(timing.by.atNanos, upper = true)
+            timing.after?.let { "KO window ${bound(it.atNanos, upper = false)}–$by $clock" } ?: "KO by $by $clock"
+        }
+        ReplayFaintTiming.Unknown, null -> "KO time unknown"
     }
 }
 

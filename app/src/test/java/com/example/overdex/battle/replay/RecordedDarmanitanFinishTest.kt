@@ -33,10 +33,26 @@ class RecordedDarmanitanFinishTest {
         assertEquals("Counter",link.moveName)
         assertEquals("Zapdos",link.attackerSpeciesName)
         assertNull(link.reception)
+        fun faintMarker(m: MatchReplayModel) = m.eventMarkers.single {
+            it.kind == ReplayEventMarkerKind.FAINT && it.finishingAttribution?.recipientSpeciesName == "Darmanitan"
+        }
+        val marker = faintMarker(replay)
+        val window = marker.faintTiming as ReplayFaintTiming.Window
+        val go = requireNotNull(replay.matchStartNanos)
+        val lastAlive = requireNotNull(window.after)
+        assertEquals(93_444L, (lastAlive.atNanos - go) / 1_000_000L)
+        assertEquals(93_982L, (window.by.atNanos - go) / 1_000_000L)
+        assertEquals(go + 93_982_125_006L, marker.atNanos)
+        assertEquals(data.cryId, window.by.articleId)
+        assertTrue(lastAlive.articleId in link.evidenceArticleIds)
+        assertEquals("KO window 1:33–1:34 from GO",
+            com.example.overdex.ui.screens.observatory.formatReplayFaintTime(window, go, replay.startNanos))
         assertEquals(link,replay.sceneAt(link.impactAtNanos).fastMoveActions.single { it.side == "PLAYER" }.finishingAssociation)
         assertTrue(replay.sceneAt(link.faintSourceAtNanos).opponent!!.isFainted)
         assertFalse(replay.sceneAt(link.moveSourceAtNanos).opponent!!.isFainted)
-        assertEquals(link,model(archive.copy(articles = archive.articles.reversed())).finishingFastMoveAssociations.single { it.recipientSpeciesName == "Darmanitan" })
+        val reversed = model(archive.copy(articles = archive.articles.reversed()))
+        assertEquals(link, reversed.finishingFastMoveAssociations.single { it.recipientSpeciesName == "Darmanitan" })
+        assertEquals(marker, faintMarker(reversed))
         val cry = archive.articles.single { it.articleId == data.cryId }
         val bar = archive.articles.last { row ->
             (row.payload as? ArchivedCompleteHpBarObserved)?.side == "OPPONENT" &&

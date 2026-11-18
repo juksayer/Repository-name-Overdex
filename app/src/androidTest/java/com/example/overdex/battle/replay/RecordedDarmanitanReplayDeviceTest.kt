@@ -1,6 +1,11 @@
 package com.example.overdex.battle.replay
 
 import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
@@ -10,6 +15,7 @@ import com.example.overdex.data.LocalSpriteProvider
 import com.example.overdex.data.PokemonRepository
 import com.example.overdex.data.local.PokedexDatabase
 import com.example.overdex.ui.screens.observatory.ReplayBattlefield
+import com.example.overdex.ui.screens.observatory.ReplayEventMarkerControls
 import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -42,15 +48,24 @@ class RecordedDarmanitanReplayDeviceTest {
             chargedMovesBySpeciesName = ids.associate { it.name to it.chargedMoves },
             audioRecovery = audio, lastOpponentFastEvidence = finish)
         val link = model.finishingFastMoveAssociations.single { it.recipientSpeciesName == "Darmanitan" }
-        assertEquals("Faint · Darmanitan · Counter by Zapdos · inferred",
-            model.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT && it.finishingAttribution == link }.label)
+        val faint = model.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT && it.finishingAttribution == link }
+        assertEquals("Faint · Darmanitan · Counter by Zapdos · inferred", faint.label)
         var cursor by mutableLongStateOf(link.landingAtNanos)
-        compose.setContent { ReplayBattlefield(model.sceneAt(cursor), cursor, ctx) }
+        compose.setContent {
+            Column(Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxWidth().weight(1f)) { ReplayBattlefield(model.sceneAt(cursor), cursor, ctx) }
+                ReplayEventMarkerControls(model.eventMarkers, cursor, faint.id, model.startNanos,
+                    onSeek = { cursor = it.atNanos }, matchStartNanos = model.matchStartNanos)
+            }
+        }
+        compose.onNodeWithText("KO window 1:33–1:34 from GO").assertIsDisplayed()
         compose.onNodeWithContentDescription("PLAYER Counter projectile", useUnmergedTree = true).assertIsDisplayed()
         compose.onNodeWithContentDescription("Darmanitan, fainted", useUnmergedTree = true).assertExists()
         compose.runOnIdle { cursor = link.moveSourceAtNanos }
+        compose.onNodeWithText("KO window 1:33–1:34 from GO").assertDoesNotExist()
         compose.onNodeWithContentDescription("Darmanitan, fainted", useUnmergedTree = true).assertDoesNotExist()
         compose.runOnIdle { cursor = link.landingAtNanos }
+        compose.onNodeWithText("KO window 1:33–1:34 from GO").assertIsDisplayed()
         compose.onNodeWithContentDescription("PLAYER Counter projectile", useUnmergedTree = true).assertIsDisplayed()
         assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
     }

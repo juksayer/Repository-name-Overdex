@@ -21,6 +21,7 @@ data class ReplayFinishingFastAssociation(
     override val attackerAppearanceAtNanos: Long = Long.MIN_VALUE,
     override val reception: ReplayFinishingReception? = null,
     override val basis: String = "INFERRED_FAST_MOVE_WITH_CONFIRMED_LOSS",
+    override val departedBy: ReplayTimeBound? = null,
 ) : ReplayFinishingAttribution {
     override val landingAtNanos get() = impactAtNanos
     override val corroboratingArticleIds get() = audioArticleIds

@@ -34,6 +34,15 @@ class ReplayTerminalAudioAssociationTest {
         assertTrue(resolve(listOf(event("count", 9, ArchivedOpponentBattleResourceCountMeasured("POKE_BALLS", 2, 3)))).isEmpty())
         assertTrue(resolve(listOf(event("result", 17, ArchivedMatchEnded("LOSS")))).isEmpty())
     }
+    @Test fun `the captured cry fragment bounds the faint even when its clip starts before the attack`() {
+        val cry = audio.cries.single()
+        val fragment = cry.fragments.single().copy(captureAtNanos = 9*S, queryOffsetNanos = 4*S + S/4,
+            referenceOffsetNanos = S/4)
+        val link = resolve(recovery = audio.copy(cries = listOf(cry.copy(fragments = listOf(fragment))))).single()
+        assertEquals(9*S, link.faintSourceAtNanos)
+        assertEquals(13*S, link.landingAtNanos)
+        assertEquals(ReplayTimeBound(13*S + S/4, fragment.articleId), link.departedBy)
+    }
     @Test fun `unrendered unknown uses and pending impacts remain competing evidence`() {
         for (at in listOf(6L, 11L, 14L)) assertTrue(resolve(listOf(event("unknown", at,
             ArchivedFastMoveUseObserved("u", "UNKNOWN", "UNKNOWN", evidenceKinds = emptyList(), basis = "TEST")))).isEmpty())

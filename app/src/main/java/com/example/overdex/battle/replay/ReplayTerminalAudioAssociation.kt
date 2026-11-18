@@ -81,11 +81,15 @@ internal object ReplayTerminalAudioAssociation {
                 (a.payload is ArchivedActivePokemonSpeciesWitnessed || a.payload is ArchivedPlayerActiveIdentityResolved) &&
                     a.monotonicTimeNanos!! in minOf(appearanceAt("PLAYER", at), appearanceAt("OPPONENT", at))..at
             }.map { it.articleId }
+            // The first matched part of the cry supplies a by-time even when the clip
+            // began before the attack. An extrapolated cry onset still drives presentation.
+            val firstCry = cry.fragments.minBy { it.captureAtNanos + it.queryOffsetNanos }
             ReplayFinishingChargeAssociation("PLAYER", player.speciesName, appearanceAt("PLAYER", at),
                 "OPPONENT", target.speciesName, appearanceAt("OPPONENT", at), recovered.moveName,
                 at, cry.fragments.minOf { it.captureAtNanos }, cryAt, null,
                 recovered.fragments.map { it.articleId }, cry.fragments.map { it.articleId } + listOf(count.articleId, result.articleId) + identities,
-                listOf(shields.articleId), BASIS)
+                listOf(shields.articleId), BASIS,
+                departedBy = ReplayTimeBound(firstCry.captureAtNanos + firstCry.queryOffsetNanos, firstCry.articleId))
         }
     }
 }
