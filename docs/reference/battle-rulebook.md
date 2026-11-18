@@ -1174,4 +1174,6 @@ Implemented in completed Replay and checked against the November 18 Pixel Sealeo
 
 When both complete HP bars pan right together from their ordinary positions in the same captured frame, the live HUD can hide the opponent’s move list before the announcement or grade is read. A trusted Get Ready or incoming-attack prompt can also start this window. A complete grade on its own line can keep the list hidden even if a second line contains HUD text. The camera cue and mixed grade guide only the display.
 
-Keep the roster sprites in place through the charged exchange. Restore the list when the battlefield returns after impact or the phase ends. If the ending is missed, expire the window using the original cue time. A single bar moving on a switch and vertical Fast Move movement do not trigger this camera rule.
+Keep the roster sprites in place. In the calibrated announcement strip, a line of game text outside the HUD’s own pixels briefly hides the move list. Each fresh visible sample renews that short interval. It does not identify a move.
+
+Once Overdex recognizes Get Ready, an incoming attack or shield choice, or a completed charged move, keep the list hidden until either side’s next observed Fast Move or the match ends. Use capture order so a late report from before the charge cannot restore the list. A camera return, a faint, or a switch can occur while the banner is still visible. Camera and grade hints on their own retain their bounded display windows.

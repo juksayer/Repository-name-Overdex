@@ -8,8 +8,10 @@ import kotlinx.coroutines.*
 
 /** Presentation only: keep our move list away from the game's charged-phase text. */
 internal class ChargeTextProtectionWindow(private var boundaryNanos: Long = Long.MIN_VALUE) {
-    var untilNanos: Long = Long.MIN_VALUE
-        private set
+    private var phaseUntil = Long.MIN_VALUE
+    private var bannerBoundaryNanos = boundaryNanos
+    private var bannerUntil = Long.MIN_VALUE
+    val untilNanos get() = maxOf(phaseUntil, bannerUntil)
     private var latestPhaseNanos = Long.MIN_VALUE
     private var camera = ChargeHudCameraCue()
 
@@ -20,22 +22,27 @@ internal class ChargeTextProtectionWindow(private var boundaryNanos: Long = Long
 
     fun prepare(cue: AcceptedChargeCaptureCue, now: Long) {
         val duration = if (cue.kind == AcceptedChargeCaptureCueKind.PLAYER_QTE_PROGRESS) 8 * SECOND else 12 * SECOND
-        hold(cue.capturedAtNanos, now, duration)
+        hold(cue.capturedAtNanos, now, duration, untilFastMove = cue.kind != AcceptedChargeCaptureCueKind.PLAYER_QTE_PROGRESS)
     }
 
     fun battlefieldReturned(at: Long, now: Long) {
-        if (at <= now && isProtected(at) && at >= latestPhaseNanos) close(at)
+        if (phaseUntil != Long.MAX_VALUE && at <= now && at < phaseUntil && at >= latestPhaseNanos) closePhase(at)
     }
 
-    private fun hold(at: Long, now: Long, duration: Long) {
+    fun bannerVisible(at: Long, now: Long) {
+        if (at > bannerBoundaryNanos && at <= now && now - at < BANNER_TAIL)
+            bannerUntil = maxOf(bannerUntil, at + BANNER_TAIL)
+    }
+
+    private fun hold(at: Long, now: Long, duration: Long, untilFastMove: Boolean = false) {
         if (at <= boundaryNanos || at > now || now - at >= duration) return
         latestPhaseNanos = maxOf(latestPhaseNanos, at)
-        untilNanos = maxOf(untilNanos, at + duration)
+        phaseUntil = if (untilFastMove) Long.MAX_VALUE else maxOf(phaseUntil, at + duration)
     }
 
-    private fun close(at: Long) {
+    private fun closePhase(at: Long) {
         boundaryNanos = at
-        untilNanos = Long.MIN_VALUE
+        phaseUntil = Long.MIN_VALUE
         camera = ChargeHudCameraCue()
     }
 
@@ -44,7 +51,7 @@ internal class ChargeTextProtectionWindow(private var boundaryNanos: Long = Long
         if (at < boundaryNanos || at > nowNanos) return
         val duration = when (val p = article.payload) {
             GetReadyWitnessed, AttackIncoming -> 12_000_000_000L
-            is ChargeMoveUsedAnnounced -> 3_000_000_000L
+            ChargeMoveUsedAnnounced, is ChargedMoveEnergySpent -> 12 * SECOND
             // A HUD word may occupy a separate OCR line. An exact grade line can
             // hide our labels without changing what any battle witness accepts.
             is RawTestimony -> if (article.sourceId.id == "QTE_PROGRESS_TEXT_WITNESS" &&
@@ -53,18 +60,32 @@ internal class ChargeTextProtectionWindow(private var boundaryNanos: Long = Long
         }
         if (duration != null) {
             // A delayed reading must not grant a new full window at publication time.
-            hold(at, nowNanos, duration)
-        } else if (article.payload is MatchEnded || article.payload is ActivePokemonFaintedWitnessed ||
+            hold(at, nowNanos, duration, untilFastMove = article.payload !is RawTestimony)
+        } else if (article.payload is FastMoveUseObserved) {
+            // Use the move's capture time, including when it arrives before an older charge report.
+            if (at > latestPhaseNanos) {
+                if (phaseUntil != Long.MIN_VALUE) closePhase(at) else boundaryNanos = at
+            }
+        } else if (article.payload is ActivePokemonFaintedWitnessed) {
+            battlefieldReturned(at, nowNanos)
+        } else if (article.payload is MatchEnded ||
             article.payload is ObservationSessionStoppedByUser || article.payload is ObservationRestartedByUser ||
             article.payload is ScreenIgnoredByUser ||
             article.payload is MatchStarted || article.payload is TeamSelectPartyWitnessed) {
-            if (at >= latestPhaseNanos) close(at)
+            if (at >= latestPhaseNanos) {
+                closePhase(at)
+                bannerBoundaryNanos = at
+                if (bannerUntil <= at + BANNER_TAIL) bannerUntil = Long.MIN_VALUE
+            }
         }
     }
 
     fun isProtected(nowNanos: Long) = nowNanos < untilNanos
 
-    private companion object { const val SECOND = 1_000_000_000L }
+    private companion object {
+        const val SECOND = 1_000_000_000L
+        const val BANNER_TAIL = 1_250_000_000L
+    }
 }
 
 /** Has no testimony output: changing presentation cannot become battle evidence. */
@@ -84,6 +105,15 @@ internal class ChargeTextOverlayProtection(
         var detach: (() -> Unit)? = null
     }
     private var active: Session? = null
+
+    fun bannerVisible(at: Long) = synchronized(stateLock) {
+        active?.let { session ->
+            val now = nowNanos()
+            session.window.bannerVisible(at, now)
+            update(session, now)
+        }
+        Unit
+    }
 
     fun observeBar(bar: CompleteHpBarObserved, at: Long) = synchronized(stateLock) {
         active?.let { session ->
@@ -110,7 +140,7 @@ internal class ChargeTextOverlayProtection(
         session.expiry?.cancel()
         val protected = session.window.isProtected(now)
         setProtected(protected)
-        if (protected) session.expiry = session.workers.launch {
+        if (protected && deadline != Long.MAX_VALUE) session.expiry = session.workers.launch {
             delay((deadline - now + 999_999L) / 1_000_000L)
             synchronized(stateLock) {
                 if (active === session && session.deadline == deadline && !session.window.isProtected(nowNanos()))

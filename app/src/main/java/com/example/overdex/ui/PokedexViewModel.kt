@@ -1043,6 +1043,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             name = "Opponent Hand Sample Gate",
         )
         val chargeTextProtection = com.example.overdex.battle.observation.ChargeTextOverlayProtection()
+        val announcementPreview = com.example.overdex.battle.observation.LiveAnnouncementPreview(chargeTextProtection::bannerVisible) {
+            DroidballOverlayPresentation.battleBadgeSeen.value && DroidballOverlayPresentation.expanded.value &&
+                DroidballOverlayPresentation.panelAllowed.value && battleEvidenceLive()
+        }
         val activeHpBarWitness = LiveActiveHpBarWitness(
             input, battlefieldHpTracker, activeHpEvidenceLive, playerHpFrameHub, opponentHpFrameHub,
             onDepartureCheck = { side, at ->
@@ -1105,6 +1109,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             observerId = ObserverId(BattleWitnessContracts.chargedImpactHpCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
             name = "Charged Impact HP Capture",
             companionCrop = BattleWitnessContracts.chargedImpactAnnouncementCapture,
+            onAnnouncementPixels = announcementPreview::inspect,
         ))
         observationDispatcher.register(PokemonFaintWitness())
         observationDispatcher.register(PokemonFaintWitness(com.example.overdex.battle.custody.ActivePokemonSide.PLAYER))
@@ -1197,9 +1202,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 captureIntervalNanos = transientTextIntervalNanos,
                 captureDispatcher = auxiliaryCaptureDispatcher,
                 observerId = ObserverId(BattleWitnessContracts.announcementCropCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
-                name = "Announcement Crop Capture")
+                name = "Announcement Crop Capture", onAnnouncementPixels = announcementPreview::inspect)
         )
-        observationDispatcher.register(PersistedAnnouncementWitness(cropArtifactStore))
+        observationDispatcher.register(PersistedAnnouncementWitness(cropArtifactStore, announcementPreview))
         // Read the independently calibrated higher QTE band without publishing
         // its grades or partial words into the species/used-move announcement lane.
         observationDispatcher.register(PersistedAnnouncementWitness(cropArtifactStore,

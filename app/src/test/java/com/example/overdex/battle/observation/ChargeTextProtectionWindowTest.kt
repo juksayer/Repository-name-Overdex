@@ -51,11 +51,18 @@ class ChargeTextProtectionWindowTest {
         assertFalse(window.isProtected(19 * SECOND))
     }
 
-    @Test fun `late preparation protects only the remaining source timed window`() {
+    @Test fun `a fresh preparation stays hidden through camera return and faint until a later Fast Move`() {
         val window = ChargeTextProtectionWindow()
         window.observe(article(GetReadyWitnessed, 10), 15 * SECOND)
         assertTrue(window.isProtected(21 * SECOND))
-        assertFalse(window.isProtected(22 * SECOND))
+        window.battlefieldReturned(21 * SECOND, 21 * SECOND)
+        window.observe(article(ActivePokemonFaintedWitnessed(ActivePokemonSide.OPPONENT, "Old"), 22), 22 * SECOND)
+        window.observe(article(fast, 9), 24 * SECOND)
+        assertTrue(window.isProtected(25 * SECOND))
+        window.observe(article(fast, 26), 27 * SECOND)
+        assertFalse(window.isProtected(27 * SECOND))
+        window.observe(article(ChargeMoveUsedAnnounced, 23), 28 * SECOND)
+        assertFalse(window.isProtected(28 * SECOND))
     }
 
     @Test fun `expired preparation and untrusted raw grades cannot hide the HUD`() {
@@ -74,7 +81,7 @@ class ChargeTextProtectionWindowTest {
         window.observe(article(ActivePokemonFaintedWitnessed(ActivePokemonSide.OPPONENT, "Old"), 15), 21 * SECOND)
         assertTrue(window.isProtected(21 * SECOND))
         window.observe(article(AttackIncoming, 4), 22 * SECOND)
-        assertEquals(32 * SECOND, window.untilNanos)
+        assertTrue(window.isProtected(33 * SECOND))
     }
 
     @Test fun `result stops protection and late pre result QTE cannot reopen it`() {
@@ -91,17 +98,35 @@ class ChargeTextProtectionWindowTest {
         window.observe(article(MatchStarted, 30), 30 * SECOND)
         window.observe(article(AttackIncoming, 40), 40 * SECOND)
         assertTrue(window.isProtected(50 * SECOND))
-        assertFalse(window.isProtected(52 * SECOND))
+        assertTrue(window.isProtected(52 * SECOND))
+        window.observe(article(fast, 53), 53 * SECOND)
+        assertFalse(window.isProtected(53 * SECOND))
     }
 
-    @Test fun `used cue keeps short impact tail and future source cannot hide HUD`() {
+    @Test fun `used cue hides through the next fast move and future source cannot hide HUD`() {
         val window = ChargeTextProtectionWindow()
         window.observe(article(ChargeMoveUsedAnnounced, 10), 11 * SECOND)
         assertTrue(window.isProtected(12 * SECOND))
+        window.observe(article(fast, 13), 13 * SECOND)
         assertFalse(window.isProtected(13 * SECOND))
         window.observe(article(GetReadyWitnessed, 25), 20 * SECOND)
         assertFalse(window.isProtected(20 * SECOND))
     }
+
+    @Test fun `visible announcement outlasts a battlefield return and expires without a fast move`() {
+        val window = ChargeTextProtectionWindow()
+        window.observe(article(fast, 10), 10 * SECOND) // Same-frame Fast Move must not mask visible lettering.
+        window.bannerVisible(10 * SECOND, 10 * SECOND)
+        window.battlefieldReturned(10 * SECOND + 1, 10 * SECOND + 1)
+        window.observe(article(fast, 11), 11 * SECOND)
+        assertTrue(window.isProtected(11 * SECOND))
+        assertFalse(window.isProtected(12 * SECOND))
+        window.bannerVisible(10 * SECOND, 13 * SECOND)
+        assertFalse(window.isProtected(13 * SECOND))
+    }
+
+    private val fast = FastMoveUseObserved("fast", ActivePokemonSide.PLAYER, ActivePokemonSide.OPPONENT,
+        evidenceKinds = listOf("HP_DAMAGE_TICK"))
 
     private fun article(payload: TestimonyPayload, seconds: Long, source: String = "test") = RealityArticle(
         ArticleId("$source:$seconds"), seconds * 1000, seconds * 1000, SourceId(source), payload,

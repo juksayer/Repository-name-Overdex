@@ -4,9 +4,17 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.compose.ui.test.*
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
+import com.example.overdex.battle.archive.ArchivedCropCaptured
+import com.example.overdex.battle.archive.MatchArchivePackageReader
 import com.example.overdex.battle.custody.*
+import com.example.overdex.battle.observation.BattleCropBounds
+import com.example.overdex.battle.observation.BattleCropProvenance
+import com.example.overdex.battle.observation.LiveAnnouncementPreview
+import com.example.overdex.battle.observation.ResolvedBattleCrop
+import java.util.zip.ZipFile
 import com.example.overdex.battle.observation.DroidballOverlayPresentation
 import com.example.overdex.battle.observation.ChargeTextOverlayProtection
 import com.example.overdex.battle.observation.Match
@@ -60,6 +68,39 @@ class ChargeHudVisibilityDeviceTest {
         }
     }
 
+    @Test fun savedEarthPowerAndEntryBannersHideTheListBeforeOcr() {
+        assumeTrue(InstrumentationRegistry.getArguments().getString("recordedHudBanners") == "true")
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val file = File(context.filesDir, "match_archives/2026-11-18_16-16-50_5e39cb12-af19-4841-8d2d-3a63539666e8.odxmatch.zip")
+        val archive = file.inputStream().use(MatchArchivePackageReader::read)
+        val visible = mutableListOf<Long>()
+        val preview = LiveAnnouncementPreview(visible::add)
+        // Two Earth Power frames, Get Ready, Rock Tomb and two entrances, plus
+        // normal sky with HUD lettering, empty arena and a black transition.
+        val expected = mapOf("86b0d3c" to true, "a10baa2" to true, "ca39482" to true, "ac372f1" to true,
+            "0a6d738" to true, "5eda2e6" to true, "a8e7d0d" to false, "2d5d54f" to false,
+            "380ded5" to false, "9e6cdec" to false)
+        val checked = mutableSetOf<String>()
+        ZipFile(file).use { zip ->
+            for (row in archive.articles) {
+                val p = row.payload as? ArchivedCropCaptured ?: continue
+                val key = p.sha256.take(7)
+                if (key !in expected || p.cropName != "AnnouncementCrop") continue
+                val at = requireNotNull(row.monotonicTimeNanos)
+                val bitmap = zip.getInputStream(zip.getEntry(p.artifactPath)).use { BitmapFactory.decodeStream(it) }
+                try {
+                    val provenance = BattleCropProvenance(p.cropName, p.sourceWidth, p.sourceHeight,
+                        BattleCropBounds(p.cropLeft, p.cropTop, p.cropRight, p.cropBottom))
+                    preview.inspect(ResolvedBattleCrop(provenance, bitmap), at, p.overlayBounds)
+                    assertEquals("Source crop $key", expected.getValue(key), at in visible)
+                    assertTrue(preview.readingFor(at, provenance) != null)
+                    checked += key
+                } finally { bitmap.recycle() }
+            }
+        }
+        assertEquals(expected.keys, checked)
+    }
+
     @Test fun moveLabelsHideThroughImpactAndReturnAtTheirOriginalPosition() {
         val hud = DroidballOverlayPresentation
         compose.runOnUiThread {
@@ -75,6 +116,8 @@ class ChargeHudVisibilityDeviceTest {
         val move = compose.onNodeWithContentDescription("Liquidation, water type", useUnmergedTree = true)
         val originalSprite = sprite.assertIsDisplayed().fetchSemanticsNode().boundsInRoot
         val originalMove = move.assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithTag("move-type:Liquidation", true).assertWidthIsEqualTo(15.dp)
+        compose.onNodeWithTag("move-hazard:Liquidation", true).assertWidthIsEqualTo(15.dp)
         val custody = InMemoryTestimonyCustody()
         val match = Match("field-hud-test", custody = custody, realityTimeline = InMemoryRealityTimeline(),
             pokemonKnowledge = object : PokemonKnowledge {
@@ -97,6 +140,10 @@ class ChargeHudVisibilityDeviceTest {
             runBlocking { match.awaitAcceptedEvidencePublished() }
             move.assertDoesNotExist()
             observer.battlefieldReturned(System.nanoTime())
+            move.assertDoesNotExist()
+            cue(FastMoveUseObserved("ordinary-use", ActivePokemonSide.OPPONENT, ActivePokemonSide.PLAYER,
+                evidenceKinds = listOf("HP_DAMAGE_TICK")), "FAST_MOVE_USE_INFERENCE")
+            compose.waitUntil(5_000) { !hud.chargeTextProtected.value }
             assertEquals(originalSprite, sprite.fetchSemanticsNode().boundsInRoot)
             assertEquals(originalMove, move.assertIsDisplayed().fetchSemanticsNode().boundsInRoot)
         } finally {

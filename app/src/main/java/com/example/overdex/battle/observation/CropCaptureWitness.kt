@@ -7,6 +7,7 @@ import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.data.BattleCalibration
 import com.example.overdex.model.observation.CapturedVisualFrame
+import com.example.overdex.model.observation.OcrBox
 import com.example.overdex.model.observation.ObservationInput
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -52,6 +53,8 @@ class CropCaptureWitness(
     private val acceptsFrame: (Long) -> Boolean = { true },
     /** Preserve this second region from the same source frame and cadence. */
     private val companionCrop: BattleWitnessContract<CropCaptured>? = null,
+    /** Synchronous preview of the announcement strip before file I/O; never transfers bitmap ownership. */
+    private val onAnnouncementPixels: ((ResolvedBattleCrop, Long, OcrBox?) -> Unit)? = null,
 ) : Observer {
     private var scope: CoroutineScope? = null
     private var activeMatch: Match? = null
@@ -86,6 +89,16 @@ class CropCaptureWitness(
                     val primary = resolve(contract, activeCalibration, frame, ::reportAvailability)
                     val companion = companionCrop?.let { resolve(it, activeCalibration, frame) }
                     try {
+                        if (onAnnouncementPixels != null) {
+                            val strip = if (contract.crop == BattleCropContracts.announcement) primary
+                                else companion.takeIf { companionCrop?.crop == BattleCropContracts.announcement }
+                            if (strip != null) try {
+                                onAnnouncementPixels.invoke(strip, frame.capturedAtMonotonicTimeNanos,
+                                    strip.provenance.overlayBounds(frame.overlayRegion))
+                            } catch (failure: RuntimeException) {
+                                Log.w("CropCapture", "Announcement preview unavailable", failure)
+                            }
+                        }
                         if (primary != null) capture(match, frame, contract, primary, preserveCompleteFrame, onCaptured)
                         if (companion != null) capture(match, frame, requireNotNull(companionCrop), companion, false, null)
                     } finally {

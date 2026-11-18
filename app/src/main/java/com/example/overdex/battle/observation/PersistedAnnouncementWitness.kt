@@ -44,6 +44,9 @@ class PersistedAnnouncementWitness internal constructor(
         cropContract: BattleCropContract = BattleCropContracts.announcement,
     ) : this(ArtifactAnnouncementCropReader(artifactStore), System::nanoTime, observerId, name, cropContract)
 
+    internal constructor(store: FileCropArtifactStore, preview: LiveAnnouncementPreview) :
+        this(ArtifactAnnouncementCropReader(store, preview))
+
     private var scope: CoroutineScope? = null
 
     override fun start(match: Match) {
@@ -216,18 +219,16 @@ internal interface AnnouncementCropReadingTurn {
     suspend fun recognize(article: RealityArticle, profile: OcrHeightProfile): List<OcrTextEvidence>
 }
 
-private class ArtifactAnnouncementCropReader(private val artifactStore: FileCropArtifactStore) : AnnouncementCropReader {
+private class ArtifactAnnouncementCropReader(
+    private val artifactStore: FileCropArtifactStore,
+    private val preview: LiveAnnouncementPreview? = null,
+) : AnnouncementCropReader {
     override suspend fun inspect(article: RealityArticle): TransientTextProbe.Reading? = withContext(Dispatchers.IO) {
         val crop = article.payload as CropCaptured
+        preview?.readingFor(article.monotonicTimeNanos, crop.cropProvenance)?.let { return@withContext it }
         val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@withContext null
         try {
-            val pixels = IntArray(bitmap.width * bitmap.height)
-            bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-            val excluded = crop.overlayBounds?.let {
-                listOf(TransientTextProbe.PixelBounds(kotlin.math.floor(it.left).toInt(),
-                    kotlin.math.floor(it.top).toInt(), kotlin.math.ceil(it.right).toInt(), kotlin.math.ceil(it.bottom).toInt()))
-            }.orEmpty()
-            TransientTextProbe.analyze(pixels, bitmap.width, bitmap.height, excluded)
+            readTransientTextPixels(bitmap, crop.overlayBounds)
         } finally { bitmap.recycle() }
     }
     override suspend fun <T> withReadingTurn(

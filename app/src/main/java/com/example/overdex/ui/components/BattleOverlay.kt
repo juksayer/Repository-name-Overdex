@@ -324,7 +324,7 @@ private fun OverlayPanel(
             // the entire lower section while that source-bounded phase is active;
             // the native window shrinks and its capture footprint follows suit.
             // Keep the roster header and its calibrated seam stable.
-            if (!chargeTextProtected) Column(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 2.dp),
+            if (!chargeTextProtected) Column(Modifier.fillMaxWidth().padding(start = 8.dp, end = 6.dp, bottom = 2.dp),
                 horizontalAlignment = Alignment.End) {
                 if (opponentMoves != null) {
                     val context = LocalContext.current
@@ -406,7 +406,7 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?, trai
 }
 
 internal enum class HudHazardTier(val spoken: String, val radius: Int, val opacity: Float) {
-    NONE("", 0, 0f), SINGLE("single-weakness hazard", 6, .35f), DOUBLE("double-weakness hazard", 9, .65f);
+    NONE("", 0, 0f), SINGLE("single-weakness hazard", 5, .35f), DOUBLE("double-weakness hazard", 7, .65f);
 
     companion object {
         fun forMultiplier(value: Double) = when {
@@ -452,18 +452,18 @@ internal fun MovePossibilityLine(
                 },
                 fontWeight = if (move.hazardous || move.isConfirmed || energy != null && readiness != com.example.overdex.battle.observation.HudChargeReadiness.BUILDING) FontWeight.Bold else FontWeight.Normal,
             )
-            Box(Modifier.width(18.dp).testTag("move-type:${move.name}"), contentAlignment = Alignment.TopCenter) {
-                PokemonTypeIcon(move.type, Modifier.clearAndSetSemantics {}, TypeIconStyle.OVERDEX)
+            Box(Modifier.width(15.dp).testTag("move-type:${move.name}"), contentAlignment = Alignment.TopCenter) {
+                PokemonTypeIcon(move.type, Modifier.size(13.dp).clearAndSetSemantics {}, TypeIconStyle.OVERDEX)
             }
             val red = Color(0xFFFF1744)
-            Box(Modifier.size(width = 18.dp, height = 16.dp).testTag("move-hazard:${move.name}").drawBehind {
+            Box(Modifier.size(width = 15.dp, height = 14.dp).testTag("move-hazard:${move.name}").drawBehind {
                 if (tier != HudHazardTier.NONE) {
                     val radius = tier.radius.dp.toPx()
                     drawCircle(Brush.radialGradient(listOf(red.copy(alpha = tier.opacity * appearance.bloomPercent / 100f), Color.Transparent),
                         center, radius), radius)
                 }
             }, contentAlignment = Alignment.Center) {
-                if (tier != HudHazardTier.NONE) Icon(Icons.Filled.Warning, null, Modifier.size(12.dp), tint = red)
+                if (tier != HudHazardTier.NONE) Icon(Icons.Filled.Warning, null, Modifier.size(10.dp), tint = red)
             }
         }
     }
