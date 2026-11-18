@@ -146,6 +146,7 @@ fun MatchReplayScreen(
     onRight: (() -> Unit) -> Unit = {},
     initialPlaybackSpeed: Float = 1f,
     onPlaybackSpeedChange: (Float) -> Unit = {},
+    pairedReplayScene: ((com.example.overdex.battle.replay.ReplayScene, Long) -> com.example.overdex.battle.replay.ReplayScene)? = null,
 ) {
     val referencedNames = remember(archive) { MatchReplayModel.referencedSpeciesNames(archive) }
     var speciesResolved by remember(archive) { mutableStateOf(false) }
@@ -378,7 +379,54 @@ fun MatchReplayScreen(
                 fastMovesBySpecies[name].orEmpty() + chargedMovesBySpecies[name].orEmpty()
             }) }
     }
-    val scene = trainerProjection?.apply(model.sceneAt(cursor), cursor) ?: model.sceneAt(cursor)
+    val pairScope = rememberCoroutineScope()
+    var pairedEvidence by remember(archive) { mutableStateOf<com.example.overdex.battle.replay.PairedReplayEvidence?>(null) }
+    var pendingPair by remember(archive) { mutableStateOf<com.example.overdex.battle.replay.PairedReplayEvidence?>(null) }
+    var pairStatus by remember(archive) { mutableStateOf<String?>(null) }
+    val pairFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) pairScope.launch {
+            try {
+                val evidence = withContext(Dispatchers.IO) {
+                    val stream = requireNotNull(context.contentResolver.openInputStream(uri))
+                    val other = com.example.overdex.battle.archive.MatchArchivePackageReader.read(stream)
+                    val anchors = com.example.overdex.battle.replay.PairedReplayEvidenceBuilder.proposedAnchors(archive, other)
+                    com.example.overdex.battle.replay.PairedReplayEvidenceBuilder.build(archive, other, anchors)
+                }
+                pendingPair = evidence
+            } catch (error: Exception) {
+                if (error is kotlinx.coroutines.CancellationException) throw error
+                pairStatus = "PAIR FAILED: ${error.message}"
+            }
+        }
+    }
+    pendingPair?.let { candidate ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { pendingPair = null },
+            title = { Text("Pair this match?") },
+            text = { Text("Confirm this is the other trainer's recording of the same battle. Sides will be reversed. Timing-only matches remain uncertain.") },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = {
+                pairedEvidence = candidate; pendingPair = null; pairStatus = "PAIRED RECORD · TIMING APPROXIMATE"
+            }) { Text("Pair") } },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { pendingPair = null }) { Text("Cancel") } },
+        )
+    }
+    val pairedChargedTypes by produceState<Map<Pair<String, String>, PokemonType>>(emptyMap(), pairedEvidence) {
+        value = pairedEvidence?.events.orEmpty().flatMap { it.observations }
+            .filter { it.kind == com.example.overdex.battle.replay.PairedReplayObservation.Kind.CHARGED_MOVE }
+            .mapNotNull { observation ->
+                val species = observation.species ?: return@mapNotNull null
+                val move = observation.moveName ?: return@mapNotNull null
+                resolveChargedMoveType(species, move)?.let { (species.uppercase() to move.uppercase()) to it }
+            }.toMap()
+    }
+    val pairedProjection = remember(pairedEvidence, model.matchStartNanos, pairedChargedTypes) {
+        pairedEvidence?.let { evidence -> model.matchStartNanos?.let {
+            com.example.overdex.battle.replay.PairedReplayProjection(archive.matchId, it, evidence, pairedChargedTypes)
+        } }
+    }
+    val primaryScene = trainerProjection?.apply(model.sceneAt(cursor), cursor) ?: model.sceneAt(cursor)
+    val pairedScene = pairedProjection?.apply(primaryScene, cursor) ?: primaryScene
+    val scene = pairedReplayScene?.invoke(pairedScene, cursor) ?: pairedScene
     val attackSoundEvents = remember(model, trainerProjection) {
         trainerProjection?.soundEvents(model.attackSoundEvents, model::sceneAt) ?: model.attackSoundEvents
     }
@@ -737,6 +785,9 @@ fun MatchReplayScreen(
             MatchLcdButton("EXPORT CORRECTIONS", { editorAction = exportEventAction; exportEntries() }, selected = editorAction == exportEventAction)
             MatchLcdText("SELECT A TRAINER MARKER TO EXPORT IT; OTHERWISE EXPORT ALL")
             MatchLcdButton("IMPORT CORRECTIONS", { editorAction = importEventAction; importEntries() }, selected = editorAction == importEventAction)
+            MatchLcdButton("PAIR MATCH", { pairFile.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) })
+            pairStatus?.let { MatchLcdText(it) }
+            pairedEvidence?.let { paired -> MatchLcdText("PAIRED CANDIDATES: ${paired.events.count { it.ambiguous }} · TIMING APPROXIMATE") }
             correctionStatus?.let { MatchLcdText(it) }
             corrections.forEach { entry ->
                 val credited = entry.finishingMoveId?.let { id -> corrections.firstOrNull { it.id == id } }

@@ -39,6 +39,11 @@ internal fun ArchivedRealityArticle.terminalFinishRecord(): TerminalFinishRecord
         when (val p = payload) {
             is ArchivedTerminalParticleObservations -> TerminalParticleObservations(ActivePokemonSide.valueOf(p.requestedRecipient),
                 p.phaseAtNanos, p.sourceDeadlineNanos, p.samples, p.ended, p.totalSamples)
+            is ArchivedCompleteHpBarObserved -> CompleteHpBarObserved(ActivePokemonSide.valueOf(p.side),
+                p.barLeft, p.barTop, p.barRight, p.barBottom, p.sourceWidth, p.sourceHeight,
+                p.interiorColumns, p.liveColumns, p.damageColumns, p.status, p.candidateStartedAtNanos,
+                p.appearanceStartedAtNanos, p.railBrightness, p.backgroundBrightness,
+                p.backgroundMaskedColumns, p.unmaskedUncertainColumns)
             is ArchivedActivePokemonSpeciesWitnessed -> ActivePokemonSpeciesWitnessed(ActivePokemonSide.valueOf(p.side),
                 p.speciesName, p.speciesId, p.ocrText, p.ocrMatchBasis)
             is ArchivedActiveHpBarMeasured -> ActiveHpBarMeasured(ActivePokemonSide.valueOf(p.side),

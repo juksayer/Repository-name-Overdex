@@ -428,6 +428,7 @@ Timeline
 Review
 ↓
 new measurement / conclusion / relationship discovered
+```
 ↓
 Article
 ↓

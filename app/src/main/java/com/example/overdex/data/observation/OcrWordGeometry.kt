@@ -41,6 +41,8 @@ internal object OcrWordGeometry {
         val scaleY = inputHeight.toFloat() / (original.height + padding * 2)
         val pixels = IntArray(original.width * original.height)
         original.getPixels(pixels, 0, original.width, 0, 0, original.width, original.height)
+        val shadowedWords = mutableSetOf<Int>()
+        var wordIndex = 0
         var lineIndex = 0
         val words = result.textBlocks.flatMap { block -> block.lines.flatMap { line ->
             val index = lineIndex++
@@ -50,26 +52,34 @@ internal object OcrWordGeometry {
                     rect.right / scaleX - padding, rect.bottom / scaleY - padding,
                 ) }
                 val colors = colors(pixels, original.width, original.height, box)
+                if (colors[3] >= .02f) shadowedWords.add(wordIndex)
+                wordIndex++
                 OcrWordEvidence(element.text, index, box, colors[0], colors[1], colors[2])
             }
         } }
-        return OcrSourceFilter.apply(result.text.trim(), words, treatment, context, profile)
+        return OcrSourceFilter.applyWithShadowedWords(result.text.trim(), words, treatment, context, profile, shadowedWords)
     }
 
     private fun colors(pixels: IntArray, width: Int, height: Int, box: OcrBox?): FloatArray {
-        if (box == null) return floatArrayOf(0f, 0f, 0f)
+        if (box == null) return FloatArray(4)
+        var shadowEdges = 0
         var count = 0; var violet = 0; var teal = 0; var red = 0
         for (y in floor(box.top).toInt().coerceIn(0, height) until ceil(box.bottom).toInt().coerceIn(0, height)) {
             for (x in floor(box.left).toInt().coerceIn(0, width) until ceil(box.right).toInt().coerceIn(0, width)) {
                 val pixel = pixels[y * width + x]
                 val r = (pixel ushr 16) and 255; val g = (pixel ushr 8) and 255; val b = pixel and 255
                 count++
+                // Inspect the down-right shadow of a white glyph on the original frame.
+                if (minOf(r, g, b) >= 220 && x + 1 < width && y + 1 < height) {
+                    val next = pixels[(y + 1) * width + x + 1]
+                    if (maxOf(next ushr 16 and 255, next ushr 8 and 255, next and 255) <= 100) shadowEdges++
+                }
                 if (b - r >= 12 && r - g >= 8 && b - g >= 25) violet++
                 if (r in 20..145 && g in 45..170 && b in 40..195 && g >= r + 10 && b >= r + 8 && abs(g - b) < 40) teal++
                 if (r >= 140 && r - g >= 65 && r - b >= 65) red++
             }
         }
-        if (count == 0) return floatArrayOf(0f, 0f, 0f)
-        return floatArrayOf(violet.toFloat() / count, teal.toFloat() / count, red.toFloat() / count)
+        if (count == 0) return FloatArray(4)
+        return floatArrayOf(violet.toFloat() / count, teal.toFloat() / count, red.toFloat() / count, shadowEdges.toFloat() / count)
     }
 }

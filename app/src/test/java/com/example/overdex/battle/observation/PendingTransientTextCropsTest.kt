@@ -287,6 +287,33 @@ class PendingTransientTextCropsTest {
         assertNull(queue.select(200 * MS))
     }
 
+    @Test fun `paired charge crop can arrive behind later announcement without overwriting it`() {
+        val queue = PendingTransientTextCrops()
+        val ordinary = article("newer-blank", 900)
+        val paired = article("paired-announcement", 850).copy(
+            sourceId = SourceId(BattleWitnessContracts.chargedImpactAnnouncementCapture.witnessId))
+        queue.offer(ordinary, blank())
+        queue.offer(paired, null)
+        queue.offer(paired.copy(id = ArticleId("duplicate")), text(2))
+
+        val selected = requireNotNull(queue.select(950 * MS))
+        assertEquals("CHARGED_IMPACT_FRAME", selected.kind)
+        assertSame(paired, selected.article)
+        assertSame(ordinary, queue.select(950 * MS)?.article)
+        assertNull(queue.select(950 * MS))
+    }
+
+    @Test fun `paired charge crop for an already offered frame does not trigger duplicate OCR`() {
+        val queue = PendingTransientTextCrops()
+        val first = article("ordinary-text", 200)
+        queue.offer(first, text(1))
+        queue.offer(article("newer-blank", 300), blank())
+        queue.offer(first.copy(id = ArticleId("paired-duplicate"),
+            sourceId = SourceId(BattleWitnessContracts.chargedImpactAnnouncementCapture.witnessId)), text(3))
+
+        assertEquals(listOf("ordinary-text", "newer-blank"), drain(queue, 400).map { it.article.id.value })
+    }
+
     private fun drain(queue: PendingTransientTextCrops, nowMillis: Long): List<PendingTransientTextCrops.Selection> =
         buildList { while (true) add(queue.select(nowMillis * MS) ?: break) }
 

@@ -22,7 +22,9 @@ internal object TerminalCollapseSequences {
         var contractedAt: Long? = null, var clearFrames: Int = 0,
         val refs: MutableSet<String> = linkedSetOf())
 
-    fun find(frames: List<TerminalEffectFrame>): List<TerminalCollapseSequence> {
+    fun find(frames: List<TerminalEffectFrame>,
+        coreSupported: (TerminalParticleSample, TerminalFlashFeature) -> Boolean = { _, _ -> false },
+    ): List<TerminalCollapseSequence> {
         val seeds = mutableListOf<Seed>()
         val result = mutableListOf<TerminalCollapseSequence>()
         var previous: TerminalParticleSample? = null
@@ -74,6 +76,10 @@ internal object TerminalCollapseSequences {
             }
             if (completed != null) {
                 result += completed; seeds.clear(); cooldown = at + 500_000_000L
+            }
+            if (at >= cooldown && seeds.isEmpty()) {
+                val core = s.flashes.filter { coreSupported(s, it) }.singleOrNull()
+                if (core != null) seeds += Seed(frame, core.x, core.y, core, at, refs = linkedSetOf(frame.articleId))
             }
             if (s.points.size >= 4 && at >= cooldown) {
                 fun median(v: List<Double>): Double = v.sorted().let { (it[(it.size - 1) / 2] + it[it.size / 2]) / 2 }

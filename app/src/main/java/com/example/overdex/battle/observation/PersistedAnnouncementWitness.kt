@@ -62,13 +62,10 @@ class PersistedAnnouncementWitness internal constructor(
                 wake.close()
             }
             witnessScope.launch(start = CoroutineStart.UNDISPATCHED) {
-                var lastOfferedAt = Long.MIN_VALUE
                 match.articles.filter { article ->
                     (article.payload as? CropCaptured)?.cropProvenance?.cropName == cropContract.cropName
                 }.collect { article ->
-                    val capturedAt = article.monotonicTimeNanos ?: return@collect
-                    if (capturedAt <= lastOfferedAt) return@collect
-                    lastOfferedAt = capturedAt
+                    if (!pending.canOffer(article)) return@collect
                     val visual = try { reader.inspect(article) }
                     catch (cancelled: CancellationException) { throw cancelled }
                     catch (error: Exception) {

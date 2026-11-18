@@ -220,8 +220,8 @@ were made during this resumed check.
 After backing up calibration, only Use This Party's horizontal position and
 width were changed through Match Calibration. Its bounds on the 1080×2400 phone
 are now approximately (286, 2056, 804, 2128). All other regions, including its
-vertical geometry, are unchanged. The active profile remains `Moondrop -
-announcement Oct20`; the save also refreshed legacy published-frame metadata to
+vertical geometry, are unchanged. The active profile remains
+`Moondrop - announcement Oct20`; the save also refreshed legacy published-frame metadata to
 672×1493. The proposed default rectangle above was not applied.
 
 Notification Next created match `d494bf27-5570-4029-aebc-f8c05c6342b6` at

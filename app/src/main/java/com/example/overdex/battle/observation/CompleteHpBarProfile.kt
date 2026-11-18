@@ -48,7 +48,10 @@ internal object CompleteHpBarProfile {
                 }
                 val saturated = hi > 0 && delta * 255 >= hi * 100
                 val liveHue = hue < 16f || hue in 48f..190f || hue >= 348f
-                if (saturated && hi >= 160) {
+                // Allow a dimmer core of the orange range. Borderline hues
+                // retain their original red/yellow protection.
+                val dimOrange = hi >= 145 && hue in 19f..44f
+                if (saturated && (hi >= 160 || dimOrange)) {
                     if (hue in 16f..48f) orangePixels++
                     else if (liveHue) livePixels++
                     else uncertain[x - left] = true

@@ -1,5 +1,6 @@
 package com.example.overdex.ui.components
 
+import com.example.overdex.data.HudMoveAppearance
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
@@ -19,25 +20,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.overdex.model.PokemonType
 
 /**
- * A type-colored edge and narrow white keyline leave the established HUD ink
- * intact. OCR's size/color/position filter still needs those letter interiors;
- * a move's type color must not turn our own words into game testimony.
+ * Adjustable lettering and an offset shadow contrast with the battlefield.
  */
 @Composable
 internal fun BattleHudMoveText(
     text: AnnotatedString,
-    type: PokemonType,
-    color: Color,
+    appearance: HudMoveAppearance,
     fontWeight: FontWeight,
     modifier: Modifier = Modifier,
 ) {
     val backingStyle = with(LocalDensity.current) {
         TextStyle(
-            drawStyle = Stroke(width = .65.dp.toPx()),
-            shadow = Shadow(type.color, Offset(.9.dp.toPx(), .9.dp.toPx()), .35.dp.toPx()),
+            drawStyle = Stroke(width = .45.dp.toPx()),
+            shadow = Shadow(Color(appearance.shadowColor), Offset(.9.dp.toPx(), .9.dp.toPx()), .35.dp.toPx()),
         )
     }
     Box(modifier.semantics(mergeDescendants = true) { }) {
@@ -46,10 +43,10 @@ internal fun BattleHudMoveText(
         Text(
             text = text.text,
             modifier = Modifier.matchParentSize().clearAndSetSemantics { },
-            color = Color.White,
+            color = Color(appearance.textColor),
             style = backingStyle,
-            fontSize = 8.sp,
-            lineHeight = 10.sp,
+            fontSize = appearance.fontSp.sp,
+            lineHeight = (appearance.fontSp + 2).sp,
             textAlign = TextAlign.End,
             fontWeight = fontWeight,
             fontFamily = FontFamily.Monospace,
@@ -57,9 +54,9 @@ internal fun BattleHudMoveText(
         Text(
             text = text,
             modifier = Modifier.fillMaxWidth(),
-            color = color,
-            fontSize = 8.sp,
-            lineHeight = 10.sp,
+            color = Color(appearance.textColor),
+            fontSize = appearance.fontSp.sp,
+            lineHeight = (appearance.fontSp + 2).sp,
             textAlign = TextAlign.End,
             fontWeight = fontWeight,
             fontFamily = FontFamily.Monospace,

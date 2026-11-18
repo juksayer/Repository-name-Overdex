@@ -17,6 +17,14 @@ class MatchArchiveArticleSelectorTest {
         val wrongPurpose = rows.first().copy(articleId = "wrong-purpose", payload = payload.copy(cropName = "PlayerHpEvidenceCrop"))
         assertEquals(rows, select(rows + listOf(wrongSource, wrongPurpose)))
     }
+    @Test fun `compact keeps paired charge announcement even when OCR did not run`() {
+        val crop = ArchivedCropCaptured("artifacts/crops/sha256/${"a".repeat(64)}.png", "a".repeat(64),
+            1, "image/png", "AnnouncementCrop", 672, 1419, 40, 299, 642, 356)
+        val paired = timed("paired", crop, 10_000).copy(sourceId = "CHARGED_IMPACT_ANNOUNCEMENT_CAPTURE")
+        val ordinary = paired.copy(articleId = "ordinary", sourceId = "ANNOUNCEMENT_CROP_CAPTURE")
+        assertEquals(listOf(paired), select(listOf(ordinary, paired)))
+    }
+
     @Test
     fun `compact retains cited crop and audio artifacts but omits uncited artifacts`() {
         val crop = article("crop", ArchivedCropCaptured("artifacts/crops/sha256/${"a".repeat(64)}.png", "a".repeat(64), 1, "image/png", "COUNTDOWN", 1, 1, 0, 0, 1, 1))

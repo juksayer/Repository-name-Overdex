@@ -4,16 +4,31 @@ import android.content.Context
 import android.content.SharedPreferences
 import java.util.Locale
 
-/** Cosmetic shell colors only; these values never change observation or calibration. */
+data class HudMoveAppearance(
+    val textColor: Int = -1,
+    val shadowColor: Int = 0xFF000000.toInt(),
+    val fontSp: Int = 8,
+    val bloomPercent: Int = 100,
+    val rowPaddingDp: Int = 0,
+) {
+    fun bounded() = copy(
+        textColor = textColor or OPAQUE_ALPHA, shadowColor = shadowColor or OPAQUE_ALPHA,
+        fontSp = fontSp.coerceIn(6, 16), bloomPercent = bloomPercent.coerceIn(0, 150),
+        rowPaddingDp = rowPaddingDp.coerceIn(0, 8),
+    )
+}
+
 data class ODXFiAppearance(
     val caseColorArgb: Int = DEFAULT_CASE_COLOR_ARGB,
     val buttonColorArgb: Int = DEFAULT_BUTTON_COLOR_ARGB,
     val bezelColorArgb: Int = DEFAULT_BEZEL_COLOR_ARGB,
+    val hud: HudMoveAppearance = HudMoveAppearance(),
 ) {
     fun opaque(): ODXFiAppearance = copy(
         caseColorArgb = caseColorArgb or OPAQUE_ALPHA,
         buttonColorArgb = buttonColorArgb or OPAQUE_ALPHA,
         bezelColorArgb = bezelColorArgb or OPAQUE_ALPHA,
+        hud = hud.bounded(),
     )
 
     companion object {
@@ -35,10 +50,24 @@ fun odxFiColorHex(argb: Int): String =
 class ODXFiAppearancePreferences internal constructor(private val preferences: SharedPreferences) {
     constructor(context: Context) : this(context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE))
 
+    fun observeHud(onChange: (HudMoveAppearance) -> Unit): () -> Unit {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> onChange(read().hud) }
+        preferences.registerOnSharedPreferenceChangeListener(listener)
+        onChange(read().hud)
+        return { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+
     fun read(): ODXFiAppearance = ODXFiAppearance(
         caseColorArgb = readColor(CASE_COLOR, ODXFiAppearance.DEFAULT_CASE_COLOR_ARGB),
         buttonColorArgb = readColor(BUTTON_COLOR, ODXFiAppearance.DEFAULT_BUTTON_COLOR_ARGB),
         bezelColorArgb = readColor(BEZEL_COLOR, ODXFiAppearance.DEFAULT_BEZEL_COLOR_ARGB),
+        hud = HudMoveAppearance().let { defaults ->
+            HudMoveAppearance(
+                readColor("hud_text", defaults.textColor), readColor("hud_shadow", defaults.shadowColor),
+                readInt("hud_font", defaults.fontSp), readInt("hud_bloom", defaults.bloomPercent),
+                readInt("hud_padding", defaults.rowPaddingDp),
+            ).bounded()
+        },
     )
 
     /** The caller should change visible state only after a successful durable save. */
@@ -46,6 +75,14 @@ class ODXFiAppearancePreferences internal constructor(private val preferences: S
         .putString(CASE_COLOR, odxFiColorHex(appearance.caseColorArgb))
         .putString(BUTTON_COLOR, odxFiColorHex(appearance.buttonColorArgb))
         .putString(BEZEL_COLOR, odxFiColorHex(appearance.bezelColorArgb))
+        .apply {
+            val hud = appearance.hud.bounded()
+            putString("hud_text", odxFiColorHex(hud.textColor))
+            putString("hud_shadow", odxFiColorHex(hud.shadowColor))
+            putInt("hud_font", hud.fontSp)
+            putInt("hud_bloom", hud.bloomPercent)
+            putInt("hud_padding", hud.rowPaddingDp)
+        }
         .commit()
 
     fun writeCaseColor(argb: Int): Boolean = preferences.edit()
@@ -60,8 +97,14 @@ class ODXFiAppearancePreferences internal constructor(private val preferences: S
         .putString(BEZEL_COLOR, odxFiColorHex(argb))
         .commit()
 
-    /** Reset just the three appearance choices, preserving any other stored values. */
+    /** Restore the shell and HUD appearance defaults. */
     fun resetDefaults(): Boolean = write(ODXFiAppearance())
+
+    private fun readInt(key: String, default: Int): Int = try {
+        preferences.getInt(key, default)
+    } catch (_: ClassCastException) {
+        default
+    }
 
     private fun readColor(key: String, default: Int): Int = try {
         preferences.getString(key, null)?.let(::parseODXFiHexColor) ?: default

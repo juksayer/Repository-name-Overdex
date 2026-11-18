@@ -23,7 +23,7 @@ internal object TerminalChargedFaintResolver {
     const val BASIS = "FINAL_CHARGED_COLLAPSE_AND_RESULT"
 
     fun relevant(p: TestimonyPayload, source: String): Boolean = when (p) {
-        is TerminalParticleObservations, is ActivePokemonSpeciesWitnessed, is ActiveHpBarMeasured,
+        is TerminalParticleObservations, is CompleteHpBarObserved, is ActivePokemonSpeciesWitnessed, is ActiveHpBarMeasured,
         is PlayerPokeBallCountMeasured, is OpponentBattleResourceCountMeasured,
         is ChargedMoveEnergySpent, is FastMoveUseObserved, is SpeciesCheckMeasured, is MatchOutcomeLabelWitnessed,
         is MatchEnded, MatchStarted, GetReadyWitnessed, AttackIncoming, ChargeMoveUsedAnnounced,
@@ -55,6 +55,11 @@ internal object TerminalChargedFaintResolver {
             else -> null
         }
     }
+
+    private fun completeColorGeometry(p: CompleteHpBarObserved): Boolean =
+        p.barLeft >= 0 && p.barRight <= p.sourceWidth && p.barTop >= 0 && p.barBottom < p.sourceHeight &&
+            p.barBottom > p.barTop && p.barRight - p.barLeft >= 6 * (p.barBottom - p.barTop) &&
+            p.interiorColumns in 1..(p.barRight - p.barLeft)
 
     fun resolve(input: List<TerminalFinishRecord>): List<TerminalChargedFaintResolution> {
         val groups = input.groupBy { it.id }
@@ -94,7 +99,35 @@ internal object TerminalChargedFaintResolver {
                 p.samples.filter { it.sourceAtNanos in maxOf(start, phase) until p.sourceDeadlineNanos &&
                     it.sourceAtNanos <= outcome.at }.map { TerminalEffectFrame(r.id, it) }
             }
-            val sequences: List<TerminalFinishSequence> = TerminalCollapseSequences.find(frames) +
+            val ordinary = TerminalCollapseSequences.find(frames)
+            val barSupport = eligible.filter { it.at >= phase && it.source == "COMPLETE_${side.name}_HP_BAR_FRAME_WITNESS" &&
+                (it.payload as? CompleteHpBarObserved)?.side == side }
+            val colorPairs = barSupport.mapNotNull { orange ->
+                val p = orange.payload as CompleteHpBarObserved
+                if (p.liveColumns != 0 || p.damageColumns !in 3..(p.interiorColumns / 4) ||
+                    p.status !in setOf("DAMAGE_COLOR", "SUSTAINED_DAMAGE_COLOR", "UNRESOLVED_COLOR") ||
+                    !completeColorGeometry(p)) return@mapNotNull null
+                val red = barSupport.lastOrNull { prior ->
+                    val q = prior.payload as CompleteHpBarObserved
+                    orange.at - prior.at in 1..600_000_000L && q.liveColumns in 1..(q.interiorColumns / 4) &&
+                        q.liveColumns > q.damageColumns && completeColorGeometry(q) &&
+                        q.sourceWidth == p.sourceWidth && q.sourceHeight == p.sourceHeight &&
+                        kotlin.math.abs(q.barLeft - p.barLeft) <= 8 && kotlin.math.abs(q.barTop - p.barTop) <= 20
+                }
+                red?.let { it to orange }
+            }
+            fun supportsCore(pair: Pair<TerminalFinishRecord, TerminalFinishRecord>,
+                sample: TerminalParticleSample, core: TerminalFlashFeature): Boolean {
+                val p = pair.second.payload as CompleteHpBarObserved
+                return sample.sourceAtNanos - pair.second.at in 200_000_000L..2_600_000_000L &&
+                    p.sourceWidth == sample.sourceWidth && p.sourceHeight == sample.sourceHeight &&
+                    core.x in (p.barLeft - p.sourceWidth * .06)..(p.barRight + p.sourceWidth * .14) &&
+                    kotlin.math.abs(core.y - p.barTop) <= p.sourceHeight * .20
+            }
+            val supported = if (ordinary.isEmpty() && colorPairs.isNotEmpty()) TerminalCollapseSequences.find(frames) { sample, core ->
+                colorPairs.any { supportsCore(it, sample, core) }
+            } else emptyList()
+            val sequences: List<TerminalFinishSequence> = ordinary + supported +
                 if (side == ActivePokemonSide.PLAYER) TerminalAppearanceSequences.find(frames) else emptyList()
             for (sequence in sequences) {
                 if (outcome.at - sequence.clearedAt !in 0..20_000_000_000L) continue
@@ -135,6 +168,10 @@ internal object TerminalChargedFaintResolver {
                             TeamLossResolver.speciesKey(it) != TeamLossResolver.speciesKey(performer) } == true
                         else -> false
                     } }) continue
+                val colorProof = if (sequence in supported) colorPairs.lastOrNull { (_, orange) ->
+                    sequence.startedAt - orange.at in 200_000_000L..2_600_000_000L &&
+                        orange.at - charge.at in -500_000_000L..2_000_000_000L
+                } ?: continue else null
                 val ownerRow = eligible.lastOrNull { it.at <= charge.at && identity(it, side) != null } ?: continue
                 val owner = identity(ownerRow, side)!!
                 val userRow = eligible.lastOrNull { it.at <= charge.at && identity(it, attacker) != null } ?: continue
@@ -176,7 +213,9 @@ internal object TerminalChargedFaintResolver {
                         else -> false
                     }
                 }
-                if (invalidated) continue
+                if (invalidated || colorProof?.let { proof -> barSupport.any {
+                        it.at > proof.second.at && (it.payload as CompleteHpBarObserved).liveColumns > 0
+                    } } == true) continue
                 // A later independent positive frame with a fresh same-species badge
                 // defeats this conclusion even if that evidence was recognized late.
                 if (rows.any { hp ->
@@ -191,6 +230,7 @@ internal object TerminalChargedFaintResolver {
                     TeamLossCandidate(ownerRow.id, ownerRow.at, owner.speciesName, owner.speciesId),
                     sequence.clearedAt, sourceId,
                     (sequence.evidenceReferences + chargeSupport.map { it.id } +
+                        listOfNotNull(colorProof?.first?.id, colorProof?.second?.id) +
                         listOf(ownerRow.id, userRow.id, lastCount.id, outcome.id)).distinct())
             }
         }

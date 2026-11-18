@@ -77,8 +77,9 @@ Evidence ───────────────────────�
                                      Article
                                         │
                                         ▼
-                                    Timeline###
-                                     
+                                    Timeline
+```
+
 ### Measurement
 
 A Measurement is Overdex's characterization of evidence.
@@ -222,7 +223,7 @@ Article B
 Claim:
     Opponent appears to be Charizard
 Confidence: 0.97
-
+```
 
 ## Provenance and Traceability
 
@@ -243,9 +244,8 @@ Match Understanding at that time
         Evidence
           ↓
         Reality
-        
-        
-        
+```
+
 ## Reference Enrichment
 
 When an Observation identifies an entity, relevant Reference Knowledge can be retrieved.

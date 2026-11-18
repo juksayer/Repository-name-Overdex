@@ -94,6 +94,22 @@ class ODXFiAppearanceDeviceTest {
         assertEquals(originalBounds, hardwareBounds())
     }
 
+    @Test fun hudColorsAndSpacingCanBePreviewedAndSavedTogether() {
+        val fixture = showEditor()
+        choosePreset("hud-text", "silver")
+        choosePreset("hud-shadow", "blue")
+        for ((label, value) in listOf("Font size" to 12f, "Hazard bloom" to 45f, "Row padding" to 3f)) {
+            compose.onNodeWithContentDescription(label).performScrollTo()
+                .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.SetProgress) { it(value) }
+        }
+        compose.onNodeWithText("Ice Beam", useUnmergedTree = true).assertExists()
+        assertEquals(ODXFiAppearance(), fixture.read())
+        touch("odx-fi-colors-save")
+        compose.waitUntil(5_000) { fixture.backCount.get() == 1 }
+        assertEquals(com.example.overdex.data.HudMoveAppearance(0xFFB7BDC7.toInt(), 0xFF3466A8.toInt(), 12, 45, 3),
+            fixture.read().hud)
+    }
+
     @Test fun hardwareBCancelsAVisibleDraftWithoutSavingIt() {
         val original = ODXFiAppearance(0xFF365171.toInt(), 0xFFE2D5BA.toInt(), 0xFF5D397C.toInt())
         val fixture = showEditor(original)

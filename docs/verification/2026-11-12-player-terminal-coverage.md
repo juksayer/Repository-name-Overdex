@@ -51,8 +51,8 @@ finish windows. No variant is installed. Merely increasing the crop or one
 threshold is not a demonstrated repair, and this study does not authorize
 equating a few bright objects with a faint.
 
-The first archived final announcement also contains only `Ninetales used
-Weather`; it has a generic charged-use cue but no final named
+The first archived final announcement also contains only
+`Ninetales used Weather`; it has a generic charged-use cue but no final named
 `ChargedMoveEnergySpent` record. Better visual measurements alone would therefore
 not make that original archive satisfy the named-hit requirement. The second
 archive does retain Stunfisk's named Mud Bomb. Preserve these as distinct missing

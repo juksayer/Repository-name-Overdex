@@ -134,10 +134,21 @@ internal object ChargedImpactHpBarMeasurer {
                     abs(it.top - candidate.top) <= 3 && abs(it.bottom - candidate.bottom) <= 3 }) candidates += candidate
             if (candidates.size > 6) return null
         }
+        // A compressed frame can break a rail into short runs. A full
+        // centered rail can still seed the existing paired-rail and cap check.
+        // An unverified single rail is never returned as a measurement.
+        if (allowUnknownInterior && candidates.isEmpty()) {
+            for (run in runs) {
+                if (abs((run.left + run.right) / 2f - width / 2f) > width * .06f ||
+                    run.y + barHeight >= bounds.bottom) continue
+                candidates += ActiveHpBarMeasurement(run.left, run.y, run.right, run.y + barHeight, 0f, 0f)
+                if (candidates.size > 6) return null
+            }
+        }
         val measured = candidates.mapNotNull { candidate ->
             // The existing terminal reader requires paired outlines, both caps,
             // and a clean interior. Orange-only, flash and absent remain unknown.
-            TrackedTerminalHpBarMeasurer.measureComplete(width, height, candidate, bounds) { x, y ->
+            TrackedTerminalHpBarMeasurer.measureComplete(width, height, candidate, bounds, chargedColorProfile = allowUnknownInterior) { x, y ->
                 if (x in bounds.left until bounds.right && y in bounds.top until bounds.bottom)
                     pixels[(y - bounds.top) * regionWidth + x - bounds.left] else 0
             }?.takeIf { allowUnknownInterior || it.hpSample != null }

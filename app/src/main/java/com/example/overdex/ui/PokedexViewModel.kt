@@ -1061,6 +1061,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     terminalVisualGate.requestChargedReturn(side, at)
                 }
             },
+            onPlayerGradeVisualHint = { at -> terminalVisualGate.preparePlayerGradeVisualHint(at) },
             onCompleteColorCaptured = { payload, at ->
                 chargeTextProtection.observeBar(payload, at)
                 if (com.example.overdex.battle.observation.isCompleteBarAttentionHint(payload)) {
@@ -1103,6 +1104,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             captureDispatcher = combatCaptureDispatcher,
             observerId = ObserverId(BattleWitnessContracts.chargedImpactHpCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
             name = "Charged Impact HP Capture",
+            companionCrop = BattleWitnessContracts.chargedImpactAnnouncementCapture,
         ))
         observationDispatcher.register(PokemonFaintWitness())
         observationDispatcher.register(PokemonFaintWitness(com.example.overdex.battle.custody.ActivePokemonSide.PLAYER))

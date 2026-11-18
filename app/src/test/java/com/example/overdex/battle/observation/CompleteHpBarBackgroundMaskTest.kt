@@ -70,6 +70,21 @@ class CompleteHpBarBackgroundMaskTest {
         assertEquals(0,scattered.backgroundMaskedColumns)
     }
 
+    @Test fun `dimmer orange range preserves a red wisp and rejects warm scenery in the tail`() {
+        val dimOrange = 0xff995b20.toInt()
+        val dim = requireNotNull(read { _, _, c -> if (c == damageColor) dimOrange else c })
+        assertEquals(8, dim.damageColumns)
+        assertTrue(dim.orangeOnly)
+        assertNull(dim.hpSample)
+        val mixed = requireNotNull(read { x, y, c ->
+            if (x == 42 && y == 87) 0xffb85c66.toInt() else if (c == damageColor) dimOrange else c
+        })
+        assertEquals(1, mixed.liveColumns)
+        assertFalse(mixed.orangeOnly)
+        val warmTail = requireNotNull(read { x, _, c -> if (x in 145..190 && c == blueBackground) dimOrange else c })
+        assertFalse(warmTail.orangeOnly)
+    }
+
     @Test fun `tiny survivor cancels sustained masked color candidate without publishing zero`() {
         val side = com.example.overdex.battle.custody.ActivePokemonSide.OPPONENT
         val track = CompleteHpBarTrack()

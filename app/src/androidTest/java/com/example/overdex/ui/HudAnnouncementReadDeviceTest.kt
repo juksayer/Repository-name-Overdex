@@ -43,7 +43,11 @@ class HudAnnouncementReadDeviceTest {
 
 
     /** Actual BattleOverlay palette, with complete move names retained for accessibility. */
-    @Test fun typeEdgesAndAbbreviationsRemainReadableOnLightAndDarkBattlefields(): Unit = runBlocking {
+    @Test fun moveColumnsRemainReadableOnLightAndDarkBattlefields() = checkMoveColumns(verifyOcr = false)
+
+    @Test fun hudMoveWordsAreRejectedOnLightAndDarkBattlefields() = checkMoveColumns(verifyOcr = true)
+
+    private fun checkMoveColumns(verifyOcr: Boolean): Unit = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val palette = linkedMapOf(
             "Body Slam" to PokemonType.NORMAL,
@@ -88,7 +92,7 @@ class HudAnnouncementReadDeviceTest {
                     else -> 75
                 } } + ("Snarl" to 13))
             p.recordOpponentChargedMove("Sneasel", "Night Slash")
-            p.setActivePlayerTypes(listOf(PokemonType.NORMAL))
+            p.setActivePlayerTypes(listOf(PokemonType.NORMAL, PokemonType.STEEL))
             p.recordBattleBadgePresent()
             p.showBattleHud(userRequested = true)
             p.beginEnergyForecast("palette-preview")
@@ -115,7 +119,14 @@ class HudAnnouncementReadDeviceTest {
             compose.onNodeWithText("T. Punch", useUnmergedTree = true).assertIsDisplayed()
             compose.onNodeWithText("D. Gleam", useUnmergedTree = true).assertIsDisplayed()
             compose.onNodeWithText("✓ Night Slash", useUnmergedTree = true).assertIsDisplayed()
-            compose.onNodeWithText("⚠ +60% Close Combat", useUnmergedTree = true).assertIsDisplayed()
+            compose.onNodeWithText("Close Combat", useUnmergedTree = true).assertIsDisplayed()
+            val typeCells = palette.keys.map { compose.onNodeWithTag("move-type:$it", true).assertIsDisplayed().fetchSemanticsNode().boundsInRoot }
+            val hazards = palette.keys.map { compose.onNodeWithTag("move-hazard:$it", true).assertIsDisplayed().fetchSemanticsNode().boundsInRoot }
+            typeCells.zip(hazards).forEach { (type, hazard) ->
+                assertEquals(typeCells.first().left, type.left, 1f)
+                assertEquals(hazards.first().left, hazard.left, 1f)
+                assertTrue(type.right < hazard.left)
+            }
             val ready = compose.onNodeWithContentDescription("Hydro Cannon, water type", useUnmergedTree = true)
                 .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Possible move; estimated ready"))
                 .fetchSemanticsNode().boundsInRoot
@@ -129,7 +140,17 @@ class HudAnnouncementReadDeviceTest {
             )) {
                 compose.runOnUiThread { backdropColor = color; backdrop.invalidate(); overlay.getLocationOnScreen(location) }
                 compose.waitForIdle(); instrumentation.waitForIdleSync(); delay(150)
-                val screenshot = instrumentation.uiAutomation.takeScreenshot()!!
+                val screenshot = if (verifyOcr) checkNotNull(instrumentation.uiAutomation.takeScreenshot()) else {
+                    // Draw the same measured views when checking paint independently of screen capture.
+                    compose.runOnIdle {
+                        Bitmap.createBitmap(backdrop.width, backdrop.height + location[1], Bitmap.Config.ARGB_8888).also {
+                            val canvas = Canvas(it)
+                            canvas.drawColor(color)
+                            canvas.translate(location[0].toFloat(), location[1].toFloat())
+                            overlay.draw(canvas)
+                        }
+                    }
+                }
                 try {
                     File(instrumentation.targetContext.cacheDir, "hud-types-$name.png").outputStream().use {
                         screenshot.compress(Bitmap.CompressFormat.PNG, 100, it)
@@ -139,17 +160,19 @@ class HudAnnouncementReadDeviceTest {
                     val captured = Bitmap.createScaledBitmap(hud, (hud.width * scale).toInt(),
                         (hud.height * scale).toInt(), true)
                     try {
-                        val readings = AnnouncementRecognizer.recognizeEvidence(captured,
-                            OcrSourceContext(672, OcrBox(0f, 0f, captured.width.toFloat(), captured.height.toFloat())),
-                            OcrHeightProfile(OcrField.ANNOUNCEMENT))
-                        File(instrumentation.targetContext.cacheDir, "hud-types-ocr-$name.json").writeText(
-                            Json.encodeToString(ListSerializer(com.example.overdex.model.observation.OcrTextEvidence.serializer()), readings))
-                        val ownWords = (palette.keys + "Snarl").flatMap { it.split(Regex("[^A-Za-z]+")) }
-                            .filter { it.length >= 3 }.map { it.lowercase() }.toSet()
-                        val measured = readings.flatMap { it.words }.filter { it.text.lowercase() in ownWords }
-                        assertTrue("The palette must produce actual OCR readings for this check", measured.size >= 5)
-                        assertTrue("HUD words must retain the size/color/position rejection over $name scenery: $measured",
-                            measured.all { it.decision == "HUD_SIZE_COLOR_POSITION" })
+                        if (verifyOcr) {
+                            val readings = AnnouncementRecognizer.recognizeEvidence(captured,
+                                OcrSourceContext(672, OcrBox(0f, 0f, captured.width.toFloat(), captured.height.toFloat())),
+                                OcrHeightProfile(OcrField.ANNOUNCEMENT))
+                            File(instrumentation.targetContext.cacheDir, "hud-types-ocr-$name.json").writeText(
+                                Json.encodeToString(ListSerializer(com.example.overdex.model.observation.OcrTextEvidence.serializer()), readings))
+                            val ownWords = (palette.keys + "Snarl").flatMap { it.split(Regex("[^A-Za-z]+")) }
+                                .filter { it.length >= 3 }.map { it.lowercase() }.toSet()
+                            val measured = readings.flatMap { it.words }.filter { it.text.lowercase() in ownWords }
+                            assertTrue("The palette must produce actual OCR readings for this check", measured.size >= 5)
+                            assertTrue("HUD words must retain the size/color/position rejection over $name scenery: $measured",
+                                measured.all { it.decision == "HUD_SIZE_COLOR_POSITION" })
+                        }
                     } finally { captured.recycle(); hud.recycle() }
                     fun containsInk(bounds: androidx.compose.ui.geometry.Rect, accepts: (Int, Int, Int) -> Boolean): Boolean {
                         val left = (location[0] + bounds.left.toInt()).coerceIn(0, screenshot.width)
@@ -163,11 +186,30 @@ class HudAnnouncementReadDeviceTest {
                         }
                         return false
                     }
-                    assertTrue("Ready text remains bright red over $name scenery", containsInk(ready) { r, g, b ->
-                        r >= 230 && g <= 65 && b <= 65
+                    fun hazardPixels(move: String): Int {
+                        var count = 0
+                        containsInk(hazards[palette.keys.indexOf(move)]) { r, g, b ->
+                            if (r - g > 18 && r - b > 12) count++
+                            false
+                        }
+                        return count
+                    }
+                    assertEquals(0, hazardPixels("Body Slam"))
+                    val single = hazardPixels("Flamethrower")
+                    assertTrue("Single weakness has red ink", single > 0)
+                    assertTrue("Double weakness has a wider bloom", hazardPixels("Close Combat") > single)
+                    for ((index, type) in palette.values.withIndex()) {
+                        assertTrue("$type icon has visible ink on $name", containsInk(typeCells[index]) { r, g, b ->
+                            kotlin.math.abs(r - android.graphics.Color.red(color)) +
+                                kotlin.math.abs(g - android.graphics.Color.green(color)) +
+                                kotlin.math.abs(b - android.graphics.Color.blue(color)) > 32
+                        })
+                    }
+                    assertTrue("Ready text stays white over $name", containsInk(ready) { r, g, b ->
+                        minOf(r,g,b) >= 253
                     })
-                    assertTrue("One-away text remains amber over $name scenery", containsInk(oneAway) { r, g, b ->
-                        r >= 230 && g in 115..190 && b <= 65
+                    assertTrue("One-away text has a black shadow over $name", containsInk(oneAway) { r, g, b ->
+                        maxOf(r,g,b) <= 20
                     })
                 } finally { screenshot.recycle() }
             }
@@ -251,7 +293,7 @@ class HudAnnouncementReadDeviceTest {
             val bounds = labels.map { compose.onNodeWithText(it, substring = true, useUnmergedTree = true)
                 .assertIsDisplayed().fetchSemanticsNode().boundsInRoot }
             bounds.zipWithNext().forEach { (a, b) ->
-                assertTrue("No reserved announcement gap", b.top - a.bottom < 3f)
+assertTrue("Text rows do not overlap", b.top >= a.bottom - 1f)
                 assertEquals("Move labels share right edge", a.right, b.right, 1f)
             }
             assertEquals("Empty space beside the moves must reveal the game without a panel tint",

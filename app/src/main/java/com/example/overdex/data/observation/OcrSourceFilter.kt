@@ -61,13 +61,20 @@ object OcrSourceFilter {
         context: OcrSourceContext?,
         profile: OcrHeightProfile?,
     ): OcrTextEvidence {
+        return applyWithShadowedWords(rawText, words, treatment, context, profile, emptySet())
+    }
+
+    internal fun applyWithShadowedWords(
+        rawText: String, words: List<OcrWordEvidence>, treatment: String,
+        context: OcrSourceContext?, profile: OcrHeightProfile?, shadowedWords: Set<Int>,
+    ): OcrTextEvidence {
         val minHeight = profile?.minimumHeightAt672
-        val checked = words.map { word ->
+        val checked = words.mapIndexed { index, word ->
             val box = word.bounds
             val overlap = box != null && context?.overlayBounds?.let { box.overlapFraction(it) >= .5f } == true
             val height = if (box != null && context != null && context.frameWidth > 0)
                 box.height * 672f / context.frameWidth else null
-            val ourInk = word.violetFraction >= .04f || word.tealFraction >= .08f || word.dangerRedFraction >= .06f
+            val ourInk = index in shadowedWords || word.violetFraction >= .04f || word.tealFraction >= .08f || word.dangerRedFraction >= .06f
             val decision = when {
                 overlap && height != null && minHeight != null && height < minHeight &&
                     context?.overlayPolicy == OcrOverlayPolicy.SMALL_WORDS -> "HUD_SIZE_POSITION"

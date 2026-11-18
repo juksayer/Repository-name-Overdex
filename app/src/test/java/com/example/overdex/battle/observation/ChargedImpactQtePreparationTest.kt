@@ -121,6 +121,25 @@ class ChargedImpactQtePreparationTest {
         assertNull(resized.request(816, 1808, at(61.2)))
     }
 
+    @Test fun `button contact prepares before the grade and repeat contact cannot extend it`() {
+        val watch = seeded()
+        assertEquals(ChargedImpactHpWatchPolicy.PreparationResult.PREPARED,
+            watch.prepareFromPlayerContact(at(53.0), "touch"))
+        assertEquals(ChargedImpactHpWatchPolicy.PreparationResult.SUPPORTED_EXISTING,
+            watch.prepareFromPlayerContact(at(53.2), "held"))
+        assertEquals(listOf("touch"), watch.request(672, 1493, at(55.1))?.cueArticleIds)
+        assertFalse(watch.canCapture(at(65.1)))
+    }
+
+    @Test fun `two surviving columns can wake sampling without becoming damage only`() {
+        val sample = CompleteHpBarObserved(opponent, 210, 710, 403, 727,
+            672, 1493, 189, 2, 23, "LIVE_COLOR", null, null, .95f, null)
+        assertTrue(isCompleteBarAttentionHint(sample))
+        assertFalse(isCompleteBarAttentionHint(sample.copy(liveColumns = 3)))
+        assertFalse(isCompleteBarAttentionHint(sample.copy(damageColumns = 5)))
+        assertEquals("LIVE_COLOR", sample.status)
+    }
+
     private fun article(text: String, source: String = "QTE_PROGRESS_TEXT_WITNESS") = RealityArticle(
         ArticleId("grade"), 0, 0, SourceId(source), RawTestimony(text), monotonicTimeNanos = at(56.805))
 }

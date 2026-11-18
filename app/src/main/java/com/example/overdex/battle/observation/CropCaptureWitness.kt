@@ -6,16 +6,20 @@ import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.data.BattleCalibration
+import com.example.overdex.model.observation.CapturedVisualFrame
 import com.example.overdex.model.observation.ObservationInput
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 
 /**
- * Preserves one purpose-named crop as durable testimony. It never recognizes
+ * Preserves purpose-named crops as durable testimony. It never recognizes
  * or interprets the crop, and it submits nothing if persistence fails.
  */
 class CropCaptureWitness(
@@ -46,6 +50,8 @@ class CropCaptureWitness(
     /** Live calibration may supply a current region without rebuilding the observation session. */
     private val calibrationProvider: () -> BattleCalibration = { calibration },
     private val acceptsFrame: (Long) -> Boolean = { true },
+    /** Preserve this second region from the same source frame and cadence. */
+    private val companionCrop: BattleWitnessContract<CropCaptured>? = null,
 ) : Observer {
     private var scope: CoroutineScope? = null
     private var activeMatch: Match? = null
@@ -76,52 +82,67 @@ class CropCaptureWitness(
                         frame.capturedAtMonotonicTimeNanos - lastSampledAtNanos < captureIntervalNanos
                     ) return@supplyFrames
                     lastSampledAtNanos = frame.capturedAtMonotonicTimeNanos
-                    val crop = contract.crop
-                    val measuredRegion = TeamBadgeCropLocator.locate(crop.region, calibrationProvider(), frame)
-                    val rect = BattleCropResolver.resolveRect(measuredRegion, frame.bitmap.width, frame.bitmap.height,
-                        crop.minimumSize, crop.areaInRegion)
-                    val readable = rect != null && frame.canObserve(BattleCropBounds(rect.left, rect.top, rect.right, rect.bottom))
-                    reportAvailability(readable)
-                    if (!readable) return@supplyFrames
-                    val resolved = BattleCropResolver.resolve(crop.cropName, measuredRegion, frame.bitmap,
-                        crop.minimumSize, crop.areaInRegion) ?: return@supplyFrames
+                    val activeCalibration = calibrationProvider()
+                    val primary = resolve(contract, activeCalibration, frame, ::reportAvailability)
+                    val companion = companionCrop?.let { resolve(it, activeCalibration, frame) }
                     try {
-                        val artifact = if (preserveCompleteFrame) {
-                            artifactStore.preserveFrameCrop(
-                                frameMonotonicTimeNanos = frame.capturedAtMonotonicTimeNanos,
-                                bitmap = resolved.bitmap,
-                                provenance = resolved.provenance,
-                                sourceFrame = frame.bitmap
-                            )
-                        } else {
-                            artifactStore.preservePng(resolved.bitmap)
-                        } ?: return@supplyFrames
-                        val testimony = CropCaptured(artifact, resolved.provenance,
-                            resolved.provenance.overlayBounds(frame.overlayRegion))
-                        match.custody.submitTestimony(
-                            sourceId = sourceId,
-                            payload = testimony,
-                            timestamp = frame.capturedAtWallTimeMillis,
-                            confidence = null,
-                            evidenceReferences = emptyList(),
-                            monotonicTimeNanos = frame.capturedAtMonotonicTimeNanos
-                        )
-                        try {
-                            onCaptured?.invoke(
-                                testimony,
-                                frame.capturedAtWallTimeMillis,
-                                frame.capturedAtMonotonicTimeNanos
-                            )
-                        } catch (error: Exception) {
-                            Log.e("CropCapture", "Post-custody delivery failed for ${contract.crop.cropName}", error)
-                        }
-                    } catch (error: Exception) {
-                        Log.e("CropCapture", "Crop preservation failed for ${contract.crop.cropName}", error)
+                        if (primary != null) capture(match, frame, contract, primary, preserveCompleteFrame, onCaptured)
+                        if (companion != null) capture(match, frame, requireNotNull(companionCrop), companion, false, null)
                     } finally {
-                        resolved.bitmap.recycle()
+                        primary?.bitmap?.recycle()
+                        companion?.bitmap?.recycle()
                     }
                 }
             }
+        }
+    }
+
+    private fun resolve(
+        contract: BattleWitnessContract<CropCaptured>,
+        calibration: BattleCalibration,
+        frame: CapturedVisualFrame,
+        reportAvailability: (Boolean) -> Unit = {},
+    ): ResolvedBattleCrop? {
+        val crop = contract.crop
+        val region = TeamBadgeCropLocator.locate(crop.region, calibration, frame)
+        val rect = BattleCropResolver.resolveRect(region, frame.bitmap.width, frame.bitmap.height,
+            crop.minimumSize, crop.areaInRegion)
+        val readable = rect != null && frame.canObserve(BattleCropBounds(rect.left, rect.top, rect.right, rect.bottom))
+        reportAvailability(readable)
+        return if (readable) BattleCropResolver.resolve(crop.cropName, region, frame.bitmap,
+            crop.minimumSize, crop.areaInRegion) else null
+    }
+
+    private suspend fun capture(
+        match: Match,
+        frame: CapturedVisualFrame,
+        contract: BattleWitnessContract<CropCaptured>,
+        resolved: ResolvedBattleCrop,
+        preserveCompleteFrame: Boolean,
+        onCaptured: ((CropCaptured, Long, Long) -> Unit)?,
+    ) {
+        try {
+            val artifact = if (preserveCompleteFrame) {
+                artifactStore.preserveFrameCrop(frame.capturedAtMonotonicTimeNanos,
+                    resolved.bitmap, resolved.provenance, frame.bitmap)
+            } else artifactStore.preservePng(resolved.bitmap)
+            if (artifact == null) return
+            currentCoroutineContext().ensureActive()
+            val testimony = CropCaptured(artifact, resolved.provenance,
+                resolved.provenance.overlayBounds(frame.overlayRegion))
+            match.custody.submitTestimony(
+                sourceId = SourceId(contract.witnessId),
+                payload = testimony,
+                timestamp = frame.capturedAtWallTimeMillis,
+                confidence = null,
+                evidenceReferences = emptyList(),
+                monotonicTimeNanos = frame.capturedAtMonotonicTimeNanos,
+            )
+            onCaptured?.invoke(testimony, frame.capturedAtWallTimeMillis, frame.capturedAtMonotonicTimeNanos)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            Log.e("CropCapture", "Crop capture failed for ${contract.crop.cropName}", error)
         }
     }
 

@@ -48,6 +48,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.overdex.data.HudMoveAppearance
+import com.example.overdex.battle.observation.OverlayMovePossibility
+import com.example.overdex.model.PokemonType
+import com.example.overdex.ui.components.MovePossibilityLine
 import com.example.overdex.data.ODXFiAppearance
 import com.example.overdex.data.odxFiColorHex
 import com.example.overdex.ui.ODXFi.LocalODXFiAppearance
@@ -68,17 +72,25 @@ fun ODXFiAppearanceScreen(
     var caseColor by rememberSaveable { mutableIntStateOf(initialAppearance.opaque().caseColorArgb) }
     var buttonColor by rememberSaveable { mutableIntStateOf(initialAppearance.opaque().buttonColorArgb) }
     var bezelColor by rememberSaveable { mutableIntStateOf(initialAppearance.opaque().bezelColorArgb) }
+    val initialHud = initialAppearance.hud.bounded()
+    var hudText by rememberSaveable { mutableIntStateOf(initialHud.textColor) }
+    var hudShadow by rememberSaveable { mutableIntStateOf(initialHud.shadowColor) }
+    var fontSp by rememberSaveable { mutableIntStateOf(initialHud.fontSp) }
+    var bloom by rememberSaveable { mutableIntStateOf(initialHud.bloomPercent) }
+    var padding by rememberSaveable { mutableIntStateOf(initialHud.rowPaddingDp) }
     var selectedPart by rememberSaveable { mutableIntStateOf(0) }
     var selectedChannel by rememberSaveable { mutableIntStateOf(0) }
     var saving by remember { mutableStateOf(false) }
     var saveFailed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val draft = ODXFiAppearance(caseColor, buttonColor, bezelColor)
+    val draft = ODXFiAppearance(caseColor, buttonColor, bezelColor, HudMoveAppearance(hudText, hudShadow, fontSp, bloom, padding))
     val part = AppearancePart.entries[selectedPart]
     val selectedColor = when (part) {
         AppearancePart.CASE -> caseColor
         AppearancePart.BUTTONS -> buttonColor
         AppearancePart.BEZELS -> bezelColor
+        AppearancePart.HUD_TEXT -> hudText
+        AppearancePart.HUD_SHADOW -> hudShadow
     }
     val channel = AppearanceChannel.entries[selectedChannel]
 
@@ -91,6 +103,8 @@ fun ODXFiAppearanceScreen(
             AppearancePart.CASE -> caseColor = opaque
             AppearancePart.BUTTONS -> buttonColor = opaque
             AppearancePart.BEZELS -> bezelColor = opaque
+            AppearancePart.HUD_TEXT -> hudText = opaque
+            AppearancePart.HUD_SHADOW -> hudShadow = opaque
         }
         saveFailed = false
     }
@@ -110,6 +124,11 @@ fun ODXFiAppearanceScreen(
         caseColor = original.caseColorArgb
         buttonColor = original.buttonColorArgb
         bezelColor = original.bezelColorArgb
+        hudText = original.hud.textColor
+        hudShadow = original.hud.shadowColor
+        fontSp = original.hud.fontSp
+        bloom = original.hud.bloomPercent
+        padding = original.hud.rowPaddingDp
         saveFailed = false
     }
 
@@ -163,6 +182,13 @@ fun ODXFiAppearanceScreen(
                     onColor = ::changeColor,
                     onChannelSelected = { if (!saving) selectedChannel = it.ordinal },
                     onChannelValue = { selected, value -> changeChannel(selected.ordinal, value) },
+                    hudControls = {
+                        if (part == AppearancePart.HUD_TEXT || part == AppearancePart.HUD_SHADOW) {
+                            HudSlider("Font size", fontSp, "sp", 6..16, !saving) { fontSp = it }
+                            HudSlider("Hazard bloom", bloom, "%", 0..150, !saving) { bloom = it }
+                            HudSlider("Row padding", padding, "dp", 0..8, !saving) { padding = it }
+                        }
+                    },
                     onReset = ::restoreOriginal,
                     onSave = ::save,
                 )
@@ -176,11 +202,23 @@ fun ODXFiAppearanceScreen(
                 Text("Colors", color = TerminalGreen, fontSize = 22.sp, fontFamily = FontFamily.Monospace)
                 if (saveFailed) Text("Not saved. Please try again.", color = Color(0xFFFFC9BC),
                     fontSize = 13.sp, modifier = Modifier.testTag("odx-fi-colors-save-error"))
+                if (part == AppearancePart.HUD_TEXT || part == AppearancePart.HUD_SHADOW) {
+                    Column(Modifier.fillMaxWidth().background(Color(0xFF596D77)).padding(8.dp)) {
+                        MovePossibilityLine(listOf(
+                            OverlayMovePossibility("Mud Shot", PokemonType.GROUND, 1.0),
+                            OverlayMovePossibility("Ice Beam", PokemonType.ICE, 1.6),
+                            OverlayMovePossibility("Rock Slide", PokemonType.ROCK, 2.56),
+                        ), emptyMap(), draft.hud)
+                    }
+
+                }
                 AppearancePart.entries.forEach { previewPart ->
                     val color = when (previewPart) {
                         AppearancePart.CASE -> caseColor
                         AppearancePart.BUTTONS -> buttonColor
                         AppearancePart.BEZELS -> bezelColor
+                        AppearancePart.HUD_TEXT -> hudText
+                        AppearancePart.HUD_SHADOW -> hudShadow
                     }
                     Row(
                         Modifier.fillMaxWidth()
@@ -225,6 +263,7 @@ private fun AppearanceLcd(
     onColor: (Int) -> Unit,
     onChannelSelected: (AppearanceChannel) -> Unit,
     onChannelValue: (AppearanceChannel, Int) -> Unit,
+    hudControls: @Composable () -> Unit,
     onReset: () -> Unit,
     onSave: () -> Unit,
 ) {
@@ -241,8 +280,9 @@ private fun AppearanceLcd(
         previousSelectedChannel = selectedChannel
     }
     Column(Modifier.fillMaxSize().testTag("odx-fi-colors-lcd")) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-            AppearancePart.entries.forEach { candidate ->
+        AppearancePart.entries.chunked(3).forEach { parts ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+            parts.forEach { candidate ->
                 Box(
                     Modifier.weight(1f).heightIn(min = 30.dp)
                         .background(if (candidate == part) Color(0xFF244931) else Color.Transparent,
@@ -257,12 +297,14 @@ private fun AppearanceLcd(
                     Text(candidate.label, color = TerminalGreen, fontSize = 10.sp, maxLines = 1)
                 }
             }
+            }
         }
         Column(
             Modifier.weight(1f).fillMaxWidth().verticalScroll(controlsScroll)
                 .testTag("odx-fi-colors-controls").padding(top = 5.dp),
             verticalArrangement = Arrangement.spacedBy(5.dp),
         ) {
+            hudControls()
             Text(odxFiColorHex(selectedColor), color = Color.White, fontSize = 12.sp,
                 fontFamily = FontFamily.Monospace, modifier = Modifier.testTag("odx-fi-colors-lcd-hex"))
             appearancePresets(part).chunked(4).forEach { row ->
@@ -318,7 +360,7 @@ private fun AppearanceLcd(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = onReset, enabled = !saving, modifier = Modifier.weight(1.5f)
                 .testTag("odx-fi-colors-reset")) {
-                Text("Original colors", color = TerminalGreen, fontSize = 10.sp, maxLines = 1)
+                Text("Restore defaults", color = TerminalGreen, fontSize = 10.sp, maxLines = 1)
             }
             TextButton(onClick = onSave, enabled = !saving, modifier = Modifier.weight(1f)
                 .testTag("odx-fi-colors-save")) {
@@ -326,6 +368,17 @@ private fun AppearanceLcd(
                     fontWeight = FontWeight.Bold)
             }
         }
+    }
+}
+
+@Composable
+private fun HudSlider(label: String, value: Int, unit: String, range: IntRange, enabled: Boolean, update: (Int) -> Unit) {
+    Column {
+        Text("$label  $value $unit", color = TerminalGreen, fontSize = 13.sp)
+        Slider(value = value.toFloat(), onValueChange = { update(it.roundToInt()) },
+            valueRange = range.first.toFloat()..range.last.toFloat(), enabled = enabled,
+            steps = range.last - range.first - 1,
+            modifier = Modifier.fillMaxWidth().semantics { contentDescription = label })
     }
 }
 
@@ -339,6 +392,8 @@ private enum class AppearancePart(val label: String, val tag: String, val origin
     CASE("Case", "case", ODXFiAppearance.DEFAULT_CASE_COLOR_ARGB),
     BUTTONS("Buttons", "buttons", ODXFiAppearance.DEFAULT_BUTTON_COLOR_ARGB),
     BEZELS("Bezels", "bezels", ODXFiAppearance.DEFAULT_BEZEL_COLOR_ARGB),
+    HUD_TEXT("HUD text", "hud-text", -1),
+    HUD_SHADOW("HUD shadow", "hud-shadow", 0xFF000000.toInt()),
 }
 
 private enum class AppearanceChannel(val label: String, val tag: String, val shift: Int) {

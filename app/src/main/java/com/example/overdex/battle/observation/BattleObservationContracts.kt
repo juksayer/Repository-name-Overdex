@@ -367,6 +367,9 @@ object BattleWitnessContracts {
         crop = BattleCropContracts.announcement,
         testimonyType = CropCaptured::class
     )
+    val chargedImpactAnnouncementCapture = announcementCropCapture.copy(
+        witnessId = "CHARGED_IMPACT_ANNOUNCEMENT_CAPTURE",
+    )
     val playerInactiveUpperSpeciesSpriteCapture = BattleWitnessContract(
         witnessId = "PLAYER_INACTIVE_UPPER_SPECIES_SPRITE_CAPTURE",
         crop = BattleCropContracts.playerInactiveUpperSpeciesSprite,

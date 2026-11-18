@@ -33,6 +33,7 @@ internal class ChargedImpactHpWatchPolicy {
         var acquiredAt: Long? = null, var lastScanAt: Long? = null, var consumed: Boolean = false,
         var firstImpactAt: Long? = null,
         var qteCueAt: Long? = null,
+        val scanFrom: Long = preparedAt + PREPARATION_DELAY_NANOS,
     )
     private val references = mutableMapOf<ActivePokemonSide, ArrayDeque<Reference>>()
     private val impacts = java.util.TreeMap<Long, String?>()
@@ -45,6 +46,7 @@ internal class ChargedImpactHpWatchPolicy {
     private var token = 0L
     private var latestCueAt = Long.MIN_VALUE
     private var retryablePreparation: Pair<ActivePokemonSide, Long>? = null
+    private var lastGradeProbeAt: Long? = null
     private var latestFrameAt = Long.MIN_VALUE
     private var dimensions: Pair<Int, Int>? = null
 
@@ -122,6 +124,38 @@ internal class ChargedImpactHpWatchPolicy {
         }
     }
 
+    @Synchronized fun prepareFromPlayerContact(at: Long, articleId: String): PreparationResult {
+        if (window?.let { it.side == ActivePokemonSide.OPPONENT && at in it.preparedAt..it.until } == true)
+            return PreparationResult.SUPPORTED_EXISTING
+        return prepare(ActivePokemonSide.OPPONENT, at, articleId)
+    }
+
+    @Synchronized fun mayProbePlayerGrade(width: Int, height: Int, at: Long): Boolean {
+        if (dimensions != (width to height) || at <= latestCueAt ||
+            window?.let { it.side == ActivePokemonSide.OPPONENT && at <= it.until } == true ||
+            lastGradeProbeAt?.let { at - it < 120_000_000L } == true ||
+            gradeReference(at) == null) return false
+        lastGradeProbeAt = at
+        return true
+    }
+
+    @Synchronized fun prepareFromVisualGrade(at: Long): Boolean {
+        if (at <= latestCueAt || window?.let { it.side == ActivePokemonSide.OPPONENT && at <= it.until } == true)
+            return false
+        val reference = gradeReference(at) ?: return false
+        latestCueAt = at
+        retryablePreparation = null
+        window = Window(ActivePokemonSide.OPPONENT, at, at + PREPARATION_WINDOW_NANOS,
+            reference.bar, reference.at, ++token, mutableListOf(), qteCueAt = at, scanFrom = at)
+        return true
+    }
+
+    private fun gradeReference(at: Long): Reference? =
+        references[ActivePokemonSide.OPPONENT]?.lastOrNull { it.at <= at }?.takeIf {
+            at - it.at in 0..9_000_000_000L && it.bar.filledFraction in Float.MIN_VALUE..0.25f &&
+                at > (boundaries[ActivePokemonSide.OPPONENT] ?: Long.MIN_VALUE)
+        }
+
     @Synchronized fun impact(at: Long, articleId: String? = null) {
         impacts[at] = articleId
         while (impacts.size > 8) impacts.pollFirstEntry()
@@ -147,11 +181,13 @@ internal class ChargedImpactHpWatchPolicy {
         if (dimensions != null && dimensions != size) resetAll(at)
         dimensions = size
         val active = window ?: return null
-        if (at < active.preparedAt + PREPARATION_DELAY_NANOS || at > active.until || active.consumed) return null
+        if (at < active.scanFrom || at > active.until || active.consumed) return null
         if (active.firstImpactAt == null &&
             active.acquiredAt?.let { at - it >= IMPACT_WINDOW_NANOS } == true) return null
         val anchor = active.anchor?.takeIf { at - requireNotNull(active.anchorAt) in 0..MAX_TRACK_GAP_NANOS }
-        if (anchor == null && active.lastScanAt?.let { at - it < ACQUISITION_INTERVAL_NANOS } == true) return null
+        val interval = if (active.scanFrom == active.preparedAt) ACQUISITION_INTERVAL_NANOS / 3
+            else ACQUISITION_INTERVAL_NANOS
+        if (anchor == null && active.lastScanAt?.let { at - it < interval } == true) return null
         if (anchor == null) active.lastScanAt = at
         return Request(active.side, active.reference, anchor, active.token, active.cueArticleIds.toList())
     }
@@ -187,7 +223,7 @@ internal class ChargedImpactHpWatchPolicy {
     /** Sparse forensic crops share the phase window, without advancing the live scan cadence. */
     @Synchronized fun canCapture(at: Long): Boolean {
         val active = window ?: return false
-        return at >= active.preparedAt + PREPARATION_DELAY_NANOS && at <= active.until &&
+        return at >= active.scanFrom && at <= active.until &&
             !active.consumed && boundaries[active.side]?.let { at <= it } != true &&
             (active.firstImpactAt != null ||
                 active.acquiredAt?.let { at - it >= IMPACT_WINDOW_NANOS } != true)
@@ -238,6 +274,7 @@ internal class ChargedImpactHpWatchPolicy {
     @Synchronized fun reset(side: ActivePokemonSide, at: Long? = null) {
         referenceEpochs[side] = snapshotReferenceEpoch(side) + 1L
         references.remove(side)
+        if (side == ActivePokemonSide.OPPONENT) lastGradeProbeAt = null
         if (retryablePreparation?.first == side) retryablePreparation = null
         if (window?.side == side) { window = null; token++ }
         resetHubOnReturn += side

@@ -1,5 +1,7 @@
 package com.example.overdex.ui.components
 
+import com.example.overdex.data.HudMoveAppearance
+import com.example.overdex.data.ODXFiAppearancePreferences
 import com.example.overdex.battle.BattleSpeciesDisplay
 
 import androidx.compose.foundation.background
@@ -28,9 +30,14 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.SpanStyle
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.battle.observation.BattleHudLayout
@@ -320,12 +327,19 @@ private fun OverlayPanel(
             if (!chargeTextProtected) Column(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 2.dp),
                 horizontalAlignment = Alignment.End) {
                 if (opponentMoves != null) {
+                    val context = LocalContext.current
+                    val prefs = remember(context) { ODXFiAppearancePreferences(context.applicationContext) }
+                    var appearance by remember(prefs) { mutableStateOf(prefs.read().hud) }
+                    DisposableEffect(prefs) {
+                        val unsubscribe = prefs.observeHud { appearance = it }
+                        onDispose { unsubscribe() }
+                    }
                     if (opponentMoves.fastMoves.isNotEmpty()) {
-                        MovePossibilityLine(opponentMoves.fastMoves, Color(0xFF276F76), moveLabels,
+                        MovePossibilityLine(opponentMoves.fastMoves, moveLabels, appearance,
                             assumedMove = estimate?.takeUnless { it.moveIdentified }?.assumedMoveName)
                     }
                     if (opponentMoves.chargedMoves.isNotEmpty()) {
-                        MovePossibilityLine(opponentMoves.chargedMoves, BattleHudBadgeStyle.moveInk, moveLabels,
+                        MovePossibilityLine(opponentMoves.chargedMoves, moveLabels, appearance,
                             energy = estimate?.energy,
                             fastGain = opponentMoves.fastMoves.firstOrNull {
                                 it.name.equals(estimate?.assumedMoveName, ignoreCase = true)
@@ -391,30 +405,36 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?, trai
     }
 }
 
+internal enum class HudHazardTier(val spoken: String, val radius: Int, val opacity: Float) {
+    NONE("", 0, 0f), SINGLE("single-weakness hazard", 6, .35f), DOUBLE("double-weakness hazard", 9, .65f);
+
+    companion object {
+        fun forMultiplier(value: Double) = when {
+            value >= 2 -> DOUBLE
+            value > 1 -> SINGLE
+            else -> NONE
+        }
+    }
+}
+
 @Composable
-private fun MovePossibilityLine(
-    moves: List<OverlayMovePossibility>, color: Color, labels: Map<String, String>, assumedMove: String? = null,
+internal fun MovePossibilityLine(
+    moves: List<OverlayMovePossibility>, labels: Map<String, String>, appearance: HudMoveAppearance, assumedMove: String? = null,
     energy: Int? = null, fastGain: Int? = null,
 ) {
     moves.forEach { move ->
         val readiness = com.example.overdex.battle.observation.hudChargeReadiness(move.energy, energy, fastGain)
-        val readinessColor = when (readiness) {
-            com.example.overdex.battle.observation.HudChargeReadiness.READY -> Color(0xFFFF0000)
-            com.example.overdex.battle.observation.HudChargeReadiness.ONE_FAST_MOVE_AWAY -> Color(0xFFFFA000)
-            else -> color
-        }
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        val tier = HudHazardTier.forMultiplier(move.effectivenessMultiplier)
+        Row(Modifier.fillMaxWidth().padding(bottom = appearance.rowPaddingDp.dp), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.Top) {
             BattleHudMoveText(
+                appearance = appearance,
                 text = buildAnnotatedString {
                     if (!move.isConfirmed && !move.isAudioFavored && move.name.equals(assumedMove, ignoreCase = true)) append("≈ ")
                     if (move.isConfirmed) append("✓ ")
-                    if (move.hazardous) withStyle(SpanStyle(color = Color(0xFFC62828))) {
-                        append("⚠ +${move.damageIncreasePercent}% ")
-                    }
                     append(labels[move.name] ?: move.name)
                     if (move.isAudioFavored && !move.isConfirmed) append("\nFavored · low confidence")
                 },
-                modifier = Modifier.weight(1f).semantics {
+                modifier = Modifier.weight(1f).testTag("move-text:${move.name}").semantics {
                     contentDescription = "${move.name}, ${move.type.name.lowercase()} type"
                     stateDescription = buildString {
                         append(when {
@@ -422,6 +442,7 @@ private fun MovePossibilityLine(
                             move.isAudioFavored -> "Audio favors this move; low confidence, not confirmed"
                             else -> "Possible move"
                         })
+                        if (tier != HudHazardTier.NONE) append("; ${tier.spoken}; ${move.damageIncreasePercent} percent more damage than neutral")
                         when (readiness) {
                             com.example.overdex.battle.observation.HudChargeReadiness.READY -> append("; estimated ready")
                             com.example.overdex.battle.observation.HudChargeReadiness.ONE_FAST_MOVE_AWAY -> append("; estimated one Fast Move away")
@@ -429,10 +450,21 @@ private fun MovePossibilityLine(
                         }
                     }
                 },
-                type = move.type,
-                color = readinessColor,
                 fontWeight = if (move.hazardous || move.isConfirmed || energy != null && readiness != com.example.overdex.battle.observation.HudChargeReadiness.BUILDING) FontWeight.Bold else FontWeight.Normal,
             )
+            Box(Modifier.width(18.dp).testTag("move-type:${move.name}"), contentAlignment = Alignment.TopCenter) {
+                PokemonTypeIcon(move.type, Modifier.clearAndSetSemantics {}, TypeIconStyle.OVERDEX)
+            }
+            val red = Color(0xFFFF1744)
+            Box(Modifier.size(width = 18.dp, height = 16.dp).testTag("move-hazard:${move.name}").drawBehind {
+                if (tier != HudHazardTier.NONE) {
+                    val radius = tier.radius.dp.toPx()
+                    drawCircle(Brush.radialGradient(listOf(red.copy(alpha = tier.opacity * appearance.bloomPercent / 100f), Color.Transparent),
+                        center, radius), radius)
+                }
+            }, contentAlignment = Alignment.Center) {
+                if (tier != HudHazardTier.NONE) Icon(Icons.Filled.Warning, null, Modifier.size(12.dp), tint = red)
+            }
         }
     }
 }

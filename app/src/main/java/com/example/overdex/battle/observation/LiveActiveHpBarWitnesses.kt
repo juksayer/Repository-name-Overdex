@@ -18,6 +18,7 @@ import com.example.overdex.battle.custody.ObservationSessionStoppedByUser
 import com.example.overdex.model.AnchorRegion
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.PlayerActiveIdentityResolved
+import com.example.overdex.battle.custody.PlayerChargeButtonTouchWitnessed
 import com.example.overdex.battle.custody.FastMoveRecipientVisualArtifactMeasured
 import com.example.overdex.battle.custody.FastMoveRecipientVisualCadenceMeasured
 import com.example.overdex.battle.custody.SpeciesCheckMeasured
@@ -122,6 +123,7 @@ internal class LiveActiveHpBarWitness(
     private val onDepartureCheck: (ActivePokemonSide, Long) -> Unit = { _, _ -> },
     private val chargedImpactHpRegion: AnchorRegion = com.example.overdex.data.BattleCalibration().chargedImpactHpRegion,
     private val onBattlefieldReturn: (Long) -> Unit = {},
+    private val onPlayerGradeVisualHint: (Long) -> Unit = {},
     private val onCompleteColorCaptured: (com.example.overdex.battle.custody.CompleteHpBarObserved, Long) -> Unit = { _, _ -> },
 ) : Observer {
     override val observerId = ObserverId("ACTIVE_HP_BARS_FRAME_WITNESS", ObserverSource.SCREEN_CAPTURE)
@@ -255,6 +257,12 @@ internal class LiveActiveHpBarWitness(
         results.forEach { publishMeasurement(match, frame, it.side, it.sample.measurement, it.generation, true,
             fillColor = it.sample.fillColor) }
         checkCompleteFrame(match, frame)
+        val at = frame.capturedAtMonotonicTimeNanos
+        val bitmap = frame.bitmap
+        if (chargedImpactWatch.mayProbePlayerGrade(bitmap.width, bitmap.height, at) &&
+            frame.canObserve(PlayerQteGradeAttention.bounds(bitmap.width, bitmap.height)) &&
+            PlayerQteGradeAttention.matches(bitmap.width, bitmap.height, bitmap::getPixel) &&
+            chargedImpactWatch.prepareFromVisualGrade(at)) onPlayerGradeVisualHint(at)
         checkChargedImpactFrame(match, frame)
         checkRecipientFrame(frame)
     }
@@ -354,7 +362,7 @@ internal class LiveActiveHpBarWitness(
         val completeGeneration = completeTrack.generation(request.side)
         val complete = when {
             !observable -> null
-            request.anchor != null -> TrackedTerminalHpBarMeasurer.measureComplete(frame.bitmap, request.anchor, search)
+            request.anchor != null -> TrackedTerminalHpBarMeasurer.measureComplete(frame.bitmap, request.anchor, search, chargedColorProfile = true)
             else -> ChargedImpactHpBarMeasurer.acquireComplete(frame.bitmap, request.reference, search)
         }
         val sample = complete?.hpSample
@@ -536,6 +544,14 @@ internal class LiveActiveHpBarWitness(
                                 recipientWatch.reset(article.monotonicTimeNanos ?: System.nanoTime())
                             }
                             terminalSummary(match, "MATCH_END")
+                        }
+                        is PlayerChargeButtonTouchWitnessed -> {
+                            val at = article.monotonicTimeNanos ?: return@collect
+                            if (article.sourceId.id == "PLAYER_CHARGE_BUTTON_TOUCH_WITNESS" && payload.slot in 1..2) {
+                                synchronized(stateLock) {
+                                    if (!ended && isEnabled()) chargedImpactWatch.prepareFromPlayerContact(at, article.id.value)
+                                }
+                            }
                         }
                         GetReadyWitnessed, AttackIncoming -> {
                             val at = article.monotonicTimeNanos ?: return@collect

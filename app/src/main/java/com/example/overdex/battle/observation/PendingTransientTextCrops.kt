@@ -29,15 +29,31 @@ internal class PendingTransientTextCrops(
     private var episode: Episode? = null
     private var nextEpisode = 0L
     private var lastOfferedAt = Long.MIN_VALUE
+    private val recentSourceTimes = linkedSetOf<Long>()
     private var replacedTotal = 0L
     private var coalescedTotal = 0L
     private var overflowTotal = 0L
     private var expiredTotal = 0L
 
     @Synchronized
+    fun canOffer(article: RealityArticle): Boolean {
+        val at = article.monotonicTimeNanos ?: return false
+        return at !in recentSourceTimes && (at > lastOfferedAt ||
+            (isChargedImpactAnnouncement(article) && lastOfferedAt - at in 1..maximumAgeNanos))
+    }
+
+    @Synchronized
     fun offer(article: RealityArticle, visual: TransientTextProbe.Reading?) {
-        val at = article.monotonicTimeNanos ?: return
-        if (at <= lastOfferedAt) return
+        if (!canOffer(article)) return
+        val at = requireNotNull(article.monotonicTimeNanos)
+        recentSourceTimes += at
+        if (recentSourceTimes.size > RECENT_SOURCE_LIMIT) recentSourceTimes.remove(recentSourceTimes.first())
+        if (at < lastOfferedAt) {
+            // Paired impact evidence can be persisted after a newer ordinary
+            // crop. Queue its original frame without rewinding the live episode.
+            enqueue(Frame(article))
+            return
+        }
         lastOfferedAt = at
         if (latest != null) replacedTotal++
         latest = Frame(article)
@@ -79,8 +95,12 @@ internal class PendingTransientTextCrops(
         val id = ++nextEpisode
         episode = Episode(id, visual.signature, at)
         val frame = Frame(article, id, visual.score)
-        candidates += frame
+        enqueue(frame)
         latest = frame
+    }
+
+    private fun enqueue(frame: Frame) {
+        candidates += frame
         if (candidates.size > capacity) {
             candidates.removeAt(0)
             overflowTotal++
@@ -100,8 +120,8 @@ internal class PendingTransientTextCrops(
         val kind: String
         if (candidates.isNotEmpty()) {
             frame = candidates.removeAt(0)
-            kind = "TEXT_KEYFRAME"
-            if (latest?.episode == frame.episode) latest = null
+            kind = if (frame.episode == null) "CHARGED_IMPACT_FRAME" else "TEXT_KEYFRAME"
+            if (frame.episode != null && latest?.episode == frame.episode) latest = null
         } else {
             frame = latest ?: return null
             latest = null
@@ -158,5 +178,11 @@ internal class PendingTransientTextCrops(
         }
     }
 
-    private companion object { const val EPISODE_GAP_NANOS = 1_500_000_000L }
+    private fun isChargedImpactAnnouncement(article: RealityArticle): Boolean =
+        article.sourceId.id == BattleWitnessContracts.chargedImpactAnnouncementCapture.witnessId
+
+    private companion object {
+        const val EPISODE_GAP_NANOS = 1_500_000_000L
+        const val RECENT_SOURCE_LIMIT = 128
+    }
 }

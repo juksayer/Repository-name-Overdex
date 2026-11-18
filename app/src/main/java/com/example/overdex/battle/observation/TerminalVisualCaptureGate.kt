@@ -37,7 +37,7 @@ internal data class TerminalVisualCapturedSequence(
  */
 class TerminalVisualCaptureGate(private val now: () -> Long = System::nanoTime) {
     private data class Hp(val at: Long, val fraction: Float, val articleId: String)
-    private data class Charge(val recipient: ActivePokemonSide, val at: Long, val articleId: String,
+    private data class Charge(val recipient: ActivePokemonSide, val at: Long, val articleId: String?,
         val impactAt: Long? = null, val impactArticleId: String? = null, val returnedAt: Long? = null,
         val qteAt: Long? = null, val qteArticleId: String? = null)
     private data class Frame(
@@ -223,6 +223,19 @@ class TerminalVisualCaptureGate(private val now: () -> Long = System::nanoTime) 
         return true
     }
 
+    /** Pixel scheduling hint only. Later OCR supplies the actual grade and move evidence. */
+    @Synchronized internal fun preparePlayerGradeVisualHint(at: Long): Boolean {
+        if (!accepting || !fresh(at) || at <= latestUsedAt ||
+            at <= (boundaries[opponent] ?: Long.MIN_VALUE) ||
+            charge?.let { at <= it.at || it.recipient == opponent && it.impactAt == null } == true) return false
+        retireQte()
+        windows.values.filter { it.side == opponent && !it.closed }.forEach { it.closed = true }
+        charge = Charge(opponent, at, null, qteAt = at)
+        openWindow(opponent, TerminalVisualTrigger.PLAYER_QTE_PROGRESS, at, emptyList(),
+            QTE_WINDOW_NANOS, QTE_FRAME_INTERVAL_NANOS, QTE_MAX_FRAMES)
+        return true
+    }
+
     private fun retireQte() {
         windows.values.filter { it.trigger == TerminalVisualTrigger.PLAYER_QTE_PROGRESS }.forEach { it.closed = true }
     }
@@ -256,7 +269,7 @@ class TerminalVisualCaptureGate(private val now: () -> Long = System::nanoTime) 
         charge = current.copy(returnedAt = sourceAt)
         windows.values.filter { it.side == side && !it.closed }.forEach { it.closed = true }
         openWindow(side, TerminalVisualTrigger.CHARGED_RETURN, sourceAt,
-            listOf(current.articleId, requireNotNull(current.impactArticleId)))
+            listOfNotNull(current.articleId, requireNotNull(current.impactArticleId)))
         return true
     }
 
@@ -302,6 +315,10 @@ class TerminalVisualCaptureGate(private val now: () -> Long = System::nanoTime) 
             }
             ObservationRestartedByUser -> if (at >= lifecycleAt && triggerFresh(at)) beginSession(maxOf(at, now()))
             MatchStarted -> if (!accepting && at > lifecycleAt && triggerFresh(at)) beginSession(at)
+            is PlayerChargeButtonTouchWitnessed -> {
+                if (article.sourceId.id == "PLAYER_CHARGE_BUTTON_TOUCH_WITNESS" && payload.slot in 1..2)
+                    preparePhase(opponent, at, article.id.value)
+            }
             GetReadyWitnessed, AttackIncoming -> {
                 preparePhase(if (payload == GetReadyWitnessed) opponent else player, at, article.id.value)
             }
@@ -316,7 +333,7 @@ class TerminalVisualCaptureGate(private val now: () -> Long = System::nanoTime) 
                 // adds phase closure without stacking or extending image work.
                 if (current.qteAt != null || !triggerFresh(at)) return
                 request(current.recipient, TerminalVisualTrigger.CHARGED_IMPACT, at,
-                    listOf(current.articleId, article.id.value))
+                    listOfNotNull(current.articleId, article.id.value))
             }
             is RawTestimony -> if (article.sourceId.id == "QTE_PROGRESS_TEXT_WITNESS" &&
                 payload.ocr == null && isPlayerQteGradeText(payload.data as? String ?: "") && !article.evidenceReferences.isNullOrEmpty()) {
@@ -412,5 +429,9 @@ internal fun isCompleteBarAttentionHint(payload: CompleteHpBarObserved): Boolean
         payload.barBottom > payload.barTop && area in 1..(payload.barRight - payload.barLeft) &&
         payload.liveColumns in 0..area && payload.damageColumns in 1..area &&
         payload.liveColumns.toLong() + payload.damageColumns <= area / 4 &&
-        payload.status in setOf("DAMAGE_COLOR", "SUSTAINED_DAMAGE_COLOR", "UNRESOLVED_COLOR")
+        (payload.status in setOf("DAMAGE_COLOR", "SUSTAINED_DAMAGE_COLOR", "UNRESOLVED_COLOR") ||
+            // A few red columns on a mostly orange bar can be surviving HP.
+            // They can request more frames while retaining their LIVE_COLOR status.
+            (payload.status == "LIVE_COLOR" && payload.liveColumns in 1..2 &&
+                payload.damageColumns >= 4 * payload.liveColumns))
 }

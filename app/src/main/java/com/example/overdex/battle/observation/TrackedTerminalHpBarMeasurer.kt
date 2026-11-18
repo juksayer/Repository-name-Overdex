@@ -100,36 +100,47 @@ internal object TrackedTerminalHpBarMeasurer {
     // camera relocation still needs independent acquisition and ownership.
     private fun verticalMargin(height: Int) = height.coerceIn(3, 16)
 
-    fun measureComplete(bitmap: Bitmap, anchor: ActiveHpBarMeasurement, territory: BattleCropBounds? = null): CompleteHpBarSample? {
+    fun measureComplete(bitmap: Bitmap, anchor: ActiveHpBarMeasurement, territory: BattleCropBounds? = null,
+        chargedColorProfile: Boolean = false): CompleteHpBarSample? {
         val bounds = pixelBounds(bitmap.width, bitmap.height, anchor, territory) ?: return null
         val pixels = IntArray(bounds.width * bounds.height)
         bitmap.getPixels(pixels, 0, bounds.width, bounds.left, bounds.top, bounds.width, bounds.height)
-        return completeRegion(bounds, anchor, pixels)
+        return completeRegion(bounds, anchor, pixels, chargedColorProfile)
     }
 
     internal fun measureComplete(width: Int, height: Int, anchor: ActiveHpBarMeasurement,
-        territory: BattleCropBounds? = null, pixelAt: (Int, Int) -> Int): CompleteHpBarSample? {
+        territory: BattleCropBounds? = null, pixelAt: (Int, Int) -> Int): CompleteHpBarSample? =
+        measureComplete(width, height, anchor, territory, false, pixelAt)
+
+    internal fun measureComplete(width: Int, height: Int, anchor: ActiveHpBarMeasurement,
+        territory: BattleCropBounds?, chargedColorProfile: Boolean, pixelAt: (Int, Int) -> Int): CompleteHpBarSample? {
         val bounds = pixelBounds(width, height, anchor, territory) ?: return null
         val pixels = IntArray(bounds.width * bounds.height)
         for (y in bounds.top until bounds.bottom) for (x in bounds.left until bounds.right)
             pixels[(y - bounds.top) * bounds.width + x - bounds.left] = pixelAt(x, y)
-        return completeRegion(bounds, anchor, pixels)
+        return completeRegion(bounds, anchor, pixels, chargedColorProfile)
     }
 
-    private fun completeRegion(bounds: Bounds, anchor: ActiveHpBarMeasurement, pixels: IntArray): CompleteHpBarSample? =
-        findOutline(bounds, anchor, pixels) { shape, flagsAt ->
+    private fun completeRegion(bounds: Bounds, anchor: ActiveHpBarMeasurement, pixels: IntArray,
+        chargedColorProfile: Boolean): CompleteHpBarSample? {
+        fun profile(allowNumeric: Boolean, support: Float) = findOutline(bounds, anchor, pixels, support) { shape, flagsAt ->
             CompleteHpBarProfile.measure(shape, BattleCropBounds(bounds.left, bounds.top, bounds.right, bounds.bottom)) { x, y ->
                 pixels[(y - bounds.top) * bounds.width + x - bounds.left]
-            }.copy(hpSample = measureInterior(shape, flagsAt))
+            }.copy(hpSample = if (allowNumeric) measureInterior(shape, flagsAt) else null)
         }
+        // Capture compression can thin either rail. This fallback still needs
+        // both rails and both end caps and can only report a color profile.
+        return profile(true, MIN_LINE_SUPPORT) ?: if (chargedColorProfile) profile(false, .91f) else null
+    }
 
     private fun measureRegion(bounds: Bounds, anchor: ActiveHpBarMeasurement, pixels: IntArray): TrackedTerminalHpBarSample? =
-        findOutline(bounds, anchor, pixels, ::measureInterior)
+        findOutline(bounds, anchor, pixels, MIN_LINE_SUPPORT, ::measureInterior)
 
     private fun <T> findOutline(
         bounds: Bounds,
         anchor: ActiveHpBarMeasurement,
         pixels: IntArray,
+        minimumLineSupport: Float,
         readInterior: (ActiveHpBarMeasurement, (Int, Int) -> Int) -> T?,
     ): T? {
         // Pixel classification is linear in this tiny region, never the frame.
@@ -148,9 +159,9 @@ internal object TrackedTerminalHpBarMeasurer {
                     val rowLeft = anchor.left + X_MARGIN
                     val rowRight = anchor.right - X_MARGIN
                     val topSupport = rowSupport(rowLeft, rowRight) { x -> flagsAt(x, top) and outline != 0 }
-                    if (topSupport < MIN_LINE_SUPPORT) continue
+                    if (topSupport < minimumLineSupport) continue
                     val bottomSupport = rowSupport(rowLeft, rowRight) { x -> flagsAt(x, bottom) and outline != 0 }
-                    if (bottomSupport < MIN_LINE_SUPPORT) continue
+                    if (bottomSupport < minimumLineSupport) continue
                     fun capAt(expectedX: Int, direction: Int): Pair<Int, Float>? =
                         (max(bounds.left + 1, expectedX - X_MARGIN)..minOf(bounds.right - 2, expectedX + X_MARGIN))
                             .mapNotNull { x ->

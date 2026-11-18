@@ -70,7 +70,8 @@ class ODXFiAppearancePreferencesTest {
         assertTrue(preferences.resetDefaults())
         assertEquals(ODXFiAppearance(), ODXFiAppearancePreferences(store.preferences).read())
         assertEquals("keep", store.values["unrelated"])
-        assertEquals(setOf("case_color", "button_color", "bezel_color"), store.writtenKeys)
+        assertEquals(setOf("case_color", "button_color", "bezel_color", "hud_text", "hud_shadow",
+            "hud_font", "hud_padding", "hud_bloom"), store.writtenKeys)
     }
 
     @Test fun `failed durable saves report failure and preserve all saved colors including reset`() {
@@ -86,6 +87,16 @@ class ODXFiAppearancePreferencesTest {
         assertEquals(ODXFiAppearance(0xFF112233.toInt(), 0xFF445566.toInt(), 0xFF778899.toInt()), preferences.read())
     }
 
+    @Test fun `custom HUD survives reopening and invalid sizes stay within bounds`() {
+        val store = FakePreferences()
+        val custom = ODXFiAppearance(hud = HudMoveAppearance(0xffddffaa.toInt(), 0xff122334.toInt(), 11, 60, 3))
+        assertTrue(ODXFiAppearancePreferences(store.preferences).write(custom))
+        assertEquals(custom, ODXFiAppearancePreferences(store.preferences).read())
+        store.values["hud_font"] = "invalid"
+        store.values["hud_padding"] = 99
+        assertEquals(custom.hud.copy(fontSp = 8, rowPaddingDp = 8), ODXFiAppearancePreferences(store.preferences).read().hud)
+    }
+
     private class FakePreferences(initialValues: Map<String, Any> = emptyMap(), private val commitSucceeds: Boolean = true) {
         val values = initialValues.toMutableMap()
         val writtenKeys = mutableSetOf<String>()
@@ -95,10 +106,10 @@ class ODXFiAppearancePreferencesTest {
             arrayOf(SharedPreferences.Editor::class.java),
         ) { proxy, method, args ->
             when (method.name) {
-                "putString" -> {
+                "putString", "putInt" -> {
                     val key = args!![0] as String
                     writtenKeys += key
-                    pending[key] = args[1] as String
+                    pending[key] = args[1]
                     proxy
                 }
                 "commit" -> {
@@ -114,6 +125,7 @@ class ODXFiAppearancePreferencesTest {
             arrayOf(SharedPreferences::class.java),
         ) { _, method, args ->
             when (method.name) {
+                "getInt" -> values[args!![0] as String]?.let { it as Int } ?: args[1]
                 "getString" -> {
                     val value = values[args!![0] as String]
                     if (value != null && value !is String) throw ClassCastException()

@@ -1,41 +1,51 @@
 # BattleEngine
 
-The `BattleEngine` coordinates the entire data lifecycle within Overdex, ensuring that raw observations are correctly transformed into a structured record of combat.
+The battle engine coordinates the entire data lifecycle within Overdex, ensuring that raw screen crops, audio pulses, and sensor measurements are securely ingested into custody, compiled into a canonical timeline, and presented as real-time tactical intelligence.
+
+---
 
 ## Data Lifecycle
 
-```
-Observation Pipeline
+```text
+GO Screen & Audio Capture (DroidballService)
         │
         ▼
-BattleEngine
+Crop & Audio Witnesses (CropCaptureWitness, LiveHpWitnesses, CryWitnesses)
         │
         ▼
-BattleMemory
+TestimonyCustody (Immutable Evidence & Source Availability Ledger)
         │
         ▼
-BattleTimeline
+RealityArticle & RealityTimeline (Canonical Chronological Match Ledger)
         │
         ▼
-ArchivedBattle
+Match Engine & Inference Systems (FastMoveUse, Energy, QTE, Announcements)
+        │
+        ├─────────────────────────────────┐
+        ▼                                 ▼
+DroidballOverlayPresentation       MatchArchiveExporter (.odxmatch)
+(Live Overlay HUD)                        │
+                                          ▼
+                                   MatchReplayModel (Replay & Forensic Analysis)
 ```
 
 ---
 
-## Responsibilities
+## Core Responsibilities
 
-- **Coordination**: Managing the battle lifecycle from `BATTLE_STARTED` to `BATTLE_ENDED`.
-- **Normalization**: Translating varied inputs (OCR, Audio, Manual) into stable internal state changes.
-- **Auditing**: Ensuring that every meaningful transition is recorded as a fact in the chronological timeline.
-- **Persistence Packaging**: Facilitating the transition from live, mutable memory to a permanent, immutable `ArchivedBattle` snapshot.
+- **Session & Match Lifecycle Coordination**: Managing battle scope via `DroidballSession` and `Match.kt` from pre-battle detection (`PersistedVsScreenWitness`, `PersistedTeamSelectWitnesses`), countdown match start (`CountdownGoGeometry`), combat flow, to match completion (`PersistedOutcomeTextWitness`).
+- **Witness Signal & Custody Management**: Receiving raw testimony from independent visual and audio witnesses into `TestimonyCustody`, verifying content-addressed SHA-256 digests via `CropArtifactStore` and `AudioArtifactStore`.
+- **Real-Time Inference & Resource Accounting**: Deducting fast move executions (`FastMoveUseInference`), energy accumulation (`FastMoveEnergyInference`), charged move announcements (`ChargedMoveAnnouncementInference`), and opponent resource tracking (`PersistedOpponentBattleResourceWitness`, `OpponentPokemonFaintWitness`).
+- **Timeline Publication & Archival**: Publishing immutable `RealityArticle` envelopes to `RealityTimeline` and exporting complete `.odxmatch` archive packages through `MatchArchiveExporter`.
 
 ---
 
-## Intelligence Layers
+## Intelligence & Presentation Layers
 
-The engine provides data to analytical layers that interpret the battle without modifying the record:
-1. **Matchup Engine**: Evaluates the tactical relationship between the active Pokémon.
-2. **Decision Engine**: Translates matchup data into high-level player recommendations.
+The engine supplies evidence to downstream components that interpret and present the match without altering the underlying custody record:
+
+1. **Live Overlay Presentation (`DroidballOverlayPresentation`)**: Renders real-time health bar gauges, energy progress bars, fast move cadence indicators, and active combatant details on the floating HUD overlay.
+2. **Replay & Forensic Accounting (`MatchReplayModel`)**: Uses archived `RealityArticle` packages to reconstruct deterministic match playback, providing energy tracking (`ReplayEnergyTrack`) and team resource timelines (`ReplayTeamResources`).
 
 ---
 
@@ -43,60 +53,23 @@ The engine provides data to analytical layers that interpret the battle without 
 
 **Invisible decision support.**
 
-The engine quietly observes and remembers so the player can focus on gameplay. It surfaces only the information that reduces cognitive load, answering the core question: **"What decision does the player need to make right now?"**
+The engine quietly observes and preserves evidence so the trainer can focus on gameplay. It surfaces only the information that reduces cognitive load, answering the core question: **"What decision does the player need to make right now?"**
 
-Press A
-
-↓
-
-Match begins
-
-↓
-
-Locate next required cluster
-
-↓
-
-Observe
-
-↓
-
-Resolve
-
-↓
-
-Evaluate Integrity
-
-↓
-
-Cluster complete?
-
+```text
+Start Droidball Session
         │
-No   │   Yes
-│
-▼
-
-Continue observing
-
-        │
-
         ▼
-
-Advance to next cluster
-
-↓
-
-Objective complete?
-
+Match Begins (Vs Screen / Countdown)
         │
-No   │   Yes
-│
-▼
-
-Locate next cluster
-
-        │
-
         ▼
-
-Import Specimen
+Ingest Witness Testimony into Custody
+        │
+        ▼
+Publish RealityArticles to RealityTimeline
+        │
+        ▼
+Run Inference & Update Live Overlay
+        │
+        ▼
+Match Concludes -> Export .odxmatch Archive
+```
