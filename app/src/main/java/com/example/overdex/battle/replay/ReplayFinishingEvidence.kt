@@ -233,6 +233,31 @@ internal class ReplayFinishingEvidence(
             receipt)
     }
 
+    fun hasLivingHpAfter(side: String, ownerAppearance: Long, receipt: Long, end: Long): Boolean {
+        val recipient = actorAt(side, receipt) ?: return true
+        return articles.any { a ->
+            val time = a.monotonicTimeNanos!!
+            if (time !in receipt..end) return@any false
+            if (a.payload !is ArchivedActiveHpBarMeasured && a.payload !is ArchivedCompleteHpBarObserved) return@any false
+            val appearance = appearanceAt(side, time)
+            // A later known living return also contradicts this owner. HP from
+            // the incoming replacement or a distinct configured slot does not.
+            if (appearance != ownerAppearance) {
+                val later = actorAt(side, time) ?: return@any false
+                if (later.speciesName != recipient.speciesName ||
+                    (later.playerTeamSlot != null && recipient.playerTeamSlot != null &&
+                        later.playerTeamSlot != recipient.playerTeamSlot)) return@any false
+            }
+            when (val p = a.payload) {
+                is ArchivedActiveHpBarMeasured -> p.side == side && hp.confirmsLiveHp(a)
+                is ArchivedCompleteHpBarObserved -> p.side == side && p.status == "LIVE_COLOR" &&
+                    p.liveColumns > 0 && complete(p) && reliable(a) &&
+                    belongsToAppearance(p, time, appearance)
+                else -> false
+            }
+        }
+    }
+
     fun allows(link: ReplayFinishingAttribution, knockouts: List<ReplayKnockout>): Boolean {
         val receipt = link.reception?.atNanos ?: link.landingAtNanos
         val owner = link.attackerAppearanceAtNanos
@@ -253,28 +278,7 @@ internal class ReplayFinishingEvidence(
                         it.payload is ArchivedObservationSessionStoppedByUser ||
                         it.payload is ArchivedScreenIgnoredByUser || it.payload is ArchivedMatchEnded)
             }) return false
-        val recipient = actorAt(link.recipientSide, receipt) ?: return false
-        if (articles.any { a ->
-                val time = a.monotonicTimeNanos!!
-                if (time !in receipt..(battleEnd ?: Long.MAX_VALUE)) return@any false
-                if (a.payload !is ArchivedActiveHpBarMeasured && a.payload !is ArchivedCompleteHpBarObserved) return@any false
-                val appearance = appearanceAt(link.recipientSide, time)
-                // A later known living return also contradicts this owner. HP from
-                // the incoming replacement or a distinct configured slot does not.
-                if (appearance != link.recipientAppearanceAtNanos) {
-                    val later = actorAt(link.recipientSide, time) ?: return@any false
-                    if (later.speciesName != recipient.speciesName ||
-                        (later.playerTeamSlot != null && recipient.playerTeamSlot != null &&
-                            later.playerTeamSlot != recipient.playerTeamSlot)) return@any false
-                }
-                when (val p = a.payload) {
-                    is ArchivedActiveHpBarMeasured -> p.side == link.recipientSide && hp.confirmsLiveHp(a)
-                    is ArchivedCompleteHpBarObserved -> p.side == link.recipientSide && p.status == "LIVE_COLOR" &&
-                        p.liveColumns > 0 && complete(p) && reliable(a) &&
-                        belongsToAppearance(p, time, appearance)
-                    else -> false
-                }
-            }) return false
+        if (hasLivingHpAfter(link.recipientSide, link.recipientAppearanceAtNanos, receipt, battleEnd ?: Long.MAX_VALUE)) return false
         val charge = charges.singleOrNull { it.side == link.attackingSide && it.sourceAtNanos == link.moveSourceAtNanos &&
             it.articleIds.any(link.moveArticleIds::contains) }
         val selectedCharge = charge.takeIf { link is ReplayFinishingChargeAssociation }

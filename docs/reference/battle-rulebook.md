@@ -1112,3 +1112,13 @@ current terminal survival. Low-confidence or missing-confidence measurements
 cannot perform that corroboration. Independent move, pulse and faint testimony
 remains available. Unknown HP neither creates zero HP nor proves a faint, move
 use, or killer assignment. Original archives remain unchanged.
+
+### Fast Move credit after a charged exchange
+
+If a late QTE vibration cites the preparation for a charge that already completed, Replay keeps it in that charge. A new preparation can open the next charge.
+
+If complete, aligned views of the same opponent HP bar change from a verified red sliver to orange damage, Replay can place a separately supported Fast Move at that change. Two disjoint portions of a move sound must agree on its source time. One clip can contain portions of two distinct attacks.
+
+A matching departure cry and a count-confirmed replacement, or a last-opponent count followed by a win, can support the faint independently. A living return or even one verified surviving HP column after the proposed reception vetoes that finish. A competing attack leaves credit open. Earlier red HP supplies the lower time bound and the first matched cry fragment can bound the departure. An uncertain bar interior never establishes an observed zero.
+
+Implemented in completed Replay and checked against the November 18 Pixel Sealeo and Vaporeon finishes and the living-switch controls.

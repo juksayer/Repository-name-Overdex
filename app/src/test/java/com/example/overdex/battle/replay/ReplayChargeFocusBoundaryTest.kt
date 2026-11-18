@@ -71,6 +71,23 @@ class ReplayChargeFocusBoundaryTest {
         }
     }
 
+    @Test fun `late vibrations from a completed charge cannot reopen it or absorb the next charge`() {
+        val oldPattern = at("pattern", 11, ArchivedChargeMoveQteVibrationPatternInferred(
+            "PLAYER", 3, SECOND, "GET_READY_LINKED_SHORT_DEVICE_MOTION_PULSES"
+        )).copy(predecessorIds = listOf("first-ready"))
+        val first = at("first-ready", 2, ArchivedGetReadyWitnessed)
+        val completion = at("named", 9, spend("PLAYER"))
+        val between = MatchReplayModel(archive(oldPattern, completion, first))
+        assertTrue(between.sceneAt(13 * SECOND).chargedMoveActions.isEmpty())
+        val marker = between.eventMarkers.single { it.kind == ReplayEventMarkerKind.CHARGED_MOVE }
+        assertTrue(marker.sourceArticleIds.containsAll(listOf("named", "pattern", "first-ready")))
+        val next = at("second-ready", 10, ArchivedGetReadyWitnessed)
+        val model = MatchReplayModel(archive(oldPattern, next, completion, first))
+        val later = model.sceneAt(13 * SECOND).chargedMoveActions.single()
+        assertEquals(ReplayChargePhase.CHARGING, later.phase)
+        assertFalse("QTE_VIBRATION_PATTERN" in later.evidenceKinds)
+    }
+
     private fun spend(side: String) = ArchivedChargedMoveEnergySpent(side,
         if (side == "PLAYER") "Camerupt" else "Sneasel", "Example Charge", 45, "TEST")
 

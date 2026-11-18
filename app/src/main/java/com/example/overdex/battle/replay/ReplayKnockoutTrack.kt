@@ -205,7 +205,7 @@ internal class ReplayKnockoutTrack(
         return BallCount(articleId, monotonicTimeNanos ?: return null, count).takeIf { count in 0..3 }
     }
 
-    fun at(side: String, cursor: Long): ReplayKnockout? = knockouts.lastOrNull {
+    fun at(side: String, cursor: Long, available: List<ReplayKnockout> = knockouts): ReplayKnockout? = available.lastOrNull {
         it.side == side && cursor >= it.presentationAtNanos &&
             (it.replacementAtNanos == null || cursor < it.replacementAtNanos)
     }

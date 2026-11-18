@@ -38,7 +38,8 @@ object ReplayRetainedAudioRecovery {
             .mapNotNull { it.monotonicTimeNanos }.minOrNull() ?: return emptyList()
         val start = archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedMatchStarted }.mapNotNull { it.monotonicTimeNanos }.minOrNull()
             ?: return emptyList()
-        val unique = archive.articles.groupBy { it.articleId }.values.mapNotNull { it.distinct().singleOrNull() }
+        val unique = archive.articles.filter { it.matchId == archive.matchId }
+            .groupBy { it.articleId }.values.mapNotNull { it.distinct().singleOrNull() }
         val previous = mutableMapOf<String, String>()
         val entries = unique.sortedBy { it.monotonicTimeNanos ?: Long.MAX_VALUE }.mapNotNull { a ->
             if (a.matchId != archive.matchId) return@mapNotNull null
@@ -55,12 +56,14 @@ object ReplayRetainedAudioRecovery {
                     p.byteCount in 44..1_600_044 }
             .sortedBy { it.monotonicTimeNanos }
         val ending = clips.filter { it.monotonicTimeNanos!! >= end - 40 * SECOND }.takeLast(64)
+        val changes = ReplaySliverExchange.changes(unique)
         val departureCandidates = unique.mapNotNull { a ->
             a.monotonicTimeNanos.takeIf { a.payload is ArchivedRepeatCryDepartureCandidate }
         }
         val earlierEntries = clips.filter { a -> a.monotonicTimeNanos!! < end - 40 * SECOND &&
             (entries.any { kotlin.math.abs(a.monotonicTimeNanos!! - it) <= 2 * SECOND } ||
-                departureCandidates.any { a.monotonicTimeNanos!! in (it - 3 * SECOND)..(it + SECOND) }) }.takeLast(64)
+                departureCandidates.any { a.monotonicTimeNanos!! in (it - 3 * SECOND)..(it + SECOND) } ||
+                changes.any { a.monotonicTimeNanos!! in (it.at - 4 * SECOND)..(it.at + 2 * SECOND) }) }.takeLast(64)
         return (earlierEntries + ending).sortedBy { it.monotonicTimeNanos }
     }
 
@@ -90,6 +93,7 @@ object ReplayRetainedAudioRecovery {
             a.monotonicTimeNanos?.let { it to sound }
         }.groupBy({ it.first }, { it.second })
         val selected = selectedArticles(archive).filter { captureWindow == null || it.monotonicTimeNanos in captureWindow }
+        val changes = ReplaySliverExchange.changes(archive.articles.filter { it.matchId == archive.matchId })
         val end = archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedMatchEnded }
             .mapNotNull { it.monotonicTimeNanos }.minOrNull()
         if (end != null && (selected.count { it.monotonicTimeNanos!! < end - 40 * SECOND } >= 64 ||
@@ -107,7 +111,8 @@ object ReplayRetainedAudioRecovery {
             }
             val mono = StatChangeSoundMatcher.mono8k(audio)
             if (article.sourceId == "FAST_MOVE_STREAM_AUDIO_CAPTURE" && mono.size <= 4 * 8000) {
-                if (end != null && article.monotonicTimeNanos!! >= end - 20 * SECOND) {
+                val nearSliver = changes.any { article.monotonicTimeNanos!! in (it.at - 4 * SECOND)..(it.at + 2 * SECOND) }
+                if (nearSliver || end != null && article.monotonicTimeNanos!! >= end - 20 * SECOND) {
                     partialCries += ReplayPartialCryRecovery.measure(audio, article.articleId,
                         article.monotonicTimeNanos!!, p.sha256, references)
                 }
@@ -118,6 +123,8 @@ object ReplayRetainedAudioRecovery {
                     it.name.uppercase().filter(Char::isLetterOrDigit) in names }
                 if (captureWindow == null && eligible.size <= 8) mixed += ReplayMixedAudioRecovery.measure(audio,
                     article.articleId, article.monotonicTimeNanos!!, p.sha256, eligible)
+                if (captureWindow == null && nearSliver && eligible.size <= 8) mixed += ReplayMixedAudioRecovery.measure(
+                    audio, article.articleId, article.monotonicTimeNanos!!, p.sha256, eligible, shortFragments = true)
             }
             if (captureWindow != null && mono.size <= 4 * 8000) {
                 // The caller has already bounded this comparison to the two active species and

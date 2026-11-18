@@ -27,11 +27,11 @@ internal object ReplayMixedAudioRecovery {
         val query = StatChangeSoundMatcher.mono8k(audio)
         if (query.size !in length..(RATE * 4) || articleId.isBlank() || audioSha256.isBlank()) return emptyList()
         return references.asSequence().filter { !it.charged && it.speciesId == null }
-            .distinctBy { it.name to it.sha256 }.mapNotNull { reference ->
+            .distinctBy { it.name to it.sha256 }.flatMap { reference ->
                 val samples = StatChangeSoundMatcher.mono8k(reference.audio)
-                if (samples.size !in (length * 2)..(RATE * 8)) return@mapNotNull null
+                if (samples.size !in (length * 2)..(RATE * 8)) return@flatMap emptyList()
                 val offsets = (0..samples.size - length step (length / 2)).toList()
-                if (offsets.size > CryWaveformMatcher.MAX_REFERENCES) return@mapNotNull null
+                if (offsets.size > CryWaveformMatcher.MAX_REFERENCES) return@flatMap emptyList()
                 val matcher = CryWaveformMatcher(offsets.mapIndexed { i, off ->
                     CryWaveformReference(i + 1, reference.sha256,
                         Pcm16Audio(RATE, 1, samples.copyOfRange(off, off + length)))
@@ -46,10 +46,18 @@ internal object ReplayMixedAudioRecovery {
                         abs(first.estimatedOnsetNanos - second.estimatedOnsetNanos) > ONSET_TOLERANCE ||
                         maxOf(first.correlation, second.correlation) < STRONG_SCORE) null else listOf(first, second)
                 } }
-                val best = pairs.maxByOrNull { minOf(it[0].correlation, it[1].correlation) } ?: return@mapNotNull null
-                ReplayMixedAudioCandidate(reference.name,
-                    best.minOf { it.estimatedOnsetNanos } + abs(best[0].estimatedOnsetNanos - best[1].estimatedOnsetNanos) / 2,
-                    best)
+                // One clip can contain the tail of one use and the beginning of the next.
+                // Multiple fragment pairs at the same onset still describe one occurrence.
+                val matches = mutableListOf<ReplayMixedAudioCandidate>()
+                for (pair in pairs.sortedByDescending { it.minOf(ReplayAudioFragment::correlation) }) {
+                    val onset = pair[0].estimatedOnsetNanos +
+                        (pair[1].estimatedOnsetNanos - pair[0].estimatedOnsetNanos) / 2
+                    if (matches.none { abs(it.estimatedOnsetNanos - onset) <= ONSET_TOLERANCE }) {
+                        matches += ReplayMixedAudioCandidate(reference.name, onset, pair)
+                        if (!shortFragments) break
+                    }
+                }
+                matches
             }.toList()
     }
 }
