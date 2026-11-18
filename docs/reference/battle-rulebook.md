@@ -310,8 +310,8 @@ choices changes when the underlying battle event happened.
 When a faint is resolved but its frame is missing, the Replay KO marker shows the interval
 from the last supported living HP for that appearance (or its preceding verified team count)
 to the first evidence establishing the loss. Displayed bounds round outward. With only an
-upper bound, show “KO by”. A measured zero-HP frame and a trainer's timestamp each get
-their own label. The animation's seek point supplies neither bound nor KO credit.
+upper bound, show “KO by”. A measured zero-HP frame can supply the upper bound.
+A confirmed faint cry and a trainer's timestamp each get their own label. The animation's seek point supplies neither bound nor KO credit.
 
 The trainer proposes placing a clearly labeled estimated Replay faint near the
 end of the last supported move or charge sequence, even when a faint itself is
@@ -698,9 +698,10 @@ When the opposing side has a single possible recipient, a uniquely owned attack
 and an independently resolved faint close together can establish an inferred
 finishing link. Require the same recipient appearance, a completed unshielded
 charge or supported Fast Move, and no conflicting attack, intervening switch or
-subsequent live HP. The Replay faint marker for a credited finish marks the start
-of that attack. Show impact and departure at their separate presentation times.
-Keep the source-time faint observation and any measured reception for review.
+subsequent live HP. Replay marks a confirmed faint cry at its source onset. Without a confirmed cry,
+show the window from the last supported living observation to the earliest evidence
+of departure. Show an upper bound alone if the lower bound is unknown. Keep attack,
+reception and original faint testimony on their own clocks.
 
 **MOVE-05 — shield bracket for a count-resolved charged finish, November 18.**
 If an independently count-confirmed faint follows one named player charge, a
@@ -993,6 +994,7 @@ recognition accuracy claim or implemented inference change.
 | CRY-02 — shortcut contradicted | Two different opponent species cries occur close together. | Open a bounded transition/identity check. | 1605 recording: Swampert entry at 97.740 s and Abomasnow entry at 101.217 s are an ordinary switch, with Swampert later returning alive. A 3.477 s gap overlaps confirmed KO-pair gaps of 2.240–4.970 s. This pair does not itself prove a faint. |
 | CRY-03 — implemented candidate; device trial pending | Source-ordered cry history has an established active species, then its cry repeats before a different species enters. | Treat the repeated active cry as a departure/faint candidate for corroboration. Match phase can distinguish opening entries. | In the non-mirror pilot this marked four reviewed faints and did not mark the two ordinary switches. Roster-to-side mapping came from video; missed cries, mirror sides and other cry contexts remain unvalidated. A final KO need not have a replacement cry. Elapsed match time alone does not distinguish mid-battle switches from KOs. |
 | CRY-06 — trainer proposal, November 15 | A correctly identified non-mirror cry belongs to the opponent's independently established last remaining active Pokémon, and its source-timed HP is below full. | Test treating the cry as sufficient faint evidence for that active appearance, without requiring a zero HP outline or a second cry. If it is an entrance with full HP, test classifying it as entry. | A previously damaged Pokémon can return to the field below full HP, including as the final survivor after a teammate faints. Require the active appearance and whether an entrance is in progress to be independently resolved; stale HP, missed entry cues, uncertain cry identification, HP animation, shields/charged moves, and incomplete resource counts can all make purpose ambiguous. Full HP alone does not prove entry. The trainer-confirmed Vaporeon ending is a positive case, not universal validation or a runtime rule change. |
+| CRY-06 — final active appearance, November 18 recording | A trusted one-ball badge establishes the last teammate. The Pokémon is already fighting in that appearance, and its own distinct cry accompanies departure after a received hit. | Count the departure as a faint. A bench switch is impossible. Keep the attack identity and KO credit as separate decisions. | Verify side and appearance. Its entrance cry, a mirror-species cry of uncertain origin, or the latest cry in an interrupted recording can still be ambiguous. In Moondrop match `78813508`, Vaporeon was active before the hit, cried at GO +80.718 s, then disappeared on video. This is a confirmed review example. |
 
 Trainer wording: “hearing vaporeon cry when its hp is not 100% should be enough
 for a faint by itself. a cry and full hp bar would be an entrance.” Here “by

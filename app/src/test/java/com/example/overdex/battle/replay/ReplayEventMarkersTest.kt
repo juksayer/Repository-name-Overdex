@@ -36,6 +36,7 @@ class ReplayEventMarkersTest {
         val replay = MatchReplayModel(archive)
         val faint = replay.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }
         assertEquals(10 * SECOND - ReplayKnockoutTrack.MIN_VISIBLE_KO_NANOS, faint.atNanos)
+        assertEquals(11 * SECOND, (faint.faintTiming as ReplayFaintTiming.Window).by.atNanos)
         assertEquals(11 * SECOND, faint.sourceAtNanos)
         assertTrue(faint.sourceArticleIds.contains("ko"))
         assertEquals("OPP", faint.sideLabel)

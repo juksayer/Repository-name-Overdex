@@ -37,17 +37,13 @@ class RecordedDarmanitanFinishTest {
             it.kind == ReplayEventMarkerKind.FAINT && it.finishingAttribution?.recipientSpeciesName == "Darmanitan"
         }
         val marker = faintMarker(replay)
-        val window = marker.faintTiming as ReplayFaintTiming.Window
+        val cryTime = (marker.faintTiming as ReplayFaintTiming.Cry).onset
         val go = requireNotNull(replay.matchStartNanos)
-        val lastAlive = requireNotNull(window.after)
-        assertEquals(93_444L, (lastAlive.atNanos - go) / 1_000_000L)
-        assertEquals(93_982L, (window.by.atNanos - go) / 1_000_000L)
-        assertEquals(go + 93_982_125_006L, window.by.atNanos)
-        assertEquals(link.moveSourceAtNanos, marker.atNanos)
-        assertEquals(data.cryId, window.by.articleId)
-        assertTrue(lastAlive.articleId in link.evidenceArticleIds)
-        assertEquals("KO window 1:33–1:34 from GO",
-            com.example.overdex.ui.screens.observatory.formatReplayFaintTime(window, go, replay.startNanos))
+        assertEquals(go + 93_982_125_006L, cryTime.atNanos)
+        assertEquals(cryTime.atNanos, marker.atNanos)
+        assertEquals(data.cryId, cryTime.articleId)
+        assertEquals("Faint cry at 01:33.9 from GO",
+            com.example.overdex.ui.screens.observatory.formatReplayFaintTime(marker.faintTiming, go, replay.startNanos))
         assertEquals(link,replay.sceneAt(link.impactAtNanos).fastMoveActions.single { it.side == "PLAYER" }.finishingAssociation)
         assertTrue(replay.sceneAt(link.faintSourceAtNanos).opponent!!.isFainted)
         assertFalse(replay.sceneAt(link.moveSourceAtNanos).opponent!!.isFainted)

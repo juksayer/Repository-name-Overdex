@@ -36,9 +36,9 @@ class ReplayFinishingAttributionTest {
         val markers = normal.eventMarkers.filter { it.finishingAttribution == link }
         assertEquals(setOf(ReplayEventMarkerKind.FAST_MOVE, ReplayEventMarkerKind.FAINT), markers.map { it.kind }.toSet())
         assertEquals("Faint · Sealeo · Incinerate by Camerupt", markers.single { it.kind == ReplayEventMarkerKind.FAINT }.label)
-        val faintTime = markers.single { it.kind == ReplayEventMarkerKind.FAINT }.faintTiming as ReplayFaintTiming.ZeroHp
-        assertEquals(HIT, faintTime.frame.atNanos)
-        assertTrue(faintTime.frame.articleId in link.reception.articleIds)
+        val faintTime = markers.single { it.kind == ReplayEventMarkerKind.FAINT }.faintTiming as ReplayFaintTiming.Window
+        assertEquals(HIT, faintTime.by.atNanos)
+        assertTrue(faintTime.by.articleId in link.reception.articleIds)
         assertEquals(faintTime, delayed.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }.faintTiming)
         assertEquals(before, MatchArchiveSerializer.serialize(archive))
     }
@@ -64,7 +64,7 @@ class ReplayFinishingAttributionTest {
         assertEquals("Faint · Sealeo · Earth Power by Camerupt",
             replay.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }.label)
         assertEquals(HIT, (replay.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }
-            .faintTiming as ReplayFaintTiming.ZeroHp).frame.atNanos)
+            .faintTiming as ReplayFaintTiming.Window).by.atNanos)
         replay.sceneAt(8*S)
         assertEquals(atLanding, replay.sceneAt(link.landingAtNanos))
         val delayed = MatchReplayModel(match(source.reversed().map { it.copy(recordedAt = 100_000L - it.perceivedAt) }))
@@ -117,7 +117,7 @@ class ReplayFinishingAttributionTest {
             assertTrue("last-ball" in link.evidenceArticleIds)
             assertNull(link.reception)
             val marker = replay.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }
-            assertEquals(3*S, marker.atNanos)
+            assertEquals(7*S, marker.atNanos)
             assertEquals(7*S, marker.sourceAtNanos)
         }
         val laterAttack = row("later-use", 6*S + S/2, ArchivedFastMoveUseObserved("new", "OPPONENT", "PLAYER",
@@ -143,7 +143,7 @@ class ReplayFinishingAttributionTest {
         assertNull(link.reception)
         assertEquals(link, replay.sceneAt(link.landingAtNanos).fastMoveActions.single().finishingAssociation)
         val marker = replay.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }
-        assertTrue(marker.atNanos < link.landingAtNanos)
+        assertEquals(7*S, marker.atNanos)
         assertEquals(7*S, marker.sourceAtNanos)
         val second = use.copy(articleId = "rival", payload = (use.payload as ArchivedFastMoveUseObserved).copy(useId = "other"))
         assertTrue(MatchReplayModel(match(listOf(badge, use, second, faint, won))).finishingAttributions.isEmpty())
@@ -280,6 +280,26 @@ class ReplayFinishingAttributionTest {
         val live = hp("one-pixel", 6*S + 10, .001f, "RED")
         assertEquals(ReplayFaintTiming.Window(ReplayTimeBound(6*S + 10, "one-pixel"), by), time(events + live))
         assertEquals(ReplayFaintTiming.Unknown, time(events + live.copy(monotonicTimeNanos = 7*S)))
+    }
+
+    @Test fun onlyOneSidedDepartureCryCanSetTheMarker() {
+        val live = hp("sliver", 5*S, .01f, "RED")
+        val sound = ArchivedBattleCryLocalized(364, "reference", .97f, S, "test")
+        val cry = row("heard", 6*S, sound, "LOCALIZED_BATTLE_CRY_WITNESS")
+        fun timing(vararg events: ArchivedRealityArticle) =
+            MatchReplayModel(match(listOf(live, faint) + events)).eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }
+        val expected = ReplayFaintTiming.Cry(ReplayTimeBound(6*S, "heard"))
+        assertEquals(expected, timing(cry).faintTiming)
+        assertEquals(6*S, timing(cry).atNanos)
+        assertEquals(expected, timing(cry.copy(recordedAt = 1000000)).faintTiming)
+        for (control in listOf(
+            listOf(cry.copy(payload = sound.copy(speciesId = 323))),
+            listOf(cry.copy(payload = sound.copy(correlation = .6f))),
+            listOf(cry.copy(monotonicTimeNanos = 2*S)),
+            listOf(cry, cry.copy(articleId = "second", monotonicTimeNanos = 6*S + S/2)),
+            listOf(cry, hp("still-alive", 6*S + S/2, .001f, "RED")),
+            listOf(cry, player(5*S, "Sealeo", 364)),
+        )) assertTrue(timing(*control.toTypedArray()).faintTiming is ReplayFaintTiming.Window)
     }
 
     private fun match(events: List<ArchivedRealityArticle>) = MatchArchive(matchId = "test",

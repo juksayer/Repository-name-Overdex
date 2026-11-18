@@ -1,9 +1,10 @@
 package com.example.overdex.battle.replay
 
-/** Capture time and original article for an endpoint. These values never schedule an animation. */
+/** Capture time and original article for an endpoint. Original observations keep their clocks independently of playback. */
 data class ReplayTimeBound(val atNanos: Long, val articleId: String)
 
 sealed interface ReplayFaintTiming {
+    data class Cry(val onset: ReplayTimeBound) : ReplayFaintTiming
     data class ZeroHp(val frame: ReplayTimeBound) : ReplayFaintTiming
     data class TrainerMark(val atNanos: Long) : ReplayFaintTiming
     data class Window(val after: ReplayTimeBound?, val by: ReplayTimeBound) : ReplayFaintTiming {

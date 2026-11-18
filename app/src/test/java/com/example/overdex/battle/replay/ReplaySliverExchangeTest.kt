@@ -20,6 +20,14 @@ class ReplaySliverExchangeTest {
         val impact = row("impact", 60L, changed)
         val sources = listOf(red, live, impact)
         assertEquals(impact, ReplaySliverExchange.changes(sources.reversed()).single().damage)
+        val bar = red.payload as ArchivedActiveHpBarMeasured
+        val unlabelled = red.copy(payload = bar.copy(fillColor = null))
+        assertEquals(unlabelled, ReplaySliverExchange.changes(listOf(unlabelled, live, impact)).single().liveMeasurement)
+        for (mismatch in listOf(unlabelled.copy(monotonicTimeNanos = 9),
+            unlabelled.copy(payload = bar.copy(fillColor = null, filledFraction = .12f)),
+            unlabelled.copy(payload = bar.copy(fillColor = null, barTop = bar.barTop + 1)))) {
+            assertTrue(ReplaySliverExchange.changes(listOf(mismatch, live, impact)).isEmpty())
+        }
         val survivor = row("survivor", 60L, changed.copy(status = "LIVE_COLOR", liveColumns = 1))
         assertTrue(ReplaySliverExchange.changes(sources + survivor).isEmpty())
         assertTrue(ReplaySliverExchange.changes((sources + survivor).reversed()).isEmpty())

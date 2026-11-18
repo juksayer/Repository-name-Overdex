@@ -54,6 +54,40 @@ class RecordedPixelIncinerateFinishesTest {
         assertEquals(expectedDigest, digest())
     }
 
+    @Test fun moondropLastVaporeonCryMarksItsOwnFaint() = review("OVERDEX_MOONDROP_CRY_ARCHIVE",
+        "0db534ad24460b1f77f9f2c8b5913ed229c922c3a6a903cb64f05fd74eba29d2") { f ->
+        val model = f.replay()
+        val go = requireNotNull(model.matchStartNanos)
+        val cry = f.archive.articles.single { it.payload is ArchivedBattleCryLocalized &&
+            it.monotonicTimeNanos == go + 80_718_263_159L }
+        val faint = model.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT && "Vaporeon" in it.label }
+        assertEquals(ReplayFaintTiming.Cry(ReplayTimeBound(cry.monotonicTimeNanos!!, cry.articleId)), faint.faintTiming)
+        assertEquals(cry.monotonicTimeNanos, faint.atNanos)
+        assertTrue(cry.articleId in faint.sourceArticleIds)
+        assertTrue(model.sceneAt(faint.atNanos).opponent!!.isFainted)
+        val sealeo = model.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT && "Sealeo" in it.label }
+        assertEquals("Camerupt", sealeo.finishingAttribution?.attackerSpeciesName)
+        assertTrue(requireNotNull(sealeo.finishingAttribution).moveSourceAtNanos > go + 57_000_000_000L)
+        val atLanding = model.sceneAt(go + 79_800_865_005L)
+        val hit = atLanding.fastMoveActions.single { it.side == "PLAYER" && it.moveName == "Incinerate" }
+        assertEquals(1f, hit.progress, .001f)
+        assertFalse(atLanding.opponent!!.isFainted)
+        assertNotNull("Incinerate must receive credit for Vaporeon", hit.finishingAssociation)
+        assertEquals(faint.finishingAttribution, hit.finishingAssociation)
+        assertEquals(faint, f.replay(f.archive.copy(articles = f.archive.articles.reversed())).eventMarkers
+            .single { it.kind == ReplayEventMarkerKind.FAINT && "Vaporeon" in it.label })
+        val afterCharge = f.archive.articles.single { it.sourceId == "CHARGED_IMPACT_OPPONENT_HP_BAR_FRAME_WITNESS" &&
+            it.monotonicTimeNanos == go + 77_432_876_313L }
+        val ambiguous = f.replay(f.archive.copy(articles = f.archive.articles - afterCharge))
+        assertTrue(ambiguous.eventMarkers.any { it.kind == ReplayEventMarkerKind.FAINT && "Vaporeon" in it.label })
+        assertFalse(ambiguous.finishingAttributions.any { it.recipientSpeciesName == "Vaporeon" })
+        val withoutLocalization = f.replay(f.archive.copy(articles = f.archive.articles - cry)).eventMarkers
+            .single { it.kind == ReplayEventMarkerKind.FAINT && "Vaporeon" in it.label }
+        val window = withoutLocalization.faintTiming as ReplayFaintTiming.Window
+        assertTrue(requireNotNull(window.after).atNanos < faint.atNanos && faint.atNanos <= window.by.atNanos)
+        assertEquals(window.by.atNanos, withoutLocalization.atNanos)
+    }
+
     @Test fun pixelFinishesAndConflictingEvidence() = review("OVERDEX_PIXEL_INCINERATE_ARCHIVE",
         "7750b6a15daf43fd377e1dd1e4ec854a55a537d01703ca2757f91997ef25b10a") { f ->
         val model = f.replay()
@@ -89,8 +123,7 @@ class RecordedPixelIncinerateFinishesTest {
             assertEquals(1f, landed.progress, .001f)
             assertTrue(at.chargedMoveActions.isEmpty())
             assertEquals(false, at.opponent?.isFainted)
-            assertEquals(landed.startedAtNanos, faint.atNanos)
-            assertEquals(false, model.sceneAt(faint.atNanos).opponent?.isFainted)
+            assertEquals(bounds.by.atNanos, faint.atNanos)
             assertEquals(true, model.sceneAt(bounds.by.atNanos).opponent?.isFainted)
             assertEquals(at, model.sceneAt(attack.atNanos))
         }

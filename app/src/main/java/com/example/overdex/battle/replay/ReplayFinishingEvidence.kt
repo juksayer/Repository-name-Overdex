@@ -14,6 +14,7 @@ internal class ReplayFinishingEvidence(
     private val actorAt: (String, Long) -> ReplayCombatant?,
     private val appearanceAt: (String, Long) -> Long,
     private val nextAppearance: (String, Long) -> Long?,
+    private val recoveredCries: List<ReplayRecoveredCry> = emptyList(),
 ) {
     private val articles = source.filter { it.monotonicTimeNanos != null }
         .groupBy { it.articleId }.values.mapNotNull { it.distinct().singleOrNull() }
@@ -30,21 +31,51 @@ internal class ReplayFinishingEvidence(
     fun faintTiming(
         knockout: ReplayKnockout?, link: ReplayFinishingAttribution?,
     ): ReplayFaintTiming {
-        link?.reception?.let { hit ->
-            hit.articleIds.firstOrNull { byId[it]?.monotonicTimeNanos == hit.atNanos }?.let { id ->
-                return ReplayFaintTiming.ZeroHp(ReplayTimeBound(hit.atNanos, id))
-            }
-        }
-        val timing = knockout?.timing
-        if (timing is ReplayFaintTiming.ZeroHp) return timing
-        val countWindow = timing as? ReplayFaintTiming.Window
-        val by = listOfNotNull(countWindow?.by, link?.departedBy).minByOrNull { it.atNanos }
-            ?: return ReplayFaintTiming.Unknown
         val side = knockout?.side ?: link?.recipientSide ?: return ReplayFaintTiming.Unknown
         val appearance = knockout?.appearanceAtNanos ?: link?.recipientAppearanceAtNanos ?: return ReplayFaintTiming.Unknown
+        val countWindow = knockout?.timing as? ReplayFaintTiming.Window
+        val reception = link?.reception
+        val zero = reception?.articleIds?.firstOrNull { byId[it]?.monotonicTimeNanos == reception.atNanos }
+            ?.let { ReplayTimeBound(reception.atNanos, it) } ?: (knockout?.timing as? ReplayFaintTiming.ZeroHp)?.frame
+        val by = listOfNotNull(zero, countWindow?.by, link?.departedBy).minByOrNull { it.atNanos }
+            ?: return ReplayFaintTiming.Unknown
         val live = lastLiveBar(side, appearance)
         val after = listOfNotNull(countWindow?.after, live).maxByOrNull { it.atNanos }
+
+        // A partial reference match gives a by-time. Promote it to an onset only
+        // when an independent localization identifies the same departure.
+        val departure = localizedCries.filter { row ->
+            val at = row.monotonicTimeNanos!!
+            val cry = row.payload as ArchivedBattleCryLocalized
+            val other = if (side == "PLAYER") "OPPONENT" else "PLAYER"
+            val otherId = actorAt(other, at)?.speciesId
+            if (actorAt(side, at)?.speciesId != cry.speciesId || otherId == null || otherId == cry.speciesId ||
+                appearanceAt(side, at) != appearance || (after != null && at <= after.atNanos)) return@filter false
+            val cited = row.articleId == link?.departedBy?.articleId || row.articleId in knockout?.sourceArticleIds.orEmpty()
+            val upper = if (zero != null) by.atNanos + 2_000_000_000L else by.atNanos
+            val bounded = live != null && at in (by.atNanos - 2_000_000_000L)..upper
+            (cited || bounded) && articles.none { a ->
+                a.monotonicTimeNanos!! in minOf(at, by.atNanos)..maxOf(at, by.atNanos) &&
+                    (a.payload is ArchivedObservationSessionStoppedByUser || a.payload is ArchivedScreenIgnoredByUser ||
+                        a.payload is ArchivedObservationRestartedByUser)
+            }
+        }.singleOrNull()
+        if (departure != null) return ReplayFaintTiming.Cry(ReplayTimeBound(departure.monotonicTimeNanos!!, departure.articleId))
+        if (link?.basis == ReplayTerminalAudioAssociation.BASIS) {
+            // When the archive retained the start of the reference waveform, the
+            // first sample of that match gives an audible onset on the clip clock.
+            val cry = recoveredCries.singleOrNull { it.estimatedOnsetNanos == link.landingAtNanos &&
+                it.speciesId == actorAt(side, it.estimatedOnsetNanos)?.speciesId }
+            val first = cry?.fragments?.filter { it.referenceOffsetNanos == 0L && it.articleId in link.faintArticleIds }
+                ?.minByOrNull { it.captureAtNanos + it.queryOffsetNanos }
+            if (first != null) return ReplayFaintTiming.Cry(ReplayTimeBound(first.captureAtNanos + first.queryOffsetNanos, first.articleId))
+        }
         return ReplayFaintTiming.window(after, by)
+    }
+
+    private val localizedCries = articles.filter {
+        val cry = it.payload as? ArchivedBattleCryLocalized
+        cry != null && cry.correlation in .95f..1f && cry.durationNanos > 0 && cry.referenceSha256.isNotBlank()
     }
 
     private fun lastLiveBar(side: String, appearance: Long): ReplayTimeBound? {
@@ -393,12 +424,25 @@ internal class ReplayFinishingEvidence(
                 appearanceAt(link.attackingSide, it.impactAtNanos) == owner &&
                 appearanceAt(link.recipientSide, it.impactAtNanos) == link.recipientAppearanceAtNanos &&
                 it.witness.articleIds.none(ownIds::contains)
-        } && otherCharges.none {
-            (it.side == link.attackingSide || it.side !in SIDES || !it.uniquelyOwned) &&
-                it.sourceAtNanos <= competingUntil && it.impactAtNanos >= competingFrom &&
-                appearanceAt(link.attackingSide, it.sourceAtNanos) == owner &&
-                appearanceAt(link.recipientSide, it.sourceAtNanos) == link.recipientAppearanceAtNanos &&
-                (it.side !in SIDES || !it.uniquelyOwned || !blocked(it, link.recipientSide, through))
+        } && otherCharges.none { other ->
+            val overlaps = (other.side == link.attackingSide || other.side !in SIDES || !other.uniquelyOwned) &&
+                other.sourceAtNanos <= competingUntil && other.impactAtNanos >= competingFrom &&
+                appearanceAt(link.attackingSide, other.sourceAtNanos) == owner &&
+                appearanceAt(link.recipientSide, other.sourceAtNanos) == link.recipientAppearanceAtNanos
+            if (!overlaps) return@none false
+            // A living bar between this charge's impact and the independently
+            // supported Fast Move impact rules out the charge as the finisher.
+            val survived = link.basis == ReplaySliverExchange.BASIS && other.uniquelyOwned &&
+                other.side == link.attackingSide && other.sourceAtNanos < link.moveSourceAtNanos &&
+                other.impactAtNanos < receipt && articles.any { row ->
+                    val bar = row.payload as? ArchivedActiveHpBarMeasured
+                    row.sourceId == "CHARGED_IMPACT_${link.recipientSide}_HP_BAR_FRAME_WITNESS" &&
+                        bar?.side == link.recipientSide && row.monotonicTimeNanos!! in other.sourceAtNanos until link.moveSourceAtNanos &&
+                        appearanceAt(link.recipientSide, row.monotonicTimeNanos) == link.recipientAppearanceAtNanos &&
+                        hp.confirmsLiveHp(row)
+                } && hasLivingHpAfter(link.recipientSide, link.recipientAppearanceAtNanos,
+                    other.impactAtNanos + 1, receipt - 1)
+            !survived && (other.side !in SIDES || !other.uniquelyOwned || !blocked(other, link.recipientSide, through))
         }
     }
 

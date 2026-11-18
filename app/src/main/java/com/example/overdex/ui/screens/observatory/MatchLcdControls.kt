@@ -193,6 +193,7 @@ internal fun formatReplayFaintTime(timing: ReplayFaintTiming?, matchStart: Long?
     }
     fun measured(at: Long) = (if (at < origin) "−" else "") + formatReplayTime(kotlin.math.abs(at - origin))
     return when (timing) {
+        is ReplayFaintTiming.Cry -> "Faint cry at ${measured(timing.onset.atNanos)} $clock"
         is ReplayFaintTiming.ZeroHp -> "0 HP at ${measured(timing.frame.atNanos)} $clock"
         is ReplayFaintTiming.TrainerMark -> "Trainer mark ${measured(timing.atNanos)} $clock"
         is ReplayFaintTiming.Window -> {

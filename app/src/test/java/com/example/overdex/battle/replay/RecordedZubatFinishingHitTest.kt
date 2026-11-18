@@ -36,7 +36,10 @@ class RecordedZubatFinishingHitTest {
         val markers = model.eventMarkers.filter { it.finishingAttribution == link }
         assertEquals(2, markers.size)
         assertEquals(setOf(ReplayEventMarkerKind.CHARGED_MOVE, ReplayEventMarkerKind.FAINT), markers.map { it.kind }.toSet())
-        assertTrue(markers.single { it.kind == ReplayEventMarkerKind.FAINT }.atNanos <= action.startedAtNanos)
+        val faint = markers.single { it.kind == ReplayEventMarkerKind.FAINT }
+        val window = faint.faintTiming as ReplayFaintTiming.Window
+        assertTrue(faint.atNanos in link.landingAtNanos..window.by.atNanos)
+        assertTrue(model.sceneAt(faint.atNanos).opponent!!.isFainted)
         assertEquals("Faint · Zubat · Dragon Claw by Turtonator",
             model.eventMarkers.single { it.finishingAttribution == link && it.kind == ReplayEventMarkerKind.FAINT }.label)
         model.sceneAt(model.endNanos)

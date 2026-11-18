@@ -4,11 +4,12 @@ import com.example.overdex.battle.archive.*
 import com.example.overdex.battle.observation.isSideLocatedSpeciesSource
 import com.example.overdex.model.Move
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /** The change is evidence of damage. Even a complete outline may have an unreadable interior. */
 internal data class ReplaySliverChange(
     val live: ArchivedRealityArticle,
-    val red: ArchivedRealityArticle,
+    val liveMeasurement: ArchivedRealityArticle,
     val damage: ArchivedRealityArticle,
 ) {
     val at get() = damage.monotonicTimeNanos!!
@@ -36,8 +37,8 @@ internal object ReplaySliverExchange {
         // Conflicting measurements at one capture time break the sequence in either publication order.
         fun unambiguous(frame: List<ArchivedRealityArticle>): ArchivedRealityArticle? =
             frame.minBy { it.articleId }.takeIf { a -> frame.all { it.payload == a.payload && reliable(it) } }
-        val red = rows.filter { a -> val p = a.payload as? ArchivedActiveHpBarMeasured
-            p?.side == "OPPONENT" && p.fillColor == "RED" && p.filledFraction > 0 && p.filledFraction <= .15f &&
+        val smallBars = rows.filter { a -> val p = a.payload as? ArchivedActiveHpBarMeasured
+            p?.side == "OPPONENT" && (p.fillColor == "RED" || p.fillColor == null) && p.filledFraction > 0 && p.filledFraction <= .15f &&
                 a.monotonicTimeNanos != null && reliable(a) }.sortedBy { it.monotonicTimeNanos }
         return profiles.zipWithNext().mapNotNull { (earlier, later) ->
             val live = unambiguous(earlier) ?: return@mapNotNull null
@@ -49,9 +50,14 @@ internal object ReplaySliverExchange {
                 a.barLeft < a.sourceWidth / 2 || a.status != "LIVE_COLOR" || a.liveColumns !in 1..(a.interiorColumns / 8) ||
                 b.liveColumns != 0 || b.damageColumns < maxOf(2, a.liveColumns - 1) ||
                 b.status !in setOf("DAMAGE_COLOR", "SUSTAINED_DAMAGE_COLOR", "UNRESOLVED_COLOR")) return@mapNotNull null
-            val confirmed = red.lastOrNull { r ->
+            val confirmed = smallBars.lastOrNull { r ->
                 val p = r.payload as ArchivedActiveHpBarMeasured
-                r.monotonicTimeNanos!! in (at - SECOND) until at && p.sourceWidth == b.sourceWidth &&
+                // A legacy unlabelled fill still corroborates the live columns if its
+                // geometry agrees on the same source frame, within two fill columns.
+                val agrees = p.fillColor == "RED" || (r.monotonicTimeNanos == live.monotonicTimeNanos &&
+                    p.barLeft == a.barLeft && p.barRight == a.barRight && p.barTop == a.barTop && p.barBottom == a.barBottom &&
+                    abs((p.filledFraction * a.interiorColumns).roundToInt() - a.liveColumns) <= 2)
+                agrees && r.monotonicTimeNanos!! in (at - SECOND) until at && p.sourceWidth == b.sourceWidth &&
                     p.sourceHeight == b.sourceHeight && abs(p.barLeft - b.barLeft) <= 2 &&
                     abs(p.barRight - b.barRight) <= 2 && abs(p.barTop - b.barTop) <= 2 * (b.barBottom - b.barTop)
             } ?: return@mapNotNull null
@@ -133,11 +139,11 @@ internal object ReplaySliverExchange {
             !sameExchange(change.live.monotonicTimeNanos!!, at) ||
             ordinary.any { c -> c.witness.side == "PLAYER" &&
                 (c.witness.observedAtNanos in start..at || c.impactAtNanos in start..at) }) return@mapNotNull null
-        val refs = sound.fragments.map { it.articleId } + listOf(change.live.articleId, change.red.articleId, change.damage.articleId)
+        val refs = sound.fragments.map { it.articleId } + listOf(change.live.articleId, change.liveMeasurement.articleId, change.damage.articleId)
         val move = possible.first { it.name == name }
         ReplayFastMoveCycle(ReplayFastMoveWitness("PLAYER", at, name, move.type, at - start, start,
             at + 120_000_000L, setOf("FAST_EFFECT_AND_COMPLETE_BAR_COLOR_CHANGE"),
-            refs.toSet(), setOf(start, at, change.live.monotonicTimeNanos!!, change.red.monotonicTimeNanos!!) +
+            refs.toSet(), setOf(start, at, change.live.monotonicTimeNanos!!, change.liveMeasurement.monotonicTimeNanos!!) +
                 sound.fragments.map { it.captureAtNanos }), start, at)
     }.groupBy { it.startedAtNanos }.values.mapNotNull { it.singleOrNull() }
 
@@ -161,15 +167,22 @@ internal object ReplaySliverExchange {
                 it.fragments.isNotEmpty() && it.estimatedOnsetNanos in at..minOf(end, at + 2 * SECOND) } ?: return@mapNotNull null
             val cryAt = cry.estimatedOnsetNanos
             val since = appearanceAt("OPPONENT", at)
-            val lastLive = change.red.monotonicTimeNanos!!
+            val lastLive = change.liveMeasurement.monotonicTimeNanos!!
             if (listOf(change.live, change.damage).any { row ->
                     (row.payload as ArchivedCompleteHpBarObserved).appearanceStartedAtNanos?.let { appearance ->
                         appearance !in since..row.monotonicTimeNanos!!
                     } == true
                 }) return@mapNotNull null
             val fragment = cry.fragments.minBy { it.captureAtNanos + it.queryOffsetNanos }
-            val by = ReplayTimeBound(fragment.captureAtNanos + fragment.queryOffsetNanos, fragment.articleId)
-            if (by.atNanos !in cryAt..end || appearanceAt("OPPONENT", minOf(change.live.monotonicTimeNanos!!, lastLive)) != since ||
+            val localized = rows.singleOrNull { row ->
+                val sound = row.payload as? ArchivedBattleCryLocalized
+                sound?.speciesId == target.speciesId && sound.correlation in .95f..1f &&
+                    abs(row.monotonicTimeNanos!! - cryAt) <= 50_000_000L &&
+                    cry.fragments.any { it.referenceSha256 == sound.referenceSha256 }
+            }
+            val by = localized?.let { ReplayTimeBound(it.monotonicTimeNanos!!, it.articleId) }
+                ?: ReplayTimeBound(fragment.captureAtNanos + fragment.queryOffsetNanos, fragment.articleId)
+            if (by.atNanos !in at..end || appearanceAt("OPPONENT", minOf(change.live.monotonicTimeNanos!!, lastLive)) != since ||
                 appearanceAt("OPPONENT", by.atNanos) != since || actorAt("PLAYER", cryAt)?.speciesId == target.speciesId ||
                 hasLivingHp("OPPONENT", since, at, end)) return@mapNotNull null
             val known = knockouts.singleOrNull { it.side == "OPPONENT" && it.appearanceAtNanos == since &&
@@ -183,9 +196,9 @@ internal object ReplaySliverExchange {
                     is ArchivedChargedMoveEnergySpent, is ArchivedChargeMoveUsedAnnounced -> true
                     else -> isReplayPlayerChargeCue(r) || isReplayAttackIncomingCue(r)
                 } }) return@mapNotNull null
-            val cryIds = cry.fragments.map { it.articleId }
-            val colorIds = listOf(change.red.articleId, change.live.articleId, change.damage.articleId)
-            val timing = ReplayFaintTiming.window(ReplayTimeBound(lastLive, change.red.articleId), by)
+            val cryIds = cry.fragments.map { it.articleId } + listOfNotNull(localized?.articleId)
+            val colorIds = listOf(change.liveMeasurement.articleId, change.live.articleId, change.damage.articleId)
+            val timing = ReplayFaintTiming.window(ReplayTimeBound(lastLive, change.liveMeasurement.articleId), by)
             val faint = if (known != null) {
                 if (known.verifiedPokeBallsAfter !in 1..2 || known.sourceArticleIds.isEmpty() ||
                     known.replacementAtNanos?.let { it - cryAt in 0..(4 * SECOND) } != true ||

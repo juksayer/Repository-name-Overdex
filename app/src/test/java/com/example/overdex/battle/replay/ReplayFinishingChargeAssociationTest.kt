@@ -31,9 +31,11 @@ class ReplayFinishingChargeAssociationTest {
             assertFalse(model.sceneAt(requireNotNull(link.replacementAtNanos)).opponent!!.isFainted)
             assertEquals(impact, model.sceneAt(link.presentationImpactAtNanos)) // reverse scrub
             val marker = model.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT && it.finishingAttribution == link }
-            assertTrue(marker.atNanos <= link.moveSourceAtNanos)
+            val window = marker.faintTiming as ReplayFaintTiming.Window
+            assertTrue(marker.atNanos in link.landingAtNanos..window.by.atNanos)
+            assertTrue(model.sceneAt(marker.atNanos).opponent!!.isFainted)
             assertEquals(link.faintSourceAtNanos, marker.sourceAtNanos)
-            assertEquals(link.evidenceArticleIds, marker.sourceArticleIds)
+            assertTrue(marker.sourceArticleIds.containsAll(link.evidenceArticleIds))
             val chargeMarker = model.eventMarkers.single { it.kind == ReplayEventMarkerKind.CHARGED_MOVE &&
                 it.sourceAtNanos == link.moveSourceAtNanos }
             assertTrue(chargeMarker.label.endsWith(" · KO"))
