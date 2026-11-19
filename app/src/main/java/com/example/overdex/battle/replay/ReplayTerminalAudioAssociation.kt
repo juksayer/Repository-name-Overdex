@@ -1,5 +1,6 @@
 package com.example.overdex.battle.replay
 
+import com.example.overdex.battle.BattleSpeciesDisplay
 import com.example.overdex.battle.archive.*
 import com.example.overdex.battle.inference.TerminalCollapseSequences
 import com.example.overdex.battle.inference.TerminalEffectFrame
@@ -8,6 +9,8 @@ import com.example.overdex.battle.inference.TerminalEffectFrame
 internal object ReplayTerminalAudioAssociation {
     const val BASIS = "RECOVERED_CHARGE_AND_PARTIAL_CRY_WITH_LAST_SURVIVOR_AND_RESULT"
     const val ANNOUNCED = "ANNOUNCED_CHARGE_AND_LAST_OPPONENT_DEPARTURE_CRY"
+
+    const val ANNOUNCED_PARTIAL = "ANNOUNCED_CHARGE_AND_PARTIAL_CRY_DURING_RECIPIENT_COLLAPSE"
 
     fun announcedFinish(
         rows: List<ArchivedRealityArticle>,
@@ -18,15 +21,21 @@ internal object ReplayTerminalAudioAssociation {
         nextAppearance: (String, Long) -> Long?,
         witnessedDamagedBar: (ArchivedRealityArticle, String, Long) -> Boolean = { _, _, _ -> false },
     ): ReplayFinishingChargeAssociation? {
-        if (recovery.terminalWholeCries.isEmpty()) return null
+        if (recovery.terminalWholeCries.isEmpty() && recovery.partialCryCandidates.isEmpty()) return null
         val ordered = rows.filter { it.monotonicTimeNanos != null }
             .sortedWith(compareBy<ArchivedRealityArticle> { it.monotonicTimeNanos }.thenBy { it.articleId })
         val results = ordered.filter { it.payload is ArchivedMatchEnded }
         if (results.any { (it.payload as ArchivedMatchEnded).result != "WIN" }) return null
         val result = results.firstOrNull() ?: return null
         val end = result.monotonicTimeNanos!!
-        val cry = recovery.terminalWholeCries.filter { end - it.estimatedOnsetNanos in 0..20 * S }
-            .distinctBy { it.speciesId to it.estimatedOnsetNanos }.singleOrNull() ?: return null
+        val wholeCries = recovery.terminalWholeCries.filter { end - it.estimatedOnsetNanos in 0..20 * S }
+            .distinctBy { it.speciesId to it.estimatedOnsetNanos }
+        if (wholeCries.size > 1) return null
+        val cry = wholeCries.singleOrNull() ?: recovery.partialCryCandidates.singleOrNull { candidate ->
+            end - candidate.estimatedOnsetNanos in 0..20 * S && charges.any {
+                candidate.estimatedOnsetNanos - it.sourceAtNanos in 0..5 * S
+            }
+        } ?: return null
         val at = cry.estimatedOnsetNanos
         val charge = charges.singleOrNull {
             it.completed && it.uniquelyOwned && it.side == "PLAYER" && at - it.sourceAtNanos in 0..5 * S
@@ -40,7 +49,7 @@ internal object ReplayTerminalAudioAssociation {
         val named = ordered.singleOrNull { row ->
             val move = row.payload as? ArchivedChargedMoveEnergySpent
             row.articleId in charge.articleIds && move?.side == "PLAYER" &&
-                move.moveName == charge.moveName && move.speciesName == owner.speciesName
+                move.moveName == charge.moveName && BattleSpeciesDisplay.name(move.speciesName) == BattleSpeciesDisplay.name(owner.speciesName)
         } ?: return null
         val badges = ordered.filter { row ->
             val count = row.payload as? ArchivedOpponentBattleResourceCountMeasured
@@ -73,6 +82,31 @@ internal object ReplayTerminalAudioAssociation {
                 core.area >= .005 * frame.sourceWidth * frame.sourceHeight
             }
         }.singleOrNull()
+        if (cry is ReplayPartialCryCandidate) {
+            val flash = departure ?: return null
+            val expected = "${BattleSpeciesDisplay.name(owner.speciesName)} used ${charge.moveName}"
+            val announcement = ordered.firstOrNull { row ->
+                row.sourceId == "ANNOUNCEMENT_WITNESS" && row.articleId in named.predecessorIds &&
+                    (row.payload as? ArchivedRawText)?.value?.trim()?.trimEnd('!', '.')?.equals(expected, true) == true
+            } ?: return null
+            // Only the captured part of the cry can corroborate a flash. The
+            // back-projected onset can precede the clip by over a second.
+            val overlaps = cry.fragments.any { fragment ->
+                val begin = fragment.captureAtNanos + fragment.queryOffsetNanos
+                begin < flash.clearedAt && begin + fragment.durationNanos > flash.startedAt
+            }
+            if (!overlaps) return null
+            val clearFrame = phases.values.flatten().flatten().firstOrNull {
+                it.sample.sourceAtNanos == flash.clearedAt && it.articleId in flash.evidenceReferences
+            } ?: return null
+            val refs = cry.fragments.map { it.articleId } + flash.evidenceReferences + listOf(badge.articleId, result.articleId)
+            return ReplayFinishingChargeAssociation(
+                "PLAYER", owner.speciesName, appearanceAt("PLAYER", start),
+                "OPPONENT", target.speciesName, appearanceAt("OPPONENT", start), charge.moveName,
+                start, flash.clearedAt, flash.startedAt, null, (charge.articleIds + announcement.articleId).toList(), refs.distinct(),
+                emptyList(), ANNOUNCED_PARTIAL, departedBy = ReplayTimeBound(flash.clearedAt, clearFrame.articleId),
+            )
+        }
         val departureRefs = departure?.evidenceReferences ?: run {
             // During an established appearance a second capture can corroborate
             // the same cry when the departure flash is incomplete. It is one cry.

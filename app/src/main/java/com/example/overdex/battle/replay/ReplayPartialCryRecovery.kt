@@ -8,11 +8,11 @@ import kotlin.math.abs
 
 /** A partial sound match, not evidence of the cry's side or reason. */
 data class ReplayPartialCryCandidate(
-    val speciesId: Int,
-    val estimatedOnsetNanos: Long,
-    val fragments: List<ReplayAudioFragment>,
+    override val speciesId: Int,
+    override val estimatedOnsetNanos: Long,
+    override val fragments: List<ReplayAudioFragment>,
     val competingScore: Float,
-)
+) : ReplayCryMatch
 
 /** Compare two nonoverlapping reference fragments at a shared source-time onset. */
 internal object ReplayPartialCryRecovery {

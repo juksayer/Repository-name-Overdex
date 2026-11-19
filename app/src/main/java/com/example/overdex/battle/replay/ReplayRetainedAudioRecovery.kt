@@ -17,8 +17,13 @@ data class ReplayRecoveredCharge(val moveName: String, val estimatedOnsetNanos: 
     val fragments: List<ReplayAudioFragment>)
 /** Acoustic Fast effect candidate only: ownership, use count and cadence remain unresolved. */
 data class ReplayRecoveredFastEffect(val moveName: String, val estimatedOnsetNanos: Long, val fragments: List<ReplayAudioFragment>)
-data class ReplayRecoveredCry(val speciesId: Int, val estimatedOnsetNanos: Long, val referenceDurationNanos: Long,
-    val fragments: List<ReplayAudioFragment>)
+sealed interface ReplayCryMatch {
+    val speciesId: Int
+    val estimatedOnsetNanos: Long
+    val fragments: List<ReplayAudioFragment>
+}
+data class ReplayRecoveredCry(override val speciesId: Int, override val estimatedOnsetNanos: Long, val referenceDurationNanos: Long,
+    override val fragments: List<ReplayAudioFragment>) : ReplayCryMatch
 data class ReplayAudioRecovery(val charges: List<ReplayRecoveredCharge> = emptyList(),
     val cries: List<ReplayRecoveredCry> = emptyList(), val unavailableReferences: List<String> = emptyList(),
     val unavailableArtifacts: List<String> = emptyList(),

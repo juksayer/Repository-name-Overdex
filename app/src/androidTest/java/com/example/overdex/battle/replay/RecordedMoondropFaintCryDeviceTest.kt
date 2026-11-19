@@ -46,6 +46,57 @@ class RecordedMoondropFaintCryDeviceTest {
         assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
     }
 
+    @Test fun seedBombLandsBeforeVaporeonsPartialCryAndFlashFaint() = review(
+        "recordedMoondropSeedBomb", "2026-11-19_00-10-32_af45f682-e90e-477b-8192-19df8500b7ad.odxmatch.zip",
+        "d1fff5da3571cdeb4ec05d5e1b6e49954bbd3e68c4c4d7b393a5f6f0fa9c69d5",
+        controls = { archive, audio, model ->
+            fun uncredited(input: MatchArchive = archive, sound: ReplayAudioRecovery = audio) {
+                val replay = model(input, sound)
+                assertTrue(replay.finishingAttributions.none { it.recipientSpeciesName == "Vaporeon" })
+                assertTrue(replay.eventMarkers.none { it.kind == ReplayEventMarkerKind.FAINT && "Vaporeon" in it.label })
+            }
+            val tail = audio.partialCryCandidates.single { c -> c.fragments.any { it.articleId == "73250def-3107-417a-968b-a32e34d520f7" } }
+            assertTrue(tail.fragments.all { it.correlation > .99f } && tail.competingScore < .15f)
+            uncredited(sound = audio.copy(partialCryCandidates = emptyList()))
+            uncredited(archive.copy(articles = archive.articles.filterNot { it.payload is ArchivedTerminalParticleObservations }))
+            // Same predicted onset, but the actual matched samples precede the flash.
+            val earlierTail = tail.copy(fragments = tail.fragments.map {
+                it.copy(captureAtNanos = it.captureAtNanos - 800_000_000L, referenceOffsetNanos = it.referenceOffsetNanos - 800_000_000L)
+            })
+            uncredited(sound = audio.copy(partialCryCandidates = listOf(earlierTail)))
+            val earlier = archive.articles.first { (it.payload as? ArchivedActivePokemonSpeciesWitnessed)?.speciesName == "Sealeo" }
+            val switch = earlier.copy(articleId = "living-switch", monotonicTimeNanos = tail.estimatedOnsetNanos)
+            val vaporeon = archive.articles.first { (it.payload as? ArchivedActivePokemonSpeciesWitnessed)?.speciesName == "Vaporeon" }
+            val back = vaporeon.copy(articleId = "living-return", monotonicTimeNanos = tail.estimatedOnsetNanos + 500_000_000L)
+            uncredited(archive.copy(articles = archive.articles + switch))
+            uncredited(archive.copy(articles = archive.articles + switch + back))
+            val live = archive.articles.last { (it.payload as? ArchivedCompleteHpBarObserved)?.let { bar ->
+                bar.side == "OPPONENT" && bar.status == "LIVE_COLOR" } == true }
+            uncredited(archive.copy(articles = archive.articles + live.copy(articleId = "surviving-hp",
+                monotonicTimeNanos = tail.estimatedOnsetNanos + 2_000_000_000L,
+                payload = (live.payload as ArchivedCompleteHpBarObserved).copy(appearanceStartedAtNanos = vaporeon.monotonicTimeNanos))))
+        }
+    ) { model ->
+        val go = requireNotNull(model.matchStartNanos)
+        val faint = model.eventMarkers.single { it.label == "Faint · Vaporeon · Seed Bomb by Gourgeist" }
+        val link = requireNotNull(faint.finishingAttribution)
+        assertTrue(faint.faintTiming is ReplayFaintTiming.Window)
+        assertEquals(77.367, (faint.atNanos - go) / 1e9, .002)
+        assertEquals(76.871, (link.landingAtNanos - go) / 1e9, .002)
+        assertNull(link.reception)
+        assertTrue(link.faintArticleIds.containsAll(listOf("73250def-3107-417a-968b-a32e34d520f7",
+            "38efc694-bd7f-46f7-b063-dc44f14073b5")))
+        assertEquals(1, model.eventMarkers.count { it.kind == ReplayEventMarkerKind.CHARGED_MOVE && it.finishingAttribution == link })
+        val landing = model.sceneAt(link.landingAtNanos)
+        val action = landing.chargedMoveActions.single { it.finishingAssociation == link }
+        assertEquals("Seed Bomb", action.moveName)
+        assertEquals("Vaporeon", landing.opponent!!.speciesName)
+        assertEquals(1f, ReplayChargePose.at(action, true).projectileProgress, 0f)
+        assertFalse(landing.opponent!!.isFainted)
+        assertTrue(model.sceneAt(faint.atNanos).opponent!!.isFainted)
+        assertEquals(landing, model.sceneAt(link.landingAtNanos))
+    }
+
     @Test fun nightSlashLandsBeforeCradilysFullCry() = review(
         "recordedMoondropCradily", "2026-11-19_00-13-40_2329d744-dca0-440f-ae4a-8b7e82220806.odxmatch.zip",
         "6b197d6e08401638953d9018d39537152b3aaf79a57c018a3a355b2c0757b5ac",

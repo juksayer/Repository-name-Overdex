@@ -45,6 +45,29 @@ class ReplayPartialCryRecoveryTest {
         assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
     }
 
+    @Test fun `Seed Bomb ending distinguishes Vaporeon from move sounds and abstains on a tie`() {
+        val path = System.getenv("OVERDEX_SEED_BOMB_PARTIAL_CRY_ARCHIVE")
+        assumeTrue(!path.isNullOrBlank())
+        val file = File(requireNotNull(path))
+        val hash = "d1fff5da3571cdeb4ec05d5e1b6e49954bbd3e68c4c4d7b393a5f6f0fa9c69d5"
+        assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
+        ZipFile(file).use { zip ->
+            val timeline = zip.getInputStream(zip.getEntry("timeline.json")).bufferedReader().use { it.readText() }
+            val article = MatchArchiveSerializer.deserialize(timeline).articles.single { it.articleId == "73250def-3107-417a-968b-a32e34d520f7" }
+            val capture = article.payload as ArchivedAudioCaptured
+            val bytes = zip.getInputStream(zip.getEntry(capture.artifactPath)).use { it.readBytes() }
+            assertEquals(capture.sha256, ReplayRetainedAudioRecovery.sha(bytes))
+            val pcm = requireNotNull(WavPcm16.decode(bytes))
+            fun measure(pool: List<ReplayAudioReference>) = ReplayPartialCryRecovery.measure(pcm,
+                article.articleId, requireNotNull(article.monotonicTimeNanos), capture.sha256, pool)
+            val pool = refs + ref("Seed Bomb", null, "charged_move_sounds/402-0_seed_bomb.wav") +
+                ref("Water Pulse", null, "charged_move_sounds/352-0_water_pulse.wav")
+            assertEquals(134, measure(pool).single().speciesId)
+            assertTrue(measure(pool + vaporeon.copy(name = "Identical move sound", speciesId = null)).isEmpty())
+        }
+        assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
+    }
+
     @Test fun `ambiguous references and missing competition cannot certify a cry`() {
         val pcm = vaporeon.audio
         assertTrue(ReplayPartialCryRecovery.measure(pcm, "clip", 0, "audio", listOf(vaporeon)).isEmpty())

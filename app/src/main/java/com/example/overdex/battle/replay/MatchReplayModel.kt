@@ -540,7 +540,7 @@ class MatchReplayModel(
                     "Faint · ${link.recipientSpeciesName} · ${link.creditLabel()} · inferred",
                     sourceAtNanos = link.faintSourceAtNanos, sourceArticleIds = link.evidenceArticleIds, finishingAttribution = link)))
             }
-            finishingChargeAssociations.filter { it.basis in setOf(ReplayTerminalAudioAssociation.BASIS, ReplayTerminalAudioAssociation.ANNOUNCED, ReplayImpactFinish.BASIS) &&
+            finishingChargeAssociations.filter { it.basis in setOf(ReplayTerminalAudioAssociation.BASIS, ReplayTerminalAudioAssociation.ANNOUNCED, ReplayTerminalAudioAssociation.ANNOUNCED_PARTIAL, ReplayImpactFinish.BASIS) &&
                 presentedKnockouts.none { ko -> ko.side == it.recipientSide && ko.appearanceAtNanos == it.recipientAppearanceAtNanos }
             }.forEach { link ->
                 add(faintMarker(null, link, ReplayEventMarker("recovered-faint:${link.recipientSide}:${link.recipientAppearanceAtNanos}",
@@ -554,7 +554,10 @@ class MatchReplayModel(
                 val actors = listOfNotNull(combatantFor("PLAYER", cry.estimatedOnsetNanos),
                     combatantFor("OPPONENT", cry.estimatedOnsetNanos)).filter { it.speciesId == cry.speciesId }
                 val label = actors.singleOrNull()?.displayName ?: "#${cry.speciesId}"
-                val purpose = if (sliverDepartures.any { it.cry == cry }) "supports faint" else "purpose unknown"
+                val purpose = if (sliverDepartures.any { it.cry == cry } || finishingChargeAssociations.any { link ->
+                    link.basis == ReplayTerminalAudioAssociation.ANNOUNCED_PARTIAL &&
+                        cry.fragments.any { it.articleId in link.faintArticleIds }
+                }) "supports faint" else "purpose unknown"
                 add(ReplayEventMarker("partial-cry:${cry.speciesId}:${cry.estimatedOnsetNanos}",
                     ReplayEventMarkerKind.POSSIBLE_CRY, cry.estimatedOnsetNanos, null,
                     "Possible cry · $label · $purpose", sourceAtNanos = cry.fragments.minOf { it.captureAtNanos },
@@ -737,7 +740,7 @@ class MatchReplayModel(
     }
 
     private fun ReplayFinishingChargeAssociation.faintPoseAt() =
-        if (basis == ReplayImpactFinish.BASIS) faintSourceAtNanos else presentationImpactAtNanos
+        if (basis == ReplayImpactFinish.BASIS || basis == ReplayTerminalAudioAssociation.ANNOUNCED_PARTIAL) faintSourceAtNanos else presentationImpactAtNanos
 
     private fun applyFinishingChargeAssociation(side: String, combatant: ReplayCombatant?, cursor: Long): ReplayCombatant? {
         combatant ?: return null
