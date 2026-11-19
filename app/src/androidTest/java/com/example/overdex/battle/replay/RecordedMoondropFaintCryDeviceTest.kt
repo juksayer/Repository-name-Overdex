@@ -122,6 +122,23 @@ class RecordedMoondropFaintCryDeviceTest {
     ) { model ->
         val go = requireNotNull(model.matchStartNanos)
         val cry = model.audioRecovery.terminalWholeCries.single { it.speciesId == 134 }
+        val cryMarker = model.eventMarkers.single { it.kind == ReplayEventMarkerKind.POSSIBLE_CRY &&
+            kotlin.math.abs(it.atNanos - cry.estimatedOnsetNanos) < 20_000_000L }
+        assertEquals("OPPONENT", cryMarker.side)
+        assertTrue(cryMarker.label, "supports faint" in cryMarker.label)
+        val hits = model.eventMarkers.filter { it.kind == ReplayEventMarkerKind.FAST_MOVE &&
+            it.side == "PLAYER" && it.sourceAtNanos - go in 62_000_000_000L..66_000_000_000L }
+        assertEquals(2, hits.size)
+        assertTrue(hits.all { "Incinerate" in it.label })
+        assertEquals(62.722, (hits.first().atNanos - go) / 1e9, .001)
+        assertEquals(2.5, (hits.last().atNanos - hits.first().atNanos) / 1e9, .001)
+        hits.forEachIndexed { index, marker ->
+            val scene = model.sceneAt(marker.atNanos)
+            val action = scene.fastMoveActions.single { it.side == "PLAYER" }
+            assertEquals("Incinerate", action.moveName)
+            assertEquals(1f, action.progress, 0f)
+            assertEquals(if (index == 0) .91f else .83f, scene.opponentHp!!.filledFraction!!, .015f)
+        }
         assertEquals(90.542, (cry.estimatedOnsetNanos - go) / 1e9, .001)
         assertTrue(cry.fragments.distinctBy { it.audioSha256 }.size >= 2)
         val pulses = model.eventMarkers.filter { it.kind == ReplayEventMarkerKind.CHARGED_MOVE && "Dragon Pulse" in it.label }

@@ -17,6 +17,7 @@ internal data class ReplayFastMoveWitness(
     val sourceTimesNanos: Set<Long>,
     val damageTicks: List<ReplayFastMoveDamage> = emptyList(),
     val endsAtTerminalBoundary: Boolean = false,
+    val archivedUseWithDamage: Boolean = false,
 )
 
 /** Settled damage on the recipient, linked by the use's source Article IDs. */
@@ -30,6 +31,7 @@ internal data class ReplayFastMoveCycle(
     val witness: ReplayFastMoveWitness,
     val startedAtNanos: Long,
     val impactAtNanos: Long,
+    val timingAdjusted: Boolean = false,
 ) {
     val durationNanos get() = impactAtNanos - startedAtNanos
     val hasReferenceDuration get() = witness.durationNanos != null
@@ -106,7 +108,7 @@ internal object ReplayFastMoveSchedule {
                     if (it.hasReferenceDuration) it.impactAtNanos else it.witness.observedAtNanos
                 }, previousKnown?.impactAtNanos).maxOrNull()
                 val sameReference = previous?.hasReferenceDuration == true &&
-                    previous.witness.moveName == witness.moveName && previous.durationNanos == duration
+                    previous.witness.moveName == witness.moveName && previous.witness.durationNanos == duration
                 // Allow capture jitter around one cycle, but never queue a burst of
                 // impossible uses to play later during an unobserved/idle interval.
                 val tolerance = minOf(400_000_000L, duration / 4)
@@ -133,11 +135,24 @@ internal object ReplayFastMoveSchedule {
                     ))
                     continue
                 }
-                var impact = if (expected != null &&
-                    (abs(witness.observedAtNanos - expected) <= tolerance ||
-                        (separateDamage && witness.observedAtNanos < expected))) expected
-                    else maxOf(witness.observedAtNanos, witness.windowStartNanos + duration)
-                var start = impact - duration
+                val observed = witness.observedAtNanos
+                // Fit the windup to the visible part of this appearance. A witnessed
+                // impact cannot be delayed just because the camera cut off its start.
+                val openingHit = previousImpact == null && witness.archivedUseWithDamage && observed in witness.windowStartNanos..witness.windowEndNanos &&
+                    witness.damageTicks.any { it.observedAtNanos == observed && it.after < it.before }
+                // A short gap can still be in rhythm. Only align the witnessed
+                // endpoint, leaving every unwitnessed beat empty.
+                val laterBeat = if (sameReference && previousImpact != null && !witness.endsAtTerminalBoundary &&
+                    witness.damageTicks.isEmpty()) (2..3).map { previousImpact + duration * it }
+                    .firstOrNull { it <= witness.windowEndNanos && abs(observed - it) <= tolerance } else null
+                var impact = when {
+                    expected != null && (abs(observed - expected) <= tolerance ||
+                        (separateDamage && observed < expected)) -> expected
+                    openingHit -> observed
+                    laterBeat != null -> laterBeat
+                    else -> maxOf(observed, witness.windowStartNanos + duration)
+                }
+                var start = maxOf(witness.windowStartNanos, impact - duration)
                 // Both combatants must remain on the field for this cycle. Charge
                 // sequences, switches, faints and match boundaries split windows.
                 if (impact > witness.windowEndNanos) {
@@ -152,7 +167,8 @@ internal object ReplayFastMoveSchedule {
                         previousImpact ?: witness.windowStartNanos)
                     if (impact - start < duration - tolerance) continue
                 }
-                val cycle = ReplayFastMoveCycle(witness, start, impact)
+                val cycle = ReplayFastMoveCycle(witness, start, impact,
+                    timingAdjusted = impact != observed || impact - start != duration)
                 cycles += cycle
                 lastKnownCycle = cycle
             }

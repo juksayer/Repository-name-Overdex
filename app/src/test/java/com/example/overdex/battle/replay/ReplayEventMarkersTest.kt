@@ -5,6 +5,25 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ReplayEventMarkersTest {
+    @Test fun `overlapping clips can support the same cry but a different reference or entrance cannot`() {
+        val onset = 90_542_000_000L
+        val fit = ReplayAudioFragment("whole", onset, "clip1", "vaporeon", 0, 0, 200_000_000, .99f)
+        val whole = ReplayRecoveredCry(134, onset, 1_000_000_000, listOf(fit))
+        val fragment = fit.copy(articleId = "partial", audioSha256 = "clip2", captureAtNanos = onset + 4_000_000L)
+        val partial = ReplayPartialCryCandidate(134, fragment.estimatedOnsetNanos, listOf(fragment), .1f)
+        assertTrue(ReplayEventMarkers.sameCryOccurrence(partial, whole))
+        assertFalse(ReplayEventMarkers.sameCryOccurrence(partial.copy(estimatedOnsetNanos = onset - 20_000_000_000L), whole))
+        assertFalse(ReplayEventMarkers.sameCryOccurrence(partial.copy(fragments = listOf(fragment.copy(referenceSha256 = "other"))), whole))
+    }
+
+    @Test fun `cry requires exactly one matching active side and both identities known`() {
+        assertEquals("OPPONENT", ReplayEventMarkers.crySide(134, 776, 134))
+        assertEquals("PLAYER", ReplayEventMarkers.crySide(134, 134, 776))
+        assertNull(ReplayEventMarkers.crySide(134, 134, 134))
+        assertNull(ReplayEventMarkers.crySide(134, null, 134))
+        assertNull(ReplayEventMarkers.crySide(134, 776, 6))
+    }
+
     @Test fun `initial and repeated identities do not invent switches but later entries are reachable`() {
         val replay = model(
             species("lead", "PLAYER", "Raichu (Alolan)", 0),

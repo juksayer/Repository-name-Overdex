@@ -560,15 +560,30 @@ class MatchReplayModel(
                     finishingAttribution = link)))
             }
             audioRecovery.partialCryCandidates.forEach { cry ->
-                val actors = listOfNotNull(combatantFor("PLAYER", cry.estimatedOnsetNanos),
-                    combatantFor("OPPONENT", cry.estimatedOnsetNanos)).filter { it.speciesId == cry.speciesId }
-                val label = actors.singleOrNull()?.displayName ?: "#${cry.speciesId}"
-                val purpose = if (sliverDepartures.any { it.cry == cry } || finishingChargeAssociations.any { link ->
-                    link.basis in setOf(ReplayTerminalAudioAssociation.ANNOUNCED_PARTIAL, ReplaySoundMatchedBanner.BASIS) &&
-                        cry.fragments.any { it.articleId in link.faintArticleIds }
-                }) "supports faint" else "purpose unknown"
+                val player = combatantFor("PLAYER", cry.estimatedOnsetNanos)
+                val opponent = combatantFor("OPPONENT", cry.estimatedOnsetNanos)
+                val side = ReplayEventMarkers.crySide(cry.speciesId, player?.speciesId, opponent?.speciesId)
+                val actor = listOfNotNull(player, opponent).firstOrNull { it.speciesId == cry.speciesId }
+                val label = actor?.displayName ?: "#${cry.speciesId}"
+                val supportsFaint = side != null && (sliverDepartures.any { it.cry == cry } ||
+                    finishingChargeAssociations.any { link ->
+                        link.recipientSide == side &&
+                            appearanceAt(side, cry.estimatedOnsetNanos) == link.recipientAppearanceAtNanos &&
+                            when (link.basis) {
+                                ReplayTerminalAudioAssociation.ANNOUNCED_PARTIAL, ReplaySoundMatchedBanner.BASIS ->
+                                    cry.fragments.any { it.articleId in link.faintArticleIds }
+                                ReplayTerminalAudioAssociation.ANNOUNCED ->
+                                    audioRecovery.terminalWholeCries.any { whole ->
+                                        whole.estimatedOnsetNanos == link.faintSourceAtNanos &&
+                                            whole.fragments.any { it.articleId in link.faintArticleIds } &&
+                                            ReplayEventMarkers.sameCryOccurrence(cry, whole)
+                                    }
+                                else -> false
+                            }
+                    })
+                val purpose = if (supportsFaint) "supports faint" else "purpose unknown"
                 add(ReplayEventMarker("partial-cry:${cry.speciesId}:${cry.estimatedOnsetNanos}",
-                    ReplayEventMarkerKind.POSSIBLE_CRY, cry.estimatedOnsetNanos, null,
+                    ReplayEventMarkerKind.POSSIBLE_CRY, cry.estimatedOnsetNanos, side,
                     "Possible cry · $label · $purpose", sourceAtNanos = cry.fragments.minOf { it.captureAtNanos },
                     sourceArticleIds = cry.fragments.map { it.articleId }.distinct()))
             }
@@ -1925,6 +1940,7 @@ class MatchReplayModel(
                     ReplayFastMoveDamage(article.monotonicTimeNanos!!, damage.beforeFraction, damage.afterFraction)
                 },
                 endsAtTerminalBoundary = windowEnd in terminalBoundaries,
+                archivedUseWithDamage = use.canonical && "HP_DAMAGE_TICK" in use.evidenceKinds,
             )
         })
     }

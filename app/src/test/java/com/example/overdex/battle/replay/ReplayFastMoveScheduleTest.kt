@@ -7,6 +7,27 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ReplayFastMoveScheduleTest {
+    @Test fun `observed damage after entry anchors the first impact before the full windup fits`() {
+        val first = witness("first", 2.24).copy(windowStartNanos = ns(1.0), archivedUseWithDamage = true,
+            damageTicks = listOf(ReplayFastMoveDamage(ns(2.24), .99f, .91f)))
+        val second = first.copy(observedAtNanos = ns(4.22), articleIds = setOf("second"),
+            sourceTimesNanos = setOf(ns(4.22)), damageTicks = listOf(ReplayFastMoveDamage(ns(4.22), .91f, .83f)))
+        val cycles = ReplayFastMoveSchedule.build(listOf(second, first))
+        assertEquals(listOf(ns(2.24), ns(2.24) + ns(2.0)), cycles.map { it.impactAtNanos })
+        assertEquals(ns(1.0), cycles.first().startedAtNanos)
+        assertEquals(listOf(setOf("first"), setOf("second")), cycles.map { it.witness.articleIds })
+        assertTrue(ReplayEventMarkers.fastMoves(cycles).all { "timing inferred" in it.label })
+    }
+
+    @Test fun `nearby beat can align a later witness while skipped beats stay empty`() {
+        val first = witness("a", 2.0).copy(durationNanos = ns(.5))
+        val next = first.copy(observedAtNanos = ns(3.09), articleIds = setOf("b"), sourceTimesNanos = setOf(ns(3.09)))
+        val cycles = ReplayFastMoveSchedule.build(listOf(first, next))
+        assertEquals(listOf(ns(2.0), ns(3.0)), cycles.map { it.impactAtNanos })
+        assertEquals(ns(3.09), ReplayEventMarkers.fastMoves(cycles).last().sourceAtNanos)
+        assertNull(cycles.firstOrNull { it.actionAt(ns(2.4)) != null })
+    }
+
     @Test fun `presentation impact does not manufacture damage observation clocks`() {
         val sourceAt = ns(2.15)
         val withoutDamage = witness("visual", 2.0).copy(damageTicks = emptyList())

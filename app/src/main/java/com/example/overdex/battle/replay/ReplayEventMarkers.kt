@@ -53,6 +53,22 @@ object ReplayEventMarkerNavigation {
 }
 
 internal object ReplayEventMarkers {
+    fun crySide(speciesId: Int, playerId: Int?, opponentId: Int?): String? = when {
+        playerId == null || opponentId == null || playerId == opponentId -> null
+        speciesId == playerId -> "PLAYER"
+        speciesId == opponentId -> "OPPONENT"
+        else -> null
+    }
+
+    /** Adjacent clips may capture the same waveform without sharing an article ID. */
+    fun sameCryOccurrence(partial: ReplayPartialCryCandidate, whole: ReplayRecoveredCry): Boolean =
+        partial.speciesId == whole.speciesId &&
+            kotlin.math.abs(partial.estimatedOnsetNanos - whole.estimatedOnsetNanos) <= 5_000_000L &&
+            partial.fragments.any { part -> whole.fragments.any { fit ->
+                part.referenceSha256.isNotBlank() && part.referenceSha256 == fit.referenceSha256 &&
+                    kotlin.math.abs(part.estimatedOnsetNanos - fit.estimatedOnsetNanos) <= 5_000_000L
+            } }
+
     /** One marker per resolved animation, not one per contributing witness. */
     fun fastMoves(cycles: List<ReplayFastMoveCycle>): List<ReplayEventMarker> = cycles.map { cycle ->
         val use = cycle.witness
@@ -62,7 +78,11 @@ internal object ReplayEventMarkers {
             atNanos = cycle.impactAtNanos,
             side = use.side,
             label = "Fast move · ${use.moveName ?: "name unknown"}" +
-                (if ("REPLAY_CONFIRMED_FAINT_AUDIO_MOTION" in use.evidenceKinds) " · landing estimated from cry" else ""),
+                when {
+                    "REPLAY_CONFIRMED_FAINT_AUDIO_MOTION" in use.evidenceKinds -> " · landing estimated from cry"
+                    cycle.timingAdjusted -> " · timing inferred"
+                    else -> ""
+                },
             sourceAtNanos = use.observedAtNanos,
             sourceArticleIds = use.articleIds.sorted(),
         )

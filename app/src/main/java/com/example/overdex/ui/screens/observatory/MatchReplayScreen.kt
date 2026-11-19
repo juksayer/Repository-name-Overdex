@@ -160,16 +160,8 @@ fun MatchReplayScreen(
     }
     var cropProgress by remember(archive) { mutableStateOf(ReplayCropProgress("READING ARCHIVE")) }
     var cropError by remember(archive) { mutableStateOf<String?>(null) }
-    val archivedCropIdentities by produceState<List<ReplayIdentityObservation>?>(null, archive) {
-        value = null
-        value = try {
-            resolveArchivedSpeciesCrops(archive) { cropProgress = it }
-        } catch (cancelled: kotlinx.coroutines.CancellationException) {
-            throw cancelled
-        } catch (error: Exception) {
-            cropError = "Crop verification failed: ${error.message}"
-            emptyList()
-        }
+    var archivedCropIdentities by remember(archive, impactArchiveUri) {
+        mutableStateOf<List<ReplayIdentityObservation>?>(null)
     }
     val typeSpeciesNames = remember(referencedNames, archivedCropIdentities) {
         (referencedNames + archivedCropIdentities.orEmpty().map { it.speciesName }).distinct()
@@ -206,29 +198,37 @@ fun MatchReplayScreen(
         chargedMoveTypesResolved = true
     }
     val modelInputsReady = speciesResolved && fastMoveTypesResolved && fastMovesResolved &&
-        chargedMoveTypesResolved && chargedMovesResolved && archivedCropIdentities != null
+        chargedMoveTypesResolved && chargedMovesResolved
     val replayContext = LocalContext.current
-    val preparedModel by produceState<MatchReplayModel?>(
-        null,
-        archive,
-        modelInputsReady,
-        impactArchiveUri,
-        speciesIds,
-        archivedCropIdentities,
-        fastMoveTypes,
-        fastMovesBySpecies,
-        chargedMoveTypes,
-        chargedMovesBySpecies,
-    ) {
-        value = null
+    var preparedModel by remember(archive, impactArchiveUri) { mutableStateOf<MatchReplayModel?>(null) }
+    var reviewComplete by remember(archive, impactArchiveUri) { mutableStateOf(false) }
+    LaunchedEffect(archive, impactArchiveUri, modelInputsReady) {
         if (modelInputsReady) {
+            fun prepare(model: MatchReplayModel) = model.also {
+                // Resolve the indexes off the UI thread before publishing either snapshot.
+                it.eventMarkers
+                it.attackSoundEvents
+            }
+            preparedModel = withContext(Dispatchers.Default) {
+                prepare(MatchReplayModel(archive, speciesIds, emptyList(), fastMoveTypes,
+                    fastMovesBySpecies, chargedMoveTypes, chargedMovesBySpecies))
+            }
+            val crops = try {
+                resolveArchivedSpeciesCrops(archive) { cropProgress = it }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                cropError = "Crop verification failed: ${error.message}"
+                emptyList()
+            }
+            archivedCropIdentities = crops
             cropProgress = ReplayCropProgress("CHECKING ENDING AUDIO")
-            val extraNames = archivedCropIdentities.orEmpty().map { it.speciesName }.distinct()
+            val extraNames = crops.map { it.speciesName }.distinct() - referencedNames
             val allFast = fastMovesBySpecies + extraNames.associateWith { resolveFastMoves(it) }
             val allCharged = chargedMovesBySpecies + extraNames.associateWith { resolveChargedMoves(it) }
             val allIds = speciesIds + extraNames.mapNotNull { name -> resolveSpeciesId(name)?.let { name to it } }.toMap()
             val recoveredAudio = try {
-                val participants = MatchReplayModel.audioParticipantNames(archive, archivedCropIdentities.orEmpty())
+                val participants = MatchReplayModel.audioParticipantNames(archive, crops)
                 val moves = participants.flatMap { allFast[it].orEmpty() + allCharged[it].orEmpty() }.distinct()
                 resolveArchivedAudio(archive, moves, participants.mapNotNull { allIds[it] }.toSet())
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
@@ -260,18 +260,19 @@ fun MatchReplayScreen(
                 android.util.Log.w("REPLAY_FAST", "Ending evidence unavailable", error)
                 null
             }
-            value = withContext(Dispatchers.Default) {
-                MatchReplayModel(
+            preparedModel = withContext(Dispatchers.Default) {
+                prepare(MatchReplayModel(
                     archive,
                     allIds,
-                    archivedCropIdentities.orEmpty(),
+                    crops,
                     fastMoveTypes,
                     allFast,
                     chargedMoveTypes,
                     allCharged,
                     recoveredAudio, impact, fastFinish,
-                )
+                ))
             }
+            reviewComplete = true
         }
     }
     val model = preparedModel
@@ -363,9 +364,8 @@ fun MatchReplayScreen(
     var playing by remember(archive, playbackWindow) { mutableStateOf(false) }
     var autoStarted by remember(archive, playbackWindow) { mutableStateOf(false) }
     var playbackSpeed by remember(archive, playbackWindow) { mutableFloatStateOf(initialPlaybackSpeed) }
-    LaunchedEffect(autoplay, speciesResolved, fastMovesResolved, chargedMovesResolved, archivedCropIdentities) {
-        if (autoplay && !autoStarted && speciesResolved && fastMovesResolved && chargedMovesResolved &&
-            archivedCropIdentities != null) {
+    LaunchedEffect(autoplay, archive, playbackWindow) {
+        if (autoplay && !autoStarted) {
             autoStarted = true
             playing = true
         }
@@ -810,7 +810,7 @@ fun MatchReplayScreen(
                     MatchLcdButton("CLIP LIBRARY", { playing = false; open() }, selected = editorAction == 3, enabled = !savingClip)
                 }
             }
-            if (archivedCropIdentities == null) {
+            if (!reviewComplete) {
                 MatchLcdText(cropProgress.stage + if (cropProgress.total > 0) " ${cropProgress.completed}/${cropProgress.total}" else "")
                 if (cropProgress.total > 0) androidx.compose.material3.LinearProgressIndicator(
                     progress = { cropProgress.completed.toFloat() / cropProgress.total }, modifier = Modifier.fillMaxWidth(), color = TerminalGreen)

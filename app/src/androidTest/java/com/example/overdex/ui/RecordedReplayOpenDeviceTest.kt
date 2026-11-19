@@ -22,6 +22,58 @@ import java.util.concurrent.atomic.AtomicInteger
 class RecordedReplayOpenDeviceTest {
     @get:Rule val compose = createComposeRule()
 
+    @Test fun moondropReplayCanSeekWhileEndingEvidenceIsPending() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        org.junit.Assume.assumeTrue(InstrumentationRegistry.getArguments().getString("recordedMoondropTwoPulses") == "true")
+        val context = instrumentation.targetContext
+        val file = File(context.filesDir, "match_archives/2026-11-19_12-27-58_457f590b-6d03-4469-b223-b45fcf0ac2b9.odxmatch.zip")
+        val started = android.os.SystemClock.elapsedRealtime()
+        val archive = file.inputStream().use(MatchArchivePackageReader::read)
+        val go = archive.articles.first { it.payload is ArchivedMatchStarted }.monotonicTimeNanos!!
+        val repository = PokemonRepository(PokedexDatabase.getDatabase(context).pokemonDao(),
+            LocalSpriteProvider(context.assets), GameMasterLoader(context))
+        val releaseAudio = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val enteredAudio = kotlinx.coroutines.CompletableDeferred<Unit>()
+        var down: () -> Unit = {}
+        val cursor = java.util.concurrent.atomic.AtomicLong(-1L)
+        val lcd = androidx.compose.runtime.mutableStateOf<(@androidx.compose.runtime.Composable () -> Unit)?>(null)
+        compose.setContent {
+            androidx.compose.foundation.layout.Column {
+                androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.weight(1f)) {
+                    MatchReplayScreen(archive, onBack = {}, onDown = { down = it },
+                        initialCursorNanos = go + 65_000_000_000L,
+                        resolveSpeciesId = { repository.getPokemonByName(it)?.id },
+                        resolveFastMoves = { repository.getPokemonByName(it)?.fastMoves.orEmpty() },
+                        resolveChargedMoves = { repository.getPokemonByName(it)?.chargedMoves.orEmpty() },
+                        resolveArchivedAudio = { _, _, _ ->
+                            enteredAudio.complete(Unit)
+                            releaseAudio.await()
+                            com.example.overdex.battle.replay.ReplayAudioRecovery()
+                        },
+                        pairedReplayScene = { scene, at -> cursor.set(at); scene },
+                        onLcdContentUpdate = { lcd.value = it })
+                }
+                androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.weight(1f)) { lcd.value?.invoke() }
+            }
+        }
+        try {
+            compose.waitUntil(30_000) { enteredAudio.isCompleted && cursor.get() == go + 65_000_000_000L }
+            compose.onNodeWithContentDescription("Turtonator").assertIsDisplayed()
+            compose.onNodeWithContentDescription("Vaporeon").assertIsDisplayed()
+            android.util.Log.i("ReplayOpenTrial", "Archive read to usable scene: ${android.os.SystemClock.elapsedRealtime() - started} ms")
+            compose.runOnIdle { down() }
+            val sought = compose.runOnIdle { cursor.get() }
+            assertTrue(sought > go + 65_000_000_000L)
+            releaseAudio.complete(Unit)
+            compose.waitUntil(30_000) {
+                compose.onAllNodesWithText("CHECKING ENDING AUDIO").fetchSemanticsNodes().isEmpty()
+            }
+            compose.runOnIdle { assertEquals(sought, cursor.get()) }
+        } finally {
+            releaseAudio.complete(Unit)
+        }
+    }
+
     @Test fun opensNewArchivesAndRendersMissingStartMatchAfterCatalogueLoads(): Unit = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val repository = PokemonRepository(PokedexDatabase.getDatabase(context).pokemonDao(),
