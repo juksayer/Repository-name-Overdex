@@ -145,7 +145,7 @@ class RecordedMoondropFaintCryDeviceTest {
         assertEquals("OPPONENT", cryMarker.side)
         assertTrue(cryMarker.label, "supports faint" in cryMarker.label)
         val hits = model.eventMarkers.filter { it.kind == ReplayEventMarkerKind.FAST_MOVE &&
-            it.side == "PLAYER" && it.sourceAtNanos - go in 62_000_000_000L..66_000_000_000L }
+            it.side == "PLAYER" && it.sourceArticleIds.isNotEmpty() && it.sourceAtNanos - go in 62_000_000_000L..66_000_000_000L }
         assertEquals(2, hits.size)
         assertTrue(hits.all { "Incinerate" in it.label })
         assertEquals(62.722, (hits.first().atNanos - go) / 1e9, .001)

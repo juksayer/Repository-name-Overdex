@@ -12,7 +12,7 @@ class RecordedHpStepReplayTest {
         val original = MatchArchiveSerializer.serialize(archive)
         val model = MatchReplayModel(archive)
         val actions = (0..350).flatMap { model.sceneAt(it * 10_000_000L).fastMoveActions }
-            .filter { it.side == "PLAYER" }.distinctBy { it.impactAtNanos }.sortedBy { it.impactAtNanos }
+            .filter { it.side == "PLAYER" && it.sourceArticleIds.isNotEmpty() }.distinctBy { it.impactAtNanos }.sortedBy { it.impactAtNanos }
         assertEquals(3, actions.size)
         assertEquals(listOf(1L, 2L, 3L).map { it * 1_000_000_000L }, actions.map { it.impactAtNanos })
         val expected = listOf(.95238f, .92063f, .87766f)

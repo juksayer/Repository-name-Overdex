@@ -179,6 +179,7 @@ internal fun ReplayEventMarkerControls(
                     formatReplayFaintTime(marker.faintTiming, matchStartNanos, archiveStartNanos)
                 else formatReplayTime(marker.atNanos - startNanos)
                 MatchLcdText(time)
+                marker.inferenceExplanation?.let { MatchLcdText(it) }
             }
         }
         MatchLcdTextButton("›", { next?.let(onSeek) },

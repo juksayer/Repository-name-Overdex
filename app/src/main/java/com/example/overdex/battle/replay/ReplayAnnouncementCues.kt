@@ -35,3 +35,12 @@ private val QTE_PROGRESS_GRADE = Regex("(NICE|GREAT|EXCELLENT)!?", RegexOption.I
 private fun replayAnnouncementContains(article: ArchivedRealityArticle, phrase: String): Boolean =
     article.sourceId in ANNOUNCEMENT_PHASE_TEXT_SOURCES &&
         (article.payload as? ArchivedRawText)?.value?.let { announcementContainsPhrase(it, phrase) } == true
+
+/** A capture gap or a weak-connection warning alone cannot establish that combat stopped. */
+internal fun isReplayConnectionInterruption(article: ArchivedRealityArticle): Boolean {
+    if (article.sourceId !in ANNOUNCEMENT_PHASE_TEXT_SOURCES && article.sourceId != "MATCH_OUTCOME_TEXT_WITNESS") return false
+    val text = (article.payload as? ArchivedRawText)?.value ?: return false
+    return text.trim().trimEnd('.', '!', '…').trim().uppercase() in CONNECTION_INTERRUPTION_TEXT
+}
+
+private val CONNECTION_INTERRUPTION_TEXT = setOf("CONNECTION LOST", "CONNECTION INTERRUPTED", "RECONNECTING")

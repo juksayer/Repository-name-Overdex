@@ -636,7 +636,39 @@ The retained Tinkaton pixel fixture supplies a positive case; the living Carbink
 recall supplies a negative case. Reprocessing video pixels in a test does not
 add missing HP measurements to an existing archive.
 | MOVE-04 | A supported Fast Move impact lacks a resolved reference duration. | Replay may show a neutral decorative flight ending at its source impact, clipped to the current appearance and ordinary-play window; an impact exactly at entry can be an impact-only marker. | The decoration cannot identify the move, assert its cadence, generate energy/extra uses, shift source HP time, or borrow flight time from a previous appearance or charge sequence. |
-| MOVE-04 — Fast Move timing in Replay | A known Fast Move has a same-time recipient damage reading near the start of an appearance, and only part of its windup fits on screen. | Keep the observed impact and shorten the displayed windup. Mark the adjusted animation timing as inferred. | Within a continuous exchange a later witness can align to a nearby beat. Skipped beats stay empty. Switches, charge windows and faints bound each sequence. |
+| MOVE-04 — Fast Move timing in Replay | A known Fast Move has a same-time recipient damage reading near the start of an appearance, and only part of its windup fits on screen. | Keep the observed impact and shorten the displayed windup. Mark the adjusted animation timing as inferred. | Within a continuous exchange a later witness can align to a nearby beat. The evidence schedule retains the observed uses. MOVE-04a supplies any additional beats for playback. |
+
+**MOVE-04a — Continuous Fast Moves in completed Replay (presentation only).**
+Once a timed use identifies a Fast Move and its duration, Replay assumes the same
+attacker starts another cycle at the earliest eligible turn. Each side runs on
+its own clock. The animation, optional attack sound and small **Inferred** marker
+describe the same cycle. Selecting the marker identifies the last confirmed use
+and the duration in turns. A saved moveset alone supplies no timing anchor.
+
+A supported hit occupies its own beat. An off-beat use resets the rhythm.
+A capture gap can contain inferred beats while both appearances remain eligible.
+A switch, faint, recorded connection interruption or match end cuts the rhythm.
+A charge or shield sequence pauses ordinary cycles. A late QTE grade can bound
+its opening when the previously visible charge buttons have disappeared.
+Keep every supported attack in that interval. When the same pair returns,
+visible battlefield controls or a supported ordinary cycle can restart playback.
+Independently supported attacks already in flight keep their evidence. A
+returning Pokémon needs a new timing anchor.
+
+When reliable whole-bar readings bracket a beat and rule out the previously
+measured damage to that recipient at the available pixel resolution, Replay
+suppresses the inferred attacks and waits for another supported use on that
+side. If two predicted attacks span one resolved loss, the measured live edge,
+orange trail and settled positive HP can place one inferred landing at the
+first frame showing that loss. Missing frames, an unreadable bar or an
+unresolvable change leave the timing open. At the end of a match, the losing
+side’s last Pokémon can show a live sliver turning orange while its precise HP
+remains unknown. If the previously visible battlefield controls then disappear
+and stay absent through the recorded result, the first corroborated loss of
+controls can close the speculative rhythm. Later evidence of ordinary combat
+invalidates that estimate. The uncertainty window supplies no faint or KO time.
+Only evidence-supported events can change HP, count toward recorded energy or
+receive faint credit. The archive retains its original clocks.
 
 **MOVE-05 — finishing association; bounded Replay implementation November 14.** If an
 existing supported move is directed at the same opposing appearance that an

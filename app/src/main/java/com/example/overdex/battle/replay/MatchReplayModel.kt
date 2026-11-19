@@ -86,7 +86,8 @@ class MatchReplayModel(
     private val replayArticles = terminalFaintProjection.articles
         .filter { it.monotonicTimeNanos != null }
         .sortedBy { it.monotonicTimeNanos }
-    internal val matchEndNanos = replayArticles.firstOrNull { it.payload is ArchivedMatchEnded }?.monotonicTimeNanos
+    private val matchResult = replayArticles.firstOrNull { it.payload is ArchivedMatchEnded }
+    internal val matchEndNanos = matchResult?.monotonicTimeNanos
     // Publication can arrive late; the source clock decides whether an action
     // belongs to this battle. Retain every original Article in timedArticles.
     private val actionArticles = replayArticles.takeWhile {
@@ -373,7 +374,7 @@ class MatchReplayModel(
         finishingAttributions.filterIsInstance<ReplayFinishingFastAssociation>()
     }
 
-    private val presentedFastCycles by lazy {
+    private val supportedPresentationCycles by lazy {
         val inferred = finishingFastMoveAssociations.singleOrNull { it.basis == ReplayLastOpponentFastFinish.BASIS }?.let { link ->
             val move = lastOpponentFastEvidence?.playerMoves?.get(link.moveName)
             ReplayFastMoveCycle(ReplayFastMoveWitness(link.attackingSide, link.moveSourceAtNanos, link.moveName,
@@ -389,6 +390,45 @@ class MatchReplayModel(
             }.distinctBy { finishingFastMove(it) ?: it }
             .sortedBy { it.impactAtNanos }
     }
+
+    /** Decoration is added only after HP, energy and finishing attribution have consumed the evidence. */
+    private val presentedFastCycles by lazy {
+        val supported = supportedPresentationCycles
+        val end = matchEndNanos ?: recordingEndNanos
+        val cuts = buildList {
+            addAll(playerIdentityTrack.hpAppearancesAt(end).map { it.start })
+            addAll(opponentIdentityTrack.hpAppearancesAt(end).map { it.start })
+            addAll(presentedKnockouts.map { it.presentationAtNanos })
+            addAll(finishingAttributions.map { it.landingAtNanos })
+            addAll(actionArticles.filter(::isReplayConnectionInterruption).map { it.monotonicTimeNanos!! })
+        }
+        val hp = ReplayRhythmHp(replayArticles, hpEvidence, supported)
+        val chargeWindows = fastMoveChargeWindows + chargeTransitions.speculativeQteWindows(supported) + recordedChargedMoveUses.map { use ->
+            use.preparationAtNanos..if (use.isCompleted) chargePresentation(use).impactAtNanos else use.lastEvidenceAtNanos
+        }
+        // A QTE timeout or the end of a decorative flight is not a witnessed return
+        // to ordinary combat. Either side's next supported cycle, or the charge
+        // buttons becoming visible on the battlefield, can reopen both clocks.
+        val ordinaryStarts = (supported.map { it.startedAtNanos } + chargeTransitions.visibleControlTimes).sorted()
+        val charges = chargeWindows.map { phase ->
+            val resumed = ordinaryStarts.firstOrNull { it > phase.last }
+            phase.first..(resumed?.minus(1) ?: end)
+        }
+        val terminalHold = chargeTransitions.speculativeTerminalWindow(supported, hpEvidence)
+        ReplayFastMoveRhythm.present(supported, matchStartNanos ?: battlePresentationStartNanos,
+            end, cuts, charges + listOfNotNull(terminalHold), ::bothActiveForRhythm, hp::contradicts,
+            fixedImpact = { finishingFastMove(it) != null }, oneReception = hp::oneReception)
+    }
+
+    private fun bothActiveForRhythm(side: String, start: Long, landing: Long): Boolean =
+        listOf(side, oppositeSide(side)).all { participant ->
+            val actor = combatantFor(participant, start) ?: return@all false
+            val appearance = appearanceAt(participant, start)
+            appearance == appearanceAt(participant, landing) &&
+                knockoutForCombatant(participant, actor, landing, presentedKnockouts) == null &&
+                finishingAttributions.none { it.recipientSide == participant &&
+                    it.recipientAppearanceAtNanos == appearance && it.landingAtNanos <= landing }
+        }
 
     private fun finishingFastMove(cycle: ReplayFastMoveCycle): ReplayFinishingFastAssociation? =
         finishingFastMoveAssociations.singleOrNull { link ->
@@ -521,7 +561,7 @@ class MatchReplayModel(
                     sourceArticleIds = association?.evidenceArticleIds ?: use.articleIds.sorted(),
                     finishingAttribution = association))
             }
-            addAll(ReplayEventMarkers.fastMoves(presentedFastCycles).map { marker ->
+            addAll(ReplayEventMarkers.fastMoves(presentedFastCycles) { side, at -> combatantFor(side, at)?.displayName }.map { marker ->
                 val link = finishingFastMoveAssociations.singleOrNull {
                     it.attackingSide == marker.side && it.impactAtNanos == marker.atNanos &&
                         marker.sourceArticleIds.any(it.moveArticleIds::contains)
@@ -1039,6 +1079,12 @@ class MatchReplayModel(
             finishingFastMoveAssociation = link)
     }
 
+    private fun knockoutForCombatant(
+        side: String, combatant: ReplayCombatant, cursor: Long, available: List<ReplayKnockout>,
+    ) = knockoutTrack.at(side, cursor, available)?.takeIf {
+        TeamRosterSpeciesAttributor.speciesKey(it.speciesName) == TeamRosterSpeciesAttributor.speciesKey(combatant.speciesName)
+    }
+
     private fun applyFaintState(
         side: String,
         combatant: ReplayCombatant?,
@@ -1046,11 +1092,9 @@ class MatchReplayModel(
         available: List<ReplayKnockout> = knockoutTrack.knockouts,
     ): ReplayCombatant? {
         combatant ?: return null
-        val faint = knockoutTrack.at(side, cursor, available)?.takeIf {
-            TeamRosterSpeciesAttributor.speciesKey(it.speciesName) == TeamRosterSpeciesAttributor.speciesKey(combatant.speciesName)
-        }
+        val faint = knockoutForCombatant(side, combatant, cursor, available)
         if (faint == null) {
-            val result = replayArticles.firstOrNull { it.payload is ArchivedMatchEnded && it.monotonicTimeNanos!! <= cursor }
+            val result = matchResult?.takeIf { it.monotonicTimeNanos!! <= cursor }
                 ?: return combatant
             val lost = when ((result.payload as ArchivedMatchEnded).result.uppercase()) {
                 "WIN" -> side == "OPPONENT"
@@ -2552,7 +2596,7 @@ data class ReplayCombatant(
 private const val FAST_MOVE_VISUAL_NANOS = 450_000_000L
 private const val COUNTDOWN_GLYPH_VISUAL_NANOS = 850_000_000L
 private const val QTE_MILESTONE_VISUAL_NANOS = 700_000_000L
-private const val REPLAY_QTE_WINDOW_NANOS = 10_000_000_000L
+internal const val REPLAY_QTE_WINDOW_NANOS = 10_000_000_000L
 private const val REPLAY_QTE_MIN_PULSE_NANOS = 25_000_000L
 private const val REPLAY_QTE_MAX_PULSE_NANOS = 300_000_000L
 private const val REPLAY_QTE_MIN_INTER_PULSE_NANOS = 80_000_000L

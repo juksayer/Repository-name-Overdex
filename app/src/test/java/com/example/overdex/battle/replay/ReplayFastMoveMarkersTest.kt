@@ -33,7 +33,10 @@ class ReplayFastMoveMarkersTest {
             val original=MatchArchiveSerializer.serialize(archive)
             val model=pairedMirrorModel(archive)
             val markers=model.eventMarkers.filter { it.kind==ReplayEventMarkerKind.FAST_MOVE }
-            assertEquals(device, count, markers.size)
+            val (predicted, supported) = markers.partition { it.inferenceExplanation != null }
+            assertEquals(device, count, supported.size)
+            assertTrue(device, predicted.all { it.sourceArticleIds.isEmpty() && it.finishingAttribution == null })
+            assertEquals(device, markers.size, markers.distinctBy { it.side to it.atNanos }.size)
             assertEquals(markers, pairedMirrorModel(archive.copy(articles=archive.articles.reversed()))
                 .eventMarkers.filter { it.kind==ReplayEventMarkerKind.FAST_MOVE })
             assertTrue(markers.none { "f666daf2-9a01-4901-8232-a0e34201337c" in it.sourceArticleIds })

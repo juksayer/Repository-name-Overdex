@@ -500,7 +500,9 @@ class ReplayFastMoveScheduleTest {
         assertTrue(seen.values.sortedBy { it.impactAtNanos }.zipWithNext().all { (a, b) ->
             b.impactAtNanos - a.impactAtNanos >= ns(2.0)
         })
-        assertTrue((1470..1500).all { model.sceneAt(ns(it / 10.0)).fastMoveActions.none { a -> a.side == "PLAYER" } })
+        val gap = (1470..1500).flatMap { model.sceneAt(ns(it / 10.0)).fastMoveActions }.filter { it.side == "PLAYER" }
+        assertTrue(gap.isNotEmpty())
+        assertTrue(gap.all { ReplayFastMoveRhythm.INFERRED in it.evidenceKinds && it.sourceArticleIds.isEmpty() })
     }
 
     @Test fun `confirmed opening Volt Switch is not reassigned to a later Incinerate user`() {

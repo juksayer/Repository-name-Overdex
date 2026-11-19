@@ -196,6 +196,27 @@ class RecordedReplayOpenDeviceTest {
         marker.assertIsDisplayed()
         photograph("faint")
 
+        seek(go)
+        val expected = compose.onAllNodesWithText("Expected from ", substring = true)
+        val next = compose.onNodeWithContentDescription("Next replay event")
+        var visited = 0
+        while (expected.fetchSemanticsNodes().isEmpty() && visited < 200) {
+            next.assertIsEnabled().performClick()
+            visited++
+        }
+        expected.onFirst().assertIsDisplayed()
+        val inferred = compose.runOnIdle { rendered!!.fastMoveActions.single {
+            it.progress == 1f && it.sourceArticleIds.isEmpty()
+        } }
+        assertNull(inferred.finishingAssociation)
+        val glyph = compose.onNodeWithContentDescription("${inferred.side} ${inferred.moveName} projectile")
+        glyph.assertIsDisplayed()
+        photograph("inferred-fast")
+        compose.onNodeWithContentDescription("Previous replay event").performClick()
+        next.performClick()
+        expected.onFirst().assertIsDisplayed()
+        glyph.assertIsDisplayed()
+        compose.runOnIdle { assertTrue(inferred in rendered!!.fastMoveActions) }
     }
 
     @Test fun opensNewArchivesAndRendersMissingStartMatchAfterCatalogueLoads(): Unit = runBlocking {

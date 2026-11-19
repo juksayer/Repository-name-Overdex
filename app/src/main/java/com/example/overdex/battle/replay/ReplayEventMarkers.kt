@@ -12,12 +12,13 @@ data class ReplayEventMarker(
     val atNanos: Long,
     val side: String?,
     val label: String,
-    /** The unchanged event clock when presentation has fitted an animation before a replacement. */
+    /** Original event time, or the time of the confirmed use that anchors an inferred beat. */
     val sourceAtNanos: Long = atNanos,
     val sourceArticleIds: List<String> = emptyList(),
     val finishingAttribution: ReplayFinishingAttribution? = null,
     val faintTiming: ReplayFaintTiming? = null,
     val corroboratedFaintId: String? = null,
+    val inferenceExplanation: String? = null,
 ) {
     val sideLabel: String get() = when (side) {
         "PLAYER" -> "YOU"
@@ -81,8 +82,22 @@ internal object ReplayEventMarkers {
             } }
 
     /** One marker per resolved animation, not one per contributing witness. */
-    fun fastMoves(cycles: List<ReplayFastMoveCycle>): List<ReplayEventMarker> = cycles.map { cycle ->
+    fun fastMoves(cycles: List<ReplayFastMoveCycle>, actorAt: (String, Long) -> String? = { _, _ -> null }):
+        List<ReplayEventMarker> = cycles.map { cycle ->
         val use = cycle.witness
+        if (ReplayFastMoveRhythm.INFERRED in use.evidenceKinds) {
+            val turns = requireNotNull(use.durationNanos) / 500_000_000L
+            val actor = actorAt(use.side, cycle.startedAtNanos) ?: "this Pokémon"
+            return@map ReplayEventMarker(
+                id = "rhythm:${use.side}:${cycle.impactAtNanos}",
+                kind = ReplayEventMarkerKind.FAST_MOVE, atNanos = cycle.impactAtNanos, side = use.side,
+                label = "Inferred · ${use.moveName}", sourceAtNanos = use.observedAtNanos,
+                inferenceExplanation = if (ReplayFastMoveRhythm.HP_RECEPTION in use.evidenceKinds)
+                    "Expected from $actor’s last confirmed ${use.moveName}. The bar first shows one loss and its orange trail here."
+                else "Expected from $actor’s last confirmed ${use.moveName}, every " +
+                    if (turns == 1L) "turn." else "$turns turns.",
+            )
+        }
         ReplayEventMarker(
             id = "fast:${use.side}:${use.observedAtNanos}:${use.articleIds.sorted().joinToString()}",
             kind = ReplayEventMarkerKind.FAST_MOVE,

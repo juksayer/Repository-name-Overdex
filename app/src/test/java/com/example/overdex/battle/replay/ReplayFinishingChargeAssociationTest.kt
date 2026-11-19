@@ -40,7 +40,7 @@ class ReplayFinishingChargeAssociationTest {
                 it.sourceAtNanos == link.moveSourceAtNanos }
             assertTrue(chargeMarker.label.endsWith(" · KO"))
             assertEquals(link.evidenceArticleIds, chargeMarker.sourceArticleIds)
-            assertEquals(15, model.eventMarkers.count { it.kind == ReplayEventMarkerKind.FAST_MOVE })
+            assertEquals(15, model.eventMarkers.count { it.kind == ReplayEventMarkerKind.FAST_MOVE && it.sourceArticleIds.isNotEmpty() })
         }
         assertEquals(before, MatchArchiveSerializer.serialize(archive))
     }
@@ -53,7 +53,7 @@ class ReplayFinishingChargeAssociationTest {
             assertTrue(model.finishingChargeAssociations.none { it.recipientSpeciesName.startsWith("Gourgeist") })
             if (device == "pixel") {
                 assertTrue(model.finishingChargeAssociations.none { it.moveName == "Rock Tomb" })
-                assertEquals(10, model.eventMarkers.count { it.kind == ReplayEventMarkerKind.FAST_MOVE })
+                assertEquals(10, model.eventMarkers.count { it.kind == ReplayEventMarkerKind.FAST_MOVE && it.sourceArticleIds.isNotEmpty() })
             }
             assertEquals(before, MatchArchiveSerializer.serialize(archive))
         }

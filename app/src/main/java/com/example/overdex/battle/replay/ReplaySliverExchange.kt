@@ -20,7 +20,7 @@ internal object ReplaySliverExchange {
     private const val SECOND = 1_000_000_000L
     private fun reliable(article: ArchivedRealityArticle) = article.confidence?.let { it in .8f..1f } == true
 
-    private fun whole(p: ArchivedCompleteHpBarObserved) = p.side == "OPPONENT" &&
+    private fun whole(p: ArchivedCompleteHpBarObserved, side: String = "OPPONENT") = p.side == side &&
         p.barLeft >= 0 && p.barTop >= 0 && p.barRight < p.sourceWidth && p.barBottom < p.sourceHeight &&
         p.barBottom > p.barTop && p.barRight - p.barLeft >= 6 * (p.barBottom - p.barTop) &&
         p.interiorColumns in 40..(p.barRight - p.barLeft) &&
@@ -31,14 +31,14 @@ internal object ReplaySliverExchange {
             abs(a.barLeft - b.barLeft) <= 2 && abs(a.barRight - b.barRight) <= 2 &&
             abs(a.barTop - b.barTop) <= a.barBottom - a.barTop
 
-    fun changes(rows: List<ArchivedRealityArticle>): List<ReplaySliverChange> {
-        val profiles = rows.filter { (it.payload as? ArchivedCompleteHpBarObserved)?.side == "OPPONENT" &&
+    fun changes(rows: List<ArchivedRealityArticle>, side: String = "OPPONENT"): List<ReplaySliverChange> {
+        val profiles = rows.filter { (it.payload as? ArchivedCompleteHpBarObserved)?.side == side &&
             it.monotonicTimeNanos != null }.groupBy { it.monotonicTimeNanos!! }.toSortedMap().values
         // Conflicting measurements at one capture time break the sequence in either publication order.
         fun unambiguous(frame: List<ArchivedRealityArticle>): ArchivedRealityArticle? =
             frame.minBy { it.articleId }.takeIf { a -> frame.all { it.payload == a.payload && reliable(it) } }
         val smallBars = rows.filter { a -> val p = a.payload as? ArchivedActiveHpBarMeasured
-            p?.side == "OPPONENT" && (p.fillColor == "RED" || p.fillColor == null) && p.filledFraction > 0 && p.filledFraction <= .15f &&
+            p?.side == side && (p.fillColor == "RED" || p.fillColor == null) && p.filledFraction > 0 && p.filledFraction <= .15f &&
                 a.monotonicTimeNanos != null && reliable(a) }.sortedBy { it.monotonicTimeNanos }
         return profiles.zipWithNext().mapNotNull { (earlier, later) ->
             val live = unambiguous(earlier) ?: return@mapNotNull null
@@ -46,8 +46,9 @@ internal object ReplaySliverExchange {
             val a = live.payload as ArchivedCompleteHpBarObserved
             val b = damage.payload as ArchivedCompleteHpBarObserved
             val at = damage.monotonicTimeNanos!!
-            if (at - live.monotonicTimeNanos!! !in 1..SECOND || !whole(a) || !whole(b) || !aligned(a, b) ||
-                a.barLeft < a.sourceWidth / 2 || a.status != "LIVE_COLOR" || a.liveColumns !in 1..(a.interiorColumns / 8) ||
+            if (at - live.monotonicTimeNanos!! !in 1..SECOND || !whole(a, side) || !whole(b, side) || !aligned(a, b) ||
+                (side == "OPPONENT" && a.barLeft < a.sourceWidth / 2) ||
+                (side == "PLAYER" && a.barRight > a.sourceWidth / 2) || a.status != "LIVE_COLOR" || a.liveColumns !in 1..(a.interiorColumns / 8) ||
                 b.liveColumns != 0 || b.damageColumns < maxOf(2, a.liveColumns - 1) ||
                 b.status !in setOf("DAMAGE_COLOR", "SUSTAINED_DAMAGE_COLOR", "UNRESOLVED_COLOR")) return@mapNotNull null
             val confirmed = smallBars.lastOrNull { r ->

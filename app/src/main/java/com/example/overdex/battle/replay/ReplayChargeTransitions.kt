@@ -1,6 +1,7 @@
 package com.example.overdex.battle.replay
 
 import com.example.overdex.battle.archive.*
+import com.example.overdex.battle.inference.FastMoveUseEvidence
 
 /** A bounded presentation estimate, never a replacement for a witnessed phase cue. */
 data class ReplayChargeTransition(
@@ -48,6 +49,13 @@ internal class ReplayChargeTransitions(
     }
     private val frames = ordered.filter { it.sourceId == SOURCE && it.payload is ArchivedPlayerChargeButtonFillHeightMeasured }
         .groupBy { it.monotonicTimeNanos!! }.map { (at, samples) -> Frame(at, samples) }.sortedBy { it.at }
+    /** Positive readings of the configured battlefield controls can reopen ordinary Replay cycles. */
+    val visibleControlTimes: List<Long> by lazy {
+        frames.filter { frame ->
+            frame.visible(setOf(1, 2)) || (frame.visible(setOf(1)) &&
+                playerAt(frame.at)?.let { singleControlConfiguration(it, frame.at) } != null)
+        }.map { it.at }
+    }
     private val cues = ordered.filter { isReplayGetReadyCue(it) || isReplayAttackIncomingCue(it) }
     // A gap is reported on capture recovery, potentially after the phase cue.
     // Its complete interval matters, not only the time its article was emitted.
@@ -88,6 +96,105 @@ internal class ReplayChargeTransitions(
     private val byCue = cues.mapNotNull { cue -> refine(cue)?.let { cue.articleId to it } }.toMap()
 
     fun forCue(article: ArchivedRealityArticle): ReplayChargeTransition? = byCue[article.articleId]
+
+    /**
+     * A grade proves an ongoing QTE even if the opening text was missed. Between a
+     * positive battlefield rim and the sampled loss of both controls, the start is
+     * uncertain. Only speculative fast animations are withheld in this window.
+     */
+    fun speculativeQteWindows(supported: List<ReplayFastMoveCycle>): List<LongRange> {
+        val grades = ordered.filter { replayQteProgressGrade(it) != null }.map { it.monotonicTimeNanos!! }.distinct()
+        if (grades.isEmpty()) return emptyList()
+        val visible = visibleControlTimes.toSet()
+        val actions = actionTimes(supported)
+        return grades.mapNotNull { grade ->
+            val nearby = frames.filter { it.at in (grade - REPLAY_QTE_WINDOW_NANOS)..grade }
+            val index = nearby.indexOfLast { it.at in visible }
+            if (index < 0 || index == nearby.lastIndex) return@mapNotNull null
+            val baseline = nearby[index]
+            val losses = nearby.subList(index + 1, nearby.size)
+            if (losses.any { !it.unavailable() || it.geometry != baseline.geometry } ||
+                phaseBoundaries.higher(baseline.at)?.let { it <= grade } == true ||
+                grades.any { it >= baseline.at && it < grade } ||
+                captureGaps.any { (start, end) -> start < grade && end > baseline.at } ||
+                availability.any { it.monotonicTimeNanos!! in baseline.at..grade &&
+                    !(it.payload as ArchivedWitnessOperating).operating }) return@mapNotNull null
+            val latestAction = actions.floor(grade)
+            if (latestAction != null && latestAction >= losses.first().at) return@mapNotNull null
+            // An already witnessed landing can follow the last visible reading.
+            // It remains at its source time and narrows the left side of the interval.
+            (maxOf(baseline.at, latestAction ?: baseline.at) + 1)..grade
+        }
+    }
+
+    private val phaseBoundaries by lazy {
+        (barriers + cues.map { it.monotonicTimeNanos!! } + ordered.mapNotNull { article ->
+            article.monotonicTimeNanos.takeIf { article.payload is ArchivedChargedMoveEnergySpent ||
+                article.payload is ArchivedChargeMoveUsedAnnounced || isReplayConnectionInterruption(article) }
+        }).toCollection(java.util.TreeSet())
+    }
+
+    private fun actionTimes(supported: List<ReplayFastMoveCycle>) =
+        (supported.flatMap { it.witness.sourceTimesNanos + it.impactAtNanos } +
+            ordered.mapNotNull { article ->
+                val use = article.payload as? ArchivedFastMoveUseObserved
+                article.monotonicTimeNanos.takeIf { use != null && FastMoveUseEvidence.establishesUse(use.evidenceKinds) }
+            }).toCollection(java.util.TreeSet())
+
+    /** The result and a final sliver-to-damage transition corroborate loss of ordinary
+     * battlefield controls. The first sampled loss can stop speculation without
+     * assigning a faint, changing the result clock or suppressing a supported attack.
+     */
+    fun speculativeTerminalWindow(supported: List<ReplayFastMoveCycle>, hp: ReplayHpEvidence): LongRange? {
+        val result = ordered.firstOrNull { it.payload is ArchivedMatchEnded } ?: return null
+        val side = when ((result.payload as ArchivedMatchEnded).result) {
+            "WIN" -> "OPPONENT"
+            "LOSS" -> "PLAYER"
+            else -> return null
+        }
+        val end = result.monotonicTimeNanos!!
+        val recent = ordered.filter { it.monotonicTimeNanos!! in (end - TERMINAL_LOOKBACK)..end }
+        val controls = frames.filter { it.at in (end - TERMINAL_LOOKBACK)..end }
+        val visible = controls.indexOfLast { it.at in visibleControlTimes }
+        if (visible < 0 || controls.lastIndex - visible < 2) return null
+        val baseline = controls[visible]
+        val firstLoss = controls[visible + 1].at
+        if (controls.drop(visible + 1).any { !it.unavailable() || it.geometry != baseline.geometry } ||
+            controls.drop(visible).zipWithNext().any { (a, b) -> b.at - a.at > MAX_RESULT_SAMPLE_GAP } ||
+            end - controls.last().at > MAX_RESULT_SAMPLE_GAP) return null
+        val change = ReplaySliverExchange.changes(recent, side).lastOrNull() ?: return null
+        if (firstLoss - change.at !in 0..MAX_RISK_TO_CONTROL_LOSS ||
+            !hp.supportsSurvivalAtCapture(change.liveMeasurement) ||
+            controls.any { it.at in change.at until baseline.at && it.unavailable() }) return null
+        val from = change.live.monotonicTimeNanos!!
+        val counts = ordered.mapNotNull { a ->
+            val count = when (val p = a.payload) {
+                is ArchivedPlayerPokeBallCountMeasured -> p.visibleCount.takeIf { side == "PLAYER" && p.maximumCount == 3 }
+                is ArchivedOpponentBattleResourceCountMeasured -> p.visibleCount.takeIf { side == "OPPONENT" &&
+                    p.resource == "POKE_BALLS" && p.maximumCount == 3 }
+                else -> null
+            }
+            count?.let { a.monotonicTimeNanos!! to it }
+        }
+        val lastCountAt = counts.lastOrNull { it.first <= from }?.first ?: return null
+        if (counts.filter { it.first == lastCountAt }.any { it.second != 1 } ||
+            counts.any { (at, count) -> at in from..end && count !in 0..1 }) return null
+        if (phaseBoundaries.ceiling(from)?.let { it < end } == true ||
+            captureGaps.any { (start, finish) -> start < end && finish > from } ||
+            availability.any { it.monotonicTimeNanos!! in from..end && !(it.payload as ArchivedWitnessOperating).operating } ||
+            actionTimes(supported).ceiling(firstLoss)?.let { it <= end } == true) return null
+        val conflicting = recent.any { a ->
+            val at = a.monotonicTimeNanos!!
+            at in from..end && (replayQteProgressGrade(a) != null ||
+                (a.sourceId == "ANNOUNCEMENT_WITNESS" && (a.payload as? ArchivedRawText)?.value?.trim()?.startsWith("Go,", true) == true) ||
+                (at >= change.at && when (val p = a.payload) {
+                    is ArchivedActiveHpBarMeasured -> p.side == side && hp.supportsSurvivalAtCapture(a)
+                    is ArchivedCompleteHpBarObserved -> p.side == side && p.status == "LIVE_COLOR" && p.liveColumns > 0
+                    else -> false
+                }))
+        }
+        return (firstLoss..end).takeUnless { conflicting }
+    }
 
     private fun refine(cue: ArchivedRealityArticle): ReplayChargeTransition? {
         val at = cue.monotonicTimeNanos!!
@@ -168,6 +275,10 @@ internal class ReplayChargeTransitions(
     }
 
     private companion object {
+        // Terminal controls in the 12:12 recording were sampled 2–3 seconds apart.
+        const val MAX_RESULT_SAMPLE_GAP = 3_000_000_000L
+        const val TERMINAL_LOOKBACK = 15_000_000_000L
+        const val MAX_RISK_TO_CONTROL_LOSS = 5_000_000_000L
         const val SOURCE = "PLAYER_CHARGE_BUTTON_FILL_HEIGHT_WITNESS"
         const val MAX_SAMPLE_GAP_NANOS = 750_000_000L
         const val CUE_ASSOCIATION_NANOS = 2_000_000_000L

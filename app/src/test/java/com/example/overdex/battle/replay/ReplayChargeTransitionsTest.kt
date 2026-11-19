@@ -168,6 +168,23 @@ class ReplayChargeTransitionsTest {
         }
     }
 
+    @Test fun `after a charge the same pair resumes on visible controls before another hit is witnessed`() {
+        val records = baseline() + listOf(
+            at("move", .5, ArchivedFastMoveIdentified("PLAYER", "Scrafty", "Counter", nanos(1.0),
+                cadenceSampleCount = 1, basis = "TEST")),
+            at("use", 2.0, ArchivedFastMoveUseObserved("use", "PLAYER", "OPPONENT", attackerSpeciesName = "Scrafty",
+                evidenceKinds = listOf("HP_BORDER_PULSE"), basis = "TEST")),
+            ready(),
+            at("spent", 10.0, ArchivedChargedMoveEnergySpent("PLAYER", "Scrafty", "Foul Play", 40, "TEST")),
+            at("end", 24.0, ArchivedMatchEnded("WIN")),
+        )
+        fun predictions(postCharge: List<ArchivedRealityArticle>) =
+            MatchReplayModel(MatchArchive(matchId = "transition", articles = records + postCharge))
+                .eventMarkers.filter { it.inferenceExplanation != null && it.atNanos > nanos(6.0) }.map { it.atNanos }
+        assertTrue(predictions(lost(16.0)).isEmpty())
+        assertEquals((19..23).map { nanos(it.toDouble()) }, predictions(lost(16.0) + seen(18.0)))
+    }
+
     @Test fun `recorded Moondrop unknown controls do not move any phase cue earlier`() {
         // Unchanged selected source articles from c0f775ec-947e-473b-9bda-57850a5989fa.
         // The 250 measurements include a few accidental circles, not a stable
@@ -200,6 +217,96 @@ class ReplayChargeTransitionsTest {
         val striking = model.sceneAt(nanos(15.6)).chargedMoveActions.single()
         assertEquals(ReplayChargePhase.STRIKING, striking.phase)
         assertEquals(preparing.transition, striking.transition)
+    }
+
+    @Test fun `a late grade and sampled loss suppress only the uncertain interval after confirmed combat`() {
+        val grade = at("grade", 12.766, ArchivedRawText("NICE!"), "QTE_PROGRESS_TEXT_WITNESS")
+        val hit = at("hit", 7.694, ArchivedFastMoveUseObserved("observed", "PLAYER", "OPPONENT",
+            evidenceKinds = listOf("HP_BORDER_PULSE"), basis = "TEST"))
+        fun windows(samples: List<ArchivedRealityArticle>, cycles: List<ReplayFastMoveCycle> = emptyList()) =
+            ReplayChargeTransitions(samples) { ReplayCombatant("Scrafty", 560, 0) }.speculativeQteWindows(cycles)
+        val samples = setup() + seen(7.166) + lost(10.902) + grade
+        assertEquals(listOf((nanos(7.166) + 1)..nanos(12.766)), windows(samples))
+        assertEquals(listOf((nanos(7.694) + 1)..nanos(12.766)), windows((samples + hit).reversed()))
+        val use = ReplayFastMoveWitness("OPPONENT", nanos(10.92), "Counter", null, nanos(1.0),
+            nanos(.1), nanos(20.0), setOf("HP_DAMAGE_TICK"), setOf("tick"), setOf(nanos(10.93)))
+        assertTrue(windows(samples, listOf(ReplayFastMoveCycle(use, nanos(9.92), nanos(10.92)))).isEmpty())
+        assertTrue(windows(samples + hit.copy(monotonicTimeNanos = nanos(11.0))).isEmpty())
+        assertEquals(listOf((nanos(9.9) + 1)..nanos(12.766)), windows(samples + seen(9.9)))
+        assertEquals(1, windows(samples + at("grade2", 13.0, ArchivedRawText("GREAT!"), "QTE_PROGRESS_TEXT_WITNESS")).size)
+    }
+
+    @Test fun `unread controls and unrelated phases do not extend an unobserved QTE opening`() {
+        val grade = at("grade", 12.766, ArchivedRawText("NICE!"), "QTE_PROGRESS_TEXT_WITNESS")
+        fun windows(samples: List<ArchivedRealityArticle>) =
+            ReplayChargeTransitions(samples) { ReplayCombatant("Scrafty", 560, 0) }.speculativeQteWindows(emptyList())
+        val samples = setup() + seen(7.166) + lost(10.902) + grade
+        assertTrue(windows(samples + seen(11.0)).isEmpty())
+        assertTrue(windows(setup() + seen(1.0) + lost(10.902) + grade).isEmpty())
+        assertTrue(windows(setup() + lost(7.166) + lost(10.902) + grade).isEmpty())
+        assertTrue(windows(setup() + seen(7.166) + lost(10.902).take(1) + grade).isEmpty())
+        assertTrue(windows(setup() + seen(7.166) + lost(10.902, top = 1805) + grade).isEmpty())
+        assertTrue(windows(samples + ready(8.0)).isEmpty())
+        assertTrue(windows(samples + at("incoming", 12.766, ArchivedAttackIncoming)).isEmpty())
+        assertTrue(windows(samples + at("switch", 9.0, ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Raichu", 26))).isEmpty())
+        assertTrue(windows(samples + at("faint", 9.0, ArchivedActivePokemonFaintedWitnessed("OPPONENT", "Combusken", 256, "TEST"))).isEmpty())
+        assertTrue(windows(samples + at("off", 8.0, ArchivedWitnessOperating(false), SOURCE)).isEmpty())
+        assertTrue(windows(samples + at("gap", 13.0, ArchivedVisualCaptureGapObserved(nanos(5.0)))).isEmpty())
+        assertTrue(windows(samples.filterNot { it.articleId == "grade" } +
+            grade.copy(sourceId = "ANNOUNCEMENT_WITNESS")).isEmpty())
+    }
+
+    @Test fun `a corroborated final loss of both controls ends only speculative cycles from the first loss`() {
+        for (side in listOf("PLAYER", "OPPONENT")) {
+            val records = terminalEvidence(side)
+            assertEquals(nanos(7.0)..nanos(12.0), terminal(records))
+            assertEquals(terminal(records), terminal(records.reversed()))
+            val use = ArchivedFastMoveUseObserved("hit", side, if (side == "PLAYER") "OPPONENT" else "PLAYER",
+                evidenceKinds = listOf("HP_DAMAGE_TICK"), basis = "TEST")
+            assertEquals(terminal(records), terminal(records + at("real-before-loss", 5.0, use)))
+            assertNull(terminal(records + at("real-after-loss", 8.0, use)))
+        }
+    }
+
+    @Test fun `survivors intervening phases and incomplete terminal control evidence keep the clock open`() {
+        val records = terminalEvidence("OPPONENT")
+        val hp = records.single { it.articleId == "red" }
+        val full = records.single { it.articleId == "live" }
+        assertNull(terminal(records + hp.copy(articleId = "later-tiny-hp", monotonicTimeNanos = nanos(7.2),
+            payload = (hp.payload as ArchivedActiveHpBarMeasured).copy(filledFraction = 1f / 188))))
+        assertNull(terminal(records + full.copy(articleId = "live-return", monotonicTimeNanos = nanos(8.0))))
+        assertNull(terminal(records + ready(6.0)))
+        assertNull(terminal(records + at("entry", 6.0, ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Sealeo", 364))))
+        assertNull(terminal(records + at("gap", 11.0, ArchivedVisualCaptureGapObserved(nanos(2.0)))))
+        assertNull(terminal(records + seen(8.0)))
+        assertNull(terminal(records.filterNot { it.articleId == "rim-9.5-2" }))
+        assertNull(terminal(records.filterNot { it.articleId.startsWith("rim-9.5-") }))
+        assertNull(terminal(records.filterNot { it.articleId == "result" }))
+        assertNull(terminal(records.filterNot { it.articleId == "count" }))
+        assertNull(terminal(records.filterNot { it.articleId == "orange" }))
+        assertNull(terminal(records.filterNot { it.articleId == "red" }))
+        assertNull(terminal(records + at("count-conflict", 4.0,
+            ArchivedOpponentBattleResourceCountMeasured("POKE_BALLS", 2, 3))))
+    }
+
+    private fun terminal(records: List<ArchivedRealityArticle>) =
+        ReplayChargeTransitions(records) { ReplayCombatant("Scrafty", 560, 0) }
+            .speculativeTerminalWindow(emptyList(), ReplayHpEvidence(records))
+
+    private fun terminalEvidence(side: String): List<ArchivedRealityArticle> {
+        val left = if (side == "OPPONENT") 338 else 38
+        fun profile(live: Int, damage: Int) = ArchivedCompleteHpBarObserved(side, left, 640, left + 192,
+            657, 672, 1493, 188, live, damage, if (damage == 0) "LIVE_COLOR" else "UNRESOLVED_COLOR",
+            null, null, 250f, 160f, unmaskedUncertainColumns = 21)
+        val count = if (side == "OPPONENT") ArchivedOpponentBattleResourceCountMeasured("POKE_BALLS", 1, 3)
+            else ArchivedPlayerPokeBallCountMeasured(1, 3)
+        return setup() + at("count", 4.0, count) +
+            at("live", 4.2, profile(11, 0)).copy(confidence = .99f) +
+            at("red", 4.2, ArchivedActiveHpBarMeasured(side, left, 640, left + 192, 657,
+                11f / 188, 672, 1493, "RED")).copy(confidence = .99f) +
+            at("orange", 4.55, profile(0, 11)).copy(confidence = .99f) +
+            seen(5.5) + lost(7.0) + lost(9.5) + lost(11.0) +
+            at("result", 12.0, ArchivedMatchEnded(if (side == "OPPONENT") "WIN" else "LOSS"))
     }
 
     private fun transition(records: List<ArchivedRealityArticle>): ReplayChargeTransition? {
