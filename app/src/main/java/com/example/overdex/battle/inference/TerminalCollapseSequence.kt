@@ -22,7 +22,7 @@ internal object TerminalCollapseSequences {
         var contractedAt: Long? = null, var clearFrames: Int = 0,
         val refs: MutableSet<String> = linkedSetOf())
 
-    fun find(frames: List<TerminalEffectFrame>,
+    fun find(frames: List<TerminalEffectFrame>, requiredClearFrames: Int = 2,
         coreSupported: (TerminalParticleSample, TerminalFlashFeature) -> Boolean = { _, _ -> false },
     ): List<TerminalCollapseSequence> {
         val seeds = mutableListOf<Seed>()
@@ -68,7 +68,7 @@ internal object TerminalCollapseSequences {
                         seed.contractedAt = at
                     }
                 } else if (seed.contractedAt?.let { at - it <= 500_000_000L } == true) {
-                    if (++seed.clearFrames >= 2) {
+                    if (++seed.clearFrames >= requiredClearFrames) {
                         completed = TerminalCollapseSequence(seed.frame.sample.sourceAtNanos, seed.peakAt,
                             seed.contractedAt!!, at, seed.refs.toList()); break
                     }

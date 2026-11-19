@@ -1,10 +1,87 @@
 package com.example.overdex.battle.replay
 
 import com.example.overdex.battle.archive.*
+import com.example.overdex.battle.inference.TerminalCollapseSequences
+import com.example.overdex.battle.inference.TerminalEffectFrame
 
 /** Retrospective inference, never a replacement for a measured empty HP bar or raw faint. */
 internal object ReplayTerminalAudioAssociation {
     const val BASIS = "RECOVERED_CHARGE_AND_PARTIAL_CRY_WITH_LAST_SURVIVOR_AND_RESULT"
+    const val ANNOUNCED = "ANNOUNCED_CHARGE_AND_LAST_OPPONENT_DEPARTURE_CRY"
+
+    fun announcedFinish(
+        rows: List<ArchivedRealityArticle>,
+        recovery: ReplayAudioRecovery,
+        charges: List<ReplayFinishingChargeCandidate>,
+        actorAt: (String, Long) -> ReplayCombatant?,
+        appearanceAt: (String, Long) -> Long,
+        nextAppearance: (String, Long) -> Long?,
+    ): ReplayFinishingChargeAssociation? {
+        if (recovery.terminalWholeCries.isEmpty()) return null
+        val ordered = rows.filter { it.monotonicTimeNanos != null }
+            .sortedWith(compareBy<ArchivedRealityArticle> { it.monotonicTimeNanos }.thenBy { it.articleId })
+        val results = ordered.filter { it.payload is ArchivedMatchEnded }
+        if (results.any { (it.payload as ArchivedMatchEnded).result != "WIN" }) return null
+        val result = results.firstOrNull() ?: return null
+        val end = result.monotonicTimeNanos!!
+        val cry = recovery.terminalWholeCries.filter { end - it.estimatedOnsetNanos in 0..20 * S }
+            .distinctBy { it.speciesId to it.estimatedOnsetNanos }.singleOrNull() ?: return null
+        val at = cry.estimatedOnsetNanos
+        val charge = charges.singleOrNull {
+            it.completed && it.uniquelyOwned && it.side == "PLAYER" && at - it.sourceAtNanos in 0..5 * S
+        } ?: return null
+        val start = charge.sourceAtNanos
+        val owner = actorAt("PLAYER", start) ?: return null
+        val target = actorAt("OPPONENT", start) ?: return null
+        if (owner.isFainted || target.isFainted || owner.speciesId == null ||
+            target.speciesId != cry.speciesId || owner.speciesId == target.speciesId) return null
+        if (listOf("PLAYER", "OPPONENT").any { side -> nextAppearance(side, start)?.let { it <= end } == true }) return null
+        val named = ordered.singleOrNull { row ->
+            val move = row.payload as? ArchivedChargedMoveEnergySpent
+            row.articleId in charge.articleIds && move?.side == "PLAYER" &&
+                move.moveName == charge.moveName && move.speciesName == owner.speciesName
+        } ?: return null
+        val badges = ordered.filter { row ->
+            val count = row.payload as? ArchivedOpponentBattleResourceCountMeasured
+            row.sourceId == "OPPONENT_POKE_BALLS_WITNESS" && count?.resource == "POKE_BALLS" && count.maximumCount == 3
+        }
+        val badge = badges.lastOrNull { it.monotonicTimeNanos!! <= start } ?: return null
+        if ((badge.payload as ArchivedOpponentBattleResourceCountMeasured).visibleCount != 1 ||
+            badges.any { it.monotonicTimeNanos!! in badge.monotonicTimeNanos!!..end &&
+                (it.payload as ArchivedOpponentBattleResourceCountMeasured).visibleCount > 1 }) return null
+
+        if (recovery.fastEffects.any { it.estimatedOnsetNanos in start..end } ||
+            ordered.any { it.monotonicTimeNanos!! in start..end && when (val p = it.payload) {
+                is ArchivedFastMoveUseObserved, ArchivedGetReadyWitnessed, ArchivedAttackIncoming,
+                ArchivedObservationRestartedByUser, ArchivedScreenIgnoredByUser, ArchivedObservationSessionStoppedByUser -> true
+                is ArchivedChargedMoveEnergySpent -> it.articleId != named.articleId
+                is ArchivedRawText -> it.sourceId == "ANNOUNCEMENT_WITNESS" && departureConflict.containsMatchIn(p.value)
+                else -> false
+            } }) return null
+
+        // The cry gives the time. A localized flash must still contract and clear on
+        // contiguous source frames; a capture gap cannot stand in for a clear frame.
+        val phases = ordered.mapNotNull { row ->
+            val batch = row.payload as? ArchivedTerminalParticleObservations ?: return@mapNotNull null
+            if (batch.requestedRecipient != "OPPONENT" || start !in batch.phaseAtNanos..batch.sourceDeadlineNanos) return@mapNotNull null
+            batch.phaseAtNanos to batch.samples.filter { it.sourceAtNanos in at..minOf(at + 2 * S, end) }
+                .map { TerminalEffectFrame(row.articleId, it) }
+        }.groupBy({ it.first }, { it.second })
+        val departure = phases.values.flatMap { batches ->
+            TerminalCollapseSequences.find(batches.flatten(), requiredClearFrames = 1) { frame, core ->
+                core.area >= .005 * frame.sourceWidth * frame.sourceHeight
+            }
+        }.singleOrNull() ?: return null
+        val refs = cry.fragments.map { it.articleId } + departure.evidenceReferences + listOf(badge.articleId, result.articleId)
+        return ReplayFinishingChargeAssociation(
+            "PLAYER", owner.speciesName, appearanceAt("PLAYER", start),
+            "OPPONENT", target.speciesName, appearanceAt("OPPONENT", start), charge.moveName,
+            start, at, at, null, charge.articleIds.toList(), refs.distinct(), emptyList(), ANNOUNCED,
+            departedBy = ReplayTimeBound(at, cry.fragments.first().articleId),
+        )
+    }
+
+    private val departureConflict = Regex("""\b(blocked|go,)""", RegexOption.IGNORE_CASE)
     private const val S = 1_000_000_000L
     fun resolve(articles: List<ArchivedRealityArticle>, recovery: ReplayAudioRecovery,
                 charges: List<ReplayFinishingChargeCandidate>, fast: List<ReplayFastMoveCycle>,

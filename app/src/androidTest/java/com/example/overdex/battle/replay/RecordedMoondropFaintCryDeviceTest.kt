@@ -13,7 +13,9 @@ import org.junit.Assume.assumeTrue
 import org.junit.Test
 
 class RecordedMoondropFaintCryDeviceTest {
-    private fun review(argument: String, fileName: String, expectedHash: String, verify: (MatchReplayModel) -> Unit) = runBlocking<Unit> {
+    private fun review(argument: String, fileName: String, expectedHash: String,
+        controls: ((MatchArchive, ReplayAudioRecovery, (MatchArchive, ReplayAudioRecovery) -> MatchReplayModel) -> Unit)? = null,
+        verify: (MatchReplayModel) -> Unit) = runBlocking<Unit> {
         assumeTrue(InstrumentationRegistry.getArguments().getString(argument) == "true")
         val ctx = InstrumentationRegistry.getInstrumentation().targetContext
         val file = File(ctx.filesDir, "match_archives/$fileName")
@@ -34,11 +36,58 @@ class RecordedMoondropFaintCryDeviceTest {
         val impact = ReplayImpactFinish.read(archive, File(ctx.filesDir, "artifacts/frames/sha256"),
             species.associate { it.name to (it.fastMoves + it.chargedMoves) }, audio, file::inputStream, asset)
         val last = ReplayLastOpponentFastFinish.read(archive, catalog, file::inputStream, asset)
-        val model = MatchReplayModel(archive, species.associate { it.name to it.id }, crops,
+        fun model(input: MatchArchive, sound: ReplayAudioRecovery) = MatchReplayModel(input, species.associate { it.name to it.id }, crops,
             fastMovesBySpeciesName = fast, chargedMovesBySpeciesName = charged,
-            audioRecovery = audio, impactEvidence = impact, lastOpponentFastEvidence = last)
-        verify(model)
+            audioRecovery = sound, impactEvidence = impact, lastOpponentFastEvidence = last)
+        verify(model(archive, audio))
+        controls?.invoke(archive, audio, ::model)
         assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
+    }
+
+    @Test fun electrodeAndJolteonReceiveDistinctDragonPulses() = review(
+        "recordedMoondropJolteon", "2026-11-18_21-40-23_650b264c-b95e-49ea-80a6-0133d1bca575.odxmatch.zip",
+        "e59dbf0c72445ef59ebc9a0ec66aca02d65b3a0216bf14d9f00aeaeee44c3da9",
+        controls = { archive, audio, model ->
+            fun uncredited(input: MatchArchive, sound: ReplayAudioRecovery = audio) {
+                assertTrue(model(input, sound).finishingChargeAssociations.none { it.recipientSpeciesName == "Jolteon" })
+            }
+            uncredited(archive, audio.copy(terminalWholeCries = emptyList()))
+            val cryAt = audio.terminalWholeCries.first { it.speciesId == 135 }.estimatedOnsetNanos
+            val added = archive.articles.last { it.payload is ArchivedFastMoveUseObserved }
+            fun withEvent(payload: ArchivedTestimonyPayload) = archive.copy(articles = archive.articles +
+                added.copy(articleId = "control", payload = payload, monotonicTimeNanos = cryAt - 10_000_000L))
+            uncredited(withEvent(added.payload))
+            val liveBar = archive.articles.first { row ->
+                val bar = row.payload as? ArchivedActiveHpBarMeasured
+                bar?.side == "OPPONENT" && bar.fillColor == "RED" && bar.filledFraction > 0f
+            }
+            uncredited(archive.copy(articles = archive.articles + liveBar.copy(articleId = "surviving-sliver",
+                monotonicTimeNanos = cryAt + 250_000_000L)))
+            val entry = archive.articles.first { (it.payload as? ArchivedActivePokemonSpeciesWitnessed)?.side == "OPPONENT" }
+            uncredited(withEvent((entry.payload as ArchivedActivePokemonSpeciesWitnessed).copy(speciesName = "Electrode", speciesId = 101)))
+            uncredited(archive.copy(articles = archive.articles.filterNot { it.payload is ArchivedTerminalParticleObservations }))
+        }
+    ) { model ->
+        val faints = model.eventMarkers.filter { it.kind == ReplayEventMarkerKind.FAINT }
+        val links = listOf("Electrode", "Jolteon").map { target ->
+            val faint = faints.single { it.label == "Faint · $target · Dragon Pulse by Turtonator" }
+            val link = requireNotNull(faint.finishingAttribution)
+            val landing = model.sceneAt(link.landingAtNanos)
+            val hit = landing.chargedMoveActions.single { it.finishingAssociation == link }
+            assertEquals("PLAYER", hit.side)
+            assertEquals(target, landing.opponent?.speciesName)
+            assertEquals(1f, ReplayChargePose.at(hit, true).projectileProgress, 0f)
+            assertTrue(model.sceneAt(faint.atNanos).opponent!!.isFainted)
+            assertEquals(landing, model.sceneAt(link.landingAtNanos))
+            assertEquals(1, model.eventMarkers.count { it.kind == ReplayEventMarkerKind.CHARGED_MOVE && it.finishingAttribution == link })
+            link
+        }
+        assertTrue(links.first().landingAtNanos < links.last().moveSourceAtNanos)
+        val final = links.last()
+        assertNull(final.reception)
+        assertTrue("Original Jolteon WAV and last-ball badge", final.faintArticleIds.containsAll(listOf(
+            "9de59276-ae02-4f0a-ae20-31442a92af26", "9011a321-2b75-4b9d-bc37-d200cd5506d2")))
+        assertTrue(faints.last().faintTiming is ReplayFaintTiming.Cry)
     }
 
     @Test fun finalIncinerateLandsBeforeTheCryMarker() = review(

@@ -61,13 +61,13 @@ internal class ReplayFinishingEvidence(
             }
         }.singleOrNull()
         if (departure != null) return ReplayFaintTiming.Cry(ReplayTimeBound(departure.monotonicTimeNanos!!, departure.articleId))
-        if (link?.basis == ReplayTerminalAudioAssociation.BASIS) {
+        if (link != null && link.basis in setOf(ReplayTerminalAudioAssociation.BASIS, ReplayTerminalAudioAssociation.ANNOUNCED)) {
             // When the archive retained the start of the reference waveform, the
             // first sample of that match gives an audible onset on the clip clock.
-            val cry = recoveredCries.singleOrNull { it.estimatedOnsetNanos == link.landingAtNanos &&
-                it.speciesId == actorAt(side, it.estimatedOnsetNanos)?.speciesId }
-            val first = cry?.fragments?.filter { it.referenceOffsetNanos == 0L && it.articleId in link.faintArticleIds }
-                ?.minByOrNull { it.captureAtNanos + it.queryOffsetNanos }
+            val first = recoveredCries.filter { it.estimatedOnsetNanos == link.landingAtNanos &&
+                it.speciesId == actorAt(side, it.estimatedOnsetNanos)?.speciesId }.flatMap { it.fragments }
+                .filter { it.referenceOffsetNanos == 0L && it.articleId in link.faintArticleIds }
+                .minByOrNull { it.captureAtNanos + it.queryOffsetNanos }
             if (first != null) return ReplayFaintTiming.Cry(ReplayTimeBound(first.captureAtNanos + first.queryOffsetNanos, first.articleId))
         }
         return ReplayFaintTiming.window(after, by)

@@ -297,7 +297,7 @@ class MatchReplayModel(
     private fun nextAppearance(side: String, at: Long) = identityTrackFor(side).nextAppearanceAfter(at)
     private val finishingEvidence by lazy {
         ReplayFinishingEvidence(archive.articles.filter { it.matchId == archive.matchId }, hpEvidence,
-            finishingChargeCandidates, fastMoveCycles, ::combatantFor, ::appearanceAt, ::nextAppearance, audioRecovery.cries)
+            finishingChargeCandidates, fastMoveCycles, ::combatantFor, ::appearanceAt, ::nextAppearance, audioRecovery.cries + audioRecovery.terminalWholeCries)
     }
     private val sliverDepartures by lazy {
         ReplaySliverExchange.departures(actionArticles.filter { it.matchId == archive.matchId }, sliverChanges,
@@ -334,13 +334,14 @@ class MatchReplayModel(
             ::combatantFor, ::appearanceAt) { at -> availableFastMoves("PLAYER", at) }
         val terminalAudio = ReplayTerminalAudioAssociation.resolve(replayArticles, audioRecovery, charges,
             fastMoveCycles, ::combatantFor, ::appearanceAt, ::nextAppearance, acceptsHp, ::audioReferencesMissingAt)
+        val cryCharge = ReplayTerminalAudioAssociation.announcedFinish(replayArticles, audioRecovery, charges, ::combatantFor, ::appearanceAt, ::nextAppearance)
         val frameLink = retainedCharge?.let { frame ->
             charges.singleOrNull { it.sourceAtNanos == frame.at && frame.announcementCropId in it.articleIds } ?: return@let null
             ReplayImpactFinish.associate(requireNotNull(impactEvidence), replayArticles, combatantFor("PLAYER", frame.at),
                 combatantFor("OPPONENT", frame.at), appearanceAt("PLAYER", frame.at), appearanceAt("OPPONENT", frame.at),
                 nextAppearance("OPPONENT", frame.at), nextAppearance("PLAYER", frame.at))
         }
-        val links = ReplayFinishingAttributions.resolve(observed + count + fastAudio + sliverLinks + terminalAudio + listOfNotNull(frameLink, lastOpponentFastLink)) {
+        val links = ReplayFinishingAttributions.resolve(observed + count + fastAudio + sliverLinks + terminalAudio + listOfNotNull(cryCharge, frameLink, lastOpponentFastLink)) {
             evidence.allows(it, knockoutTrack.knockouts)
         }
         // Recovered cries and sliver departures use the same team budget as
@@ -538,7 +539,7 @@ class MatchReplayModel(
                     "Faint · ${link.recipientSpeciesName} · ${link.creditLabel()} · inferred",
                     sourceAtNanos = link.faintSourceAtNanos, sourceArticleIds = link.evidenceArticleIds, finishingAttribution = link)))
             }
-            finishingChargeAssociations.filter { it.basis in setOf(ReplayTerminalAudioAssociation.BASIS, ReplayImpactFinish.BASIS) &&
+            finishingChargeAssociations.filter { it.basis in setOf(ReplayTerminalAudioAssociation.BASIS, ReplayTerminalAudioAssociation.ANNOUNCED, ReplayImpactFinish.BASIS) &&
                 presentedKnockouts.none { ko -> ko.side == it.recipientSide && ko.appearanceAtNanos == it.recipientAppearanceAtNanos }
             }.forEach { link ->
                 add(faintMarker(null, link, ReplayEventMarker("recovered-faint:${link.recipientSide}:${link.recipientAppearanceAtNanos}",

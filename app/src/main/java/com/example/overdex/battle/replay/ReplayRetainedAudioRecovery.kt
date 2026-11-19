@@ -27,7 +27,8 @@ data class ReplayAudioRecovery(val charges: List<ReplayRecoveredCharge> = emptyL
     /** Unconfirmed multi-sound candidates; never substitute for an impact or faint. */
     val mixedCandidates: List<ReplayMixedAudioCandidate> = emptyList(),
     /** Partial cry fits retain their limits; they do not identify side, departure or a faint. */
-    val partialCryCandidates: List<ReplayPartialCryCandidate> = emptyList())
+    val partialCryCandidates: List<ReplayPartialCryCandidate> = emptyList(),
+    val terminalWholeCries: List<ReplayRecoveredCry> = emptyList())
 
 /** Bounded completed-archive study path. No writes, original Article mutations or live submissions. */
 object ReplayRetainedAudioRecovery {
@@ -85,6 +86,10 @@ object ReplayRetainedAudioRecovery {
         if (prepared.sumOf { it.offsets.size } > 384) return ReplayAudioRecovery(
             unavailableReferences = listOf("Reference fragments exceed recovery memory bound"))
         val missing = unavailableReferences + references.filter { r -> prepared.none { it.ref.name == r.name && it.ref.speciesId == r.speciesId && it.ref.sha256 == r.sha256 } }.map { it.name }
+        val terminalCries = mutableListOf<ReplayRecoveredCry>()
+        val finalCharge = archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedChargedMoveEnergySpent }
+            .mapNotNull { it.monotonicTimeNanos }.maxOrNull()
+        val wholeMatchers = mutableMapOf<ReplayAudioReference, CryWaveformMatcher>()
         val hits = mutableListOf<Hit>(); val unavailable = mutableListOf<String>()
         val mixed = mutableListOf<ReplayMixedAudioCandidate>()
         val partialCries = mutableListOf<ReplayPartialCryCandidate>()
@@ -152,6 +157,27 @@ object ReplayRetainedAudioRecovery {
                 val best = fits.firstOrNull() ?: continue
                 val competitor = fits.firstOrNull { it.ref.name != best.ref.name || it.ref.speciesId != best.ref.speciesId }
                     ?: continue // Never force a single-option match.
+                // A full cry corroborates a mixed fragment only in the final charged exchange.
+                // Keep this separate from standalone recognized cries.
+                val onset = best.fragment.estimatedOnsetNanos
+                val speciesId = best.ref.speciesId
+                if (speciesId != null && best.duration in 600_000_000L..1_200_000_000L &&
+                    finalCharge != null && end != null && onset - finalCharge in 0..5 * SECOND &&
+                    end - onset in 0..20 * SECOND && best.fragment.correlation >= .80f &&
+                    best.fragment.correlation - competitor.fragment.correlation >= .15f) {
+                    val matcher = wholeMatchers.getOrPut(best.ref) {
+                        CryWaveformMatcher(listOf(CryWaveformReference(speciesId, best.ref.sha256, best.ref.audio)))
+                    }
+                    val whole = matcher.measureMono8k(slice).singleOrNull()
+                    if (whole != null && whole.correlation >= .75f && whole.correlation - competitor.fragment.correlation >= .15f) {
+                        val fragment = best.fragment.copy(queryOffsetNanos = startSample * SECOND / 8000 + whole.offsetNanos,
+                            referenceOffsetNanos = 0, durationNanos = whole.durationNanos, correlation = whole.correlation,
+                            runnerUpName = competitor.ref.name, runnerUpCorrelation = competitor.fragment.correlation)
+                        if (abs(fragment.estimatedOnsetNanos - onset) <= 5_000_000L) {
+                            terminalCries += ReplayRecoveredCry(speciesId, fragment.estimatedOnsetNanos, whole.durationNanos, listOf(fragment))
+                        }
+                    }
+                }
                 val threshold = if (best.ref.speciesId != null) .95f else .98f
                 if (best.fragment.durationNanos >= 600_000_000L && best.fragment.correlation >= threshold && best.fragment.correlation - competitor.fragment.correlation >= .15f) hits += best.copy(fragment = best.fragment.copy(runnerUpName = competitor.ref.name, runnerUpCorrelation = competitor.fragment.correlation))
             }
@@ -200,7 +226,7 @@ object ReplayRetainedAudioRecovery {
             }
         }
         return ReplayAudioRecovery(charges, cries, missing.distinct(), unavailable,
-            prepared.map { it.ref.name }.distinct().sorted(), fastEffects, groupedMixed, groupedPartial)
+            prepared.map { it.ref.name }.distinct().sorted(), fastEffects, groupedMixed, groupedPartial, terminalCries.distinct())
     }
     fun sha(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
 }
