@@ -46,6 +46,55 @@ class RecordedMoondropFaintCryDeviceTest {
         assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
     }
 
+    @Test fun onlySecondDragonPulseFinishesVaporeon() = review(
+        "recordedMoondropTwoPulses", "2026-11-19_12-27-58_457f590b-6d03-4469-b223-b45fcf0ac2b9.odxmatch.zip",
+        "d4c0a20b0004ad53144fbc4be8358661b49914daae078a2f35158f3a569f1338",
+        controls = { archive, audio, replay ->
+            val go = requireNotNull(replay(archive, audio).matchStartNanos)
+            val cries = archive.articles.filter { (it.payload as? ArchivedBattleCryLocalized)?.speciesId == 134 }
+                .sortedBy { it.monotonicTimeNanos }
+            assertEquals(2, cries.size)
+            assertEquals(61.546, (cries.first().monotonicTimeNanos!! - go) / 1e9, .001)
+            val occurrence = audio.terminalWholeCries.single { it.speciesId == 134 }
+            assertEquals(cries.last().monotonicTimeNanos, occurrence.estimatedOnsetNanos)
+            fun uncredited(input: MatchArchive, sound: ReplayAudioRecovery = audio) {
+                assertTrue(replay(input, sound).finishingAttributions.none { it.recipientSpeciesName == "Vaporeon" })
+            }
+            // Leave both original localized cries in the archive, but remove the recovered departure.
+            uncredited(archive, audio.copy(terminalWholeCries = emptyList(), partialCryCandidates = emptyList()))
+            val later = occurrence.copy(estimatedOnsetNanos = occurrence.estimatedOnsetNanos + 2_000_000_000L,
+                fragments = occurrence.fragments.map { it.copy(captureAtNanos = it.captureAtNanos + 2_000_000_000L) })
+            uncredited(archive, audio.copy(terminalWholeCries = listOf(occurrence, later)))
+            val fast = archive.articles.last { it.payload is ArchivedFastMoveUseObserved }
+            uncredited(archive.copy(articles = archive.articles + fast.copy(articleId = "competing-fast-hit",
+                monotonicTimeNanos = occurrence.estimatedOnsetNanos - 100_000_000L)))
+            val switch = archive.articles.first { (it.payload as? ArchivedActivePokemonSpeciesWitnessed)?.speciesName == "Sealeo" }
+            uncredited(archive.copy(articles = archive.articles + switch.copy(articleId = "living-switch",
+                monotonicTimeNanos = occurrence.estimatedOnsetNanos)))
+        },
+    ) { model ->
+        val go = requireNotNull(model.matchStartNanos)
+        val cry = model.audioRecovery.terminalWholeCries.single { it.speciesId == 134 }
+        assertEquals(90.542, (cry.estimatedOnsetNanos - go) / 1e9, .001)
+        assertTrue(cry.fragments.distinctBy { it.audioSha256 }.size >= 2)
+        val pulses = model.eventMarkers.filter { it.kind == ReplayEventMarkerKind.CHARGED_MOVE && "Dragon Pulse" in it.label }
+        assertEquals(2, pulses.size)
+        assertNull(pulses.first().finishingAttribution)
+        assertFalse(model.sceneAt(go + 78_500_000_000).opponent!!.isFainted)
+        val faint = model.eventMarkers.single { it.label == "Faint · Vaporeon · Dragon Pulse by Turtonator" }
+        val link = requireNotNull(faint.finishingAttribution)
+        assertEquals(link, pulses.last().finishingAttribution)
+        assertEquals(89.631, (link.moveSourceAtNanos - go) / 1e9, .001)
+        assertTrue(faint.faintTiming is ReplayFaintTiming.Cry)
+        assertEquals(90.542, (faint.atNanos - go) / 1e9, .001)
+        assertTrue(link.faintArticleIds.containsAll(cry.fragments.map { it.articleId }))
+        val landing = model.sceneAt(link.landingAtNanos)
+        val action = landing.chargedMoveActions.single { it.finishingAssociation == link }
+        assertEquals(1f, ReplayChargePose.at(action, true).projectileProgress, 0f)
+        assertTrue(model.sceneAt(model.endNanos).opponent!!.isFainted)
+        assertEquals(landing, model.sceneAt(link.landingAtNanos))
+    }
+
     @Test fun seedBombLandsBeforeVaporeonsPartialCryAndFlashFaint() = review(
         "recordedMoondropSeedBomb", "2026-11-19_00-10-32_af45f682-e90e-477b-8192-19df8500b7ad.odxmatch.zip",
         "d1fff5da3571cdeb4ec05d5e1b6e49954bbd3e68c4c4d7b393a5f6f0fa9c69d5",

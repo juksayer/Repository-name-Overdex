@@ -38,6 +38,7 @@ data class ReplayAudioRecovery(val charges: List<ReplayRecoveredCharge> = emptyL
 /** Bounded completed-archive study path. No writes, original Article mutations or live submissions. */
 object ReplayRetainedAudioRecovery {
     private const val SECOND = 1_000_000_000L
+    private const val WHOLE_FIT_TOLERANCE_NANOS = 5_000_000L
     private const val FRAGMENT_SAMPLES = 4800
     fun selectedArticles(archive: MatchArchive): List<ArchivedRealityArticle> {
         val end = archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedMatchEnded }
@@ -91,7 +92,7 @@ object ReplayRetainedAudioRecovery {
         if (prepared.sumOf { it.offsets.size } > 384) return ReplayAudioRecovery(
             unavailableReferences = listOf("Reference fragments exceed recovery memory bound"))
         val missing = unavailableReferences + references.filter { r -> prepared.none { it.ref.name == r.name && it.ref.speciesId == r.speciesId && it.ref.sha256 == r.sha256 } }.map { it.name }
-        val terminalCries = mutableListOf<ReplayRecoveredCry>()
+        val terminalCries = mutableMapOf<Int, MutableList<ReplayAudioFragment>>()
         val finalCharge = archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedChargedMoveEnergySpent }
             .mapNotNull { it.monotonicTimeNanos }.maxOrNull()
         val wholeMatchers = mutableMapOf<ReplayAudioReference, CryWaveformMatcher>()
@@ -188,8 +189,8 @@ object ReplayRetainedAudioRecovery {
                         val fragment = best.fragment.copy(queryOffsetNanos = from * SECOND / 8000 + whole.offsetNanos,
                             referenceOffsetNanos = 0, durationNanos = whole.durationNanos, correlation = whole.correlation,
                             runnerUpName = competitor.ref.name, runnerUpCorrelation = competitor.fragment.correlation)
-                        if (abs(fragment.estimatedOnsetNanos - onset) <= 5_000_000L) {
-                            terminalCries += ReplayRecoveredCry(speciesId, fragment.estimatedOnsetNanos, whole.durationNanos, listOf(fragment))
+                        if (abs(fragment.estimatedOnsetNanos - onset) <= WHOLE_FIT_TOLERANCE_NANOS) {
+                            terminalCries.getOrPut(speciesId) { mutableListOf() }.add(fragment)
                         }
                     }
                 }
@@ -241,7 +242,30 @@ object ReplayRetainedAudioRecovery {
             }
         }
         return ReplayAudioRecovery(charges, cries, missing.distinct(), unavailable,
-            prepared.map { it.ref.name }.distinct().sorted(), fastEffects, groupedMixed, groupedPartial, terminalCries.distinct())
+            prepared.map { it.ref.name }.distinct().sorted(), fastEffects, groupedMixed, groupedPartial, wholeCryOccurrences(terminalCries))
     }
+    /** Two whole-waveform fits can each be 5 ms from the candidate onset.
+     * Group on the source clock against the earliest fit, so a chain cannot join separate calls. */
+    internal fun wholeCryOccurrences(bySpecies: Map<Int, List<ReplayAudioFragment>>): List<ReplayRecoveredCry> {
+        val occurrences = mutableListOf<ReplayRecoveredCry>()
+        for ((species, hits) in bySpecies) {
+            for (referenceHits in hits.groupBy { it.referenceSha256 }.values) {
+                val sorted = referenceHits.distinct().sortedWith(compareBy<ReplayAudioFragment> { it.estimatedOnsetNanos }
+                    .thenBy { it.articleId }.thenByDescending { it.correlation })
+                var start = 0
+                while (start < sorted.size) {
+                    val first = sorted[start]
+                    val onset = first.estimatedOnsetNanos
+                    var end = start + 1
+                    while (end < sorted.size && sorted[end].estimatedOnsetNanos - onset <= 2 * WHOLE_FIT_TOLERANCE_NANOS &&
+                        sorted[end].estimatedOnsetNanos - onset < first.durationNanos) end++
+                    occurrences += ReplayRecoveredCry(species, onset, first.durationNanos, sorted.subList(start, end))
+                    start = end
+                }
+            }
+        }
+        return occurrences.sortedWith(compareBy<ReplayRecoveredCry> { it.estimatedOnsetNanos }.thenBy { it.speciesId })
+    }
+
     fun sha(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
 }

@@ -29,7 +29,6 @@ internal object ReplayTerminalAudioAssociation {
         val result = results.firstOrNull() ?: return null
         val end = result.monotonicTimeNanos!!
         val wholeCries = recovery.terminalWholeCries.filter { end - it.estimatedOnsetNanos in 0..20 * S }
-            .distinctBy { it.speciesId to it.estimatedOnsetNanos }
         if (wholeCries.size > 1) return null
         val cry = wholeCries.singleOrNull() ?: recovery.partialCryCandidates.singleOrNull { candidate ->
             end - candidate.estimatedOnsetNanos in 0..20 * S && charges.any {
@@ -110,12 +109,16 @@ internal object ReplayTerminalAudioAssociation {
         val departureRefs = departure?.evidenceReferences ?: run {
             // During an established appearance a second capture can corroborate
             // the same cry when the departure flash is incomplete. It is one cry.
-            val whole = cry.fragments.singleOrNull { it.correlation >= .95f } ?: return null
+            val whole = cry.fragments.filter { it.correlation >= .95f }
             val partial = recovery.partialCryCandidates.singleOrNull { it.speciesId == cry.speciesId &&
                 kotlin.math.abs(it.estimatedOnsetNanos - at) <= 5_000_000L } ?: return null
-            val corroboration = partial.fragments.filter { it.articleId != whole.articleId &&
-                it.audioSha256 != whole.audioSha256 && it.referenceSha256 == whole.referenceSha256 &&
-                kotlin.math.abs(it.estimatedOnsetNanos - at) <= 5_000_000L }
+            val corroboration = partial.fragments.filter { part ->
+                kotlin.math.abs(part.estimatedOnsetNanos - at) <= 5_000_000L && whole.any { fit ->
+                    part.articleId != fit.articleId && part.audioSha256 != fit.audioSha256 &&
+                        part.referenceSha256 == fit.referenceSha256 &&
+                        kotlin.math.abs(part.estimatedOnsetNanos - fit.estimatedOnsetNanos) <= 5_000_000L
+                }
+            }
             val corroborated = corroboration.groupBy { it.articleId }.filterValues { fragments ->
                 fragments.maxOf { it.referenceOffsetNanos } >= fragments.minOf { it.referenceOffsetNanos + it.durationNanos }
             }

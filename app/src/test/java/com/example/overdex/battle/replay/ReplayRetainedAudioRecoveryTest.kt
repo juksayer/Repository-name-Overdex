@@ -22,6 +22,24 @@ class ReplayRetainedAudioRecoveryTest {
     private fun recover(a: MatchArchive = archive(), refs: List<ReplayAudioReference> = listOf(ref, other),
                         read: (ArchivedAudioCaptured) -> ByteArray? = { if (it.artifactPath == "one") first else second }) =
         ReplayRetainedAudioRecovery.recover(a, refs, read = read)
+    @Test fun overlappingWholeCryFitsRetainSourcesAndKeepSeparateCallsDistinct() {
+        fun clip(id: String, onset: Long) = ReplayAudioFragment(id, onset - S, "audio-$id",
+            "cry-reference", S, 0, 1_648_500_000L, .85f)
+        val entry = clip("entry", 61_546_000_000L)
+        val end = clip("departure", 90_542_000_000L)
+        val overlap = clip("overlap", end.estimatedOnsetNanos + 5_380_000)
+        val fits = listOf(entry, overlap, end, end)
+        fun recover(fragments: List<ReplayAudioFragment>) =
+            ReplayRetainedAudioRecovery.wholeCryOccurrences(mapOf(134 to fragments))
+        val occurrences = recover(fits)
+        assertEquals(occurrences, recover(fits.reversed()))
+        assertEquals(listOf(listOf(entry), listOf(end, overlap)), occurrences.map { it.fragments })
+        // Nearby rival waveforms and successively drifting fits cannot merge two calls.
+        assertEquals(3, recover(fits + overlap.copy(referenceSha256 = "other-reference")).size)
+        assertEquals(3, recover(fits + clip("drift", end.estimatedOnsetNanos + 11_000_000)).size)
+        assertEquals(3, ReplayRetainedAudioRecovery.wholeCryOccurrences(mapOf(134 to fits, 135 to listOf(end))).size)
+    }
+
     @Test fun `independent nonoverlapping segments recover one effect without source mutation`() {
         val a = archive(); val before = MatchArchiveSerializer.serialize(a)
         val result = recover(a)
@@ -101,10 +119,10 @@ class ReplayRetainedAudioRecoveryTest {
                 event("end", 16*S, ArchivedMatchEnded("WIN"))))
             return recover(a, refs) { bytes }.terminalWholeCries
         }
-        val found = scan(pcm).distinctBy { it.estimatedOnsetNanos }.single()
+        val found = scan(pcm).single()
         assertEquals(10*S + offset*S/8000, found.estimatedOnsetNanos)
         assertEquals(pcm.size*S/8000, found.referenceDurationNanos)
-        assertEquals("original", found.fragments.single().articleId)
+        assertEquals(setOf("original"), found.fragments.map { it.articleId }.toSet())
         assertTrue(scan(pcm.copyOf(9600)).isEmpty())
         assertTrue(scan(samples(charge)).none { it.speciesId == 346 })
         assertTrue(scan(samples(rival)).none { it.speciesId == 346 })
