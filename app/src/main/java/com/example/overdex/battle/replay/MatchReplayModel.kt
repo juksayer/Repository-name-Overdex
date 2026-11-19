@@ -52,6 +52,7 @@ import com.example.overdex.battle.inference.ChargedHpCameraGuard
 import com.example.overdex.battle.archive.ArchivedPokemonIdentified
 import com.example.overdex.battle.archive.ArchivedRealityArticle
 import com.example.overdex.battle.archive.ArchivedRawText
+import com.example.overdex.battle.archive.ArchivedAudioCaptured
 import com.example.overdex.battle.archive.ArchivedVsScreenWitnessed
 import com.example.overdex.battle.archive.ArchivedPlayerTeamRosterSlotWitnessed
 import com.example.overdex.battle.archive.ArchivedPlayerTeamSlotConfigured
@@ -130,12 +131,16 @@ class MatchReplayModel(
     private val reconstructedTracks = reconstructAnnouncementTracks()
     private val recoveredPlayerIdentities = ReplayPlayerIdentityRecovery.recover(replayArticles, configuredPlayerMembers)
     private val retainedCharge = impactEvidence?.frame?.takeIf { frame ->
-        timedArticles.any { it.matchId == archive.matchId && it.articleId == frame.announcementCropId && it.monotonicTimeNanos == frame.at } &&
-            timedArticles.any { it.articleId == frame.profileId && it.monotonicTimeNanos == frame.landing } &&
+        (frame.chargeSound?.let { sound -> sound.moveName == frame.move && sound.estimatedOnsetNanos == frame.at &&
+            sound.fragments.all { part -> timedArticles.any { row -> row.matchId == archive.matchId &&
+                row.articleId == part.articleId && row.monotonicTimeNanos == part.captureAtNanos &&
+                (row.payload as? ArchivedAudioCaptured)?.sha256 == part.audioSha256 } } }
+            ?: timedArticles.any { it.matchId == archive.matchId && it.articleId == frame.announcementCropId && it.monotonicTimeNanos == frame.at }) &&
+            timedArticles.any { it.matchId == archive.matchId && it.articleId == frame.profileId && it.monotonicTimeNanos == frame.landing } &&
             timedArticles.filter { it.monotonicTimeNanos!! <= frame.at }.mapNotNull { it.payload as? ArchivedActivePokemonSpeciesWitnessed }
                 .lastOrNull { it.side == "OPPONENT" }?.speciesName?.let { !it.equals(frame.actor.speciesName, true) } == true
     }
-    private val cropTracks = (archivedCropIdentities + listOfNotNull(retainedCharge?.let { f ->
+    private val cropTracks = (archivedCropIdentities + listOfNotNull(retainedCharge?.takeIf { it.chargeSound == null }?.let { f ->
         ReplayIdentityObservation("PLAYER", f.actor.speciesName, f.actor.speciesId, f.at, "SOURCE-MATCHED MOVE ANNOUNCEMENT",
             articleId = f.announcementCropId, evidenceArticleIds = listOf(f.announcementCropId, f.frameSha256))
     }))
@@ -233,7 +238,11 @@ class MatchReplayModel(
     // Source charge boundaries determine ordinary-play exclusions. A later
     // display fit must not feed back into accepted Fast Move times or counts.
     private val sourceChargedMoveUses = withRecoveredAudioCharges(reconstructChargedMoveUses()).let { uses ->
-        val frame = retainedCharge
+        val frame = retainedCharge?.takeIf { candidate ->
+            candidate.chargeSound == null || combatantFor("PLAYER", candidate.at)?.let { active ->
+                !active.isFainted && active.speciesId == candidate.actor.speciesId
+            } == true
+        }
         if (frame == null || uses.any { it.isCompleted && kotlin.math.abs(it.sourceAtNanos-frame.at) <= 600_000_000L }) uses
         else (uses + ReplayChargedMoveUse("PLAYER", frame.at, frame.at, frame.move, 1, setOf("SOURCE_MATCHED_ANNOUNCEMENT"),
             articleIds = setOf(frame.announcementCropId,frame.frameSha256))).sortedBy { it.sourceAtNanos }
@@ -540,7 +549,7 @@ class MatchReplayModel(
                     "Faint · ${link.recipientSpeciesName} · ${link.creditLabel()} · inferred",
                     sourceAtNanos = link.faintSourceAtNanos, sourceArticleIds = link.evidenceArticleIds, finishingAttribution = link)))
             }
-            finishingChargeAssociations.filter { it.basis in setOf(ReplayTerminalAudioAssociation.BASIS, ReplayTerminalAudioAssociation.ANNOUNCED, ReplayTerminalAudioAssociation.ANNOUNCED_PARTIAL, ReplayImpactFinish.BASIS) &&
+            finishingChargeAssociations.filter { it.basis in setOf(ReplayTerminalAudioAssociation.BASIS, ReplayTerminalAudioAssociation.ANNOUNCED, ReplayTerminalAudioAssociation.ANNOUNCED_PARTIAL, ReplayImpactFinish.BASIS, ReplaySoundMatchedBanner.BASIS) &&
                 presentedKnockouts.none { ko -> ko.side == it.recipientSide && ko.appearanceAtNanos == it.recipientAppearanceAtNanos }
             }.forEach { link ->
                 add(faintMarker(null, link, ReplayEventMarker("recovered-faint:${link.recipientSide}:${link.recipientAppearanceAtNanos}",
@@ -555,7 +564,7 @@ class MatchReplayModel(
                     combatantFor("OPPONENT", cry.estimatedOnsetNanos)).filter { it.speciesId == cry.speciesId }
                 val label = actors.singleOrNull()?.displayName ?: "#${cry.speciesId}"
                 val purpose = if (sliverDepartures.any { it.cry == cry } || finishingChargeAssociations.any { link ->
-                    link.basis == ReplayTerminalAudioAssociation.ANNOUNCED_PARTIAL &&
+                    link.basis in setOf(ReplayTerminalAudioAssociation.ANNOUNCED_PARTIAL, ReplaySoundMatchedBanner.BASIS) &&
                         cry.fragments.any { it.articleId in link.faintArticleIds }
                 }) "supports faint" else "purpose unknown"
                 add(ReplayEventMarker("partial-cry:${cry.speciesId}:${cry.estimatedOnsetNanos}",
@@ -740,7 +749,7 @@ class MatchReplayModel(
     }
 
     private fun ReplayFinishingChargeAssociation.faintPoseAt() =
-        if (basis == ReplayImpactFinish.BASIS || basis == ReplayTerminalAudioAssociation.ANNOUNCED_PARTIAL) faintSourceAtNanos else presentationImpactAtNanos
+        if (basis == ReplayImpactFinish.BASIS || basis == ReplaySoundMatchedBanner.BASIS || basis == ReplayTerminalAudioAssociation.ANNOUNCED_PARTIAL) faintSourceAtNanos else presentationImpactAtNanos
 
     private fun applyFinishingChargeAssociation(side: String, combatant: ReplayCombatant?, cursor: Long): ReplayCombatant? {
         combatant ?: return null

@@ -75,7 +75,7 @@ object ReplayRetainedAudioRecovery {
     }
 
     fun recover(archive: MatchArchive, references: List<ReplayAudioReference>,
-                unavailableReferences: List<String> = emptyList(), checkCancelled: () -> Unit = {}, captureWindow: LongRange? = null, read: (ArchivedAudioCaptured) -> ByteArray?): ReplayAudioRecovery {
+                unavailableReferences: List<String> = emptyList(), checkCancelled: () -> Unit = {}, captureWindow: LongRange? = null, bannerMove: String? = null, read: (ArchivedAudioCaptured) -> ByteArray?): ReplayAudioRecovery {
         if (references.size > 128) return ReplayAudioRecovery(unavailableReferences = listOf("Reference pool exceeds recovery bound"))
         data class Prepared(val ref: ReplayAudioReference, val offsets: List<Int>, val duration: Long, val matcher: CryWaveformMatcher)
         data class Hit(val ref: ReplayAudioReference, val duration: Long, val fragment: ReplayAudioFragment)
@@ -124,8 +124,23 @@ object ReplayRetainedAudioRecovery {
             if (article.sourceId == "FAST_MOVE_STREAM_AUDIO_CAPTURE" && mono.size <= 4 * 8000) {
                 val nearSliver = changes.any { article.monotonicTimeNanos!! in (it.at - 4 * SECOND)..(it.at + 2 * SECOND) }
                 if (nearSliver || end != null && article.monotonicTimeNanos!! >= end - 20 * SECOND) {
-                    partialCries += ReplayPartialCryRecovery.measure(audio, article.articleId,
+                    val candidates = ReplayPartialCryRecovery.measure(audio, article.articleId,
                         article.monotonicTimeNanos!!, p.sha256, references)
+                    partialCries += if (bannerMove == null) candidates else candidates.mapNotNull { candidate ->
+                        // Verify the entire available clip against the cry. Keep its missing onset explicit.
+                        val ref = prepared.singleOrNull { it.ref.speciesId == candidate.speciesId &&
+                            it.ref.sha256 == candidate.fragments.first().referenceSha256 }?.ref ?: return@mapNotNull null
+                        val reference = StatChangeSoundMatcher.mono8k(ref.audio)
+                        if (mono.size < 8000 || mono.size * 3 < reference.size * 2 || reference.size > 32000)
+                            return@mapNotNull null
+                        val fit = CryWaveformMatcher(listOf(CryWaveformReference(1, p.sha256, audio)))
+                            .measureMono8k(reference).singleOrNull() ?: return@mapNotNull null
+                        val fragment = ReplayAudioFragment(article.articleId, article.monotonicTimeNanos, p.sha256,
+                            ref.sha256, 0, fit.offsetNanos, fit.durationNanos, fit.correlation)
+                        candidate.takeIf { fit.correlation >= .90f && abs(fragment.estimatedOnsetNanos -
+                            it.estimatedOnsetNanos) <= WHOLE_FIT_TOLERANCE_NANOS }
+                            ?.copy(fragments = candidate.fragments + fragment)
+                    }
                 }
                 val names = soundsByCaptureTime[article.monotonicTimeNanos].orEmpty()
                     .flatMap { it.referenceCandidates }.filter { it.similarity >= .85f }
@@ -194,7 +209,11 @@ object ReplayRetainedAudioRecovery {
                         }
                     }
                 }
-                val threshold = if (best.ref.speciesId != null) .95f else .98f
+                val threshold = when {
+                    captureWindow != null && best.ref.charged && best.ref.name.equals(bannerMove, true) -> .90f
+                    best.ref.speciesId != null -> .95f
+                    else -> .98f
+                }
                 if (best.fragment.durationNanos >= 600_000_000L && best.fragment.correlation >= threshold && best.fragment.correlation - competitor.fragment.correlation >= .15f) hits += best.copy(fragment = best.fragment.copy(runnerUpName = competitor.ref.name, runnerUpCorrelation = competitor.fragment.correlation))
             }
         }

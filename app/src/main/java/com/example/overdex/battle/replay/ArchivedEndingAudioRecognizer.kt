@@ -18,7 +18,12 @@ object ArchivedEndingAudioRecognizer {
         recognize(archive, moves, speciesIds, openArchive, null, readAsset)
 
     suspend fun recognize(archive: MatchArchive, moves: List<Move>, speciesIds: Set<Int>,
-                          openArchive: () -> InputStream?, captureWindow: LongRange?, readAsset: (String) -> ByteArray): ReplayAudioRecovery = withContext(Dispatchers.Default) {
+                          openArchive: () -> InputStream?, captureWindow: LongRange?, readAsset: (String) -> ByteArray): ReplayAudioRecovery =
+        recognize(archive, moves, speciesIds, openArchive, captureWindow, null, readAsset)
+
+    internal suspend fun recognize(archive: MatchArchive, moves: List<Move>, speciesIds: Set<Int>,
+                          openArchive: () -> InputStream?, captureWindow: LongRange?, bannerMove: String?,
+                          readAsset: (String) -> ByteArray): ReplayAudioRecovery = withContext(Dispatchers.Default) {
         if (ReplayRetainedAudioRecovery.selectedArticles(archive).isEmpty()) return@withContext ReplayAudioRecovery()
         if (!archive.mediaIncluded) return@withContext ReplayAudioRecovery(unavailableArtifacts = listOf("Archive has no audio media"))
         val missing = mutableListOf<String>()
@@ -77,6 +82,6 @@ object ArchivedEndingAudioRecognizer {
             }
         } }
         val context = coroutineContext
-        ReplayRetainedAudioRecovery.recover(archive, references, missing, { context.ensureActive() }, captureWindow) { bytes[it.artifactPath] }
+        ReplayRetainedAudioRecovery.recover(archive, references, missing, { context.ensureActive() }, captureWindow, bannerMove) { bytes[it.artifactPath] }
     }
 }

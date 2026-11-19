@@ -1027,6 +1027,12 @@ recognition accuracy claim or implemented inference change.
 | CRY-06 — partial cry during a recipient flash in completed Replay | A uniquely owned charge has a named announcement against the established last opponent. A distinctive partial cry from that opponent overlaps the recipient’s independently tracked flash as it contracts and clears in the charge phase. | Credit the charge once. Replay places the inferred landing at the first flash frame and bounds the faint by the clearing frame. Keep the cry fragment, flash, announcement and badge on their original clocks. | An extrapolated cry onset is not a captured damage tick. A tied sound, living switch, later confirmed surviving HP, shield, competing hit or missing collapse withholds this association. Recorded Moondrop case `af45f682` is Gourgeist’s Seed Bomb against Vaporeon. |
 | Cry reference selection — completed Replay | A species is identified in battle from an appearance, an archived battlefield crop, a faint or an attack. | Include its cry as a competing sound, even after it leaves the field. | A place on a saved team alone does not show that the Pokémon participated. Reference selection has no effect on the archived audio. |
 
+### A retained announcement and a separate last-opponent cry
+
+If a retained banner names the attacker and uniquely identifies its equipped move, two separate archived audio clips can date that charge. Both clips must match different portions of the move sound and agree on its onset. The image's file time guides the search only.
+
+If the last opponent already had a localized entrance cry, a later clip that continuously matches at least one second and two thirds of the same cry can support departure. Replay checks the active appearances, the last-ball badge, a centered damage profile during the charge, and the subsequent result. A missing bottom rail or a surviving HP column prevents this route from assigning credit. Competing hits, shields, and living switches still block it. A cry clipped at the beginning supplies a time bound.
+
 Trainer wording: “hearing vaporeon cry when its hp is not 100% should be enough
 for a faint by itself. a cry and full hp bar would be an entrance.” Here “by
 itself” is understood in the stated context: Vaporeon is uniquely identified,

@@ -82,20 +82,24 @@ internal object ChargedImpactHpBarMeasurer {
     }
 
     internal fun acquireComplete(width: Int, height: Int, reference: ActiveHpBarMeasurement,
-        territory: BattleCropBounds? = null, pixelAt: (Int, Int) -> Int): CompleteHpBarSample? {
+        territory: BattleCropBounds? = null, pixelAt: (Int, Int) -> Int): CompleteHpBarSample? =
+        acquireComplete(width, height, reference, territory, false, pixelAt)
+
+    internal fun acquireComplete(width: Int, height: Int, reference: ActiveHpBarMeasurement,
+        territory: BattleCropBounds?, includeLastRail: Boolean, pixelAt: (Int, Int) -> Int): CompleteHpBarSample? {
         val bounds = searchBounds(width, height, reference, territory) ?: return null
         val w = bounds.right - bounds.left
         val pixels = IntArray(w * (bounds.bottom - bounds.top))
         for (y in bounds.top until bounds.bottom) for (x in bounds.left until bounds.right)
             pixels[(y - bounds.top) * w + x - bounds.left] = pixelAt(x, y)
-        return acquireCandidates(width, height, reference, bounds, pixels, true)
+        return acquireCandidates(width, height, reference, bounds, pixels, true, includeLastRail)
     }
 
     private data class Run(val y: Int, val left: Int, val right: Int, val color: Int)
 
     private fun acquireCandidates(
         width: Int, height: Int, reference: ActiveHpBarMeasurement,
-        bounds: BattleCropBounds, pixels: IntArray, allowUnknownInterior: Boolean,
+        bounds: BattleCropBounds, pixels: IntArray, allowUnknownInterior: Boolean, includeLastRail: Boolean = false,
     ): CompleteHpBarSample? {
         val regionWidth = bounds.right - bounds.left
         val flags = IntArray(pixels.size) { outline(pixels[it]) }
@@ -148,7 +152,7 @@ internal object ChargedImpactHpBarMeasurer {
         val measured = candidates.mapNotNull { candidate ->
             // The existing terminal reader requires paired outlines, both caps,
             // and a clean interior. Orange-only, flash and absent remain unknown.
-            TrackedTerminalHpBarMeasurer.measureComplete(width, height, candidate, bounds, chargedColorProfile = allowUnknownInterior) { x, y ->
+            TrackedTerminalHpBarMeasurer.measureComplete(width, height, candidate, bounds, chargedColorProfile = allowUnknownInterior, includeLastRail = includeLastRail) { x, y ->
                 if (x in bounds.left until bounds.right && y in bounds.top until bounds.bottom)
                     pixels[(y - bounds.top) * regionWidth + x - bounds.left] else 0
             }?.takeIf { allowUnknownInterior || it.hpSample != null }

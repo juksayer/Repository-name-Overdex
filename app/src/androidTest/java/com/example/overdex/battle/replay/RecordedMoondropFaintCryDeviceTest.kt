@@ -46,6 +46,53 @@ class RecordedMoondropFaintCryDeviceTest {
         assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
     }
 
+    @Test fun soundMatchedEarthPowerLandsBeforeVaporeonDeparts() = review(
+        "recordedNoonEarthPower", "2026-11-19_12-30-25_a92c7c13-11e1-4594-b162-44e6ad4be0fa.odxmatch.zip",
+        "1c3a43ab83900d67c5808d8c2adb538639ae44c132a2e5d757dee1598237e279",
+        controls = { archive, audio, replay ->
+            val original = replay(archive, audio)
+            val go = requireNotNull(original.matchStartNanos)
+            val reordered = replay(archive.copy(articles = archive.articles.reversed()), audio)
+            assertEquals(original.finishingAttributions, reordered.finishingAttributions)
+            fun rejects(rows: List<ArchivedRealityArticle>) {
+                assertTrue(replay(archive.copy(articles = rows), audio).finishingAttributions.none { it.recipientSpeciesName == "Vaporeon" })
+            }
+            val competing = archive.articles.last { (it.payload as? ArchivedFastMoveUseObserved)?.damagedSide == "OPPONENT" }
+            rejects(archive.articles + competing.copy(articleId = "another-hit", monotonicTimeNanos = go + 55_000_000_000L))
+            val living = archive.articles.first { (it.payload as? ArchivedActivePokemonSpeciesWitnessed)?.speciesName == "Sealeo" }
+            rejects(archive.articles + living.copy(articleId = "switched", monotonicTimeNanos = go + 55_000_000_000L))
+            val hp = archive.articles.last { row ->
+                val bar = row.payload as? ArchivedCompleteHpBarObserved
+                bar?.side == "OPPONENT" && bar.status == "LIVE_COLOR" && bar.liveColumns > 0 &&
+                    row.monotonicTimeNanos!! in go + 40_000_000_000L..go + 46_000_000_000L
+            }
+            rejects(archive.articles + hp.copy(articleId = "surviving-column", monotonicTimeNanos = go + 55_000_000_000L,
+                payload = (hp.payload as ArchivedCompleteHpBarObserved).copy(liveColumns = 1, appearanceStartedAtNanos = null)))
+            rejects(archive.articles.filterNot { (it.payload as? ArchivedBattleCryLocalized)?.speciesId == 134 })
+            rejects(archive.articles.filterNot { (it.payload as? ArchivedAudioCaptured)?.sha256?.startsWith("befc91bc") == true })
+        }
+    ) { model ->
+        val faint = requireNotNull(model.eventMarkers.singleOrNull { it.label == "Faint · Vaporeon · Earth Power by Camerupt" }) {
+            "Replay markers: " + model.eventMarkers.filter { it.kind in setOf(ReplayEventMarkerKind.CHARGED_MOVE, ReplayEventMarkerKind.FAINT) }.map { it.label }
+        }
+        val link = requireNotNull(faint.finishingAttribution)
+        val go = requireNotNull(model.matchStartNanos)
+        assertEquals(52.65, (link.moveSourceAtNanos - go) / 1e9, .025)
+        assertEquals(54.343, (link.landingAtNanos - go) / 1e9, .002)
+        assertTrue(faint.faintTiming is ReplayFaintTiming.Window)
+        assertTrue("Original announcement frame", "e106dcd2d92ddd723be745a3f8c1324b6edadb637217dfe320319b2da506b0ab" in link.moveArticleIds)
+        assertEquals(1, model.eventMarkers.count { it.kind == ReplayEventMarkerKind.CHARGED_MOVE && it.finishingAttribution == link })
+        assertNull(link.reception)
+        val landing = model.sceneAt(link.landingAtNanos)
+        assertEquals("Camerupt", landing.player?.speciesName)
+        assertEquals("Vaporeon", landing.opponent?.speciesName)
+        assertEquals(false, landing.opponent?.isFainted)
+        val action = landing.chargedMoveActions.single { it.finishingAssociation == link }
+        assertEquals(1f, ReplayChargePose.at(action, true).projectileProgress, 0f)
+        assertTrue(model.sceneAt(faint.atNanos).opponent!!.isFainted)
+        assertEquals(landing, model.sceneAt(link.landingAtNanos))
+    }
+
     @Test fun onlySecondDragonPulseFinishesVaporeon() = review(
         "recordedMoondropTwoPulses", "2026-11-19_12-27-58_457f590b-6d03-4469-b223-b45fcf0ac2b9.odxmatch.zip",
         "d4c0a20b0004ad53144fbc4be8358661b49914daae078a2f35158f3a569f1338",

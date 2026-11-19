@@ -110,20 +110,20 @@ internal object TrackedTerminalHpBarMeasurer {
 
     internal fun measureComplete(width: Int, height: Int, anchor: ActiveHpBarMeasurement,
         territory: BattleCropBounds? = null, pixelAt: (Int, Int) -> Int): CompleteHpBarSample? =
-        measureComplete(width, height, anchor, territory, false, pixelAt)
+        measureComplete(width, height, anchor, territory, false, pixelAt = pixelAt)
 
     internal fun measureComplete(width: Int, height: Int, anchor: ActiveHpBarMeasurement,
-        territory: BattleCropBounds?, chargedColorProfile: Boolean, pixelAt: (Int, Int) -> Int): CompleteHpBarSample? {
+        territory: BattleCropBounds?, chargedColorProfile: Boolean, includeLastRail: Boolean = false, pixelAt: (Int, Int) -> Int): CompleteHpBarSample? {
         val bounds = pixelBounds(width, height, anchor, territory) ?: return null
         val pixels = IntArray(bounds.width * bounds.height)
         for (y in bounds.top until bounds.bottom) for (x in bounds.left until bounds.right)
             pixels[(y - bounds.top) * bounds.width + x - bounds.left] = pixelAt(x, y)
-        return completeRegion(bounds, anchor, pixels, chargedColorProfile)
+        return completeRegion(bounds, anchor, pixels, chargedColorProfile, includeLastRail)
     }
 
     private fun completeRegion(bounds: Bounds, anchor: ActiveHpBarMeasurement, pixels: IntArray,
-        chargedColorProfile: Boolean): CompleteHpBarSample? {
-        fun profile(allowNumeric: Boolean, support: Float) = findOutline(bounds, anchor, pixels, support) { shape, flagsAt ->
+        chargedColorProfile: Boolean, includeLastRail: Boolean = false): CompleteHpBarSample? {
+        fun profile(allowNumeric: Boolean, support: Float) = findOutline(bounds, anchor, pixels, support, includeLastRail) { shape, flagsAt ->
             CompleteHpBarProfile.measure(shape, BattleCropBounds(bounds.left, bounds.top, bounds.right, bounds.bottom)) { x, y ->
                 pixels[(y - bounds.top) * bounds.width + x - bounds.left]
             }.copy(hpSample = if (allowNumeric) measureInterior(shape, flagsAt) else null)
@@ -134,13 +134,14 @@ internal object TrackedTerminalHpBarMeasurer {
     }
 
     private fun measureRegion(bounds: Bounds, anchor: ActiveHpBarMeasurement, pixels: IntArray): TrackedTerminalHpBarSample? =
-        findOutline(bounds, anchor, pixels, MIN_LINE_SUPPORT, ::measureInterior)
+        findOutline(bounds, anchor, pixels, MIN_LINE_SUPPORT, readInterior = ::measureInterior)
 
     private fun <T> findOutline(
         bounds: Bounds,
         anchor: ActiveHpBarMeasurement,
         pixels: IntArray,
         minimumLineSupport: Float,
+        includeLastRail: Boolean = false,
         readInterior: (ActiveHpBarMeasurement, (Int, Int) -> Int) -> T?,
     ): T? {
         // Pixel classification is linear in this tiny region, never the frame.
@@ -152,7 +153,7 @@ internal object TrackedTerminalHpBarMeasurer {
         var bestScore = Float.NEGATIVE_INFINITY
         for (top in max(bounds.top + 1, anchor.top - margin)..minOf(bounds.bottom - 2, anchor.top + margin)) {
             val centerBottom = top + expectedHeight
-            for (bottom in max(top + 6, centerBottom - HEIGHT_TOLERANCE)..minOf(bounds.bottom - 2, centerBottom + HEIGHT_TOLERANCE)) {
+            for (bottom in max(top + 6, centerBottom - HEIGHT_TOLERANCE)..minOf(bounds.bottom - (if (includeLastRail) 1 else 2), centerBottom + HEIGHT_TOLERANCE)) {
                 for (outline in intArrayOf(WHITE, ORANGE, BLUE)) {
                     // Full-length paired lines are mandatory; a single scenery
                     // line or the glow of a faint cannot stand in for a bar.

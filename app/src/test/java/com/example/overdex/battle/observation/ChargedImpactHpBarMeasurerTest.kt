@@ -27,6 +27,21 @@ class ChargedImpactHpBarMeasurerTest {
         assertTrue(green.measurement.filledFraction > .7f)
     }
 
+    @Test fun `a saved crop may end on the real bottom rail and still protects one red column`() {
+        val bounds = BattleCropBounds(220, 330, 480, centered.bottom + 1)
+        val orange = bar(fillWidth = 105, fill = ORANGE)
+        fun read(region: BattleCropBounds, pixel: (Int, Int) -> Int) =
+            ChargedImpactHpBarMeasurer.acquireComplete(700, 700, reference, region, true, pixel)
+        val damage = requireNotNull(read(bounds, orange))
+        assertTrue(damage.damageColumns > 0)
+        assertEquals(0, damage.liveColumns)
+        val surviving = requireNotNull(read(bounds) { x, y ->
+            if (x == centered.left + 4 && y in centered.top + 4 until centered.bottom - 4) RED else orange(x, y)
+        })
+        assertTrue(surviving.liveColumns > 0)
+        assertNull(read(bounds.copy(bottom = centered.bottom), orange))
+    }
+
     @Test fun `missing caps absent bar and flash remain unavailable`() {
         assertNull(measure { _, _ -> DARK })
         val outlined = bar()

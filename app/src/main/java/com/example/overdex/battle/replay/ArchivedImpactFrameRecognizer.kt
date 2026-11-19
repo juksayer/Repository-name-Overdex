@@ -21,6 +21,7 @@ data class ReplayImpactFrame(
     val announcementCropId: String, val frameSha256: String, val at: Long,
     val actor: ArchivedPlayerTeamSlotConfigured, val move: String,
     val profileId: String, val landing: Long, val departureIds: List<String>, val clearedAt: Long?,
+    val chargeSound: ReplayRecoveredCharge? = null,
 )
 
 internal object ArchivedImpactFrameRecognizer {
@@ -122,7 +123,7 @@ internal object ArchivedImpactFrameRecognizer {
         } finally { images.values.forEach(Bitmap::recycle) }
     }
 
-    private fun decode(bytes: ByteArray, width: Int, height: Int): Bitmap? {
+    internal fun decode(bytes: ByteArray, width: Int, height: Int): Bitmap? {
         if (width <= 0 || height <= 0 || width.toLong()*height > 5_000_000) return null
         val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)

@@ -15,7 +15,8 @@ internal object ReplayImpactFinish {
     suspend fun read(archive: MatchArchive, directory: File, moves: Map<String, List<Move>>,
                      audio: ReplayAudioRecovery, openArchive: () -> InputStream?,
                      readAsset: (String) -> ByteArray): ReplayImpactEvidence? {
-        val frame = ArchivedImpactFrameRecognizer.recognize(archive, directory, moves.values.flatten(), openArchive) ?: return null
+        val frame = ArchivedImpactFrameRecognizer.recognize(archive, directory, moves.values.flatten(), openArchive)
+            ?: return ReplaySoundMatchedBanner.read(archive, directory, moves, audio, openArchive, readAsset)
         val opponent = archive.articles.filter { it.matchId == archive.matchId && it.monotonicTimeNanos?.let { t -> t <= frame.at } == true &&
             (it.payload as? ArchivedActivePokemonSpeciesWitnessed)?.side == "OPPONENT" }
             .maxByOrNull { it.monotonicTimeNanos!! }?.payload as? ArchivedActivePokemonSpeciesWitnessed
@@ -53,8 +54,22 @@ internal object ReplayImpactFinish {
         }
         if (emptyBadge != null && counts.any { it.monotonicTimeNanos!! in emptyBadge.monotonicTimeNanos!!..end &&
                 (it.payload as ArchivedOpponentBattleResourceCountMeasured).visibleCount != 0 }) return null
-        val burstAt = f.clearedAt?.takeIf { f.departureIds.size == 3 }
-        val clear = burstAt ?: emptyBadge?.monotonicTimeNanos ?: return null
+        val burstAt = f.clearedAt?.takeIf { f.chargeSound == null && f.departureIds.size == 3 }
+        val repeatCry = f.chargeSound?.let {
+            val entrance = articles.singleOrNull { row -> row.articleId == f.departureIds.firstOrNull() } ?: return null
+            val known = entrance.payload as? ArchivedBattleCryLocalized ?: return null
+            val departure = e.sounds.partialCryCandidates.singleOrNull { candidate ->
+                candidate.speciesId == known.speciesId && candidate.speciesId == target?.speciesId
+            }?.fragments?.singleOrNull { part -> part.articleId == f.departureIds.lastOrNull() &&
+                part.referenceSha256 == known.referenceSha256 && part.durationNanos >= S && part.correlation >= .90f }
+                ?: return null
+            if (entrance.monotonicTimeNanos!! !in (targetAt - 2*S) until f.at ||
+                departure.estimatedOnsetNanos <= f.landing || departure.captureAtNanos != f.clearedAt ||
+                articles.none { row -> row.articleId == departure.articleId && row.monotonicTimeNanos == departure.captureAtNanos &&
+                    (row.payload as? ArchivedAudioCaptured)?.sha256 == departure.audioSha256 }) return null
+            departure
+        }
+        val clear = burstAt ?: emptyBadge?.monotonicTimeNanos ?: repeatCry?.captureAtNanos ?: return null
         if (articles.filter { it.payload is ArchivedMatchEnded }.any { (it.payload as ArchivedMatchEnded).result != "WIN" } ||
             clear !in f.landing..end || end - clear > 20*S ||
             actor?.speciesName != f.actor.speciesName || target?.speciesId == null || target.speciesName == actor.speciesName ||
@@ -72,7 +87,7 @@ internal object ReplayImpactFinish {
         // One unavailable cue is silence, not a contrary observation. Require two
         // independent kinds of departure evidence; a second clip still counts as audio.
         val qualifiedCry = cry != null && sounds.unavailableReferences.isEmpty() && sounds.unavailableArtifacts.isEmpty()
-        if (listOf(qualifiedCry, burstAt != null, emptyBadge != null).count { it } < 2) return null
+        if (repeatCry == null && listOf(qualifiedCry, burstAt != null, emptyBadge != null).count { it } < 2) return null
         if (articles.any { a -> a.monotonicTimeNanos!! in (f.at - 2_500_000_000L)..clear &&
                 (a.payload as? ArchivedFastMoveUseObserved)?.damagedSide == "OPPONENT" }) return null
         if (articles.any { a -> a.monotonicTimeNanos!! in f.at..end && when (val p = a.payload) {
@@ -84,10 +99,10 @@ internal object ReplayImpactFinish {
                 else -> false
             } }) return null
         return ReplayFinishingChargeAssociation("PLAYER", actor.speciesName, ownerAt, "OPPONENT", target.speciesName, targetAt,
-            f.move, f.at, clear, f.landing, null, listOf(f.announcementCropId, f.frameSha256),
+            f.move, f.at, clear, f.landing, null, (listOf(f.announcementCropId, f.frameSha256) + f.chargeSound?.fragments.orEmpty().map { it.articleId }).distinct(),
             f.departureIds + (cry?.fragments.orEmpty() + partial?.fragments.orEmpty()).map { it.articleId } +
                 listOfNotNull(count.articleId, emptyBadge?.articleId, result.articleId),
-            emptyList(), BASIS, impactSupportArticleIds = listOf(f.profileId),
-            departedBy = ReplayTimeBound(clear, if (burstAt != null) f.departureIds.last() else requireNotNull(emptyBadge).articleId))
+            emptyList(), if (repeatCry == null) BASIS else ReplaySoundMatchedBanner.BASIS, impactSupportArticleIds = listOf(f.profileId),
+            departedBy = ReplayTimeBound(clear, if (burstAt != null) f.departureIds.last() else repeatCry?.articleId ?: requireNotNull(emptyBadge).articleId))
     }
 }
