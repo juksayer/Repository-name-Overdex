@@ -340,6 +340,14 @@ internal class ReplayFinishingEvidence(
             receipt)
     }
 
+    fun witnessedDamagedBar(row: ArchivedRealityArticle, side: String, appearance: Long): Boolean {
+        val at = row.monotonicTimeNanos ?: return false
+        if (appearanceAt(side, at) != appearance) return false
+        val p = row.payload as? ArchivedCompleteHpBarObserved ?: return false
+        return p.side == side && p.status == "LIVE_COLOR" && p.liveColumns in 1 until p.interiorColumns &&
+            reliable(row) && complete(p) && belongsToAppearance(p, at, appearance)
+    }
+
     fun hasLivingHpAfter(side: String, ownerAppearance: Long, receipt: Long, end: Long): Boolean {
         val recipient = actorAt(side, receipt) ?: return true
         return articles.any { a ->
@@ -398,6 +406,12 @@ internal class ReplayFinishingEvidence(
             else minOf(cycle?.startedAtNanos ?: receipt, link.moveSourceAtNanos)
         val ownIds = selectedCharge?.let { chargeEvidence.getValue(it) }.orEmpty() + link.moveArticleIds + link.reception?.articleIds.orEmpty()
         val fastOccurrences = ownIds.mapNotNull { byId[it]?.fastOccurrenceId() }.toSet()
+        // A cited living bar after preparation can settle an earlier Fast Move
+        // only if that specific use already cites its own nonlethal damage.
+        val preChargeLiveAt = selectedCharge?.let { cast -> link.faintArticleIds.mapNotNull(byId::get)
+            .filter { it.monotonicTimeNanos!! in cast.preparationAtNanos until cast.sourceAtNanos &&
+                witnessedDamagedBar(it, link.recipientSide, link.recipientAppearanceAtNanos) }
+            .maxOfOrNull { it.monotonicTimeNanos!! } }
         val competingFrom = minOf(link.moveSourceAtNanos, receipt)
         val competingUntil = minOf(through, maxOf(receipt, link.faintSourceAtNanos))
         val otherCharges = charges.filter { it !== selectedCharge && it.completed }
@@ -412,6 +426,8 @@ internal class ReplayFinishingEvidence(
                 appearanceAt(link.recipientSide, claim.atNanos) == link.recipientAppearanceAtNanos &&
                 when (claim.kind) {
                     "FAST_USE" -> byId[claim.articleId]?.fastOccurrenceId() !in fastOccurrences &&
+                        !(preChargeLiveAt != null && claim.atNanos < selectedCharge.preparationAtNanos &&
+                            receivedNonlethalFast(claim.articleId, link.recipientSide, claim.atNanos)) &&
                         (claim.atNanos >= competingFrom || (selectedCharge != null && fast.none {
                             claim.articleId in it.witness.articleIds && it.impactAtNanos < selectedCharge.preparationAtNanos
                         }))
@@ -443,6 +459,29 @@ internal class ReplayFinishingEvidence(
                 } && hasLivingHpAfter(link.recipientSide, link.recipientAppearanceAtNanos,
                     other.impactAtNanos + 1, receipt - 1)
             !survived && (other.side !in SIDES || !other.uniquelyOwned || !blocked(other, link.recipientSide, through))
+        }
+    }
+
+    private fun receivedNonlethalFast(id: String, side: String, sourceAt: Long): Boolean {
+        val row = byId[id] ?: return false
+        val use = row.payload as? ArchivedFastMoveUseObserved ?: return false
+        if (use.damagedSide != side || "HP_DAMAGE_TICK" !in use.evidenceKinds) return false
+        val tickRow = (row.predecessorIds + row.evidenceReferences.orEmpty()).distinct().mapNotNull(byId::get)
+            .singleOrNull { it.payload is ArchivedActiveHpBarDamageTickMeasured } ?: return false
+        val tick = tickRow.payload as ArchivedActiveHpBarDamageTickMeasured
+        if (tickRow.monotonicTimeNanos != sourceAt || tick.damagedSide != side ||
+            !(tick.beforeFraction <= 1f && tick.afterFraction > 0f && tick.afterFraction < tick.beforeFraction)) return false
+        // The exact damage amount may be uncertain. Verify what survived that
+        // specific tick using the original whole bar and its co-timed measurement.
+        val key = side to sourceAt
+        val profile = profiles[key].orEmpty().singleOrNull() ?: return false
+        if (!witnessedDamagedBar(profile, side, appearanceAt(side, sourceAt))) return false
+        val p = profile.payload as ArchivedCompleteHpBarObserved
+        return hpByFrame[key].orEmpty().any { sample ->
+            val bar = sample.payload as ArchivedActiveHpBarMeasured
+            reliable(sample) && bar.filledFraction == tick.afterFraction && bar.barLeft == p.barLeft &&
+                bar.barRight == p.barRight && bar.barTop == p.barTop && bar.barBottom == p.barBottom &&
+                bar.sourceWidth == p.sourceWidth && bar.sourceHeight == p.sourceHeight
         }
     }
 

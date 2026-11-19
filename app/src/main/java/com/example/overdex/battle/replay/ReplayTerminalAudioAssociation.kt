@@ -16,6 +16,7 @@ internal object ReplayTerminalAudioAssociation {
         actorAt: (String, Long) -> ReplayCombatant?,
         appearanceAt: (String, Long) -> Long,
         nextAppearance: (String, Long) -> Long?,
+        witnessedDamagedBar: (ArchivedRealityArticle, String, Long) -> Boolean = { _, _, _ -> false },
     ): ReplayFinishingChargeAssociation? {
         if (recovery.terminalWholeCries.isEmpty()) return null
         val ordered = rows.filter { it.monotonicTimeNanos != null }
@@ -59,7 +60,7 @@ internal object ReplayTerminalAudioAssociation {
                 else -> false
             } }) return null
 
-        // The cry gives the time. A localized flash must still contract and clear on
+        // The cry gives the time. For visual corroboration, the flash must contract and clear on
         // contiguous source frames; a capture gap cannot stand in for a clear frame.
         val phases = ordered.mapNotNull { row ->
             val batch = row.payload as? ArchivedTerminalParticleObservations ?: return@mapNotNull null
@@ -71,8 +72,28 @@ internal object ReplayTerminalAudioAssociation {
             TerminalCollapseSequences.find(batches.flatten(), requiredClearFrames = 1) { frame, core ->
                 core.area >= .005 * frame.sourceWidth * frame.sourceHeight
             }
-        }.singleOrNull() ?: return null
-        val refs = cry.fragments.map { it.articleId } + departure.evidenceReferences + listOf(badge.articleId, result.articleId)
+        }.singleOrNull()
+        val departureRefs = departure?.evidenceReferences ?: run {
+            // During an established appearance a second capture can corroborate
+            // the same cry when the departure flash is incomplete. It is one cry.
+            val whole = cry.fragments.singleOrNull { it.correlation >= .95f } ?: return null
+            val partial = recovery.partialCryCandidates.singleOrNull { it.speciesId == cry.speciesId &&
+                kotlin.math.abs(it.estimatedOnsetNanos - at) <= 5_000_000L } ?: return null
+            val corroboration = partial.fragments.filter { it.articleId != whole.articleId &&
+                it.audioSha256 != whole.audioSha256 && it.referenceSha256 == whole.referenceSha256 &&
+                kotlin.math.abs(it.estimatedOnsetNanos - at) <= 5_000_000L }
+            val corroborated = corroboration.groupBy { it.articleId }.filterValues { fragments ->
+                fragments.maxOf { it.referenceOffsetNanos } >= fragments.minOf { it.referenceOffsetNanos + it.durationNanos }
+            }
+            if (corroborated.isEmpty()) return null
+            val appearance = appearanceAt("OPPONENT", start)
+            val live = ordered.lastOrNull { row ->
+                row.monotonicTimeNanos!! in maxOf(appearance, start - 2 * S)..start &&
+                    witnessedDamagedBar(row, "OPPONENT", appearance)
+            } ?: return null
+            corroborated.keys.toList() + live.articleId
+        }
+        val refs = cry.fragments.map { it.articleId } + departureRefs + listOf(badge.articleId, result.articleId)
         return ReplayFinishingChargeAssociation(
             "PLAYER", owner.speciesName, appearanceAt("PLAYER", start),
             "OPPONENT", target.speciesName, appearanceAt("OPPONENT", start), charge.moveName,

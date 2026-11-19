@@ -37,6 +37,7 @@ import com.example.overdex.battle.custody.FastMoveSoundSearchScope
 import com.example.overdex.battle.inference.RecipientAudioSupport
 import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillIncreased
 import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillCadenceMeasured
+import com.example.overdex.battle.archive.ArchivedPlayerActiveIdentityResolved
 import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveLabelRead
 import com.example.overdex.battle.archive.ArchivedPlayerChargeButtonTouchWitnessed
 import com.example.overdex.battle.archive.ArchivedChargedMoveEnergySpent
@@ -334,7 +335,7 @@ class MatchReplayModel(
             ::combatantFor, ::appearanceAt) { at -> availableFastMoves("PLAYER", at) }
         val terminalAudio = ReplayTerminalAudioAssociation.resolve(replayArticles, audioRecovery, charges,
             fastMoveCycles, ::combatantFor, ::appearanceAt, ::nextAppearance, acceptsHp, ::audioReferencesMissingAt)
-        val cryCharge = ReplayTerminalAudioAssociation.announcedFinish(replayArticles, audioRecovery, charges, ::combatantFor, ::appearanceAt, ::nextAppearance)
+        val cryCharge = ReplayTerminalAudioAssociation.announcedFinish(replayArticles, audioRecovery, charges, ::combatantFor, ::appearanceAt, ::nextAppearance, evidence::witnessedDamagedBar)
         val frameLink = retainedCharge?.let { frame ->
             charges.singleOrNull { it.sourceAtNanos == frame.at && frame.announcementCropId in it.articleIds } ?: return@let null
             ReplayImpactFinish.associate(requireNotNull(impactEvidence), replayArticles, combatantFor("PLAYER", frame.at),
@@ -2093,10 +2094,38 @@ class MatchReplayModel(
         private val MOVE_PATTERN = Regex("^(.+?)\\s+used\\s+.+!*$", RegexOption.IGNORE_CASE)
         private val NAMED_MOVE_PATTERN = Regex("^(.+?)\\s+used\\s+(.+?)[!.]*$", RegexOption.IGNORE_CASE)
 
+        /** A saved slot establishes possible team membership. Only a battle appearance or use enters the audio pool. */
+        fun audioParticipantNames(archive: MatchArchive, crops: List<ReplayIdentityObservation>): Set<String> {
+            val rows = archive.articles.filter { it.matchId == archive.matchId && it.monotonicTimeNanos != null }
+            val start = rows.filter { it.payload is ArchivedMatchStarted }.minOfOrNull { it.monotonicTimeNanos!! } ?: return emptySet()
+            val end = rows.filter { it.payload is ArchivedMatchEnded }.minOfOrNull { it.monotonicTimeNanos!! } ?: return emptySet()
+            return buildSet {
+                crops.filter { it.atNanos in start..end }.forEach { add(it.speciesName) }
+                for (row in rows) {
+                    if (row.monotonicTimeNanos!! !in start..end) continue
+                    when (val p = row.payload) {
+                        is ArchivedActivePokemonSpeciesWitnessed -> add(p.speciesName)
+                        is ArchivedPlayerActiveIdentityResolved -> add(p.speciesName)
+                        is ArchivedActivePokemonFaintedWitnessed -> p.speciesName?.let(::add)
+                        is ArchivedFastMoveIdentified -> add(p.speciesName)
+                        is ArchivedChargedMoveEnergySpent -> add(p.speciesName)
+                        is ArchivedRawText -> if (row.sourceId == "ANNOUNCEMENT_WITNESS") {
+                            ENTRY_PATTERN.matchEntire(p.value.trim())?.groupValues?.get(1)?.trim()?.let(::add)
+                            MOVE_PATTERN.matchEntire(p.value.trim())?.groupValues?.get(1)?.trim()?.let(::add)
+                        }
+                        else -> Unit
+                    }
+                }
+            }
+        }
+
         fun referencedSpeciesNames(archive: MatchArchive): Set<String> = buildSet {
             archive.articles.forEach { article ->
                 when (val payload = article.payload) {
                     is ArchivedActivePokemonSpeciesWitnessed -> add(payload.speciesName)
+                    is ArchivedPlayerActiveIdentityResolved -> add(payload.speciesName)
+                    is ArchivedFastMoveIdentified -> add(payload.speciesName)
+                    is ArchivedChargedMoveEnergySpent -> add(payload.speciesName)
                     is ArchivedActivePokemonFaintedWitnessed -> payload.speciesName?.let(::add)
                     is ArchivedPokemonIdentified -> add(payload.species)
                     is ArchivedPlayerTeamRosterSlotWitnessed -> add(payload.speciesName)

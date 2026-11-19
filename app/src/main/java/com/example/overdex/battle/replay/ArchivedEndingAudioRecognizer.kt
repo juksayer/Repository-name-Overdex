@@ -26,7 +26,7 @@ object ArchivedEndingAudioRecognizer {
         val wanted = moves.map { key(it.name) }.toMutableSet()
         // A configured or recorded move is still a candidate even when reference legality disagrees.
         if (captureWindow == null) archive.articles.forEach { a -> when (val p = a.payload) {
-            is ArchivedPlayerTeamSlotConfigured -> wanted.addAll((p.chargedMoveNames + p.fastMoveName).map(::key))
+            is ArchivedPlayerTeamSlotConfigured -> if (p.speciesId in speciesIds) wanted.addAll((p.chargedMoveNames + p.fastMoveName).map(::key))
             is ArchivedFastMoveIdentified -> wanted.add(key(p.moveName))
             is ArchivedChargedMoveEnergySpent -> wanted.add(key(p.moveName))
             else -> Unit

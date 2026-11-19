@@ -2,6 +2,9 @@ package com.example.overdex.battle.replay
 
 import com.example.overdex.battle.archive.*
 import com.example.overdex.battle.audio.Pcm16Audio
+import com.example.overdex.battle.audio.StatChangeSoundMatcher
+import com.example.overdex.battle.audio.WavPcm16
+import java.io.File
 import org.junit.Assert.*
 import org.junit.Test
 import java.nio.ByteBuffer
@@ -75,6 +78,51 @@ class ReplayRetainedAudioRecoveryTest {
         assertEquals(10*S, found.fragments.single().captureAtNanos)
         assertTrue(result.unavailableArtifacts.isEmpty())
     }
+    @Test fun `a complete long cry crosses search windows but never spans artifacts or wins an acoustic tie`() {
+        fun reference(name: String, species: Int?, asset: String): ReplayAudioReference {
+            val bytes = File("src/main/assets/$asset").readBytes()
+            return ReplayAudioReference(name, species == null, species, ReplayRetainedAudioRecovery.sha(bytes),
+                requireNotNull(WavPcm16.decodeBundledReference(bytes)))
+        }
+        val cry = reference("Cradily", 346, "cry_references/pv346.wav")
+        val charge = reference("Night Slash", null, "charged_move_sounds/400-0_night_slash.wav")
+        val rival = reference("Sceptile", 254, "cry_references/pv254.wav")
+        val pool = listOf(cry, charge, rival)
+        fun samples(r: ReplayAudioReference) = StatChangeSoundMatcher.mono8k(r.audio)
+        val pcm = samples(cry)
+        val offset = 7100
+        fun scan(signal: ShortArray, refs: List<ReplayAudioReference> = pool): List<ReplayRecoveredCry> {
+            val data = noise(offset, 42) + signal
+            val bytes = wav(data)
+            val row = capture("original", 10*S, bytes)
+            val clip = row.copy(payload = (row.payload as ArchivedAudioCaptured).copy(durationNanos = data.size * S / 8000))
+            val a = archive().copy(articles = listOf(event("go", 0, ArchivedMatchStarted), clip,
+                event("charge", 10*S, ArchivedChargedMoveEnergySpent("PLAYER", "Greninja", "Night Slash", 35, "announced")),
+                event("end", 16*S, ArchivedMatchEnded("WIN"))))
+            return recover(a, refs) { bytes }.terminalWholeCries
+        }
+        val found = scan(pcm).distinctBy { it.estimatedOnsetNanos }.single()
+        assertEquals(10*S + offset*S/8000, found.estimatedOnsetNanos)
+        assertEquals(pcm.size*S/8000, found.referenceDurationNanos)
+        assertEquals("original", found.fragments.single().articleId)
+        assertTrue(scan(pcm.copyOf(9600)).isEmpty())
+        assertTrue(scan(samples(charge)).none { it.speciesId == 346 })
+        assertTrue(scan(samples(rival)).none { it.speciesId == 346 })
+        assertTrue(scan(pcm, pool + cry.copy(name = "Indistinguishable move", speciesId = null)).isEmpty())
+    }
+
+    @Test fun `a saved team member needs a battle appearance to enter the cry comparison`() {
+        val roster = ArchivedPlayerTeamSlotConfigured(1, "Turtonator", 776, "Incinerate", listOf("Dragon Pulse"))
+        val a = archive().copy(articles = archive().articles + listOf(
+            event("roster", 0, roster),
+            event("old", 0, ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Camerupt", 323)).copy(matchId = "other"),
+            event("entry", 5*S, ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Sceptile", 254)),
+            event("use", 12*S, ArchivedChargedMoveEnergySpent("PLAYER", "Greninja", "Night Slash", 35, "announced")),
+            event("after", 17*S, ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Gourgeist", 711))))
+        val crop = ReplayIdentityObservation("OPPONENT", "Cradily", 346, 11*S, "ARCHIVED_CROP")
+        assertEquals(setOf("Sceptile", "Greninja", "Cradily"), MatchReplayModel.audioParticipantNames(a, listOf(crop)))
+    }
+
     @Test fun `early appearance permits bounded entry audio without admitting unrelated early clips`() {
         val a = archive().copy(articles = listOf(event("start", 0, ArchivedMatchStarted),
             event("identity", 20*S, ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Vaporeon", 134)),

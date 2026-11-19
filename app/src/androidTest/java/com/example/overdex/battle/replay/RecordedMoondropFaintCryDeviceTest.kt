@@ -31,8 +31,10 @@ class RecordedMoondropFaintCryDeviceTest {
         val fast = species.associate { it.name to it.fastMoves }
         val charged = species.associate { it.name to it.chargedMoves }
         val asset = { name: String -> ctx.assets.open(name).use { it.readBytes() } }
-        val audio = ArchivedEndingAudioRecognizer.recognize(archive, (fast.values.flatten() + charged.values.flatten()).distinct(),
-            species.map { it.id }.toSet(), file::inputStream, asset)
+        val participants = MatchReplayModel.audioParticipantNames(archive, crops)
+        val inBattle = species.filter { it.name in participants }
+        val audio = ArchivedEndingAudioRecognizer.recognize(archive, inBattle.flatMap { it.fastMoves + it.chargedMoves }.distinct(),
+            inBattle.map { it.id }.toSet(), file::inputStream, asset)
         val impact = ReplayImpactFinish.read(archive, File(ctx.filesDir, "artifacts/frames/sha256"),
             species.associate { it.name to (it.fastMoves + it.chargedMoves) }, audio, file::inputStream, asset)
         val last = ReplayLastOpponentFastFinish.read(archive, catalog, file::inputStream, asset)
@@ -42,6 +44,54 @@ class RecordedMoondropFaintCryDeviceTest {
         verify(model(archive, audio))
         controls?.invoke(archive, audio, ::model)
         assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
+    }
+
+    @Test fun nightSlashLandsBeforeCradilysFullCry() = review(
+        "recordedMoondropCradily", "2026-11-19_00-13-40_2329d744-dca0-440f-ae4a-8b7e82220806.odxmatch.zip",
+        "6b197d6e08401638953d9018d39537152b3aaf79a57c018a3a355b2c0757b5ac",
+        controls = { archive, audio, model ->
+            fun uncredited(input: MatchArchive, sound: ReplayAudioRecovery = audio) {
+                val replay = model(input, sound)
+                assertTrue(replay.finishingChargeAssociations.none { it.recipientSpeciesName == "Cradily" })
+                assertTrue(replay.eventMarkers.none { it.kind == ReplayEventMarkerKind.FAINT && "Cradily" in it.label })
+            }
+            assertTrue("Earlier opponent remains a rival", "Cry 254" in audio.referenceCandidateNames)
+            assertFalse("Configured but absent Turtonator", "Cry 776" in audio.referenceCandidateNames)
+            val at = audio.terminalWholeCries.first { it.speciesId == 346 }.estimatedOnsetNanos
+            uncredited(archive, audio.copy(partialCryCandidates = emptyList()))
+            uncredited(archive, audio.copy(terminalWholeCries = emptyList()))
+            // Without the witnessed pre-QTE reception this use could still be pending.
+            uncredited(archive.copy(articles = archive.articles.map { row ->
+                if (row.articleId == "d44d126b-59e2-4ee2-b8ae-9a51d3b3f2f2") row.copy(predecessorIds = emptyList()) else row
+            }))
+            val live = archive.articles.single { it.articleId == "37cddc39-a6d3-49e5-9490-de9314b94ac2" }
+            uncredited(archive.copy(articles = archive.articles + live.copy(articleId = "later-live",
+                monotonicTimeNanos = at + 250_000_000L)))
+            val switch = archive.articles.first { (it.payload as? ArchivedActivePokemonSpeciesWitnessed)?.speciesName == "Sceptile" }
+            uncredited(archive.copy(articles = archive.articles + switch.copy(articleId = "living-switch",
+                monotonicTimeNanos = at - 100_000_000L)))
+        }
+    ) { model ->
+        val audio = model.audioRecovery
+        assertTrue("Full cry, pool errors: ${audio.unavailableReferences}", audio.terminalWholeCries.any { it.speciesId == 346 })
+        assertTrue("Second source", audio.partialCryCandidates.any { it.speciesId == 346 })
+        val faint = model.eventMarkers.single { it.label == "Faint · Cradily · Night Slash by Greninja" }
+        val link = requireNotNull(faint.finishingAttribution)
+        assertEquals(1, model.eventMarkers.count { it.kind == ReplayEventMarkerKind.FAINT && "Cradily" in it.label })
+        assertTrue(faint.faintTiming is ReplayFaintTiming.Cry)
+        assertEquals(106.082, (faint.atNanos - requireNotNull(model.matchStartNanos)) / 1e9, .002)
+        assertTrue(link.faintArticleIds.containsAll(listOf("51561b3f-c0a4-4ad7-943a-567bac4b9da7",
+            "8f9850e4-39c0-4b6a-8df7-124ca824ef9d")))
+        assertNull(link.reception)
+        assertEquals(1, model.eventMarkers.count { it.kind == ReplayEventMarkerKind.CHARGED_MOVE && it.finishingAttribution == link })
+        val landing = model.sceneAt(link.landingAtNanos)
+        val action = landing.chargedMoveActions.single { it.finishingAssociation == link }
+        assertEquals("Greninja", landing.player!!.speciesName)
+        assertEquals("Cradily", landing.opponent!!.speciesName)
+        assertEquals("Night Slash", action.moveName)
+        assertEquals(1f, ReplayChargePose.at(action, true).projectileProgress, 0f)
+        assertTrue(model.sceneAt(faint.atNanos).opponent!!.isFainted)
+        assertEquals(landing, model.sceneAt(link.landingAtNanos))
     }
 
     @Test fun electrodeAndJolteonReceiveDistinctDragonPulses() = review(

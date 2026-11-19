@@ -228,7 +228,9 @@ fun MatchReplayScreen(
             val allCharged = chargedMovesBySpecies + extraNames.associateWith { resolveChargedMoves(it) }
             val allIds = speciesIds + extraNames.mapNotNull { name -> resolveSpeciesId(name)?.let { name to it } }.toMap()
             val recoveredAudio = try {
-                resolveArchivedAudio(archive, (allFast.values.flatten() + allCharged.values.flatten()).distinct(), allIds.values.toSet())
+                val participants = MatchReplayModel.audioParticipantNames(archive, archivedCropIdentities.orEmpty())
+                val moves = participants.flatMap { allFast[it].orEmpty() + allCharged[it].orEmpty() }.distinct()
+                resolveArchivedAudio(archive, moves, participants.mapNotNull { allIds[it] }.toSet())
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
               catch (error: Exception) {
                 com.example.overdex.battle.replay.ReplayAudioRecovery(unavailableArtifacts = listOf("Audio recovery failed: ${error.message}"))

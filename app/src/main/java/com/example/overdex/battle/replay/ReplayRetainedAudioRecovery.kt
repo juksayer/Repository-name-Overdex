@@ -161,16 +161,26 @@ object ReplayRetainedAudioRecovery {
                 // Keep this separate from standalone recognized cries.
                 val onset = best.fragment.estimatedOnsetNanos
                 val speciesId = best.ref.speciesId
-                if (speciesId != null && best.duration in 600_000_000L..1_200_000_000L &&
+                if (speciesId != null && best.duration in 600_000_000L..2 * SECOND &&
                     finalCharge != null && end != null && onset - finalCharge in 0..5 * SECOND &&
                     end - onset in 0..20 * SECOND && best.fragment.correlation >= .80f &&
                     best.fragment.correlation - competitor.fragment.correlation >= .15f) {
                     val matcher = wholeMatchers.getOrPut(best.ref) {
                         CryWaveformMatcher(listOf(CryWaveformReference(speciesId, best.ref.sha256, best.ref.audio)))
                     }
-                    val whole = matcher.measureMono8k(slice).singleOrNull()
+                    // The search window identifies a candidate, but longer cries can span
+                    // several windows. Verify the entire waveform in one original capture.
+                    val predictedStart = ((onset - best.fragment.captureAtNanos) * 8000 / SECOND).toInt()
+                    val referenceSamples = (best.duration * 8000 / SECOND).toInt()
+                    val from = if (referenceSamples <= window) startSample else maxOf(0, predictedStart - 40)
+                    val until = minOf(mono.size, predictedStart + referenceSamples + 40)
+                    val whole = when {
+                        referenceSamples <= window -> matcher.measureMono8k(slice).singleOrNull()
+                        until - from >= referenceSamples -> matcher.measureMono8k(mono.copyOfRange(from, until)).singleOrNull()
+                        else -> null
+                    }
                     if (whole != null && whole.correlation >= .75f && whole.correlation - competitor.fragment.correlation >= .15f) {
-                        val fragment = best.fragment.copy(queryOffsetNanos = startSample * SECOND / 8000 + whole.offsetNanos,
+                        val fragment = best.fragment.copy(queryOffsetNanos = from * SECOND / 8000 + whole.offsetNanos,
                             referenceOffsetNanos = 0, durationNanos = whole.durationNanos, correlation = whole.correlation,
                             runnerUpName = competitor.ref.name, runnerUpCorrelation = competitor.fragment.correlation)
                         if (abs(fragment.estimatedOnsetNanos - onset) <= 5_000_000L) {
