@@ -491,7 +491,7 @@ class MatchReplayModel(
 
     /** Seek destinations reuse the same completed-archive projections as the battlefield. */
     val eventMarkers: List<ReplayEventMarker> by lazy {
-        buildList {
+        buildList<ReplayEventMarker> {
             val goAt = matchStartNanos ?: countdown?.takeUnless {
                 it.timingBasis == ReplayCountdownTiming.PRESENTATION_ONLY
             }?.goAtNanos
@@ -559,6 +559,7 @@ class MatchReplayModel(
                     sourceAtNanos = link.faintSourceAtNanos, sourceArticleIds = link.evidenceArticleIds,
                     finishingAttribution = link)))
             }
+            val cryTimedFaints = filter { it.kind == ReplayEventMarkerKind.FAINT && it.faintTiming is ReplayFaintTiming.Cry }
             audioRecovery.partialCryCandidates.forEach { cry ->
                 val player = combatantFor("PLAYER", cry.estimatedOnsetNanos)
                 val opponent = combatantFor("OPPONENT", cry.estimatedOnsetNanos)
@@ -581,11 +582,18 @@ class MatchReplayModel(
                                 else -> false
                             }
                     })
+                val sameFaint = if (supportsFaint) cryTimedFaints.singleOrNull { marker ->
+                    marker.side == side && audioRecovery.terminalWholeCries.any { whole ->
+                        whole.estimatedOnsetNanos == marker.atNanos &&
+                            whole.fragments.any { it.articleId in marker.sourceArticleIds } &&
+                            ReplayEventMarkers.sameCryOccurrence(cry, whole)
+                    }
+                } else null
                 val purpose = if (supportsFaint) "supports faint" else "purpose unknown"
                 add(ReplayEventMarker("partial-cry:${cry.speciesId}:${cry.estimatedOnsetNanos}",
                     ReplayEventMarkerKind.POSSIBLE_CRY, cry.estimatedOnsetNanos, side,
                     "Possible cry · $label · $purpose", sourceAtNanos = cry.fragments.minOf { it.captureAtNanos },
-                    sourceArticleIds = cry.fragments.map { it.articleId }.distinct()))
+                    sourceArticleIds = cry.fragments.map { it.articleId }.distinct(), corroboratedFaintId = sameFaint?.id))
             }
             addAll(ReplayEventMarkers.activeChanges(mapOf("PLAYER" to playerIdentityTrack.appearances(),
                 "OPPONENT" to opponentIdentityTrack.appearances()), knockoutTrack.knockouts, replayArticlesById))

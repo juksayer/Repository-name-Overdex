@@ -17,6 +17,7 @@ data class ReplayEventMarker(
     val sourceArticleIds: List<String> = emptyList(),
     val finishingAttribution: ReplayFinishingAttribution? = null,
     val faintTiming: ReplayFaintTiming? = null,
+    val corroboratedFaintId: String? = null,
 ) {
     val sideLabel: String get() = when (side) {
         "PLAYER" -> "YOU"
@@ -53,6 +54,16 @@ object ReplayEventMarkerNavigation {
 }
 
 internal object ReplayEventMarkers {
+    /** The LCD has one seek stop for a faint and partial matches of its confirmed cry. */
+    fun lcdMarkers(markers: List<ReplayEventMarker>): List<ReplayEventMarker> {
+        val faintIds = markers.filter { it.kind == ReplayEventMarkerKind.FAINT }.map { it.id }.toSet()
+        val corroboration = markers.filter { it.corroboratedFaintId in faintIds }.groupBy { it.corroboratedFaintId }
+        return markers.filter { it.corroboratedFaintId !in faintIds }.map { marker ->
+            val parts = corroboration[marker.id] ?: return@map marker
+            marker.copy(sourceArticleIds = (marker.sourceArticleIds + parts.flatMap { it.sourceArticleIds }).distinct())
+        }
+    }
+
     fun crySide(speciesId: Int, playerId: Int?, opponentId: Int?): String? = when {
         playerId == null || opponentId == null || playerId == opponentId -> null
         speciesId == playerId -> "PLAYER"

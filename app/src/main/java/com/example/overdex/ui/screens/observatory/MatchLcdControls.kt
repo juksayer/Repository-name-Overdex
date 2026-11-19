@@ -113,8 +113,12 @@ internal fun ReplayEventMarkerStrip(
     }) {
         val duration = (endNanos - startNanos).coerceAtLeast(1)
         val radius = 2.dp.toPx()
-        // Paint small Fast Move dots first so a coincident major event stays visible.
-        events.sortedBy { if (it.kind == ReplayEventMarkerKind.FAST_MOVE) 0 else 1 }.forEach { marker ->
+        // A confirmed faint stays visible even when multiple events share a scrubber pixel.
+        events.sortedBy { when (it.kind) {
+            ReplayEventMarkerKind.FAST_MOVE -> 0
+            ReplayEventMarkerKind.FAINT -> 2
+            else -> 1
+        } }.forEach { marker ->
             val x = radius + (size.width - 2 * radius).coerceAtLeast(0f) *
                 ((marker.atNanos - startNanos).toDouble() / duration).toFloat()
             val y = when (marker.side) {
@@ -164,8 +168,9 @@ internal fun ReplayEventMarkerControls(
             } ?: if (markers.isEmpty()) "NO EVENT MARKERS" else "${markers.size} EVENT MARKERS · NEXT ›"
             Text(label, color = current?.kind?.let(::replayMarkerColor) ?: TerminalGreen,
                 fontSize = 9.sp, lineHeight = 11.sp, fontFamily = FontFamily.Monospace,
-                maxLines = 2, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.semantics {
+                maxLines = if (current?.kind == ReplayEventMarkerKind.FAINT) Int.MAX_VALUE else 2,
+                overflow = if (current?.kind == ReplayEventMarkerKind.FAINT) TextOverflow.Clip else TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth().semantics {
                     contentDescription = "Replay event details"
                     stateDescription = current?.description ?: "No event selected"
                 })

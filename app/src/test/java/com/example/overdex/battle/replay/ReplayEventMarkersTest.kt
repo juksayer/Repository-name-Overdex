@@ -16,6 +16,22 @@ class ReplayEventMarkersTest {
         assertFalse(ReplayEventMarkers.sameCryOccurrence(partial.copy(fragments = listOf(fragment.copy(referenceSha256 = "other"))), whole))
     }
 
+    @Test fun `LCD combines only corroboration of a visible faint and keeps independent cries reachable`() {
+        val faint = ReplayEventMarker("ko", ReplayEventMarkerKind.FAINT, 100, "OPPONENT", "Faint",
+            sourceArticleIds = listOf("whole"))
+        val fragment = ReplayEventMarker("partial", ReplayEventMarkerKind.POSSIBLE_CRY, 104, "OPPONENT", "Cry",
+            sourceArticleIds = listOf("partial-audio"), corroboratedFaintId = faint.id)
+        val entrance = fragment.copy(id = "entrance", atNanos = 10, corroboratedFaintId = null)
+        val other = fragment.copy(id = "other", atNanos = 105, corroboratedFaintId = null)
+        val all = listOf(entrance, faint, fragment, other)
+        val lcd = ReplayEventMarkers.lcdMarkers(all)
+        assertEquals(listOf("entrance", "ko", "other"), lcd.map { it.id })
+        assertEquals(listOf("whole", "partial-audio"), lcd[1].sourceArticleIds)
+        assertEquals("ko", lcd[ReplayEventMarkerNavigation.currentIndex(lcd, 104, null)].id)
+        assertEquals(listOf(fragment, other), ReplayEventMarkers.lcdMarkers(all.takeLast(2)))
+        assertEquals(listOf("whole"), faint.sourceArticleIds)
+    }
+
     @Test fun `cry requires exactly one matching active side and both identities known`() {
         assertEquals("OPPONENT", ReplayEventMarkers.crySide(134, 776, 134))
         assertEquals("PLAYER", ReplayEventMarkers.crySide(134, 134, 776))

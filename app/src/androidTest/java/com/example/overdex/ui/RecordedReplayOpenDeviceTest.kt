@@ -74,6 +74,52 @@ class RecordedReplayOpenDeviceTest {
         }
     }
 
+    @Test fun savedSecondDragonPulseShowsSelectableFaintWithOwnerOnLcd() {
+        org.junit.Assume.assumeTrue(InstrumentationRegistry.getArguments().getString("recordedMoondropTwoPulses") == "true")
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val file = File(context.filesDir, "match_archives/2026-11-19_12-27-58_457f590b-6d03-4469-b223-b45fcf0ac2b9.odxmatch.zip")
+        val archive = file.inputStream().use(MatchArchivePackageReader::read)
+        val go = archive.articles.first { it.payload is ArchivedMatchStarted }.monotonicTimeNanos!!
+        val repo = PokemonRepository(PokedexDatabase.getDatabase(context).pokemonDao(),
+            LocalSpriteProvider(context.assets), GameMasterLoader(context))
+        val lcd = androidx.compose.runtime.mutableStateOf<(@androidx.compose.runtime.Composable () -> Unit)?>(null)
+        compose.setContent {
+            androidx.compose.foundation.layout.Column {
+                androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.weight(1f)) {
+                    MatchReplayScreen(archive, onBack = {}, initialCursorNanos = go + 91_000_000_000L,
+                        impactArchiveUri = android.net.Uri.fromFile(file), resolveSpeciesNames = repo::getAllSpeciesNames,
+                        resolveSpeciesId = { repo.getPokemonByName(it)?.id },
+                        resolveFastMoves = { repo.getPokemonByName(it)?.fastMoves.orEmpty() },
+                        resolveChargedMoves = { repo.getPokemonByName(it)?.chargedMoves.orEmpty() },
+                        onLcdContentUpdate = { lcd.value = it })
+                }
+                androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.weight(1f)) { lcd.value?.invoke() }
+            }
+        }
+        val label = "Faint · Vaporeon · Dragon Pulse by Turtonator"
+        compose.waitUntil(240_000) { compose.onAllNodesWithText(label, substring = true).fetchSemanticsNodes().isNotEmpty() }
+        val marker = compose.onNodeWithText(label, substring = true)
+        marker.assertIsDisplayed()
+        compose.onNodeWithContentDescription("Previous replay event").performClick()
+        // From a cursor beyond the final marker, previous seeks to the faint itself.
+        marker.assertIsDisplayed()
+        compose.onNodeWithContentDescription("Previous replay event").performClick()
+        compose.onNodeWithContentDescription("Next replay event").performClick()
+        marker.assertIsDisplayed()
+        val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        marker.performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        val layout = layouts.single()
+        val last = layout.lineCount - 1
+        val measured = "LCD ${layout.size}, last line ${layout.getLineRight(last)} x ${layout.getLineBottom(last)}"
+        assertFalse(measured, layout.isLineEllipsized(last))
+        assertEquals(measured, layout.layoutInput.text.length, layout.getLineEnd(last, visibleEnd = true))
+        assertTrue(measured, layout.getLineRight(last) <= layout.size.width + 1)
+        assertTrue(measured, layout.getLineBottom(last) <= layout.size.height + 1)
+        File(context.cacheDir, "recorded-vaporeon-faint-lcd.png").outputStream().use {
+            marker.captureToImage().asAndroidBitmap().compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+        }
+    }
+
     @Test fun opensNewArchivesAndRendersMissingStartMatchAfterCatalogueLoads(): Unit = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val repository = PokemonRepository(PokedexDatabase.getDatabase(context).pokemonDao(),

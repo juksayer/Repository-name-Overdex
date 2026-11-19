@@ -77,6 +77,24 @@ class RecordedMoondropFaintCryDeviceTest {
         }
         val link = requireNotNull(faint.finishingAttribution)
         val go = requireNotNull(model.matchStartNanos)
+        val hits = model.eventMarkers.filter { it.kind == ReplayEventMarkerKind.FAST_MOVE &&
+            it.side == "PLAYER" && it.atNanos - go in 38_000_000_000L..47_000_000_000L }
+        assertEquals(2, hits.size)
+        val damageTimes = listOf(41_832_985_617L, 44_160_432_925L)
+        val fractions = listOf(.8736842f, .7659575f, .65425533f)
+        hits.forEachIndexed { index, marker ->
+            val at = marker.atNanos
+            val scene = model.sceneAt(at)
+            val hit = scene.fastMoveActions.single { it.side == "PLAYER" }
+            assertEquals("Camerupt", scene.player?.speciesName)
+            assertEquals("Vaporeon", scene.opponent?.speciesName)
+            assertEquals("Incinerate", hit.moveName)
+            assertEquals(1f, hit.progress, 0f)
+            assertEquals(setOf(go + damageTimes[index]), hit.damageObservationTimesNanos)
+            assertEquals(fractions[index], model.sceneAt(at - 1).opponentHp!!.filledFraction!!, .001f)
+            assertEquals(fractions[index + 1], scene.opponentHp!!.filledFraction!!, .001f)
+            assertNull(hit.finishingAssociation)
+        }
         assertEquals(52.65, (link.moveSourceAtNanos - go) / 1e9, .025)
         assertEquals(54.343, (link.landingAtNanos - go) / 1e9, .002)
         assertTrue(faint.faintTiming is ReplayFaintTiming.Window)
@@ -147,6 +165,11 @@ class RecordedMoondropFaintCryDeviceTest {
         assertFalse(model.sceneAt(go + 78_500_000_000).opponent!!.isFainted)
         val faint = model.eventMarkers.single { it.label == "Faint · Vaporeon · Dragon Pulse by Turtonator" }
         val link = requireNotNull(faint.finishingAttribution)
+        assertEquals(faint.id, cryMarker.corroboratedFaintId)
+        val lcd = ReplayEventMarkers.lcdMarkers(model.eventMarkers)
+        val displayed = lcd[ReplayEventMarkerNavigation.currentIndex(lcd, cryMarker.atNanos + 1, null)]
+        assertEquals(faint.id, displayed.id)
+        assertTrue(displayed.sourceArticleIds.containsAll(cryMarker.sourceArticleIds))
         assertEquals(link, pulses.last().finishingAttribution)
         assertEquals(89.631, (link.moveSourceAtNanos - go) / 1e9, .001)
         assertTrue(faint.faintTiming is ReplayFaintTiming.Cry)

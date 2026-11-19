@@ -134,6 +134,7 @@ fun BattleRecordsScreen(viewModel: PokedexViewModel, ownedId: String? = null, on
         if (activeReplay != null) MatchReplayScreen(activeReplay, onBack = { replay = null },
             onUp = { replayUp = it }, onDown = { replayDown = it }, onA = { replayA = it }, onB = { replayB = it },
             onLcdContentUpdate = { replayLcd = it }, initialCursorNanos = replayAt, impactArchiveUri = replayUri,
+            resolveSpeciesNames = viewModel::getAllSpeciesNames,
             resolveSpeciesId = { viewModel.getPokemonByName(it)?.id },
             resolveSpeciesTypes = { viewModel.getPokemonByName(it)?.types.orEmpty() },
             resolveFastMoves = { viewModel.getPokemonByName(it)?.fastMoves.orEmpty() },

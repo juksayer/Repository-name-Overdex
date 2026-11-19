@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.battle.archive.*
 import com.example.overdex.battle.replay.ReplayExcerptStore
-import com.example.overdex.battle.replay.ReplayIdentityObservation
 import com.example.overdex.model.PokemonType
 import com.example.overdex.model.Move
 import com.example.overdex.ui.components.TerminalHeader
@@ -77,8 +76,7 @@ fun MatchArchiveViewerScreen(
     resolveChargedMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
     resolveFastMoves: suspend (speciesName: String) -> List<com.example.overdex.model.Move> = { emptyList() },
     impactArchiveUri: android.net.Uri? = null,
-    resolveArchivedAudio: suspend (MatchArchive, List<Move>, Set<Int>) -> com.example.overdex.battle.replay.ReplayAudioRecovery = { _, _, _ -> com.example.overdex.battle.replay.ReplayAudioRecovery() },
-    resolveArchivedSpeciesCrops: suspend (MatchArchive, (com.example.overdex.battle.replay.ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() },
+    resolveSpeciesNames: suspend () -> Set<String> = { emptySet() },
     onOpenEditor: (() -> Unit)? = null,
     startInReplay: Boolean = false,
 ) {
@@ -170,9 +168,8 @@ fun MatchArchiveViewerScreen(
             resolveChargedMoveType = resolveChargedMoveType,
             resolveChargedMoves = resolveChargedMoves,
             resolveFastMoves = resolveFastMoves,
-            resolveArchivedAudio = resolveArchivedAudio,
             impactArchiveUri = impactArchiveUri,
-            resolveArchivedSpeciesCrops = resolveArchivedSpeciesCrops
+            resolveSpeciesNames = resolveSpeciesNames
         )
         return
     }

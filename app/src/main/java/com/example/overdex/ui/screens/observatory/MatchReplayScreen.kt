@@ -94,6 +94,10 @@ import com.example.overdex.battle.replay.replayAttackSoundsBetween
 import com.example.overdex.battle.replay.ReplayTransportSounds
 import com.example.overdex.battle.replay.ReplayPlaybackClock
 import com.example.overdex.battle.replay.ReplayEventMarker
+import com.example.overdex.battle.replay.ReplayEventMarkers
+import com.example.overdex.battle.replay.ArchivedEndingAudioRecognizer
+import com.example.overdex.battle.replay.ArchivedSpeciesCropRecognizer
+import com.example.overdex.battle.replay.ReplayAudioRecovery
 import com.example.overdex.battle.replay.ReplayEventMarkerNavigation
 import com.example.overdex.data.LocalSpriteProvider
 import com.example.overdex.model.Move
@@ -133,8 +137,9 @@ fun MatchReplayScreen(
     resolveFastMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
     resolveChargedMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
     impactArchiveUri: android.net.Uri? = null,
-    resolveArchivedAudio: suspend (MatchArchive, List<Move>, Set<Int>) -> com.example.overdex.battle.replay.ReplayAudioRecovery = { _, _, _ -> com.example.overdex.battle.replay.ReplayAudioRecovery() },
-    resolveArchivedSpeciesCrops: suspend (MatchArchive, (ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() },
+    resolveSpeciesNames: suspend () -> Set<String> = { emptySet() },
+    resolveArchivedAudio: (suspend (MatchArchive, List<Move>, Set<Int>) -> ReplayAudioRecovery)? = null,
+    resolveArchivedSpeciesCrops: (suspend (MatchArchive, (ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation>)? = null,
     initialCursorNanos: Long? = null,
     playbackWindow: ReplayWindow? = null,
     autoplay: Boolean = false,
@@ -213,8 +218,12 @@ fun MatchReplayScreen(
                 prepare(MatchReplayModel(archive, speciesIds, emptyList(), fastMoveTypes,
                     fastMovesBySpecies, chargedMoveTypes, chargedMovesBySpecies))
             }
+            val openArchive = { impactArchiveUri?.let { replayContext.contentResolver.openInputStream(it) } }
             val crops = try {
-                resolveArchivedSpeciesCrops(archive) { cropProgress = it }
+                val progress: (ReplayCropProgress) -> Unit = { cropProgress = it }
+                resolveArchivedSpeciesCrops?.invoke(archive, progress) ?: if (impactArchiveUri != null)
+                    ArchivedSpeciesCropRecognizer.recognize(archive, openArchive, resolveSpeciesNames(), resolveSpeciesId, progress)
+                else emptyList()
             } catch (cancelled: kotlinx.coroutines.CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
@@ -230,7 +239,11 @@ fun MatchReplayScreen(
             val recoveredAudio = try {
                 val participants = MatchReplayModel.audioParticipantNames(archive, crops)
                 val moves = participants.flatMap { allFast[it].orEmpty() + allCharged[it].orEmpty() }.distinct()
-                resolveArchivedAudio(archive, moves, participants.mapNotNull { allIds[it] }.toSet())
+                val ids = participants.mapNotNull { allIds[it] }.toSet()
+                resolveArchivedAudio?.invoke(archive, moves, ids) ?: if (impactArchiveUri != null)
+                    ArchivedEndingAudioRecognizer.recognize(archive, moves, ids, openArchive,
+                        { path -> replayContext.assets.open(path).use { it.readBytes() } })
+                else ReplayAudioRecovery()
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
               catch (error: Exception) {
                 com.example.overdex.battle.replay.ReplayAudioRecovery(unavailableArtifacts = listOf("Audio recovery failed: ${error.message}"))
@@ -355,7 +368,8 @@ fun MatchReplayScreen(
                         com.example.overdex.battle.replay.ReplayFaintTiming.TrainerMark(at) else null)
             }
         }.orEmpty()
-        (model.eventMarkers + trainerMarkers).filter { it.atNanos in playbackStart..playbackEnd }.sortedBy { it.atNanos }
+        ReplayEventMarkers.lcdMarkers((model.eventMarkers + trainerMarkers)
+            .filter { it.atNanos in playbackStart..playbackEnd }.sortedBy { it.atNanos })
     }
     var selectedMarkerId by remember(archive, playbackWindow) { mutableStateOf<String?>(null) }
     var cursor by remember(archive, initialCursorNanos, playbackWindow) {
@@ -722,6 +736,13 @@ fun MatchReplayScreen(
                 previousSelected = editorAction == previousEventAction,
                 nextSelected = editorAction == nextEventAction,
                 matchStartNanos = model.matchStartNanos, archiveStartNanos = model.startNanos)
+            if (!reviewComplete) {
+                MatchLcdText(cropProgress.stage + if (cropProgress.total > 0) " ${cropProgress.completed}/${cropProgress.total}" else "")
+                if (cropProgress.total > 0) androidx.compose.material3.LinearProgressIndicator(
+                    progress = { cropProgress.completed.toFloat() / cropProgress.total }, modifier = Modifier.fillMaxWidth(), color = TerminalGreen)
+                else androidx.compose.material3.LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = TerminalGreen)
+            }
+            cropError?.let { MatchLcdText(it) }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 MatchLcdTextButton("BACK", { scrubBy(-SCRUB_STEP_NANOS) },
                     Modifier.weight(1f).semantics { contentDescription = "Step backward one second" })
@@ -810,13 +831,6 @@ fun MatchReplayScreen(
                     MatchLcdButton("CLIP LIBRARY", { playing = false; open() }, selected = editorAction == 3, enabled = !savingClip)
                 }
             }
-            if (!reviewComplete) {
-                MatchLcdText(cropProgress.stage + if (cropProgress.total > 0) " ${cropProgress.completed}/${cropProgress.total}" else "")
-                if (cropProgress.total > 0) androidx.compose.material3.LinearProgressIndicator(
-                    progress = { cropProgress.completed.toFloat() / cropProgress.total }, modifier = Modifier.fillMaxWidth(), color = TerminalGreen)
-                else androidx.compose.material3.LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = TerminalGreen)
-            }
-            cropError?.let { MatchLcdText(it) }
             scene.countdownFrame?.let { MatchLcdText(it.lcdLabel) }
             MatchLcdText("RECORDED ENERGY\nP ${energyLedger(scene.playerEnergy)}  O ${energyLedger(scene.opponentEnergy)}")
             scene.statChanges.filter { it.side == null }.forEach {

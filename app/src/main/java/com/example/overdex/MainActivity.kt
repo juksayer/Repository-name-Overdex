@@ -52,7 +52,6 @@ import com.example.overdex.battle.archive.ArchiveDirectoryManager
 import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.battle.archive.MatchArchiveExportMode
 import com.example.overdex.battle.history.BattleRecordStore
-import com.example.overdex.battle.replay.ArchivedSpeciesCropRecognizer
 import com.example.overdex.battle.observation.CountdownBurstRecorder
 import com.example.overdex.battle.observation.CountdownGlyphMatcher
 import com.example.overdex.battle.observation.CountdownSampleRecorder
@@ -1846,24 +1845,7 @@ fun PokedexApp(
                                     viewModel.getPokemonByName(speciesName)?.chargedMoves.orEmpty()
                                 },
                                 impactArchiveUri = sourceUri,
-                                resolveArchivedAudio = { selectedArchive, moves, ids ->
-                                    com.example.overdex.battle.replay.ArchivedEndingAudioRecognizer.recognize(
-                                        selectedArchive, moves, ids,
-                                        openArchive = { sourceUri?.let { context.contentResolver.openInputStream(it) } },
-                                        readAsset = { context.assets.open(it).use { stream -> stream.readBytes() } })
-                                },
-                                resolveArchivedSpeciesCrops = { selectedArchive, progress ->
-                                    val uri = sourceUri
-                                    if (uri == null) emptyList() else {
-                                        ArchivedSpeciesCropRecognizer.recognize(
-                                            archive = selectedArchive,
-                                            openArchive = { context.contentResolver.openInputStream(uri) },
-                                            knownSpeciesNames = viewModel.getAllSpeciesNames(),
-                                            resolveSpeciesId = { name -> viewModel.getPokemonByName(name)?.id },
-                                            onProgress = progress
-                                        )
-                                    }
-                                }
+                                resolveSpeciesNames = viewModel::getAllSpeciesNames,
                             )
                         }
                     } else {
