@@ -23,7 +23,7 @@ object ArchivedEndingAudioRecognizer {
 
     internal suspend fun recognize(archive: MatchArchive, moves: List<Move>, speciesIds: Set<Int>,
                           openArchive: () -> InputStream?, captureWindow: LongRange?, bannerMove: String?,
-                          readAsset: (String) -> ByteArray): ReplayAudioRecovery = withContext(Dispatchers.Default) {
+                          readAsset: (String) -> ByteArray, cache: ReplayReviewCache? = null): ReplayAudioRecovery = withContext(Dispatchers.Default) {
         if (ReplayRetainedAudioRecovery.selectedArticles(archive).isEmpty()) return@withContext ReplayAudioRecovery()
         if (!archive.mediaIncluded) return@withContext ReplayAudioRecovery(unavailableArtifacts = listOf("Archive has no audio media"))
         val missing = mutableListOf<String>()
@@ -36,13 +36,17 @@ object ArchivedEndingAudioRecognizer {
             is ArchivedChargedMoveEnergySpent -> wanted.add(key(p.moveName))
             else -> Unit
         } }
+        val cacheKey = cache?.key(listOf("ending-audio", captureWindow?.first.toString(), captureWindow?.last.toString(),
+            bannerMove.orEmpty(), speciesIds.sorted().joinToString(",")) + wanted.sorted())
+        if (cache != null && cacheKey != null) cache.read<ReplayAudioRecovery>(cacheKey)?.let { return@withContext it }
+        var assetReadFailed = false
         val references = mutableListOf<ReplayAudioReference>()
         fun entries(path: String) = try { Json.parseToJsonElement(readAsset(path).decodeToString()).jsonObject.getValue("references").jsonArray }
-            catch (e: java.io.IOException) { missing += path; JsonArray(emptyList()) }
+            catch (e: java.io.IOException) { assetReadFailed = true; missing += path; JsonArray(emptyList()) }
         fun reference(name: String, charged: Boolean, species: Int?, path: String, sha: String) {
-            val bytes = try { readAsset(path) } catch (e: java.io.IOException) { null }
+            val bytes = try { readAsset(path) } catch (e: java.io.IOException) { assetReadFailed = true; null }
             val decoded = bytes?.takeIf { ReplayRetainedAudioRecovery.sha(it) == sha }?.let(WavPcm16::decodeBundledReference)
-            if (decoded == null) missing += name else references += ReplayAudioReference(name, charged, species, sha, decoded)
+            if (decoded == null) { assetReadFailed = true; missing += name } else references += ReplayAudioReference(name, charged, species, sha, decoded)
         }
         for (charged in listOf(false, true)) {
             val dir = if (charged) "charged_move_sounds" else "fast_move_sounds"
@@ -82,6 +86,10 @@ object ArchivedEndingAudioRecognizer {
             }
         } }
         val context = coroutineContext
-        ReplayRetainedAudioRecovery.recover(archive, references, missing, { context.ensureActive() }, captureWindow, bannerMove) { bytes[it.artifactPath] }
+        val result = ReplayRetainedAudioRecovery.recover(archive, references, missing, { context.ensureActive() }, captureWindow, bannerMove) { bytes[it.artifactPath] }
+        if (cache != null && cacheKey != null && !assetReadFailed && result.unavailableArtifacts.isEmpty()) {
+            cache.write(cacheKey, result)
+        }
+        result
     }
 }

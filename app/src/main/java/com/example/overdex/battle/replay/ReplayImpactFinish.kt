@@ -14,9 +14,9 @@ internal object ReplayImpactFinish {
 
     suspend fun read(archive: MatchArchive, directory: File, moves: Map<String, List<Move>>,
                      audio: ReplayAudioRecovery, openArchive: () -> InputStream?,
-                     readAsset: (String) -> ByteArray): ReplayImpactEvidence? {
+                     readAsset: (String) -> ByteArray, cache: ReplayReviewCache? = null): ReplayImpactEvidence? {
         val frame = ArchivedImpactFrameRecognizer.recognize(archive, directory, moves.values.flatten(), openArchive)
-            ?: return ReplaySoundMatchedBanner.read(archive, directory, moves, audio, openArchive, readAsset)
+            ?: return ReplaySoundMatchedBanner.read(archive, directory, moves, audio, openArchive, readAsset, cache)
         val opponent = archive.articles.filter { it.matchId == archive.matchId && it.monotonicTimeNanos?.let { t -> t <= frame.at } == true &&
             (it.payload as? ArchivedActivePokemonSpeciesWitnessed)?.side == "OPPONENT" }
             .maxByOrNull { it.monotonicTimeNanos!! }?.payload as? ArchivedActivePokemonSpeciesWitnessed
@@ -29,7 +29,7 @@ internal object ReplayImpactFinish {
             val candidates = playerMoves + opponentMoves
             if (playerMoves.map { it.name }.toSet() != equipped.toSet() || opponentMoves.isEmpty()) audio else ArchivedEndingAudioRecognizer.recognize(archive, candidates,
                 setOf(frame.actor.speciesId, opponent.speciesId), openArchive,
-                (frame.at - 4*S)..(frame.clearedAt ?: (frame.landing + 5*S)), readAsset)
+                (frame.at - 4*S)..(frame.clearedAt ?: (frame.landing + 5*S)), null, readAsset, cache)
         } else audio
         return ReplayImpactEvidence(frame, sounds)
     }

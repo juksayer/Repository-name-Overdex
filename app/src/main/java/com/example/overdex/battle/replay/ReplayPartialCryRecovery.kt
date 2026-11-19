@@ -1,5 +1,6 @@
 package com.example.overdex.battle.replay
 
+import kotlinx.serialization.Serializable
 import com.example.overdex.battle.audio.CryWaveformMatcher
 import com.example.overdex.battle.audio.CryWaveformReference
 import com.example.overdex.battle.audio.Pcm16Audio
@@ -7,6 +8,7 @@ import com.example.overdex.battle.audio.StatChangeSoundMatcher
 import kotlin.math.abs
 
 /** A partial sound match, not evidence of the cry's side or reason. */
+@Serializable
 data class ReplayPartialCryCandidate(
     override val speciesId: Int,
     override val estimatedOnsetNanos: Long,

@@ -97,6 +97,7 @@ import com.example.overdex.battle.replay.ReplayEventMarker
 import com.example.overdex.battle.replay.ReplayEventMarkers
 import com.example.overdex.battle.replay.ArchivedEndingAudioRecognizer
 import com.example.overdex.battle.replay.ArchivedSpeciesCropRecognizer
+import com.example.overdex.battle.replay.ReplayReviewCache
 import com.example.overdex.battle.replay.ReplayAudioRecovery
 import com.example.overdex.battle.replay.ReplayEventMarkerNavigation
 import com.example.overdex.data.LocalSpriteProvider
@@ -219,10 +220,14 @@ fun MatchReplayScreen(
                     fastMovesBySpecies, chargedMoveTypes, chargedMovesBySpecies))
             }
             val openArchive = { impactArchiveUri?.let { replayContext.contentResolver.openInputStream(it) } }
+            val cache = if (impactArchiveUri != null) ReplayReviewCache.open(
+                java.io.File(replayContext.cacheDir, "replay-review"),
+                replayContext.packageManager.getPackageInfo(replayContext.packageName, 0).lastUpdateTime, archive, openArchive)
+            else null
             val crops = try {
                 val progress: (ReplayCropProgress) -> Unit = { cropProgress = it }
                 resolveArchivedSpeciesCrops?.invoke(archive, progress) ?: if (impactArchiveUri != null)
-                    ArchivedSpeciesCropRecognizer.recognize(archive, openArchive, resolveSpeciesNames(), resolveSpeciesId, progress)
+                    ArchivedSpeciesCropRecognizer.recognize(archive, openArchive, resolveSpeciesNames(), resolveSpeciesId, progress, cache)
                 else emptyList()
             } catch (cancelled: kotlinx.coroutines.CancellationException) {
                 throw cancelled
@@ -241,8 +246,8 @@ fun MatchReplayScreen(
                 val moves = participants.flatMap { allFast[it].orEmpty() + allCharged[it].orEmpty() }.distinct()
                 val ids = participants.mapNotNull { allIds[it] }.toSet()
                 resolveArchivedAudio?.invoke(archive, moves, ids) ?: if (impactArchiveUri != null)
-                    ArchivedEndingAudioRecognizer.recognize(archive, moves, ids, openArchive,
-                        { path -> replayContext.assets.open(path).use { it.readBytes() } })
+                    ArchivedEndingAudioRecognizer.recognize(archive, moves, ids, openArchive, null, null,
+                        { path -> replayContext.assets.open(path).use { it.readBytes() } }, cache)
                 else ReplayAudioRecovery()
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
               catch (error: Exception) {
@@ -254,7 +259,7 @@ fun MatchReplayScreen(
                     (allFast.keys + allCharged.keys).associateWith {
                     allFast[it].orEmpty() + allCharged[it].orEmpty()
                     }, recoveredAudio, { replayContext.contentResolver.openInputStream(uri) },
-                    { path -> replayContext.assets.open(path).use { it.readBytes() } })
+                    { path -> replayContext.assets.open(path).use { it.readBytes() } }, cache)
                 }
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
               catch (error: Exception) {
@@ -266,7 +271,7 @@ fun MatchReplayScreen(
                     com.example.overdex.battle.replay.ReplayLastOpponentFastFinish.read(archive,
                         com.example.overdex.data.GameMasterLoader(replayContext),
                         { replayContext.contentResolver.openInputStream(uri) },
-                        { path -> replayContext.assets.open(path).use { it.readBytes() } })
+                        { path -> replayContext.assets.open(path).use { it.readBytes() } }, cache)
                 }
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
               catch (error: Exception) {
@@ -839,11 +844,19 @@ fun MatchReplayScreen(
         }
     }
 
-    LaunchedEffect(playing, playbackSpeed, playbackEnd) {
+    // A first-pass scene can only show the result withdrawal while the ending sounds are pending.
+    // Keep the selected seek position, but never play a provisional departure past the user.
+    val pendingFinishStart = if (!reviewComplete && archive.mediaIncluded && impactArchiveUri != null)
+        model.matchEndNanos?.let { (it - 20_000_000_000L).coerceAtLeast(model.matchStartNanos ?: model.startNanos) }
+            ?.takeIf { it <= playbackEnd }?.coerceAtLeast(playbackStart)
+    else null
+    LaunchedEffect(playing, playbackSpeed, playbackEnd, pendingFinishStart) {
         // Cursor is deliberately not an effect key. A frame is a chance to draw,
         // not a fixed amount of Match time; slow frames must not slow the clock.
-        val clock = ReplayPlaybackClock(cursor, playbackEnd, playbackSpeed)
-        while (playing && cursor < playbackEnd) {
+        val readyThrough = pendingFinishStart ?: playbackEnd
+        if (pendingFinishStart != null && cursor >= readyThrough) return@LaunchedEffect
+        val clock = ReplayPlaybackClock(cursor, readyThrough, playbackSpeed)
+        while (playing && cursor < readyThrough) {
             val frameNanos = withFrameNanos { it }
             if (!playing) break
             val previous = cursor
@@ -858,7 +871,7 @@ fun MatchReplayScreen(
                 replayHaptics.play(event.pulseCount)
             }
         }
-        if (playing && cursor >= playbackEnd) {
+        if (pendingFinishStart == null && playing && cursor >= playbackEnd) {
             playing = false
             transportSounds.stop()
             completion()
@@ -871,7 +884,11 @@ fun MatchReplayScreen(
                 com.example.overdex.battle.replay.latestArchivedPlayerRoster(archive.articles, Long.MAX_VALUE))
         }
     }
-    ReplayBattlefield(scene, cursor, context, speciesTypes, playerTypeReference)
+    if (pendingFinishStart != null && cursor >= pendingFinishStart) {
+        Box(Modifier.fillMaxSize().background(Color(0xFF163721)), contentAlignment = Alignment.Center) {
+            Text("Checking the finish…", color = TerminalGreen)
+        }
+    } else ReplayBattlefield(scene, cursor, context, speciesTypes, playerTypeReference)
 }
 
 @Composable

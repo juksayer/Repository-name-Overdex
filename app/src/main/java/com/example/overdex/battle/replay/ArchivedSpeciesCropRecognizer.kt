@@ -33,6 +33,15 @@ object ArchivedSpeciesCropRecognizer {
         knownSpeciesNames: Set<String>,
         resolveSpeciesId: suspend (String) -> Int?,
         onProgress: (ReplayCropProgress) -> Unit = {}
+    ): List<ReplayIdentityObservation> = recognize(archive, openArchive, knownSpeciesNames, resolveSpeciesId, onProgress, null)
+
+    internal suspend fun recognize(
+        archive: MatchArchive,
+        openArchive: () -> InputStream?,
+        knownSpeciesNames: Set<String>,
+        resolveSpeciesId: suspend (String) -> Int?,
+        onProgress: (ReplayCropProgress) -> Unit,
+        cache: ReplayReviewCache?,
     ): List<ReplayIdentityObservation> = withContext(Dispatchers.IO) {
         if (!archive.mediaIncluded || knownSpeciesNames.isEmpty()) return@withContext emptyList()
         val targets = listOf(
@@ -41,38 +50,54 @@ object ArchivedSpeciesCropRecognizer {
         ).flatten()
         if (targets.isEmpty()) return@withContext emptyList()
 
-        val artifactTargets = targets.associateBy { it.payload.artifactPath }
-        onProgress(ReplayCropProgress("READING CROPS", 0, artifactTargets.size))
-        val encodedArtifacts = readSelectedArtifacts(openArchive() ?: return@withContext emptyList(), artifactTargets) { completed ->
-            onProgress(ReplayCropProgress("READING CROPS", completed, artifactTargets.size))
-        }
-        Log.d("REPLAY_SPECIES", "selected=${targets.size} artifacts=${encodedArtifacts.size}")
-        val recognizedByTarget = linkedMapOf<Target, String?>()
-        val heightProfiles = mapOf("PLAYER" to OcrHeightProfile(OcrField.SPECIES),
-            "OPPONENT" to OcrHeightProfile(OcrField.SPECIES))
-        var completed = 0
-        onProgress(ReplayCropProgress("VERIFYING CROPS", 0, targets.size))
-        targets.forEach { target ->
-            val path = target.payload.artifactPath
-            val bytes = encodedArtifacts[path]
-            recognizedByTarget[target] = if (bytes == null || !target.matches(bytes)) {
-                null
-            } else {
-                val bitmap = decodeTargetCrop(bytes, target.payload)
-                if (bitmap == null) null else try {
-                    // New recordings retain the HUD footprint from capture time.
-                    // Never use today's HUD position to classify an archived word.
-                    SpeciesNameRecognizer.recognizeCandidates(bitmap,
-                        OcrSourceContext(target.payload.sourceWidth, target.payload.overlayBounds),
-                        heightProfiles.getValue(target.side))
-                        .firstNotNullOfOrNull { SpeciesTextResolver.resolve(it.text, knownSpeciesNames) }
-                } finally {
-                    bitmap.recycle()
-                }
+        val key = cache?.key(listOf("species-crops") + knownSpeciesNames.sorted())
+        val cached = if (cache != null && key != null) cache.read<List<String?>>(key) else null
+        val names = cached?.takeIf { it.size == targets.size } ?: run readTargets@{
+            val artifactTargets = targets.associateBy { it.payload.artifactPath }
+            onProgress(ReplayCropProgress("READING CROPS", 0, artifactTargets.size))
+            val encodedArtifacts = readSelectedArtifacts(openArchive() ?: return@readTargets emptyList<String?>(), artifactTargets) { completed ->
+                onProgress(ReplayCropProgress("READING CROPS", completed, artifactTargets.size))
             }
-            onProgress(ReplayCropProgress("VERIFYING CROPS", ++completed, targets.size))
-        }
+            Log.d("REPLAY_SPECIES", "selected=${targets.size} artifacts=${encodedArtifacts.size}")
+            var complete = true
+            val heightProfiles = mapOf("PLAYER" to OcrHeightProfile(OcrField.SPECIES),
+                "OPPONENT" to OcrHeightProfile(OcrField.SPECIES))
+            var completed = 0
+            onProgress(ReplayCropProgress("VERIFYING CROPS", 0, targets.size))
+            val names = targets.map { target ->
+                val path = target.payload.artifactPath
+                val bytes = encodedArtifacts[path]
+                val name = if (bytes == null || !target.matches(bytes)) {
+                    complete = false
+                    null
+                } else {
+                    val bitmap = decodeTargetCrop(bytes, target.payload)
+                    if (bitmap == null) {
+                        complete = false
+                        null
+                    } else try {
+                        // New recordings retain the HUD footprint from capture time.
+                        // Never use today's HUD position to classify an archived word.
+                        SpeciesNameRecognizer.withReadingTurn {
+                            val candidates = recognizeCandidates(bitmap,
+                                OcrSourceContext(target.payload.sourceWidth, target.payload.overlayBounds),
+                                heightProfiles.getValue(target.side))
+                            if (hadReadFailure) complete = false
+                            candidates
+                        }
+                            .firstNotNullOfOrNull { SpeciesTextResolver.resolve(it.text, knownSpeciesNames) }
+                    } finally {
+                        bitmap.recycle()
+                    }
+                }
+                onProgress(ReplayCropProgress("VERIFYING CROPS", ++completed, targets.size))
+                name
+            }
 
+            if (complete && cache != null && key != null) cache.write(key, names)
+            names
+        }
+        val recognizedByTarget = targets.zip(names).toMap()
         onProgress(ReplayCropProgress("RESOLVING SPECIES"))
         val lastBySide = mutableMapOf<String, String>()
         buildList {

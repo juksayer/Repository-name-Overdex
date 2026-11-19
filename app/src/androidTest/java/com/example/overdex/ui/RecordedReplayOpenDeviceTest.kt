@@ -74,14 +74,60 @@ class RecordedReplayOpenDeviceTest {
         }
     }
 
+    @Test fun pendingReviewHoldsPlaybackAtTheEndingAndResumesOnce() {
+        fun event(id: String, time: Long, payload: ArchivedTestimonyPayload) =
+            ArchivedRealityArticle(id, "ending", 0, 0, "TEST", payload, emptyList(), null, null, emptyList(), time)
+        val archive = MatchArchive(matchId = "ending", articles = listOf(
+            event("start", 1_000_000_000L, ArchivedMatchStarted),
+            event("end", 41_000_000_000L, ArchivedMatchEnded("WIN"))))
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val file = File.createTempFile("replay-ending", ".zip", context.cacheDir)
+        val release = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val cursor = java.util.concurrent.atomic.AtomicLong()
+        val completed = AtomicInteger()
+        try {
+            java.util.zip.ZipOutputStream(file.outputStream()).close()
+            compose.setContent {
+                MatchReplayScreen(archive, onBack = {}, initialCursorNanos = 20_900_000_000L,
+                    playbackWindow = com.example.overdex.battle.replay.ReplayWindow(20_900_000_000L, 21_200_000_000L),
+                    impactArchiveUri = android.net.Uri.fromFile(file), autoplay = true,
+                    resolveArchivedAudio = { _, _, _ ->
+                        release.await()
+                        com.example.overdex.battle.replay.ReplayAudioRecovery()
+                    },
+                    pairedReplayScene = { scene, at -> cursor.set(at); scene },
+                    onPlaybackComplete = { completed.incrementAndGet() })
+            }
+            compose.waitUntil(30_000) { cursor.get() == 21_000_000_000L }
+            compose.onNodeWithText("Checking the finish…").assertIsDisplayed()
+            compose.mainClock.advanceTimeBy(1_000)
+            assertEquals(21_000_000_000L, cursor.get())
+            assertEquals(0, completed.get())
+            release.complete(Unit)
+            compose.waitUntil(30_000) { completed.get() > 0 && cursor.get() == 21_200_000_000L }
+            assertEquals(21_200_000_000L, cursor.get())
+            assertEquals(1, completed.get())
+            compose.onNodeWithText("Checking the finish…").assertDoesNotExist()
+        } finally {
+            release.complete(Unit)
+            file.delete()
+        }
+    }
+
     @Test fun savedSecondDragonPulseShowsSelectableFaintWithOwnerOnLcd() {
         org.junit.Assume.assumeTrue(InstrumentationRegistry.getArguments().getString("recordedMoondropTwoPulses") == "true")
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val file = File(context.filesDir, "match_archives/2026-11-19_12-27-58_457f590b-6d03-4469-b223-b45fcf0ac2b9.odxmatch.zip")
+        val openedAt = android.os.SystemClock.elapsedRealtime()
         val archive = file.inputStream().use(MatchArchivePackageReader::read)
         val go = archive.articles.first { it.payload is ArchivedMatchStarted }.monotonicTimeNanos!!
         val repo = PokemonRepository(PokedexDatabase.getDatabase(context).pokemonDao(),
             LocalSpriteProvider(context.assets), GameMasterLoader(context))
+        val model = MatchReplayModel(archive)
+        val duration = model.endNanos - model.startNanos
+        var drag: (androidx.compose.ui.geometry.Offset) -> Unit = {}
+        var cursor = 0L
+        var rendered: com.example.overdex.battle.replay.ReplayScene? = null
         val lcd = androidx.compose.runtime.mutableStateOf<(@androidx.compose.runtime.Composable () -> Unit)?>(null)
         compose.setContent {
             androidx.compose.foundation.layout.Column {
@@ -91,15 +137,21 @@ class RecordedReplayOpenDeviceTest {
                         resolveSpeciesId = { repo.getPokemonByName(it)?.id },
                         resolveFastMoves = { repo.getPokemonByName(it)?.fastMoves.orEmpty() },
                         resolveChargedMoves = { repo.getPokemonByName(it)?.chargedMoves.orEmpty() },
+                        resolveChargedMoveType = { species, move ->
+                            repo.getPokemonByName(species)?.chargedMoves?.firstOrNull { it.name.equals(move, true) }?.type
+                        },
+                        pairedReplayScene = { scene, at -> rendered = scene; cursor = at; scene },
+                        onLcdDrag = { drag = it },
                         onLcdContentUpdate = { lcd.value = it })
                 }
                 androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.weight(1f)) { lcd.value?.invoke() }
             }
         }
         val label = "Faint · Vaporeon · Dragon Pulse by Turtonator"
-        compose.waitUntil(240_000) { compose.onAllNodesWithText(label, substring = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(480_000) { compose.onAllNodesWithText(label, substring = true).fetchSemanticsNodes().isNotEmpty() }
         val marker = compose.onNodeWithText(label, substring = true)
         marker.assertIsDisplayed()
+        android.util.Log.i("ReplayOpenTrial", "Archive open to credited LCD faint: ${android.os.SystemClock.elapsedRealtime() - openedAt} ms")
         compose.onNodeWithContentDescription("Previous replay event").performClick()
         // From a cursor beyond the final marker, previous seeks to the faint itself.
         marker.assertIsDisplayed()
@@ -118,6 +170,32 @@ class RecordedReplayOpenDeviceTest {
         File(context.cacheDir, "recorded-vaporeon-faint-lcd.png").outputStream().use {
             marker.captureToImage().asAndroidBitmap().compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
         }
+        val finish = compose.runOnIdle { requireNotNull(rendered?.opponent?.finishingChargeAssociation) }
+        assertEquals("Turtonator", finish.attackerSpeciesName)
+        assertEquals("Dragon Pulse", finish.moveName)
+        fun seek(target: Long) {
+            compose.runOnIdle { drag(androidx.compose.ui.geometry.Offset((600.0 * (target - cursor) / duration).toFloat(), 0f)) }
+            compose.runOnIdle { assertTrue("seek error ${cursor - target} ns", kotlin.math.abs(cursor - target) < 1_000_000L) }
+        }
+        fun photograph(name: String) {
+            File(context.cacheDir, "recorded-vaporeon-$name.png").outputStream().use {
+                compose.onRoot().captureToImage().asAndroidBitmap().compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+            }
+        }
+        seek(go + 78_500_000_000L)
+        compose.onNodeWithContentDescription("Vaporeon").assertIsDisplayed()
+        seek(finish.landingAtNanos + 1_000_000L)
+        val projectile = compose.onNodeWithContentDescription("Charged move projectile").assertIsDisplayed()
+        val target = compose.onNode(hasContentDescription("Vaporeon") or hasContentDescription("Vaporeon, fainted")).assertIsDisplayed()
+        assertTrue("Dragon Pulse should overlap Vaporeon's sprite on impact",
+            projectile.fetchSemanticsNode().boundsInRoot.overlaps(target.fetchSemanticsNode().boundsInRoot))
+        compose.runOnIdle { assertEquals(finish, rendered!!.chargedMoveActions.single { it.side == "PLAYER" }.finishingAssociation) }
+        photograph("impact")
+        seek(finish.faintSourceAtNanos + com.example.overdex.battle.replay.ReplayFaintPose.DURATION_NANOS + 10_000_000L)
+        compose.onNodeWithContentDescription("Vaporeon, fainted").assertIsDisplayed()
+        marker.assertIsDisplayed()
+        photograph("faint")
+
     }
 
     @Test fun opensNewArchivesAndRendersMissingStartMatchAfterCatalogueLoads(): Unit = runBlocking {

@@ -22,6 +22,50 @@ class ReplayRetainedAudioRecoveryTest {
     private fun recover(a: MatchArchive = archive(), refs: List<ReplayAudioReference> = listOf(ref, other),
                         read: (ArchivedAudioCaptured) -> ByteArray? = { if (it.artifactPath == "one") first else second }) =
         ReplayRetainedAudioRecovery.recover(a, refs, read = read)
+    @Test fun `reopen reuses completed fits and retries an unavailable archive`() = kotlinx.coroutines.runBlocking {
+        val a = archive()
+        val directory = java.nio.file.Files.createTempDirectory("ending-audio-test").toFile()
+        try {
+            val zip = java.io.ByteArrayOutputStream().also { bytes ->
+                java.util.zip.ZipOutputStream(bytes).use { out ->
+                    for ((id, clip) in listOf("one" to first, "two" to second)) {
+                        out.putNextEntry(java.util.zip.ZipEntry(id))
+                        out.write(clip)
+                        out.closeEntry()
+                    }
+                }
+            }.toByteArray()
+            val asset = wav(effect)
+            val sha = ReplayRetainedAudioRecovery.sha(asset)
+            val rivalAsset = wav(other.audio.samples)
+            val rivalSha = ReplayRetainedAudioRecovery.sha(rivalAsset)
+            val cache = requireNotNull(ReplayReviewCache.open(directory, 1, a) { zip.inputStream() })
+            val move = com.example.overdex.model.Move("Example charge", com.example.overdex.model.PokemonType.NORMAL, 20, 40, false)
+            val rival = move.copy(name = other.name, isFast = true)
+            var reads = 0
+            suspend fun recognize(available: Boolean, window: LongRange? = null) =
+                ArchivedEndingAudioRecognizer.recognize(a, listOf(move, rival), emptySet(), {
+                    reads++
+                    if (available) zip.inputStream() else null
+                }, window, null, { path -> when (path) {
+                    "fast_move_sounds/rival.wav" -> rivalAsset
+                    "fast_move_sounds/manifest.json" -> """{"references":[{"moveName":"Competing fast","file":"rival.wav","sha256":"$rivalSha"}]}""".encodeToByteArray()
+                    "charged_move_sounds/example.wav" -> asset
+                    "charged_move_sounds/manifest.json" -> """{"references":[{"moveName":"Example charge","file":"example.wav","sha256":"$sha"}]}""".encodeToByteArray()
+                    else -> """{"references":[]}""".encodeToByteArray()
+                } }, cache)
+            assertTrue(recognize(false).unavailableArtifacts.isNotEmpty())
+            val full = recognize(true)
+            assertEquals(listOf("one", "two"), full.charges.single().fragments.map { it.articleId })
+            assertEquals(full, recognize(true))
+            assertEquals(2, reads)
+            assertTrue(recognize(true, 10*S..10*S).charges.isEmpty())
+            assertEquals(3, reads)
+        } finally {
+            directory.deleteRecursively()
+        }
+    }
+
     @Test fun overlappingWholeCryFitsRetainSourcesAndKeepSeparateCallsDistinct() {
         fun clip(id: String, onset: Long) = ReplayAudioFragment(id, onset - S, "audio-$id",
             "cry-reference", S, 0, 1_648_500_000L, .85f)

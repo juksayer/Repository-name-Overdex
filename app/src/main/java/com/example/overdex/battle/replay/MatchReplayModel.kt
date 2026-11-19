@@ -86,7 +86,7 @@ class MatchReplayModel(
     private val replayArticles = terminalFaintProjection.articles
         .filter { it.monotonicTimeNanos != null }
         .sortedBy { it.monotonicTimeNanos }
-    private val matchEndNanos = replayArticles.firstOrNull { it.payload is ArchivedMatchEnded }?.monotonicTimeNanos
+    internal val matchEndNanos = replayArticles.firstOrNull { it.payload is ArchivedMatchEnded }?.monotonicTimeNanos
     // Publication can arrive late; the source clock decides whether an action
     // belongs to this battle. Retain every original Article in timedArticles.
     private val actionArticles = replayArticles.takeWhile {

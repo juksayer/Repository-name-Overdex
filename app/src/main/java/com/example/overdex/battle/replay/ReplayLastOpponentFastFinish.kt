@@ -23,9 +23,12 @@ internal object ReplayLastOpponentFastFinish {
     const val BASIS = "LAST_OPPONENT_CRY_AND_RECEIVED_FAST_MOVE_PATTERN"
     private const val S = 1_000_000_000L
 
+    suspend fun read(archive: MatchArchive, catalog: GameMasterLoader, open: () -> InputStream?,
+                     asset: (String) -> ByteArray): ReplayLastOpponentFastEvidence? = read(archive, catalog, open, asset, null)
+
     suspend fun read(
         archive: MatchArchive, catalog: GameMasterLoader,
-        open: () -> InputStream?, asset: (String) -> ByteArray,
+        open: () -> InputStream?, asset: (String) -> ByteArray, cache: ReplayReviewCache?,
     ): ReplayLastOpponentFastEvidence? = withContext(Dispatchers.Default) {
         val rows = archive.articles.filter { it.matchId == archive.matchId && it.monotonicTimeNanos != null }
             .sortedBy { it.monotonicTimeNanos }
@@ -54,7 +57,7 @@ internal object ReplayLastOpponentFastFinish {
         val opponentMoves = moves(opponent) ?: return@withContext null
         if (playerMoves.isEmpty() || opponentMoves.isEmpty()) return@withContext null
         val audio = ArchivedEndingAudioRecognizer.recognize(archive, (playerMoves + opponentMoves).values.toList(),
-            setOf(player, opponent), open, (at - 6*S)..at, asset)
+            setOf(player, opponent), open, (at - 6*S)..at, null, asset, cache)
         ReplayLastOpponentFastEvidence(audio, playerMoves, opponentMoves.keys, cry.articleId)
     }
 

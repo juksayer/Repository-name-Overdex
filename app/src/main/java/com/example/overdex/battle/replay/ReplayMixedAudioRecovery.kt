@@ -1,5 +1,6 @@
 package com.example.overdex.battle.replay
 
+import kotlinx.serialization.Serializable
 import com.example.overdex.battle.audio.CryWaveformMatcher
 import com.example.overdex.battle.audio.CryWaveformReference
 import com.example.overdex.battle.audio.Pcm16Audio
@@ -7,6 +8,7 @@ import com.example.overdex.battle.audio.StatChangeSoundMatcher
 import kotlin.math.abs
 
 /** Exploratory acoustic evidence only. It does not establish a move use, side, hit or faint. */
+@Serializable
 data class ReplayMixedAudioCandidate(
     val moveName: String,
     val estimatedOnsetNanos: Long,

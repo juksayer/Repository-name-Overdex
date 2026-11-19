@@ -26,6 +26,8 @@ object SpeciesNameRecognizer {
         }
 
     internal class ReadingTurn(private val read: suspend (Bitmap) -> Text) {
+        var hadReadFailure: Boolean = false
+            private set
         var nativeReadNanos: Long = 0L
             private set
         var readCount: Int = 0
@@ -36,7 +38,7 @@ object SpeciesNameRecognizer {
             sourceContext: OcrSourceContext? = null,
             heightProfile: OcrHeightProfile? = null,
             accepts: (String) -> Boolean = { false },
-        ): List<Candidate> = recognizeInTurn(bitmap, sourceContext, heightProfile, accepts) { input ->
+        ): List<Candidate> = recognizeInTurn(bitmap, sourceContext, heightProfile, accepts, { hadReadFailure = true }) { input ->
             val startedAt = System.nanoTime()
             try { read(input) } finally {
                 nativeReadNanos += System.nanoTime() - startedAt
@@ -71,6 +73,7 @@ object SpeciesNameRecognizer {
         sourceContext: OcrSourceContext?,
         heightProfile: OcrHeightProfile?,
         accepts: (String) -> Boolean,
+        onReadFailure: () -> Unit,
         read: suspend (Bitmap) -> Text,
     ): List<Candidate> {
         val candidates = linkedSetOf<Candidate>()
@@ -81,7 +84,7 @@ object SpeciesNameRecognizer {
         for (treatment in treatments) {
             val prepared = if (treatment == "RAW") rawInput(bitmap)
                 else threshold(bitmap, cutoff = 190, padding = 12)
-            recognize(treatment, bitmap, prepared, sourceContext, heightProfile, read)?.let {
+            recognize(treatment, bitmap, prepared, sourceContext, heightProfile, onReadFailure, read)?.let {
                 candidates += Candidate(it.acceptedText, treatment, it)
                 if (accepts(it.acceptedText)) return candidates.toList()
             }
@@ -101,7 +104,7 @@ object SpeciesNameRecognizer {
 
     private suspend fun recognize(
         treatment: String, original: Bitmap, prepared: Bitmap,
-        context: OcrSourceContext?, profile: OcrHeightProfile?,
+        context: OcrSourceContext?, profile: OcrHeightProfile?, onReadFailure: () -> Unit,
         read: suspend (Bitmap) -> Text,
     ): OcrTextEvidence? = try {
         val reading = OcrWordGeometry.read(original, prepared,
@@ -114,6 +117,7 @@ object SpeciesNameRecognizer {
     } catch (cancelled: CancellationException) {
         throw cancelled
     } catch (error: Exception) {
+        onReadFailure()
         Log.e("SPECIES_RECOGNIZER", "Recognition failed treatment=$treatment", error)
         null
     } finally {

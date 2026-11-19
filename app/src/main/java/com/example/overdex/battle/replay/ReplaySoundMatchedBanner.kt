@@ -25,7 +25,7 @@ internal object ReplaySoundMatchedBanner {
     private fun letters(s: String) = s.filter(Char::isLetter).lowercase()
 
     suspend fun read(archive: MatchArchive, directory: File, moves: Map<String, List<Move>>,
-                     audio: ReplayAudioRecovery, open: () -> InputStream?, asset: (String) -> ByteArray
+                     audio: ReplayAudioRecovery, open: () -> InputStream?, asset: (String) -> ByteArray, cache: ReplayReviewCache? = null
     ): ReplayImpactEvidence? = withContext(Dispatchers.IO) {
         if (!archive.mediaIncluded || !directory.isDirectory) return@withContext null
         val rows = archive.articles.filter { it.matchId == archive.matchId && it.monotonicTimeNanos != null }
@@ -74,7 +74,7 @@ internal object ReplaySoundMatchedBanner {
         val opposing = moves[target.speciesName].orEmpty()
         if (player.map { it.name }.toSet() != equipped.toSet() || opposing.isEmpty()) return@withContext null
         val sounds = ArchivedEndingAudioRecognizer.recognize(archive, player + opposing,
-            setOf(actor.speciesId, cry.speciesId), open, at-8*S..at+2*S, name, asset)
+            setOf(actor.speciesId, cry.speciesId), open, at-8*S..at+2*S, name, asset, cache)
         val charge = sounds.charges.singleOrNull() ?: return@withContext null
         if (charge.moveName != name || at - charge.estimatedOnsetNanos !in 1..6*S ||
             !sounds.referenceCandidateNames.containsAll(equipped) || sounds.unavailableArtifacts.isNotEmpty() || sounds.fastEffects.isNotEmpty()) return@withContext null

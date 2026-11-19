@@ -1,5 +1,6 @@
 package com.example.overdex.battle.replay
 
+import kotlinx.serialization.Serializable
 import com.example.overdex.battle.archive.*
 import com.example.overdex.battle.audio.*
 import java.security.MessageDigest
@@ -7,23 +8,28 @@ import kotlin.math.abs
 
 /** A reference is a possibility, never an observed use. Fast effects remain competing references. */
 data class ReplayAudioReference(val name: String, val charged: Boolean, val speciesId: Int?, val sha256: String, val audio: Pcm16Audio)
+@Serializable
 data class ReplayAudioFragment(val articleId: String, val captureAtNanos: Long, val audioSha256: String,
     val referenceSha256: String, val queryOffsetNanos: Long, val referenceOffsetNanos: Long,
     val durationNanos: Long, val correlation: Float,
     val runnerUpName: String? = null, val runnerUpCorrelation: Float? = null) {
     val estimatedOnsetNanos get() = captureAtNanos + queryOffsetNanos - referenceOffsetNanos
 }
+@Serializable
 data class ReplayRecoveredCharge(val moveName: String, val estimatedOnsetNanos: Long, val referenceDurationNanos: Long,
     val fragments: List<ReplayAudioFragment>)
 /** Acoustic Fast effect candidate only: ownership, use count and cadence remain unresolved. */
+@Serializable
 data class ReplayRecoveredFastEffect(val moveName: String, val estimatedOnsetNanos: Long, val fragments: List<ReplayAudioFragment>)
 sealed interface ReplayCryMatch {
     val speciesId: Int
     val estimatedOnsetNanos: Long
     val fragments: List<ReplayAudioFragment>
 }
+@Serializable
 data class ReplayRecoveredCry(override val speciesId: Int, override val estimatedOnsetNanos: Long, val referenceDurationNanos: Long,
     override val fragments: List<ReplayAudioFragment>) : ReplayCryMatch
+@Serializable
 data class ReplayAudioRecovery(val charges: List<ReplayRecoveredCharge> = emptyList(),
     val cries: List<ReplayRecoveredCry> = emptyList(), val unavailableReferences: List<String> = emptyList(),
     val unavailableArtifacts: List<String> = emptyList(),
