@@ -14,6 +14,12 @@ object MatchArchiveArticleSelector {
         val retainedIds = linkedSetOf<String>()
         val pendingIds = ArrayDeque<String>()
         val previewIds = calibrationPreviewIds(articles)
+        val endingAnnouncementIds = articles.groupBy { it.matchId }.values.flatMap {
+            ReplayEndingAnnouncementCrops.select(it)
+        }.mapTo(hashSetOf()) { it.articleId }
+        val endingHpFrameIds = articles.groupBy { it.matchId }.values.flatMap {
+            ReplayEndingHpFrames.select(it)
+        }.mapTo(hashSetOf()) { it.frame.articleId }
 
         // The timeline remains intact. Raw artifact records join it only when a
         // retained observation explicitly cites them as evidence. The bounded,
@@ -21,7 +27,10 @@ object MatchArchiveArticleSelector {
         // LCD preview are retained independently of successful recognition. Hand
         // samples are raw calibration or bounded departure-hint captures, not
         // recall/send-out testimony.
-        articles.filter { !isRawArtifact(it) || isCalibrationSample(it) || it.articleId in previewIds }.forEach { article ->
+        articles.filter {
+            !isRawArtifact(it) || isCalibrationSample(it) ||
+                it.articleId in previewIds || it.articleId in endingAnnouncementIds || it.articleId in endingHpFrameIds
+        }.forEach { article ->
             retainedIds += article.articleId
             article.referencedArticleIds().forEach(pendingIds::addLast)
         }

@@ -50,6 +50,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.asSharedFlow
 import java.util.UUID
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -150,6 +152,25 @@ class Match(
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
     private val rawArticlePublication = RawArticlePublication(realityTimeline::articleForSequence)
+    private val announcementInbox = Channel<RealityArticle>(16, BufferOverflow.DROP_OLDEST)
+    internal val capturedAnnouncements = announcementInbox.receiveAsFlow()
+
+    // Custody already owns the saved crop. This input is only for OCR scheduling.
+    // The ledger creates the canonical article with the same ID and its actual publication time.
+    internal fun offerAnnouncementCrop(receipt: TestimonyRecord) {
+        if (receipt.sourceId.id != BattleWitnessContracts.announcementCropCapture.witnessId &&
+            receipt.sourceId.id != BattleWitnessContracts.chargedImpactAnnouncementCapture.witnessId) return
+        val crop = receipt.payload as? com.example.overdex.battle.custody.CropCaptured ?: return
+        if (crop.cropProvenance.cropName != BattleCropContracts.announcement.cropName) return
+        announcementInbox.trySend(RealityArticle(announcementEvidenceId(receipt), receipt.timestamp, 0L,
+            receipt.sourceId, crop, confidence = receipt.confidence, sequenceNumber = receipt.sequenceNumber,
+            evidenceReferences = receipt.evidenceReferences, matchId = MatchId(matchId),
+            monotonicTimeNanos = receipt.monotonicTimeNanos))
+    }
+
+    internal fun announcementEvidenceId(receipt: TestimonyRecord): ArticleId =
+        recordArticleId?.invoke(receipt.sequenceNumber) ?: ArticleId(UUID.nameUUIDFromBytes(
+            "overdex/announcement/$matchId/${receipt.sequenceNumber}".encodeToByteArray()).toString())
 
     /** Raw article is on the Timeline and broadcast; inline derivations may still be running. */
     suspend fun awaitRawArticlePublished(sequence: Long): RealityArticle = rawArticlePublication.await(sequence)
@@ -434,7 +455,12 @@ class Match(
                 }
 
                 val article = RealityArticle(
-                    id = recordArticleId?.invoke(testimony.sequenceNumber) ?: ArticleId(UUID.randomUUID().toString()),
+                    id = when (testimony.sourceId.id) {
+                        BattleWitnessContracts.announcementCropCapture.witnessId,
+                        BattleWitnessContracts.chargedImpactAnnouncementCapture.witnessId,
+                        "ANNOUNCEMENT_WITNESS_OCR" -> announcementEvidenceId(testimony)
+                        else -> recordArticleId?.invoke(testimony.sequenceNumber) ?: ArticleId(UUID.randomUUID().toString())
+                    },
                     perceivedAt = testimony.timestamp,
                     recordedAt = publicationClockMillis(),
                     sourceId = testimony.sourceId,
@@ -1087,6 +1113,7 @@ class Match(
      * Releases resources and cancels active subscriptions.
      */
     fun release() {
+        announcementInbox.cancel()
         rawArticlePublication.close()
         acceptedChargeCapturePreparation.close()
         speciesChecks.stop()

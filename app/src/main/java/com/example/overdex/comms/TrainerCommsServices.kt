@@ -52,6 +52,9 @@ class TrainerCommsServices private constructor(context: Context) {
         repository.activate(null, null)
         auth?.signOut()
     }
+    internal fun replayCodes(): TrainerReplayCodes =
+        TrainerReplayCodes(requireNotNull(auth) { "Trainer Comms is not configured." }, FirebaseFirestore.getInstance())
+
     suspend fun reconnect() {
         val source = requireNotNull(auth)
         val user = requireNotNull(source.currentUser).also { check(!it.isAnonymous) }

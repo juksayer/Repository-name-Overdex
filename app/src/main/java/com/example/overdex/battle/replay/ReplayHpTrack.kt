@@ -235,6 +235,7 @@ internal class ReplayHpTrack(
     evidence: ReplayHpEvidence,
     fastMoveCycles: List<ReplayFastMoveCycle> = emptyList(),
     private val allowLastSeen: (ArchivedRealityArticle) -> Boolean = { true },
+    uninterrupted: (Long, Long) -> Boolean = { _, _ -> true },
 ) {
     private val hpObservations = articles.filter { (it.payload as? ArchivedActiveHpBarMeasured)?.side == side }
         .sortedBy { it.monotonicTimeNanos }
@@ -244,22 +245,75 @@ internal class ReplayHpTrack(
         at != null && !ChargedImpactHpSource.matches(observation.sourceId) &&
             allowLastSeen(observation) && evidence.confirmsLiveHp(observation, at)
     }
-    private data class Sample(val at: Long, val fraction: Float, val before: Float? = null, val aligned: Boolean = false)
+    private data class Sample(
+        val at: Long, val fraction: Float, val before: Float? = null, val aligned: Boolean = false,
+        val projectedUntil: Long? = null,
+    )
     private data class Damage(val at: Long, val before: Float, val aligned: Boolean)
-    // Damage on our bar belongs to their move, and vice versa. Each bounded
-    // cycle ends before either combatant changes, so HP cannot cross a switch.
-    private val incoming = fastMoveCycles.filter { it.witness.side != side && it.hasReferenceDuration }
+    // The displayed projectile and its HP feedback use the same landing clock.
+    private val incoming = fastMoveCycles.filter { it.witness.side != side }.sortedBy { it.impactAtNanos }
+    private val measuredIncoming = incoming.filter {
+        it.hasReferenceDuration && (it.witness.articleIds.isNotEmpty() ||
+            ReplayFastMoveRhythm.HP_RECEPTION in it.witness.evidenceKinds)
+    }
 
-    private fun impactFor(at: Long): Long? = incoming.firstOrNull { cycle ->
+    private fun impactFor(at: Long): Long? = measuredIncoming.firstOrNull { cycle ->
         cycle.witness.damageTicks.any { it.observedAtNanos == at }
-    }?.impactAtNanos ?: incoming.filter { it.coversHpSample(at) }
-        .minByOrNull { cycle -> cycle.witness.sourceTimesNanos.minOf { kotlin.math.abs(it - at) } }
-        ?.impactAtNanos
+    }?.impactAtNanos ?: measuredIncoming.firstOrNull {
+        ReplayFastMoveRhythm.HP_RECEPTION in it.witness.evidenceKinds && it.impactAtNanos == at
+    }?.impactAtNanos ?: measuredIncoming.filter {
+        it.witness.sourceTimesNanos.isNotEmpty() && it.coversHpSample(at)
+    }.minByOrNull { cycle -> cycle.witness.sourceTimesNanos.minOf { kotlin.math.abs(it - at) } }?.impactAtNanos
 
     private val samples = buildList {
+        // Preserve an individually witnessed damage tick. When several supported
+        // hits share a single measured loss, show steps through that loss only
+        // between two trustworthy source-time endpoints on the same pair.
+        val ticks = articles.filter { a ->
+            val tick = a.payload as? ArchivedActiveHpBarDamageTickMeasured
+            tick?.damagedSide == side && tick.validDamage() && evidence.accepts(a)
+        }.groupBy { it.monotonicTimeNanos }
+        val tickTimes = java.util.TreeSet(ticks.keys.filterNotNull())
+        val captured = hpObservations.filter { evidence.accepts(it) && it.monotonicTimeNanos != null }
+            .groupBy { it.monotonicTimeNanos!! }.toSortedMap()
+        val redistributed = mutableSetOf<Long>()
+        for ((before, after) in captured.values.zipWithNext()) {
+            val first = before.singleOrNull() ?: continue
+            val last = after.singleOrNull() ?: continue
+            val from = first.monotonicTimeNanos!!
+            val until = last.monotonicTimeNanos!!
+            val a = first.payload as ArchivedActiveHpBarMeasured
+            val b = last.payload as ArchivedActiveHpBarMeasured
+            if (until - from > MAX_DISTRIBUTION_GAP_NANOS ||
+                !allowLastSeen(first) || !allowLastSeen(last) ||
+                ChargedImpactHpSource.matches(first.sourceId) || ChargedImpactHpSource.matches(last.sourceId) ||
+                !evidence.confirmsLiveHp(first) || !evidence.confirmsLiveHp(last) ||
+                !replayHpBaselineContinues(a, b) || !uninterrupted(from, until) ||
+                tickTimes.higher(from)?.let { it < until } == true ||
+                ticks[until].orEmpty().any { evidence.acceptsSingleHit(it) }) continue
+            val hits = incoming.between(from, until)
+            val exemplar = hits.firstOrNull()?.witness ?: continue
+            if (hits.size < 2 || exemplar.moveName == null || exemplar.durationNanos == null ||
+                hits.any {
+                    it.witness.articleIds.isEmpty() || it.witness.moveName != exemplar.moveName ||
+                        it.witness.durationNanos != exemplar.durationNanos || it.witness.damageTicks.isNotEmpty() ||
+                        it.witness.windowStartNanos != exemplar.windowStartNanos ||
+                        it.witness.windowEndNanos != exemplar.windowEndNanos
+                } || from < exemplar.windowStartNanos || until >= exemplar.windowEndNanos) continue
+            val drop = (a.filledFraction - b.filledFraction) / hits.size
+            val pixel = 1f / (b.barRight - b.barLeft - 4).coerceAtLeast(1)
+            if (drop < maxOf(MIN_VISIBLE_DAMAGE, pixel)) continue
+            redistributed += until
+            hits.forEachIndexed { index, hit ->
+                val fraction = if (index == hits.lastIndex) b.filledFraction
+                    else (a.filledFraction - drop * (index + 1)).coerceAtLeast(b.filledFraction)
+                add(Sample(hit.impactAtNanos, fraction, aligned = true, projectedUntil = until))
+            }
+        }
         articles.forEach { article ->
             if (!evidence.accepts(article)) return@forEach
             val at = article.monotonicTimeNanos ?: return@forEach
+            if (at in redistributed) return@forEach
             val fraction = when (val payload = article.payload) {
                 is ArchivedActiveHpBarMeasured -> payload.filledFraction.takeIf { payload.side == side }
                 is ArchivedActiveHpBarDamageTickMeasured -> payload.afterFraction.takeIf {
@@ -278,7 +332,7 @@ internal class ReplayHpTrack(
         // A draining bar can produce several readings for the same hit. Use the
         // measured final fraction and retain the whole orange damage chunk.
         Sample(at, samples.minOf { it.fraction }, samples.mapNotNull { it.before }.maxOrNull(),
-            samples.any { it.aligned })
+            samples.any { it.aligned }, samples.mapNotNull { it.projectedUntil }.maxOrNull())
     }.sortedBy { it.at }
     private val pulses = (articles.mapNotNull { article ->
         if (!evidence.accepts(article)) return@mapNotNull null
@@ -288,7 +342,12 @@ internal class ReplayHpTrack(
             else -> false
         }
         article.monotonicTimeNanos.takeIf { present }?.let { impactFor(it) ?: it }
-    } + incoming.map { it.impactAtNanos }).distinct().sorted()
+    } + incoming.filter { it.hasReferenceDuration }.map { it.impactAtNanos }).distinct().sorted()
+
+    private fun List<ReplayFastMoveCycle>.between(from: Long, until: Long): List<ReplayFastMoveCycle> {
+        val index = binarySearchBy(from + 1) { it.impactAtNanos }.let { if (it < 0) -it - 1 else it }
+        return listIterator(index).asSequence().takeWhile { it.impactAtNanos <= until }.toList()
+    }
 
     fun stateAt(cursor: Long, appearances: List<ReplayHpAppearance>, fainted: Boolean, matchStart: Long?): ReplayHpState {
         if (fainted) return ReplayHpState(filledFraction = 0f)
@@ -304,6 +363,7 @@ internal class ReplayHpTrack(
         var fraction = 1f
         var measured = false
         var damage: Damage? = null
+        var projectedUntil: Long? = null
         for ((index, appearance) in appearances.withIndex()) {
             if (appearance.speciesKey != current.speciesKey) continue
             val end = appearances.getOrNull(index + 1)?.start
@@ -319,6 +379,7 @@ internal class ReplayHpTrack(
                         damage = Damage(sample.at, before, sample.aligned)
                     }
                     fraction = sample.fraction
+                    projectedUntil = sample.projectedUntil
                 }
                 measured = true
             }
@@ -333,10 +394,11 @@ internal class ReplayHpTrack(
                 it.monotonicTimeNanos?.let { time -> time in maxOf(current.start, matchStart ?: current.start)..cursor } == true
             },
             damageTimingReconstructed = recentDamage?.aligned == true,
-            currentHpConfirmed = hpObservations.lastOrNull {
+            estimatedBetweenMeasurements = projectedUntil?.let { cursor < it } == true,
+            currentHpConfirmed = projectedUntil?.let { cursor >= it } != false && hpObservations.lastOrNull {
                 it.monotonicTimeNanos?.let { time -> time in maxOf(current.start, matchStart ?: current.start)..cursor } == true
             }?.let { sample ->
-                hpEvidence.confirmsLiveHp(sample, cursor) && incoming.none {
+                hpEvidence.confirmsLiveHp(sample, cursor) && measuredIncoming.none {
                     it.impactAtNanos > sample.monotonicTimeNanos!! && it.impactAtNanos <= cursor
                 }
             } == true,
@@ -353,7 +415,8 @@ internal class ReplayHpTrack(
         beforeFraction.validFraction() && afterFraction.validFraction() && afterFraction <= beforeFraction
 
     companion object {
-        // Presentation durations only; no extra hits or HP estimates are inferred.
+        private const val MAX_DISTRIBUTION_GAP_NANOS = 6_000_000_000L
+        // Presentation durations only.
         private const val DAMAGE_TRAIL_NANOS = 350_000_000L
         private const val BORDER_PULSE_NANOS = 180_000_000L
         private const val MIN_VISIBLE_DAMAGE = 0.006f
@@ -367,12 +430,13 @@ data class ReplayHpState(
     val damageTrailFraction: Float? = null,
     val borderPulse: Boolean = false,
     val assumedInitialFull: Boolean = false,
-    /** Only the display timing is aligned; damage amounts still come from measurements. */
+    /** The display timing is aligned to a supported or measured reception. */
     val damageTimingReconstructed: Boolean = false,
     /** The fraction can be historical; only this flag permits displaying it as current live HP. */
     val currentHpConfirmed: Boolean = false,
     /** Historical display only; never evidence of survival at the replay cursor. */
     val lastSeenFraction: Float? = null,
+    val estimatedBetweenMeasurements: Boolean = false,
 )
 
 internal data class ReplayHpAppearance(val speciesKey: String, val start: Long)

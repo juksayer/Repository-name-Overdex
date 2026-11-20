@@ -348,6 +348,60 @@ class RecordedMoondropFaintCryDeviceTest {
         assertEquals(landing, model.sceneAt(credit.landingAtNanos))
     }
 
+    @Test fun retainedRedSliverSeparatesFinalIncinerateFromEarthPower() = runBlocking<Unit> {
+        assumeTrue(InstrumentationRegistry.getArguments().getString("recordedMoondropRetainedSliver") == "true")
+        val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        val file = File(ctx.filesDir,
+            "match_archives/2026-11-18_21-36-57_f07ce5f3-a512-486e-af27-4ceb26fc5e32.odxmatch.zip")
+        val expectedHash = "1bd727e8b0b42fa1e3823552ff6754b7472f289efa9c49f12f93837b87afd5f7"
+        assertEquals(expectedHash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
+        val archive = file.inputStream().use(MatchArchivePackageReader::read)
+        val catalog = GameMasterLoader(ctx)
+        val repo = PokemonRepository(PokedexDatabase.getDatabase(ctx).pokemonDao(), LocalSpriteProvider(ctx.assets), catalog)
+        val lookup = ReplayReferenceLookup.fromRepository(repo::getPokemonByName, repo::getAllSpeciesNames)
+        val replay = requireNotNull(prepareReplay(ctx, archive, android.net.Uri.fromFile(file), lookup, {},
+            loadCrops = { _, _ -> emptyList() }).replay)
+        val model = replay.model
+        val go = requireNotNull(model.matchStartNanos)
+        val marker = model.eventMarkers.single {
+            it.kind == ReplayEventMarkerKind.FAINT && it.label.contains("Vaporeon")
+        }
+        val link = marker.finishingAttribution as ReplayFinishingFastAssociation
+        val crop = archive.articles.single { it.articleId == "4877605d-278e-456a-bdc5-4d2b6b4fda25" }
+        assertEquals("Camerupt", link.attackerSpeciesName)
+        assertEquals("Incinerate", link.moveName)
+        assertEquals(crop.monotonicTimeNanos, link.landingAtNanos)
+        assertTrue(crop.articleId in link.moveArticleIds)
+        assertNull("The retained color profile leaves the numeric damage time unknown", link.reception)
+        assertTrue(marker.faintTiming is ReplayFaintTiming.Cry)
+        assertEquals(go + 43_947_990_464L, marker.atNanos)
+        assertFalse(model.sceneAt(marker.atNanos - 1).opponent!!.isFainted)
+        assertTrue(model.sceneAt(marker.atNanos).opponent!!.isFainted)
+        val landing = model.sceneAt(link.landingAtNanos)
+        assertEquals(1f, landing.fastMoveActions.single { it.finishingAssociation == link }.progress, .001f)
+        assertEquals(landing, model.sceneAt(link.landingAtNanos))
+        assertTrue(model.finishingChargeAssociations.none { it.recipientSpeciesName == "Vaporeon" })
+        assertEquals(crop, model.timedArticles.single { it.articleId == crop.articleId })
+
+        val profiles = ReplayRetainedSliverReader.read(archive, file::inputStream)
+        fun review(rows: List<ArchivedRealityArticle>, retained: ReplayRetainedSliverEvidence) =
+            MatchReplayModel(archive.copy(articles = rows), mapOf("Vaporeon" to 134, "Camerupt" to 323),
+                fastMovesBySpeciesName = replay.fastMoves, chargedMovesBySpeciesName = replay.chargedMoves,
+                audioRecovery = model.audioRecovery, retainedSliverEvidence = retained)
+        assertEquals(link, review(archive.articles.reversed(), profiles).finishingFastMoveAssociations.single())
+        assertTrue(review(archive.articles, ReplayRetainedSliverEvidence()).finishingAttributions.none { it.recipientSpeciesName == "Vaporeon" })
+        val previous = archive.articles.single { it.articleId == "68dff304-9af8-489a-87ca-c1be3e41f6fd" }
+        val living = previous.copy(articleId = "surviving-column", monotonicTimeNanos = link.landingAtNanos + 30_000_000L,
+            payload = (previous.payload as ArchivedCompleteHpBarObserved).copy(liveColumns = 1))
+        assertTrue(review(archive.articles + living, profiles).finishingAttributions.none { it.recipientSpeciesName == "Vaporeon" })
+        val sealeo = archive.articles.first {
+            (it.payload as? ArchivedActivePokemonSpeciesWitnessed)?.speciesName == "Sealeo"
+        }
+        val replacement = sealeo.copy(articleId = "live-switch", monotonicTimeNanos = link.landingAtNanos + 30_000_000L)
+        assertTrue(review(archive.articles + replacement, profiles).finishingAttributions.none { it.recipientSpeciesName == "Vaporeon" })
+        assertEquals(expectedHash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
+    }
+
     @Test fun finalEarthPowerNamesBothTheLandingAndVaporeonFaint() = review(
         "recordedMoondropEarthPower", "2026-11-18_16-16-50_5e39cb12-af19-4841-8d2d-3a63539666e8.odxmatch.zip",
         "7477d19a5bf0af4ebeb34e4f0fae85f0e61d7aceaf424fc2c1920dfa395333c0"
@@ -373,5 +427,141 @@ class RecordedMoondropFaintCryDeviceTest {
         assertEquals(1f, ReplayChargePose.at(action, true).projectileProgress, 0f)
         assertTrue(model.sceneAt(faint.atNanos).opponent!!.isFainted)
         assertEquals(landing, model.sceneAt(link.landingAtNanos))
+    }
+
+    @Test fun powderSnowFinishesJumpluffAtItsOwnDepartureCry() = runBlocking<Unit> {
+        assumeTrue(InstrumentationRegistry.getArguments().getString("recordedMoondropFinishingSides") == "true")
+        val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        val file = File(ctx.filesDir,
+            "match_archives/2026-11-20_09-27-33_47f5733f-28d0-49b8-8719-494775613653.odxmatch.zip")
+        val hash = "3adcc1d30728f8486520fb1ed11a1952b6d93babc8b442e6c31fc31c9a5bdd9b"
+        assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
+        val archive = file.inputStream().use(MatchArchivePackageReader::read)
+        val replay = prepareRecorded(archive, file)
+        val model = replay.model
+        val go = requireNotNull(model.matchStartNanos)
+        val at = go + 138_221_718_393L
+        val damage = archive.articles.single { it.articleId.startsWith("cd6ebff1") }
+        val crop = archive.articles.single { it.articleId.startsWith("4b657b6c") }
+        val badge = archive.articles.single { it.articleId.startsWith("80040b92") }
+        val retained = ReplayRetainedSliverReader.read(archive, file::inputStream)
+        assertTrue("Read the saved, recipient-local departure", retained.departures.any {
+            it.damageArticleId == damage.articleId && it.cropArticleId == crop.articleId
+        })
+        val faint = model.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT && it.side == "PLAYER" }
+        val credit = faint.finishingAttribution as ReplayFinishingFastAssociation
+        assertEquals("Faint · Jumpluff · Powder Snow by Piloswine · inferred", faint.label)
+        assertEquals("OPPONENT", faint.initiatingSide)
+        assertEquals(at, faint.atNanos)
+        assertTrue(faint.faintTiming is ReplayFaintTiming.Cry)
+        assertTrue(faint.sourceArticleIds.containsAll(listOf(damage.articleId, crop.articleId, badge.articleId)))
+        assertEquals(go + 136_892_771_239L, credit.moveSourceAtNanos)
+        assertEquals(damage.monotonicTimeNanos, credit.landingAtNanos)
+        assertNull(credit.reception)
+        val landing = model.sceneAt(credit.landingAtNanos)
+        val hit = landing.fastMoveActions.single { it.finishingAssociation == credit }
+        assertEquals(1f, hit.progress, .001f)
+        assertEquals("Piloswine", landing.opponent?.speciesName)
+        assertEquals("Jumpluff", landing.player?.speciesName)
+        assertFalse(model.sceneAt(at - 1).player!!.isFainted)
+        assertTrue(model.sceneAt(at).player!!.isFainted)
+        assertFalse(model.sceneAt(at).opponent!!.isFainted)
+        assertEquals(0f, model.sceneAt(at).playerHp!!.filledFraction!!, .001f)
+        assertEquals(landing, model.sceneAt(credit.landingAtNanos))
+        assertEquals(damage, model.timedArticles.single { it.articleId == damage.articleId })
+
+        fun review(rows: List<ArchivedRealityArticle>, evidence: ReplayRetainedSliverEvidence = retained) =
+            MatchReplayModel(archive.copy(articles = rows), mapOf("Jumpluff" to 189, "Piloswine" to 221),
+                fastMovesBySpeciesName = replay.fastMoves, chargedMovesBySpeciesName = replay.chargedMoves,
+                audioRecovery = model.audioRecovery, retainedSliverEvidence = evidence)
+        fun hasJumpluffFaint(candidate: MatchReplayModel) = candidate.eventMarkers.any {
+            it.kind == ReplayEventMarkerKind.FAINT && it.side == "PLAYER" && "Jumpluff" in it.label
+        }
+        val reversed = review(archive.articles.reversed())
+        assertEquals(credit, reversed.finishingFastMoveAssociations.single { it.recipientSpeciesName == "Jumpluff" })
+        assertFalse(hasJumpluffFaint(review(archive.articles, retained.copy(departures = emptyList()))))
+        assertFalse(hasJumpluffFaint(review(archive.articles.filterNot { it.articleId == badge.articleId })))
+
+        val profile = damage.payload as ArchivedCompleteHpBarObserved
+        val survivor = damage.copy(articleId = "surviving-hp", monotonicTimeNanos = credit.landingAtNanos + 30_000_000L,
+            payload = profile.copy(liveColumns = 1, status = "LIVE_COLOR"))
+        assertFalse(hasJumpluffFaint(review(archive.articles + survivor)))
+        val replacement = badge.copy(articleId = "living-switch", monotonicTimeNanos = credit.landingAtNanos + 30_000_000L,
+            payload = ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Gallade", 475))
+        assertFalse(hasJumpluffFaint(review(archive.articles + replacement)))
+
+        val priorUse = archive.articles.first { (it.payload as? ArchivedFastMoveUseObserved)?.attackingSide == "OPPONENT" }
+        val competing = priorUse.copy(articleId = "competing-use", monotonicTimeNanos = credit.landingAtNanos + 40_000_000L,
+            payload = (priorUse.payload as ArchivedFastMoveUseObserved).copy(useId = "competing-use", attackerSpeciesName = "Piloswine"))
+        val disputed = review(archive.articles + competing)
+        assertTrue(hasJumpluffFaint(disputed))
+        assertTrue(disputed.finishingAttributions.none { it.recipientSpeciesName == "Jumpluff" })
+        assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
+    }
+
+    @Test fun fairyWindLandsBeforeCradilysDepartureCry() = runBlocking<Unit> {
+        assumeTrue(InstrumentationRegistry.getArguments().getString("recordedCradilyFairyWind") == "true")
+        val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        val file = File(ctx.filesDir, "match_archives/2026-11-20_10-30-recovered-source-review.odxmatch.zip")
+        val hash = "e66c33550ca32269db62dd8fc2477f47a84486243306f92e45f00514b424d4db"
+        assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
+        val archive = file.inputStream().use(MatchArchivePackageReader::read)
+        val model = prepareRecorded(archive, file).model
+        val go = requireNotNull(model.matchStartNanos)
+        val field = archive.articles.single { it.articleId.startsWith("35a4bc74") }
+        val faint = model.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT && it.label.startsWith("Faint · Cradily") }
+        val credit = faint.finishingAttribution as ReplayFinishingFastAssociation
+        assertEquals("Faint · Cradily · Fairy Wind by Jumpluff · inferred", faint.label)
+        assertEquals("PLAYER", faint.initiatingSide)
+        assertEquals(go + 180_862_029_165L, faint.atNanos)
+        assertTrue(faint.faintTiming is ReplayFaintTiming.Cry)
+        assertEquals(go + 180_072_654_165L, credit.moveSourceAtNanos)
+        assertEquals(field.monotonicTimeNanos, credit.landingAtNanos)
+        assertTrue(field.articleId in credit.evidenceArticleIds)
+        assertNull(credit.reception)
+
+        val landing = model.sceneAt(credit.landingAtNanos)
+        val hit = landing.fastMoveActions.single { it.finishingAssociation == credit }
+        assertEquals(1f, hit.progress, .001f)
+        assertEquals("Jumpluff", landing.player?.speciesName)
+        assertEquals("Cradily", landing.opponent?.speciesName)
+        assertFalse(model.sceneAt(faint.atNanos - 1).opponent!!.isFainted)
+        assertTrue(model.sceneAt(faint.atNanos).opponent!!.isFainted)
+        assertEquals(landing, model.sceneAt(credit.landingAtNanos))
+        assertEquals(1, model.attackSoundEvents.count { it.finishingAssociation == credit })
+        assertEquals(1, ReplayEventMarkers.lcdMarkers(model.eventMarkers).count { it.finishingAttribution == credit &&
+            it.kind == ReplayEventMarkerKind.FAINT })
+        assertEquals(field, model.timedArticles.single { it.articleId == field.articleId })
+        assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
+    }
+
+    @Test fun concessionKeepsBothFinalPokemonStanding() = runBlocking<Unit> {
+        assumeTrue(InstrumentationRegistry.getArguments().getString("recordedMoondropFinishingSides") == "true")
+        val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        val file = File(ctx.filesDir,
+            "match_archives/2026-11-20_09-24-15_72c92504-2227-427a-b4dd-053f7df79397.odxmatch.zip")
+        val hash = "6a9a5993d4db88352f55c9feedc16b1b956b9643d91ce280a352c899bcbcd33c"
+        assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
+        val archive = file.inputStream().use(MatchArchivePackageReader::read)
+        val model = prepareRecorded(archive, file).model
+        assertTrue(model.finishingAttributions.isEmpty())
+        assertTrue(model.eventMarkers.none { it.kind == ReplayEventMarkerKind.FAINT })
+        val ending = model.sceneAt(requireNotNull(model.matchEndNanos) - 1)
+        assertEquals("Jumpluff", ending.player?.speciesName)
+        assertEquals("Primeape", ending.opponent?.speciesName)
+        assertFalse(ending.player!!.isFainted)
+        assertFalse(ending.opponent!!.isFainted)
+        assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
+    }
+
+    private suspend fun prepareRecorded(archive: MatchArchive, file: File): PreparedReplay {
+        val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        val catalog = GameMasterLoader(ctx)
+        val repo = PokemonRepository(PokedexDatabase.getDatabase(ctx).pokemonDao(), LocalSpriteProvider(ctx.assets), catalog)
+        // Both sides have original named badge readings. The media portion
+        // still reads and verifies the original PNGs and WAVs.
+        return requireNotNull(prepareReplay(ctx, archive, android.net.Uri.fromFile(file),
+            ReplayReferenceLookup.fromRepository(repo::getPokemonByName, repo::getAllSpeciesNames), {},
+            loadCrops = { _, _ -> emptyList() }).replay)
     }
 }

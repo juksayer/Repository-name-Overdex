@@ -15,6 +15,8 @@ internal data class CompleteHpBarSample(
     val hpSample: TrackedTerminalHpBarSample? = null,
     val backgroundMaskedColumns: Int = 0,
     val unmaskedUncertainColumns: Int = 0,
+    val possibleLiveColumns: Int = liveColumns,
+    val coherentDamage: Boolean = orangeOnly,
 ) {
     // A geometry prior only. Callers may publish HP exclusively from hpSample.
     fun anchor() = ActiveHpBarMeasurement(bounds.left, bounds.top, bounds.right, bounds.bottom,
@@ -31,11 +33,13 @@ internal object CompleteHpBarProfile {
         val bottom = bar.bottom - vertical
         val orange = BooleanArray(right - left)
         var live = 0
+        var possibleLive = 0
         val uncertain = BooleanArray(right - left)
         val protectedColor = BooleanArray(right - left)
         for (x in left until right) {
             var livePixels = 0
             var orangePixels = 0
+            var possibleLiveColor = false
             for (y in top until bottom) {
                 val c = pixelAt(x, y)
                 val r = c ushr 16 and 255; val g = c ushr 8 and 255; val b = c and 255
@@ -62,10 +66,12 @@ internal object CompleteHpBarProfile {
                     // Preserve even dim red/yellow/green slivers as unresolved evidence.
                     // Darkness or location after an orange run cannot erase possible HP.
                     if (liveHue || hi >= 160) protectedColor[x - left] = true
+                    if (liveHue) possibleLiveColor = true
                 }
             }
             // Even one surviving source column blocks orange-only. Never erode the mask.
             if (livePixels > 0) live++
+            if (livePixels > 0 || possibleLiveColor) possibleLive++
             orange[x - left] = orangePixels >= max(2, (bottom - top) * 3 / 5)
         }
         val first = orange.indexOfFirst { it }
@@ -94,6 +100,7 @@ internal object CompleteHpBarProfile {
         }
         return CompleteHpBarSample(BattleCropBounds(bar.left, bar.top, bar.right, bar.bottom),
             bar.confidence, right - left, live, damage, orangeOnly, rail, background,
-            backgroundMaskedColumns = backgroundMasked, unmaskedUncertainColumns = unmaskedUncertain)
+            backgroundMaskedColumns = backgroundMasked, unmaskedUncertainColumns = unmaskedUncertain,
+            possibleLiveColumns = possibleLive, coherentDamage = coherentDamage)
     }
 }

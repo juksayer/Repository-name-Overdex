@@ -1232,8 +1232,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             name = "QTE Progress Text",
             cropContract = com.example.overdex.battle.observation.BattleCropContracts.qteProgressText))
         val qteSampling = com.example.overdex.battle.observation.QteTypeIconSampling(
-            savedRegion = { DroidballService.qteCalibrationRegion ?: calibrationManager.load().qteTypeIconsRegion }
+            savedRegion = { calibrationManager.load().qteTypeIconsRegion },
+            followsQte = false,
         )
+        observationDispatcher.register(com.example.overdex.battle.observation.QteGlyphWitness(
+            input, calibrationManager::load, cropArtifactStore,
+        ))
         DroidballService.qteTypeIconSampling.value = qteSampling
         observationDispatcher.register(qteSampling)
         observationDispatcher.register(CropCaptureWitness(input, calibration,

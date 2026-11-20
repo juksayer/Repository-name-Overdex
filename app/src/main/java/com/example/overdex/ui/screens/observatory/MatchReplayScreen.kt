@@ -81,7 +81,6 @@ import coil.request.ImageRequest
 import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.battle.replay.ReplayFastMoveAction
 import com.example.overdex.battle.replay.ReplayChargedMoveAction
-import com.example.overdex.battle.replay.ReplayChargePhase
 import com.example.overdex.battle.replay.ReplayChargePose
 import com.example.overdex.battle.replay.ReplayScene
 import com.example.overdex.battle.replay.ReplayCropProgress
@@ -148,6 +147,7 @@ fun MatchReplayScreen(
     playbackWindow: ReplayWindow? = null,
     autoplay: Boolean = false,
     playbackLabel: String? = null,
+    sharedReplay: com.example.overdex.battle.replay.SharedReplay? = null,
     onPlaybackComplete: () -> Unit = {},
     onOpenEditor: (() -> Unit)? = null,
     allowClipSave: Boolean = true,
@@ -158,10 +158,10 @@ fun MatchReplayScreen(
     pairedReplayScene: ((com.example.overdex.battle.replay.ReplayScene, Long) -> com.example.overdex.battle.replay.ReplayScene)? = null,
 ) {
     val replayContext = LocalContext.current
-    var preparation by remember(archive, impactArchiveUri, replayPreparation) {
+    var preparation by remember(archive, impactArchiveUri, replayPreparation, sharedReplay) {
         mutableStateOf(ReplayPreparationState())
     }
-    LaunchedEffect(archive, impactArchiveUri, replayPreparation) {
+    LaunchedEffect(archive, impactArchiveUri, replayPreparation, sharedReplay) {
         try {
             if (replayPreparation != null && impactArchiveUri != null && replayPreparation.owns(impactArchiveUri) &&
                 resolveArchivedAudio == null && resolveArchivedSpeciesCrops == null) {
@@ -172,6 +172,7 @@ fun MatchReplayScreen(
                     ReplayReferenceLookup(resolveSpeciesId, resolveSpeciesNames, resolveFastMoves,
                         resolveChargedMoves, resolveFastMoveType, resolveChargedMoveType),
                     { preparation = it }, resolveArchivedAudio, resolveArchivedSpeciesCrops,
+                    sharedReadings = sharedReplay?.readings,
                 )
             }
         } catch (cancelled: kotlinx.coroutines.CancellationException) {
@@ -249,7 +250,7 @@ fun MatchReplayScreen(
     }
     val context = LocalContext.current
     val correctionStore = remember(context) { com.example.overdex.battle.replay.ReplayTrainerCorrectionStore(context.filesDir) }
-    var corrections by remember(replayArchive) { mutableStateOf(correctionStore.list(replayArchive.matchId)) }
+    var corrections by remember(replayArchive) { mutableStateOf(if (sharedReplay == null) correctionStore.list(replayArchive.matchId) else emptyList()) }
     val trainerEnd = model.matchStartNanos?.let { start -> corrections.mapNotNull { entry ->
         runCatching { Math.addExact(Math.addExact(start, entry.matchOffsetNanos), 1_000_000_000L) }.getOrNull()
     }.maxOrNull() }
@@ -626,7 +627,13 @@ fun MatchReplayScreen(
     val section = lcdSection
     val menuActions = when (section) {
         null -> buildList {
-            ReplayLcdSection.entries.filter { it != ReplayLcdSection.Clips || allowClipSave || onOpenEditor != null }
+            ReplayLcdSection.entries.filter {
+                when (it) {
+                    ReplayLcdSection.Clips -> allowClipSave || onOpenEditor != null
+                    ReplayLcdSection.Corrections -> sharedReplay == null
+                    else -> true
+                }
+            }
                 .forEach { entry -> add(ReplayLcdAction(entry.id, entry.title, run = { openSection(entry) })) }
             add(exit)
         }
@@ -962,7 +969,9 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                         Modifier.align(Alignment.Center), playerOffset, opponentOffset)
                 }
                 scene.chargedMoveActions.forEach { action ->
-                    ChargedMoveReplayIndicator(action, travelHalfWidth, spriteSize * 1.15f,
+                    val visible = if (action.side == "OPPONENT" && cursor < action.announcementAtNanos)
+                        action.copy(moveName = null, type = null) else action
+                    ChargedMoveReplayIndicator(visible, travelHalfWidth, spriteSize * 1.15f,
                         opponentForwardX, opponentForwardY, Modifier.align(Alignment.Center),
                         performerOffsetPixels = if (action.side == "PLAYER") playerOffset else opponentOffset,
                         recipientOffsetPixels = if (action.side == "PLAYER") opponentOffset else playerOffset)
@@ -1443,6 +1452,7 @@ internal fun ReplayHpBar(hp: ReplayHpState, label: String, modifier: Modifier = 
     Box(modifier.width(132.dp).height(11.dp).semantics {
         contentDescription = label
         stateDescription = if (hp.assumedInitialFull) "Full HP assumed on first entry"
+            else if (hp.estimatedBetweenMeasurements && fraction != null) "Estimated ${(fraction * 100).toInt()} percent between HP readings"
             else if (lastSeen) "Last seen ${(fraction!! * 100).toInt()} percent; current HP unknown"
             else fraction?.let { "${(it * 100).toInt()} percent" } ?: "HP not recorded"
     }) {

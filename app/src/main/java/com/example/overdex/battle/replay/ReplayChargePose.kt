@@ -34,12 +34,21 @@ data class ReplayChargePose(
             val gradeProgress = action.qteLevelProgress.coerceIn(0f, 1f)
             val gradeGrowth = if (action.qteLevel > 0) action.qteLevel.coerceAtMost(3) - 1f +
                 gradeProgress * gradeProgress * (3f - 2f * gradeProgress) else 0f
+            val shieldWindUp = !player && "SHIELD_PROMPT" in action.evidenceKinds
             if (action.phase == ReplayChargePhase.CHARGING) return ReplayChargePose(
-                -amplitude * 0.75f * progress * (2f - progress),
+                -amplitude * when {
+                    shieldWindUp -> smooth(progress)
+                    player -> 0.75f * progress * (2f - progress)
+                    else -> 0.75f * smooth(progress)
+                },
                 0.72f + 0.58f * progress + 0.12f * gradeGrowth,
                 0f,
                 1f,
             )
+            // The visible shield phase already brought the opponent to the apex.
+            // Spend the existing strike interval on the throw and descent.
+            if (shieldWindUp) return ReplayChargePose(
+                -amplitude * (1f - smooth(progress)), 1.3f, progress, 1f, -amplitude)
             val flight = ((progress - APEX_PROGRESS) / (1f - APEX_PROGRESS)).coerceIn(0f, 1f)
             val height = if (progress <= APEX_PROGRESS) {
                 val rise = progress / APEX_PROGRESS
@@ -51,6 +60,8 @@ data class ReplayChargePose(
             return ReplayChargePose(-amplitude * height, 1.3f + 0.12f * gradeGrowth,
                 flight, 1f, if (progress >= APEX_PROGRESS) -amplitude else -amplitude * height)
         }
+
+        private fun smooth(progress: Float) = progress * progress * (3f - 2f * progress)
     }
 }
 

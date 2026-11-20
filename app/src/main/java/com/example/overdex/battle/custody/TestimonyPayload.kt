@@ -37,6 +37,9 @@ data class RawTestimony(
     val ocr: com.example.overdex.model.observation.OcrTextEvidence? = null,
 ) : TestimonyPayload
 
+/** A glyph observed during the player's bounded Get Ready episode. */
+data class QteMoveTypeWitnessed(val type: PokemonType, val firstObservedAtNanos: Long) : TestimonyPayload
+
 /** Accepted result-label interpretation; the original OCR remains unchanged and independently cited. */
 data class MatchOutcomeLabelWitnessed(
     val result: BattleResult,

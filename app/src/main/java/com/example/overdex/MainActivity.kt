@@ -493,6 +493,9 @@ fun PokedexApp(
 
 ){
     val navController = rememberNavController()
+    var receivedReplay by remember {
+        mutableStateOf<Pair<String, com.example.overdex.battle.replay.SharedReplay>?>(null)
+    }
     val launchAccessibilityProbe: () -> Unit = {
         if (BuildConfig.DEBUG) navController.navigate("accessibility_probe")
     }
@@ -1092,6 +1095,11 @@ fun PokedexApp(
                     services = trainerComms,
                     trainerRepository = trainerRepository,
                     viewModel = viewModel,
+                    archiveDirectory = archiveDirectoryManager,
+                    onOpenSharedReplay = { account, replay ->
+                        receivedReplay = account to replay
+                        navController.navigate("shared_replay") { launchSingleTop = true }
+                    },
                     onBack = { navController.debugPopBackStack() }
                 )
             }
@@ -1740,8 +1748,8 @@ fun PokedexApp(
                     }
                 }
             }
-            listOf("match_archive_viewer", "match_replay?archiveUri={archiveUri}").forEach { viewerRoute ->
-                composable(viewerRoute, arguments = if (viewerRoute == "match_archive_viewer") emptyList() else listOf(
+            listOf("match_archive_viewer", "shared_replay", "match_replay?archiveUri={archiveUri}").forEach { viewerRoute ->
+                composable(viewerRoute, arguments = if (viewerRoute != "match_replay?archiveUri={archiveUri}") emptyList() else listOf(
                     navArgument("archiveUri") { type = NavType.StringType }
                 )) { entry ->
                     var matchLcdContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
@@ -1757,11 +1765,22 @@ fun PokedexApp(
                             }
                         }
                     }
-                    val archive = if (replayUri != null) loadedReplay?.getOrNull() else openedArchive.value
-                    val sourceUri = replayUri ?: openedArchiveUri.value
-                    var showingReplay by remember(replayUri) { mutableStateOf(replayUri != null) }
-                    val openError = loadedReplay?.exceptionOrNull()?.let { it.message ?: "Recording unavailable." }
-                    if (archive != null || replayUri != null) {
+                    val sharedRoute = viewerRoute == "shared_replay"
+                    val sharedReplay = if (sharedRoute) {
+                        val commsState by trainerComms.repository.state.collectAsState()
+                        receivedReplay?.takeIf { it.first == commsState.accountId }?.second
+                    } else null
+                    val archive = when {
+                        sharedRoute -> sharedReplay?.archive
+                        replayUri != null -> loadedReplay?.getOrNull()
+                        else -> openedArchive.value
+                    }
+                    val sourceUri = if (sharedRoute) null else replayUri ?: openedArchiveUri.value
+                    val startInReplay = replayUri != null || sharedRoute
+                    var showingReplay by remember(replayUri, sharedRoute) { mutableStateOf(startInReplay) }
+                    val openError = if (sharedRoute && sharedReplay == null) "Reopen the code in Trainer Comms."
+                        else loadedReplay?.exceptionOrNull()?.let { it.message ?: "Recording unavailable." }
+                    if (archive != null || startInReplay) {
                         var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                         var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                         var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -1807,12 +1826,14 @@ fun PokedexApp(
                                 }
                             } else com.example.overdex.ui.screens.observatory.MatchArchiveViewerScreen(
                                 archive = archive,
-                                startInReplay = replayUri != null,
+                                startInReplay = startInReplay,
+                                sharedReplay = sharedReplay,
                                 onReplayVisibilityChange = { showingReplay = it },
-                                onOpenEditor = { navController.navigate("replay_editor") },
+                                onOpenEditor = if (sharedRoute) null else ({ navController.navigate("replay_editor") }),
                                 onLcdContentUpdate = { matchLcdContent = it },
                                 onBack = {
-                                    if (replayUri == null) {
+                                    if (sharedRoute) receivedReplay = null
+                                    if (!startInReplay) {
                                         openedArchive.value = null
                                         openedArchiveUri.value = null
                                     }

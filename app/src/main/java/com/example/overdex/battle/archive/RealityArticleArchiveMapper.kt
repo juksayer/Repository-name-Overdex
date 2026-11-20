@@ -207,6 +207,8 @@ object RealityArticleArchiveMapper {
                 basis = p.basis
             )
             is GetReadyWitnessed -> ArchivedGetReadyWitnessed
+            is com.example.overdex.battle.custody.QteMoveTypeWitnessed ->
+                ArchivedQteMoveTypeWitnessed(p.type.name, p.firstObservedAtNanos)
             is ChargeMoveUsedAnnounced -> ArchivedChargeMoveUsedAnnounced
             is DeviceMotionPulseMeasured -> ArchivedDeviceMotionPulseMeasured(
                 durationNanos = p.durationNanos,

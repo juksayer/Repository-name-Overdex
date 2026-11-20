@@ -1,5 +1,8 @@
 package com.example.overdex.battle.observation
 
+import com.example.overdex.data.QteGlyphCrop
+import com.example.overdex.data.qteGlyphRegion
+import com.example.overdex.data.withQteGlyphRegion
 import android.app.Activity
 import android.app.KeyguardManager
 import android.app.Notification
@@ -152,7 +155,6 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val opponentHandSampling = MutableStateFlow<QteTypeIconSampling?>(null)
         private val _opponentHandBoxRequested = MutableStateFlow(false)
         val opponentHandBoxRequested = _opponentHandBoxRequested.asStateFlow()
-        @Volatile var qteCalibrationRegion: com.example.overdex.model.AnchorRegion? = null
         private val captureVisibility = LiveCaptureVisibilityGate()
         private val instrumentVisible = MutableStateFlow(true)
 
@@ -1150,20 +1152,35 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         if (registrationMode || qteCalibrationWindow != null) return
         val bounds = displayBounds()
         val calibration = com.example.overdex.CalibrationManager(this)
+        val saved = calibration.load()
+        val drafts = mutableMapOf<QteGlyphCrop, com.example.overdex.model.AnchorRegion>()
+        var selected = QteGlyphCrop.LEFT
+        fun remember(region: com.example.overdex.model.AnchorRegion) {
+            if (region == saved.qteGlyphRegion(selected)) drafts.remove(selected) else drafts[selected] = region
+        }
         val window = com.example.overdex.ui.components.LiveQteCalibrationWindow(
             this, windowManager, this, this, this, serviceScope,
-            bounds.width(), bounds.height(), calibration.load().qteTypeIconsRegion,
+            bounds.width(), bounds.height(), saved.qteGlyphRegion(selected),
             saveRegion = { region ->
-                // Load at save time: a live adjustment owns only this box, never
-                // a stale copy of species, HP, shields or another user's edits.
-                calibration.save(calibration.load().copy(qteTypeIconsRegion = region))
+                remember(region)
+                val updated = drafts.entries.fold(calibration.load()) { profile, (crop, draft) ->
+                    profile.withQteGlyphRegion(crop, draft)
+                }
+                calibration.save(updated)
             },
-            onClosed = { qteCalibrationWindow = null; qteCalibrationRegion = null },
+            onClosed = { qteCalibrationWindow = null },
             sampleRegion = { qteTypeIconSampling.value?.sample(it) == true },
             samplingStatus = qteTypeIconSampling.flatMapLatest { sampler ->
                 sampler?.status ?: kotlinx.coroutines.flow.flowOf(QteIconSamplingStatus())
             },
-            onRegionChanged = { qteCalibrationRegion = it },
+            title = "QTE CROPS",
+            hideWhileSampling = true,
+            initialRegionLabel = selected.label,
+            nextRegion = { region ->
+                remember(region)
+                selected = QteGlyphCrop.entries[(selected.ordinal + 1) % QteGlyphCrop.entries.size]
+                selected.label to (drafts[selected] ?: saved.qteGlyphRegion(selected))
+            },
         )
         qteCalibrationWindow = window
         try { window.show(); window.setVisible(!instrumentVisible.value) }

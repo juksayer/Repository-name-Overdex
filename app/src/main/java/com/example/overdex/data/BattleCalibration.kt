@@ -119,6 +119,7 @@ data class BattleCalibration(
     val qteTypeIconsRegion: AnchorRegion = AnchorRegion(
         x = 0.375f, y = 0.45f, width = 0.25f, height = 0.15f
     ),
+    val qteGlyphRegions: Map<QteGlyphCrop, AnchorRegion> = emptyMap(),
     // Adjustable starting territory around the upper-left battle exit button.
     // Full captured-frame coordinates; no assumed status-bar subtraction.
     val exitIconRegion: AnchorRegion = AnchorRegion(
@@ -265,3 +266,9 @@ data class BattleCalibration(
         return enemyNameRegion.width > 0f
     }
 }
+
+fun BattleCalibration.qteGlyphRegion(crop: QteGlyphCrop): AnchorRegion =
+    qteGlyphRegions[crop] ?: crop.defaultRegion
+
+fun BattleCalibration.withQteGlyphRegion(crop: QteGlyphCrop, region: AnchorRegion): BattleCalibration =
+    copy(qteGlyphRegions = if (region == crop.defaultRegion) qteGlyphRegions - crop else qteGlyphRegions + (crop to region))

@@ -4,6 +4,8 @@
 // trainerConversations/{stable ID}: immutable kind/title/ownerId/memberIds (2-8)/createdAt.
 // trainerConversations/{ID}/messages/{stable ID}: immutable text, senderId/name, client sentAt,
 //   serverSentAt. Read/list requires membership; create binds sender to authenticated UID.
+// trainerReplayCodes/{12-symbol code}: immutable owner, conversation, total byte count,
+//   SHA-256, and server timestamp. chunks/{index}: immutable index and replay bytes.
 // Email/password exist only in Firebase Authentication, never in public profile documents.
 // Tournament lobby v1 data model (all reads require an invited, non-anonymous account):
 // tournaments/{ID}: schemaVersion=1, immutable ownerId/createdAt, memberIds (1-16 unique
@@ -103,6 +105,41 @@ service cloud.firestore {
         allow create: if member(id) && messageId.matches('[A-Za-z0-9_-]{1,80}') && validMessage(request.resource.data);
         // Retry reads the same ID in a transaction; messages are never overwritten.
         allow update, delete: if false;
+      }
+    }
+
+    function replayCode(id) {
+      return /databases/$(database)/documents/trainerReplayCodes/$(id);
+    }
+    function validReplayCode(id, d) {
+      return id.matches('[0-9A-HJKMNP-TV-Z]{12}')
+        && d.keys().hasAll(['ownerId', 'conversationId', 'byteCount', 'sha256', 'createdAt'])
+        && d.keys().hasOnly(['ownerId', 'conversationId', 'byteCount', 'sha256', 'createdAt'])
+        && own(d.ownerId) && uid(d.ownerId)
+        && d.conversationId is string && d.conversationId.matches('[A-Za-z0-9_-]{1,80}')
+        && d.byteCount is int && d.byteCount > 0 && d.byteCount <= 8388608
+        && d.sha256 is string && d.sha256.matches('[0-9a-f]{64}')
+        && d.createdAt == request.time;
+    }
+    function validReplayChunk(chunkId, d, total) {
+      return d.keys().hasAll(['index', 'data']) && d.keys().hasOnly(['index', 'data'])
+        && d.index is int && d.index >= 0 && d.index < 16 && chunkId == string(d.index)
+        && d.index * 524288 < total && d.data is bytes
+        && d.data.size() == (total - d.index * 524288 < 524288 ? total - d.index * 524288 : 524288);
+    }
+    match /trainerReplayCodes/{id} {
+      allow get: if member(resource.data.conversationId);
+      allow create: if signedIn() && validReplayCode(id, request.resource.data)
+        && member(request.resource.data.conversationId);
+      allow list, update, delete: if false;
+      match /chunks/{chunkId} {
+        allow get: if signedIn() && member(get(replayCode(id)).data.conversationId);
+        // Chunks can only be written with the pointer in the same upload batch.
+        allow create: if signedIn() && !exists(replayCode(id))
+          && own(getAfter(replayCode(id)).data.ownerId)
+          && member(getAfter(replayCode(id)).data.conversationId)
+          && validReplayChunk(chunkId, request.resource.data, getAfter(replayCode(id)).data.byteCount);
+        allow list, update, delete: if false;
       }
     }
 

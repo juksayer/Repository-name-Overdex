@@ -48,6 +48,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.overdex.data.ScreenshotDirectoryManager
 import com.example.overdex.data.MatchCalibrationProfileStore
+import com.example.overdex.data.QteGlyphCrop
+import com.example.overdex.data.qteGlyphRegion
+import com.example.overdex.data.withQteGlyphRegion
 import com.example.overdex.data.MatchCalibrationProfile
 import com.example.overdex.data.MatchCalibrationProfileSummary
 import com.example.overdex.data.CalibrationProfileCompatibility
@@ -248,6 +251,10 @@ fun MatchCalibrationScreen(
             CalibrationRegion.CHARGE_MOVE_EXECUTION,
             CalibrationRegion.QTE_PROGRESS_TEXT,
             CalibrationRegion.QTE_TYPE_ICONS,
+            CalibrationRegion.QTE_GLYPH_LEFT,
+            CalibrationRegion.QTE_GLYPH_MIDDLE,
+            CalibrationRegion.QTE_GLYPH_RIGHT,
+            CalibrationRegion.QTE_GLYPH_LOW_CENTER,
             CalibrationRegion.EXIT_ICON,
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS,
             CalibrationRegion.POINTER_COORDINATES,
@@ -298,7 +305,11 @@ fun MatchCalibrationScreen(
             CalibrationRegion.OPPONENT_HP -> "Opponent HP"
             CalibrationRegion.CHARGE_MOVE_EXECUTION -> "Charge-Move Execution"
             CalibrationRegion.QTE_PROGRESS_TEXT -> "QTE Progress Text (Nice / Great / Excellent)"
-            CalibrationRegion.QTE_TYPE_ICONS -> "QTE Type Icons"
+            CalibrationRegion.QTE_TYPE_ICONS -> "QTE Type Icon Sample"
+            CalibrationRegion.QTE_GLYPH_LEFT -> "QTE · Left"
+            CalibrationRegion.QTE_GLYPH_MIDDLE -> "QTE · Middle"
+            CalibrationRegion.QTE_GLYPH_RIGHT -> "QTE · Right"
+            CalibrationRegion.QTE_GLYPH_LOW_CENTER -> "QTE · Low center"
             CalibrationRegion.EXIT_ICON -> "Exit Icon"
             CalibrationRegion.OPPONENT_TRAINER_HAND -> "Opponent Hand / Poké Ball"
             CalibrationRegion.CHARGED_IMPACT_HP -> "Charged Impact HP"
@@ -354,6 +365,10 @@ fun MatchCalibrationScreen(
         CalibrationRegion.CHARGE_MOVE_EXECUTION -> calibration.chargeMoveExecutionRegion
         CalibrationRegion.QTE_PROGRESS_TEXT -> calibration.qteProgressTextRegion
         CalibrationRegion.QTE_TYPE_ICONS -> calibration.qteTypeIconsRegion
+        CalibrationRegion.QTE_GLYPH_LEFT -> calibration.qteGlyphRegion(QteGlyphCrop.LEFT)
+        CalibrationRegion.QTE_GLYPH_MIDDLE -> calibration.qteGlyphRegion(QteGlyphCrop.MIDDLE)
+        CalibrationRegion.QTE_GLYPH_RIGHT -> calibration.qteGlyphRegion(QteGlyphCrop.RIGHT)
+        CalibrationRegion.QTE_GLYPH_LOW_CENTER -> calibration.qteGlyphRegion(QteGlyphCrop.LOW_CENTER)
         CalibrationRegion.EXIT_ICON -> calibration.exitIconRegion
         CalibrationRegion.OPPONENT_TRAINER_HAND -> calibration.opponentTrainerHandRegion
         CalibrationRegion.CHARGED_IMPACT_HP -> calibration.chargedImpactHpRegion
@@ -441,6 +456,10 @@ fun MatchCalibrationScreen(
             CalibrationRegion.CHARGE_MOVE_EXECUTION -> calibration.copy(chargeMoveExecutionRegion = updated)
             CalibrationRegion.QTE_PROGRESS_TEXT -> calibration.copy(qteProgressTextRegion = updated)
             CalibrationRegion.QTE_TYPE_ICONS -> calibration.copy(qteTypeIconsRegion = updated)
+        CalibrationRegion.QTE_GLYPH_LEFT -> calibration.withQteGlyphRegion(QteGlyphCrop.LEFT, updated)
+        CalibrationRegion.QTE_GLYPH_MIDDLE -> calibration.withQteGlyphRegion(QteGlyphCrop.MIDDLE, updated)
+        CalibrationRegion.QTE_GLYPH_RIGHT -> calibration.withQteGlyphRegion(QteGlyphCrop.RIGHT, updated)
+        CalibrationRegion.QTE_GLYPH_LOW_CENTER -> calibration.withQteGlyphRegion(QteGlyphCrop.LOW_CENTER, updated)
             CalibrationRegion.EXIT_ICON -> calibration.copy(exitIconRegion = updated)
             CalibrationRegion.OPPONENT_TRAINER_HAND -> calibration.copy(opponentTrainerHandRegion = updated)
             CalibrationRegion.CHARGED_IMPACT_HP -> calibration.copy(chargedImpactHpRegion = updated)

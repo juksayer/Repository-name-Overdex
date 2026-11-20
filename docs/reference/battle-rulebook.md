@@ -667,8 +667,13 @@ remains unknown. If the previously visible battlefield controls then disappear
 and stay absent through the recorded result, the first corroborated loss of
 controls can close the speculative rhythm. Later evidence of ordinary combat
 invalidates that estimate. The uncertainty window supplies no faint or KO time.
-Only evidence-supported events can change HP, count toward recorded energy or
-receive faint credit. The archive retains its original clocks.
+The Replay HP border pulses when the displayed Fast Move lands. With two
+qualified positive whole-bar readings around multiple supported attacks of
+the same move and a single aggregate loss, Replay can display that loss in
+equal steps at the landings. This estimate requires the same uninterrupted
+pair and gives way to individually measured damage ticks. A rhythm-only
+attack supplies no HP loss, energy or faint credit. The archive retains
+its original clocks.
 
 **MOVE-04b — Energy balance in completed Replay.** Use the matching archived
 energy gain for each admitted Fast Move. When that derivation is missing, a
@@ -679,6 +684,18 @@ some gains are missing. Show the possible remainder up to the cap less the
 recorded cost, or unknown when the estimate spans the entire bar. These are
 presentation estimates from the available record. Rhythm-only animations and
 a higher-energy identity tie-break supply no energy gain.
+
+**MOVE-04c — Saved announcements in a Replay evidence gap.** If the last
+established attack precedes the recorded result by at least 12 seconds,
+compact saves keep a bounded sample of the last 52 seconds of announcement
+crops with their source clocks. In completed Replay, legible phase and entry
+messages from those crops can interrupt the Fast Move rhythm. A named charge
+still needs a legal move and a resolved active performer. A move name in the
+HUD, an empty crop, or a result supplies no attack, damage, or faint. This
+review leaves the original testimony intact. Two consecutive original dark
+strips within twelve seconds of the result can stop speculative attacks if
+there is no later battle activity. The screen transition supplies an animation
+boundary only.
 
 **MOVE-05 — finishing association; bounded Replay implementation November 14.** If an
 existing supported move is directed at the same opposing appearance that an
@@ -760,6 +777,34 @@ subsequent live HP. Replay marks a confirmed faint cry at its source onset. With
 show the window from the last supported living observation to the earliest evidence
 of departure. Show an upper bound alone if the lower bound is unknown. Keep attack,
 reception and original faint testimony on their own clocks.
+
+**MOVE-05 — charged impact and a tracked departure.** When a named charge changes
+the last recipient's complete live bar to damage color, require a localized flash
+that contracts and clears on actual frames in the same charge phase. A matching
+last-ball badge and result support one faint. Use the impact frame for the
+projectile and the clear frame to bound the faint. A competing supported attack
+leaves the faint visible with its cause unresolved. A shield, switch, surviving
+HP, or missing departure evidence blocks this route.
+
+**MOVE-05 — Fast Move finish on either side in completed Replay.** A complete
+low-HP bar followed by damage color on the same side can locate a landing.
+Resolve the recipient at the source frame. When an older appearance tag
+conflicts with a newer, independently read badge from before the hit, use
+the verified appearance and retain both original observations.
+
+Evaluate the faint before assigning credit. A distinctive departure cry with
+last-ball evidence can support the final faint. When the ball read is missing,
+require a nearly resolved damage profile, a localized flash confirmed in a
+saved crop, clear follow-up samples, and a consistent result for that side.
+If the saved audio includes the start of the cry, use it for the marker.
+Otherwise retain the supported time window.
+
+Compare the hit sound against both active move pools. If the attacker's move
+identity is open, require another strongly matched effect from the same
+appearance. Use the damage-colored frame for inferred landing timing.
+Preserve the original crop, audio, and measurement clocks. A competing hit
+can leave a known faint without credit. A new active appearance, later
+surviving HP or a result alone cannot supply this finishing link.
 
 **MOVE-05 — shield bracket for a count-resolved charged finish, November 18.**
 If an independently count-confirmed faint follows one named player charge, a
@@ -897,7 +942,7 @@ cover delayed and in-flight delivery. See [verification and acceptance limits](.
 
 | Rule | If… | Then… | Does not establish… |
 | --- | --- | --- | --- |
-| CHARGE-01 | A dedicated accepted stream preserves the shield-choice prompt. | Replay can show bounded opponent charge preparation from that captured time. | The prompt does not prove shield expenditure, name a move, debit that move's energy or invent a completed strike. Generic shield text from an unrelated crop is insufficient. |
+| CHARGE-01 | A dedicated accepted stream preserves the shield-choice prompt. | Start the opponent’s Replay wind-up at the first shield prompt. Show “Opponent charging…” and ease the rise until a matching announcement within ten seconds. In Team Leader and Rocket practice, a shield decision can close the wait early. Use the observed prompt-to-announcement interval even when it is well under 9.5 seconds. If the announcement is unavailable, the prompt-only cue expires after an estimated 9.5 seconds or an earlier interruption. | The prompt does not prove shield expenditure, name a move, debit that move's energy or invent a completed strike. Generic shield text from an unrelated crop is insufficient. |
 | CHARGE-07 | Replay has a supported player QTE or opponent shield-choice/incoming preparation, followed by a completed charge. | Ease into the larger player / smaller opponent framing, hold through the presentation impact, then ease back over 750 ms. Framing is separate from the attack action so its return does not add an attack. | An uncompleted preparation has only its existing bounded expiry, not an invented impact. New preparation, replacement, restart and Match boundaries stop stale framing. Decision timer and disappearing controls are supporting cues, not proof of a named move, damage or shield expenditure. |
 | CHARGE-02 | A dedicated announcement/QTE reader accepts a qualifying phase cue from an already-preserved crop for the current Match, with valid source clocks and provenance. | It may prepare the bounded receiving-side HP watch immediately, before raw/accepted/typed publication completes, carrying the original crop reference and capture time. Continue the unchanged canonical evidence chain. | Scheduling is not an attack, impact, damage or faint. Recognition/receipt time cannot replace the source time, unknown text cannot supply a cue, and a stopped reader or ended Match cannot be reopened. |
 | CHARGE-02a | The charged-impact capture has an eligible source frame. | Preserve the calibrated announcement strip from that same frame on the charged-impact capture cadence. Keep both crop records and their original source clocks even when OCR reads the announcement late. | A preserved crop supplies pixels for recognition. It does not establish a move, damage, or a faint on its own. |
@@ -908,6 +953,8 @@ cover delayed and in-flight delivery. See [verification and acceptance limits](.
 | CHARGE-06a · completed Replay | Two announcement reads at different capture times in one charged exchange repeat the same player announcement. Its move text has at least seven normalized characters and lacks only the last letter of a single legal move equipped by the named player Pokémon. | Replay can name the existing charge at the first read and carry that name to a separately supported finishing hit. Retain both reads. | A repeated banner represents one use. A lone clipped read, an ambiguous owner or a result alone cannot establish this repair. |
 | QTE-01 | The dedicated accepted QTE stream reads NICE, GREAT or EXCELLENT. | Replay may show that observed grade at its source time within the relevant QTE. | Do not invent unobserved grades, physical vibration, a named charged move or its finish. A lingering grade after completion must not reopen the QTE. |
 | QTE-02 | The dedicated accepted QTE grade stream reads a complete NICE, GREAT or EXCELLENT, and normal opponent HP geometry was measured within five seconds before that image. | Prepare a bounded opponent charge-camera HP watch if Get Ready has not done so. Later grades support the existing phase without replacing its anchor/token or extending its deadline; an older delayed Get Ready cannot reset it. | The grade does not establish QTE onset, move name, impact, damage or faint. Stale/missing geometry or appearance, stop and resize boundaries cannot establish ownership. |
+| QTE-03 | The player’s source-timed Get Ready cue opens a QTE window. Two distinct frames in that window show the same complete, unobscured type glyph on a supported bubble. | Record one observed **type** with the original glyph crop and capture times. The four calibrated regions restrict the search. Close on charge completion, incoming attack, stop, or expiry. | Region, fill color, an estimated count or grade alone cannot establish type. The reading does not name a move or establish that it completed, spent energy, landed, damaged, or fainted a Pokémon. Overlapping Fire and Poison bubbles need not be individually countable. |
+| QTE-04 · recorded observation and proposed counter | Within one player QTE, captured pop audio shows distinct attacks progressing through the same calibrated five-step pitch cycle. | Count separately supported attacks. Treat a confirmed wrap as supporting a run even if only a few video frames show it. When the cycle and both attacks are independently established, equal-pitch endpoints can bound at least one cycle. | One compound sound can have repeated peaks. Same pitch or greater loudness alone cannot supply another pop or a full cycle. Simultaneous identical notes, missing audio and competing sounds may leave the exact count unknown. Dragon and Grass show the cycle, with uncollected Normal and Grass as controls. Exact live counts and collected Normal remain unverified. |
 | SHIELD-01 | A valid side-specific shield baseline exists and a later source-ordered count decreases. | Record the expenditure; a 2-to-0 gap represents two usages with unknown individual instants. | An initial count of 1 does not timestamp a use. Repeated counts or a noisy increase followed by the old value do not spend again. |
 | STAT-01 | An accepted stat-change sound has exactly one compatible, attributed named charge in the six-second source-time window. | Attribute the observed change and target side with both sources. Retract that side/name assignment if later evidence introduces another compatible move. | A move's possible or guaranteed reference effect alone is not an observed change. Timing proximity must not choose between competing candidates. Preserve the original cue and any revision. |
 
@@ -1066,6 +1113,7 @@ recognition accuracy claim or implemented inference change.
 | CRY-06 — final active appearance, November 18 recording | A trusted one-ball badge establishes the last teammate. The Pokémon is already fighting in that appearance, and its own distinct cry accompanies departure after a received hit. | Count the departure as a faint. A bench switch is impossible. Keep the attack identity and KO credit as separate decisions. | Verify side and appearance. Its entrance cry, a mirror-species cry of uncertain origin, or the latest cry in an interrupted recording can still be ambiguous. In Moondrop match `78813508`, Vaporeon was active before the hit, cried at GO +80.718 s, then disappeared on video. This is a confirmed review example. |
 | CRY-06 — announced charged finish, Moondrop match `650b264c` | Replay identifies a complete cry from the already active, last opponent after a uniquely owned named charge. The recipient's flash contracts and clears on consecutive source samples in that charge phase, followed by a win. | Use the cry onset for the faint marker. Associate the charged move after checking attacker, recipient, shielding, competing attacks and subsequent living HP. The landing time is inferred. | A result, isolated flash, entrance cry or missing frame alone leaves the finish unresolved. Electrode supplies a count-confirmed comparison in this same archive. |
 | CRY-06 — corroborated full cry in completed Replay | The already-active last opponent has a damaged, complete HP bar before a named charged hit. A full cry and two nonoverlapping portions of the same cry in a different original recording agree on its onset. | The two recordings support one departure and one cry-timed faint. The charge may receive credit after checking ownership, shields, later survival, and competing hits. | The landing is inferred. A living switch, a later living bar or another plausible attack withholds credit. A pre-charge Fast Move with its own nonlethal damage tick can be ruled out when the same recipient is still alive after charge preparation. Moondrop archive `2329d744` provides the Cradily case. |
+| CRY-06 — distinct repeat cry in completed Replay, Moondrop match `408e9802` | A whole cry distinctly matches the already active last opponent after an exact, uniquely owned charge announcement. An earlier independent clip identifies the same species near entry, the opponent has a verified damaged whole HP bar before the charge, and their shield count is zero. | The named charge can receive credit with inferred landing at the cry if a win follows and ownership, competing attacks, later survival and interruption checks agree. | A duplicated detection of the terminal cry, a living replacement, a later positive bar or a result by itself supplies no finishing attribution. Lanturn in `593b8a2d` is a surviving-HP control. |
 | CRY-06 — overlapping full-cry detections in completed Replay | Whole-waveform fits for the same species and reference overlap on the source clock, with onset estimates within 10 ms of the earliest fit. | Count one occurrence and retain every contributing source. Use the earliest matched onset for timing. | Duplicate captures supply no additional cries. A separate entrance, another species or waveform, or a later distinct cry stays separate. KO credit still requires an eligible attack and independent departure support. Recorded case `457f590b` has two Dragon Pulses against the same opponent. |
 | Cry marker in completed Replay | Both active species are identified at the cry onset and only one matches the sound. | Display the cry on that Pokémon’s side. A corroborating fragment can support an already resolved departure. | A mirror or missing identity leaves the side open. A known side alone does not establish a faint or credit an attack. |
 | CRY-06 — partial cry during a recipient flash in completed Replay | A uniquely owned charge has a named announcement against the established last opponent. A distinctive partial cry from that opponent overlaps the recipient’s independently tracked flash as it contracts and clears in the charge phase. | Credit the charge once. Replay places the inferred landing at the first flash frame and bounds the faint by the clearing frame. Keep the cry fragment, flash, announcement and badge on their original clocks. | An extrapolated cry onset is not a captured damage tick. A tied sound, living switch, later confirmed surviving HP, shield, competing hit or missing collapse withholds this association. Recorded Moondrop case `af45f682` is Gourgeist’s Seed Bomb against Vaporeon. |
@@ -1223,9 +1271,19 @@ If complete, aligned views of the same opponent HP bar change from a verified re
 
 A matching departure cry and a count-confirmed replacement, or a last-opponent count followed by a win, can support the faint independently. A living return or even one verified surviving HP column after the proposed reception vetoes that finish. A competing attack leaves credit open. Earlier red HP supplies the lower time bound and the first matched cry fragment can bound the departure. An uncertain bar interior never establishes an observed zero.
 
+If the opponent’s bar moved between readings, a retained full battlefield frame can show the later damage during the same appearance. The reader requires both rails and both caps, a coherent orange trail, and a localized flash below the bar. Possible live color in even one column leaves the finish unresolved. A previously verified one-ball count must still apply to that appearance, and distinct saved clips must agree on its departure cry. A strong waveform match can corroborate the original spectral read of the same clip when the estimated onsets align. The appearance and competing-attack checks still determine who gets credit.
+
 Implemented in completed Replay and checked against the November 18 Pixel Sealeo and Vaporeon finishes and the living-switch controls.
 
 ### Live HUD during a charged move
+
+Once Custody accepts a saved announcement crop, the announcement reader can
+select it at its original capture time while the Timeline publishes earlier
+records. The published text keeps links to the crop and the full OCR output.
+If the filtered OCR block contains one complete named “used …!” line, the
+reader can pass that line to the move resolver. Wrapped or competing move
+lines retain the existing interpretation path. Species, side, and legal move
+checks still determine whether the named attack can be published.
 
 When both complete HP bars pan right together from their ordinary positions in the same captured frame, the live HUD can hide the opponent’s move list before the announcement or grade is read. A trusted Get Ready or incoming-attack prompt can also start this window. A complete grade on its own line can keep the list hidden even if a second line contains HUD text. The camera cue and mixed grade guide only the display.
 

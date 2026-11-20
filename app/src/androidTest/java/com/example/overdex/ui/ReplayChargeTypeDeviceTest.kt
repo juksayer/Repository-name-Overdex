@@ -89,6 +89,48 @@ class ReplayChargeTypeDeviceTest {
         assertTrue(restored.config[SemanticsProperties.StateDescription].endsWith("QTE level 1"))
     }
 
+    @Test fun opponentShieldPromptKeepsChargingVisibleUntilTheNamedAnnouncement() {
+        val prompt = 12_000_000_000L
+        val announcement = 21_500_000_000L
+        val archive = fixture().let { source ->
+            source.copy(articles = source.articles.map { row ->
+                when (row.articleId) {
+                    "incoming" -> row.copy(payload = ArchivedRawText("Use a Protect Shield?"),
+                        sourceId = "ANNOUNCEMENT_WITNESS")
+                    "fire" -> row.copy(monotonicTimeNanos = announcement)
+                    else -> row
+                }
+            })
+        }
+        val cursor = mutableLongStateOf(prompt)
+        compose.setContent {
+            MatchReplayScreen(archive, onBack = {}, initialCursorNanos = cursor.longValue,
+                resolveChargedMoveType = { _, name -> if (name == "Flamethrower") PokemonType.FIRE else null })
+        }
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithText("Opponent charging…").fetchSemanticsNodes().isNotEmpty()
+        }
+        fun seek(at: Long) {
+            compose.runOnIdle { cursor.longValue = at }
+            compose.waitForIdle()
+        }
+
+        seek(announcement - 1)
+        compose.onNodeWithText("Opponent charging…").assertIsDisplayed()
+        compose.onNodeWithText("Combusken used Flamethrower!").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Charging move").assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.StateDescription,
+                "OPPONENT: Move unconfirmed; type unconfirmed; QTE level 0"))
+
+        seek(announcement + 250_000_000L)
+        compose.onNodeWithText("Opponent charging…").assertDoesNotExist()
+        compose.onNodeWithText("Combusken used Flamethrower!").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Charged move projectile").assertIsDisplayed()
+
+        seek(prompt)
+        compose.onNodeWithText("Opponent charging…").assertIsDisplayed()
+    }
+
     @Test fun recordedChargesUsePhoneReferenceTypesAndOnlyOneIcon() = checkRecordedCharges(
         "repeated-charge-readings-20261013.json", listOf(
             Triple(16_765_969_463L, "OPPONENT: Foul Play; DARK", "Sneasel"),

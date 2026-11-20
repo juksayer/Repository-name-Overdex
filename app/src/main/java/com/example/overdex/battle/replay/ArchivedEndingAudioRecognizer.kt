@@ -23,12 +23,14 @@ object ArchivedEndingAudioRecognizer {
 
     internal suspend fun recognize(archive: MatchArchive, moves: List<Move>, speciesIds: Set<Int>,
                           openArchive: () -> InputStream?, captureWindow: LongRange?, bannerMove: String?,
-                          readAsset: (String) -> ByteArray, cache: ReplayReviewCache? = null): ReplayAudioRecovery = withContext(Dispatchers.Default) {
+                          readAsset: (String) -> ByteArray, cache: ReplayReviewCache? = null,
+                          fastSearches: Map<Long, Set<String>> = emptyMap()): ReplayAudioRecovery = withContext(Dispatchers.Default) {
         if (ReplayRetainedAudioRecovery.selectedArticles(archive).isEmpty()) return@withContext ReplayAudioRecovery()
         if (!archive.mediaIncluded) return@withContext ReplayAudioRecovery(unavailableArtifacts = listOf("Archive has no audio media"))
         val missing = mutableListOf<String>()
         fun key(s: String) = s.uppercase().filter(Char::isLetterOrDigit)
         val wanted = moves.map { key(it.name) }.toMutableSet()
+        wanted.addAll(fastSearches.values.flatten().map(::key))
         // A configured or recorded move is still a candidate even when reference legality disagrees.
         if (captureWindow == null) archive.articles.forEach { a -> when (val p = a.payload) {
             is ArchivedPlayerTeamSlotConfigured -> if (p.speciesId in speciesIds) wanted.addAll((p.chargedMoveNames + p.fastMoveName).map(::key))
@@ -36,8 +38,9 @@ object ArchivedEndingAudioRecognizer {
             is ArchivedChargedMoveEnergySpent -> wanted.add(key(p.moveName))
             else -> Unit
         } }
+        val fastSearchKeys = fastSearches.toSortedMap().map { (at, names) -> "$at=${names.sorted().joinToString(",")}" }
         val cacheKey = cache?.key(listOf("ending-audio", captureWindow?.first.toString(), captureWindow?.last.toString(),
-            bannerMove.orEmpty(), speciesIds.sorted().joinToString(",")) + wanted.sorted())
+            bannerMove.orEmpty(), speciesIds.sorted().joinToString(",")) + wanted.sorted() + fastSearchKeys)
         if (cache != null && cacheKey != null) cache.read<ReplayAudioRecovery>(cacheKey)?.let { return@withContext it }
         var assetReadFailed = false
         val references = mutableListOf<ReplayAudioReference>()
@@ -86,7 +89,8 @@ object ArchivedEndingAudioRecognizer {
             }
         } }
         val context = coroutineContext
-        val result = ReplayRetainedAudioRecovery.recover(archive, references, missing, { context.ensureActive() }, captureWindow, bannerMove) { bytes[it.artifactPath] }
+        val result = ReplayRetainedAudioRecovery.recover(archive, references, missing, { context.ensureActive() },
+            captureWindow, bannerMove, fastSearches) { bytes[it.artifactPath] }
         if (cache != null && cacheKey != null && !assetReadFailed && result.unavailableArtifacts.isEmpty()) {
             cache.write(cacheKey, result)
         }

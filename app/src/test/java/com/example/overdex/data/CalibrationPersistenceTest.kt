@@ -274,6 +274,23 @@ class CalibrationPersistenceTest {
         assertEquals(profile.teamSelectCalibration, named.teamSelectCalibration)
     }
 
+    @Test fun `four glyph crops round trip without changing the legacy sample box`() {
+        val context = TestContext(temporary.newFolder())
+        val manager = CalibrationManager(context)
+        val original = manager.load().copy(qteTypeIconsRegion = strip(410f, 1000f, 256f, 270f))
+        for (crop in QteGlyphCrop.entries) assertEquals(crop.defaultRegion, original.qteGlyphRegion(crop))
+        val edited = QteGlyphCrop.entries.fold(original) { calibration, crop ->
+            calibration.withQteGlyphRegion(crop, crop.defaultRegion.copy(y = crop.defaultRegion.y + .01f))
+        }
+        assertTrue(manager.save(edited))
+        assertEquals(edited, manager.load())
+        val saved = saveProfile(context, original)
+        assertTrue(manager.save(edited))
+        assertEquals(edited, manager.load())
+        assertEquals(edited, MatchCalibrationProfileStore(context).activeProfile()!!.battleCalibration)
+        assertEquals(saved.id, MatchCalibrationProfileStore(context).activeProfile()!!.id)
+    }
+
     @Test fun `older profiles get only a default QTE box without rewriting saved coordinates`() {
         val context = TestContext(temporary.newFolder())
         val positioned = BattleCalibration(opponentSpeciesNameRegion = strip(784f, 241f, 269f, 58f))

@@ -3,8 +3,9 @@
 Direction agreed October 20, 2026. The source checkpoint is complete.
 Step 1 is implemented: account-based direct/group conversations, trainer-code
 discovery, saved history, and acknowledged delivery. Email/password sign-in and
-membership rules are deployed to the existing Firebase project. Match and clip
-attachments remain steps 2 and 3.
+membership rules are deployed to the existing Firebase project. The Replay Code
+client is implemented, and its Firestore access rules were deployed on
+November 20, 2026. Clip attachments remain step 3.
 
 ## Product home
 
@@ -57,12 +58,18 @@ record and is not a social feed.
    lists. Preserve existing direct-message history while adding group names,
    membership, and trainer/coach conversations. Show pending, sent, and failed
    delivery accurately; keep a failed send available for retry.
-2. **Share and open a match.** Select an existing `.odxmatch` in Trainer Comms,
-   upload it once, and attach a reference to the message. Track name, format,
-   size, hash, sender, and source match ID. Show transfer progress and open a
-   validated received recording in the existing Replay workflow. Enforce
-   conversation membership for messages and file access; test with two accounts
-   and a group before calling it ready.
+2. **Share and open a match.** In a confirmed conversation, choose **Copy Replay
+   Code**, then select a saved match or choose an exported archive. Trainer Comms
+   compresses its Timeline and the readings used to prepare Replay. The sender
+   chooses how to send the copied code. The recipient chooses **Open Replay
+   Code** and pastes a code or opens it from a selected code message. Only members
+   of the selected conversation can open it.
+   The receiving Replay keeps the original timestamps, source references, and
+   inference labels. It opens as a read-only review outside personal battle
+   statistics. It can be played and sought after opening. Opening the code again
+   requires an online account check. Source PNGs and WAVs stay local. The rules
+   and client exchange are verified against the local Firebase emulators before
+   any production rollout.
 3. **Share clips and compilations.** Package clip boundaries, notes, compilation
    order, and the required source snapshots together. A recipient must be able
    to play the selection without the sender's local files. Preserve original

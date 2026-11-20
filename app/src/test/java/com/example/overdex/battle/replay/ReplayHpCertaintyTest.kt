@@ -85,5 +85,60 @@ class ReplayHpCertaintyTest {
         assertEquals(0f, fainted.filledFraction!!, 0f)
         assertNull(fainted.lastSeenFraction)
     }
+    @Test fun `supported Fast Moves step through a shared observed drop at their displayed landings`() {
+        val before = row("before", S, payload = hp.copy(filledFraction = .9f, fillColor = "GREEN"))
+        val after = row("after", 4*S, payload = hp)
+        val rows = listOf(before, after)
+        val attacks = listOf(cycle(2*S), cycle(3*S))
+        val track = ReplayHpTrack(rows.reversed(), "OPPONENT", ReplayHpEvidence(rows), attacks)
+        val appearances = listOf(ReplayHpAppearance("houndoom", 0))
+        fun at(time: Long) = track.stateAt(time, appearances, false, 0)
+
+        assertEquals(.9f, at(2*S - 1).filledFraction!!, 0f)
+        assertEquals(.451f, at(2*S).filledFraction!!, .00001f)
+        assertEquals(.9f, at(2*S).damageTrailFraction!!, 0f)
+        assertTrue(at(2*S).borderPulse)
+        assertTrue(at(2*S).damageTimingReconstructed)
+        assertFalse(at(2*S).currentHpConfirmed)
+        assertEquals(.002f, at(3*S).filledFraction!!, 0f)
+        assertEquals(.451f, at(3*S).damageTrailFraction!!, .00001f)
+        assertEquals(.002f, at(4*S).lastSeenFraction!!, 0f)
+        assertEquals(.451f, at(2*S).filledFraction!!, .00001f)
+    }
+
+    @Test fun `cadence-only hits flash without inventing damage on a living sliver`() {
+        val rows = listOf(row("before", S), row("after", 4*S))
+        val track = ReplayHpTrack(rows, "OPPONENT", ReplayHpEvidence(rows),
+            listOf(cycle(2*S), cycle(3*S, inferred = true)))
+        val appearance = listOf(ReplayHpAppearance("sealeo", 0))
+        val second = track.stateAt(3*S, appearance, false, 0)
+        assertTrue(second.borderPulse)
+        assertNull(second.damageTrailFraction)
+        assertEquals(.002f, second.filledFraction!!, 0f)
+    }
+
+    @Test fun `a captured individual tick a charge or a switch keeps the loss out of earlier attacks`() {
+        val before = row("before", S, payload = hp.copy(filledFraction = .9f, fillColor = "GREEN"))
+        val after = row("after", 4*S)
+        val tick = row("tick", 3*S, payload = ArchivedActiveHpBarDamageTickMeasured("OPPONENT", .9f, .002f, .898f))
+        val appearance = listOf(ReplayHpAppearance("houndoom", 0))
+        for ((rows, continuous) in listOf(listOf(before, after, tick) to true, listOf(before, after) to false)) {
+            val track = ReplayHpTrack(rows, "OPPONENT", ReplayHpEvidence(rows),
+                listOf(cycle(2*S), cycle(3*S)), uninterrupted = { _, _ -> continuous })
+            val early = track.stateAt(2*S, appearance, false, 0)
+            assertEquals(.9f, early.filledFraction!!, 0f)
+            assertNull(early.damageTrailFraction)
+            assertEquals(.002f, track.stateAt(4*S, appearance, false, 0).filledFraction!!, 0f)
+        }
+    }
+
+    private fun cycle(impact: Long, inferred: Boolean = false) = ReplayFastMoveCycle(
+        ReplayFastMoveWitness("PLAYER", impact, "Dragon Tail", null, S, 0, 10*S,
+            if (inferred) setOf(ReplayFastMoveRhythm.INFERRED) else setOf("AUDIO"),
+            if (inferred) emptySet() else setOf("move-$impact"),
+            if (inferred) emptySet() else setOf(impact)),
+        impact - S, impact,
+    )
+
     private companion object { const val S = 1_000_000_000L }
 }

@@ -8,6 +8,8 @@ import com.example.overdex.model.PokemonType
 
 /** Matches captured GO badges against the retained official reference sheet. */
 object PokemonGoTypeIconMatcher {
+    @Volatile internal var qteReader: QteGlyphReader? = null
+        private set
     @Volatile private var matcher: TypeIconPixelMatcher? = null
 
     data class Result(
@@ -20,19 +22,24 @@ object PokemonGoTypeIconMatcher {
         val sheet = BitmapFactory.decodeResource(context.resources, R.drawable.pokemon_go_type_icon_reference)
             ?: return
         try {
-            val ordered = listOf(
-                PokemonType.FAIRY, PokemonType.PSYCHIC, PokemonType.FIGHTING, PokemonType.ROCK, PokemonType.FIRE, PokemonType.STEEL,
-                PokemonType.WATER, PokemonType.FLYING, PokemonType.GHOST, PokemonType.GRASS, PokemonType.BUG, PokemonType.GROUND,
-                PokemonType.ICE, PokemonType.DARK, PokemonType.DRAGON, PokemonType.NORMAL, PokemonType.ELECTRIC, PokemonType.POISON,
-            )
-            matcher = TypeIconPixelMatcher(ordered.mapIndexed { index, type ->
-                val centerX = 150 + index % 6 * 180
-                val centerY = 150 + index / 6 * 180
-                val pixels = IntArray(130 * 130)
-                sheet.getPixels(pixels, 0, 130, centerX - 65, centerY - 65, 130, 130)
-                TypeIconReference(type.ordinal, TypeIconPixels(130, 130, pixels), TypeIconCircle(64.5, 64.5, 65.0))
-            })
+            val references = readReferences { left, top ->
+                IntArray(130 * 130).also { sheet.getPixels(it, 0, 130, left, top, 130, 130) }
+            }
+            qteReader = QteGlyphReader(references, PokemonType.WATER.ordinal, PokemonType.ROCK.ordinal)
+            matcher = TypeIconPixelMatcher(references)
         } finally { sheet.recycle() }
+    }
+
+    internal fun readReferences(readPixels: (left: Int, top: Int) -> IntArray): List<TypeIconReference> {
+        val ordered = listOf(
+            PokemonType.FAIRY, PokemonType.PSYCHIC, PokemonType.FIGHTING, PokemonType.ROCK, PokemonType.FIRE, PokemonType.STEEL,
+            PokemonType.WATER, PokemonType.FLYING, PokemonType.GHOST, PokemonType.GRASS, PokemonType.BUG, PokemonType.GROUND,
+            PokemonType.ICE, PokemonType.DARK, PokemonType.DRAGON, PokemonType.NORMAL, PokemonType.ELECTRIC, PokemonType.POISON,
+        )
+        return ordered.mapIndexed { index, type ->
+            val pixels = readPixels(85 + index % 6 * 180, 85 + index / 6 * 180)
+            TypeIconReference(type.ordinal, TypeIconPixels(130, 130, pixels), TypeIconCircle(64.5, 64.5, 65.0))
+        }
     }
 
     fun matchIsolatedBadge(bitmap: Bitmap): Result = matcher?.matchIsolatedBadge(bitmap.pixels())?.publicResult()

@@ -4,10 +4,13 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -19,11 +22,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.comms.*
+import com.example.overdex.battle.archive.ArchiveDirectoryManager
+import com.example.overdex.battle.history.BattleRecordStore
+import com.example.overdex.battle.replay.ReplayReferenceLookup
+import com.example.overdex.battle.replay.prepareReplay
+import com.example.overdex.battle.replay.ReplayShare
+import com.example.overdex.battle.replay.SharedReplay
 import com.example.overdex.battle.replay.ReplayCorrectionTransfer
 import com.example.overdex.data.TrainerRepository
 import com.example.overdex.ui.ODXFi.ODXFiShell
@@ -33,6 +43,7 @@ import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalDimGreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
@@ -48,6 +59,8 @@ fun TrainerCommsScreen(
     trainerRepository: TrainerRepository,
     viewModel: PokedexViewModel,
     onBack: () -> Unit,
+    archiveDirectory: ArchiveDirectoryManager,
+    onOpenSharedReplay: (accountId: String, replay: SharedReplay) -> Unit,
 ) {
     val repository = services.repository
     val context = LocalContext.current
@@ -77,6 +90,8 @@ fun TrainerCommsScreen(
     val contacts = state.snapshot.contacts.sortedBy { it.displayName.lowercase() }
     var outgoingConversationId by remember { mutableStateOf<String?>(null) }
     var outgoingAccountId by remember { mutableStateOf<String?>(null) }
+    var shareChoices by remember { mutableStateOf(emptyList<ArchiveDirectoryManager.ArchiveEntry>()) }
+    var replayCodeToCopy by remember(state.accountId) { mutableStateOf<String?>(null) }
     var fileToSave by remember { mutableStateOf<ByteArray?>(null) }
     val saveCorrectionFile = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         val bytes = fileToSave
@@ -119,6 +134,47 @@ fun TrainerCommsScreen(
             } finally { busy = false }
         }
     }
+    fun copyReplayCode(uri: android.net.Uri, account: String, conversationId: String) {
+        dialog = null
+        work {
+            withContext(Dispatchers.Main) { notice = "Preparing Replay…" }
+            val ready = if (viewModel.replayPreparation.owns(uri)) {
+                viewModel.replayPreparation.observe(uri).first { it.complete }
+            } else {
+                val archive = BattleRecordStore(context).readArchive(uri)
+                prepareReplay(context, archive, uri,
+                    ReplayReferenceLookup.fromRepository(viewModel::getPokemonByName, viewModel::getAllSpeciesNames), {})
+            }
+            val replay = requireNotNull(ready.replay) { ready.error ?: "This Replay is unavailable." }
+            require(ready.error == null) { ready.error.orEmpty() }
+            withContext(Dispatchers.Main) { notice = "Uploading review…" }
+            val code = services.replayCodes().copyCode(account, conversationId, ReplayShare.encode(replay))
+            withContext(Dispatchers.Main) {
+                if (repository.state.value.accountId == account) {
+                    clipboard.setText(AnnotatedString(code))
+                    replayCodeToCopy = code
+                    val readyToSend = repository.state.value.selectedConversationId == conversationId && draft.isBlank()
+                    if (readyToSend) {
+                        draft = code
+                        selectedAction = 2
+                    }
+                    notice = if (readyToSend) "Replay code ready to send." else "Replay code copied."
+                }
+            }
+        }
+    }
+    var exportedReplayTarget by rememberSaveable { mutableStateOf<List<String>?>(null) }
+    val openExportedReplay = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val target = exportedReplayTarget
+        exportedReplayTarget = null
+        if (uri != null && target != null && repository.state.value.accountId == target[0]) {
+            copyReplayCode(uri, target[0], target[1])
+        }
+    }
+    suspend fun openReplayCode(code: String, account: String) {
+        val replay = withContext(Dispatchers.IO) { services.replayCodes().open(account, code) }
+        if (repository.state.value.accountId == account) onOpenSharedReplay(account, replay)
+    }
     fun goBack() {
         when {
             keyboard.isVisible -> keyboard.close()
@@ -157,6 +213,7 @@ fun TrainerCommsScreen(
         choosingMembers = false
         selectedMembers = emptySet()
         keyboard.close()
+        dialog = null
     }
     LaunchedEffect(state.selectedConversationId, choosingMembers) {
         selectedRow = if (conversation != null) (messages.size - 1).coerceAtLeast(0) else 0
@@ -198,12 +255,39 @@ fun TrainerCommsScreen(
             val selected = messages.getOrNull(selectedRow)
             listOf(
                 CommsAction("WRITE", conversation.kind != ConversationKind.LEGACY) { keyboard.open() },
+                CommsAction("PASTE", conversation.kind != ConversationKind.LEGACY) {
+                    clipboard.getText()?.text?.let { pasted ->
+                        val code = runCatching { TrainerReplayCode.parse(pasted) }.getOrNull()
+                        if (code == null || runCatching { TrainerReplayCode.parse(draft) }.getOrNull() != code) {
+                            draft = (draft + pasted).take(CommsRepository.MAX_TEXT_LENGTH)
+                        }
+                    }
+                },
                 CommsAction("SEND", conversation.kind != ConversationKind.LEGACY && draft.isNotBlank()) {
                     val body = draft
                     work {
                         repository.sendText(conversation.id, body)
                         withContext(Dispatchers.Main) { draft = ""; keyboard.close() }
                     }
+                },
+                CommsAction("COPY REPLAY CODE", conversation.confirmed && conversation.kind != ConversationKind.LEGACY) {
+                    work {
+                        val choices = archiveDirectory.listArchives()
+                        withContext(Dispatchers.Main) {
+                            if (repository.state.value.selectedConversationId == conversation.id &&
+                                repository.state.value.accountId == state.accountId) {
+                                shareChoices = choices
+                                dialog = "shareReplay"
+                            }
+                        }
+                    }
+                },
+                CommsAction("OPEN REPLAY CODE", conversation.kind != ConversationKind.LEGACY) {
+                    val code = selected?.text?.takeIf { runCatching { TrainerReplayCode.parse(it) }.isSuccess }
+                    val account = state.accountId
+                    if (code != null && account != null) {
+                        work { withContext(Dispatchers.Main) { openReplayCode(code, account) } }
+                    } else dialog = "openReplay"
                 },
                 CommsAction("SEND CORRECTION FILE", conversation.kind != ConversationKind.LEGACY) {
                     outgoingConversationId = conversation.id
@@ -225,6 +309,7 @@ fun TrainerCommsScreen(
         }
         else -> listOf(
             CommsAction("OPEN", conversations.isNotEmpty()) { chooseRow() },
+            CommsAction("OPEN REPLAY CODE") { dialog = "openReplay" },
             CommsAction("NEW CHAT") { choosingMembers = true; selectedMembers = emptySet() },
             CommsAction("MY CODE") { dialog = "profile" },
             CommsAction("ACCOUNT") { dialog = "account" },
@@ -233,6 +318,8 @@ fun TrainerCommsScreen(
     }
     LaunchedEffect(actions.map { it.label }) { selectedAction = 0 }
     fun activate() { actions.getOrNull(selectedAction)?.takeIf { it.enabled && !busy && !state.loading }?.run?.invoke() }
+    val showComposer = conversation != null && conversation.kind != ConversationKind.LEGACY
+    val composerActions = if (showComposer) 3 else 0
 
     ODXFiShell(
         viewModel = viewModel,
@@ -249,30 +336,45 @@ fun TrainerCommsScreen(
         onSelect = { if (keyboard.isVisible) keyboard.close() else chooseRow() },
         onStart = { if (keyboard.isVisible) keyboard.close() else activate() },
         lcdContent = {
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(3.dp)) {
-                if (conversation != null && conversation.kind != ConversationKind.LEGACY) {
-                    Text(draft.ifEmpty { "Write a message" }, color = TerminalGreen, fontSize = 13.sp, maxLines = 3)
-                }
-                if (busy || state.loading) Text("WORKING…", color = TerminalGreen, fontSize = 12.sp)
-                notice?.let { Text(it, color = Color(0xFFFFC36B), fontSize = 12.sp) }
-                actions.chunked(2).forEachIndexed { row, buttons ->
+            Column(Modifier.fillMaxSize().padding(horizontal = 3.dp)) {
+                if (showComposer) {
                     Row(Modifier.fillMaxWidth()) {
-                        buttons.forEachIndexed { column, action ->
-                            val index = row * 2 + column
-                            TextButton(onClick = { selectedAction = index; if (!busy && !state.loading) action.run() },
-                                enabled = action.enabled && !busy && !state.loading, modifier = Modifier.weight(1f)) {
-                                Text((if (index == selectedAction) "> " else "") + action.label,
-                                    color = if (action.enabled) TerminalGreen else TerminalDimGreen, fontSize = 12.sp)
+                        actions.take(composerActions).forEachIndexed { index, action ->
+                            CommsLcdButton(action, index == selectedAction, busy || state.loading, Modifier.weight(1f)) {
+                                selectedAction = index
+                            }
+                        }
+                    }
+                    Text(draft.ifEmpty { "Write a message" }, color = TerminalGreen, fontSize = 13.sp,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
+                    actions.drop(composerActions).chunked(2).forEachIndexed { row, buttons ->
+                        Row(Modifier.fillMaxWidth()) {
+                            buttons.forEachIndexed { column, action ->
+                                val index = composerActions + row * 2 + column
+                                val requester = remember { BringIntoViewRequester() }
+                                LaunchedEffect(selectedAction) {
+                                    if (index == selectedAction) requester.bringIntoView()
+                                }
+                                CommsLcdButton(action, index == selectedAction, busy || state.loading,
+                                    Modifier.weight(1f).bringIntoViewRequester(requester)) { selectedAction = index }
                             }
                         }
                     }
                 }
-                Text("↑ ↓ browse   ← → actions   A choose", color = TerminalDimGreen, fontSize = 10.sp)
             }
         },
     ) { _ ->
         Column(Modifier.fillMaxSize().padding(10.dp)) {
             TerminalPathIndicator(path = "/PROFILE/TRAINER COMMS")
+            val status = notice ?: if (busy || state.loading) "Working…" else null
+            status?.let { Text(it, color = Color(0xFFFFC36B), fontSize = 13.sp) }
+            replayCodeToCopy?.let { code ->
+                TextButton(onClick = { clipboard.setText(AnnotatedString(code)) }) {
+                    Text("Copy $code", color = TerminalGreen, fontSize = 13.sp)
+                }
+            }
             when {
                 state.accountId == null -> {
                     Spacer(Modifier.height(22.dp))
@@ -307,7 +409,8 @@ fun TrainerCommsScreen(
                     LazyColumn(state = listState, modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         when {
                             conversation != null -> itemsIndexed(messages, key = { _, message -> message.id }) { index, message ->
-                                Column(Modifier.fillMaxWidth().background(if (index == selectedRow) Color(0xFF143D23) else Color.Transparent).padding(8.dp)) {
+                                Column(Modifier.fillMaxWidth().background(if (index == selectedRow) Color(0xFF143D23) else Color.Transparent)
+                                    .clickable { selectedRow = index }.padding(8.dp)) {
                                     val mine = message.senderId == state.accountId ||
                                         (conversation.kind == ConversationKind.LEGACY && message.senderId == localIdentity?.trainerId?.toString())
                                     Text((if (mine) "YOU" else message.senderName) + " · " + messageTime(message.sentAt), color = TerminalDimGreen, fontSize = 11.sp)
@@ -347,6 +450,49 @@ fun TrainerCommsScreen(
     }
 
     when (dialog) {
+        "shareReplay" -> AlertDialog(
+            onDismissRequest = { dialog = null },
+            title = { Text("Copy Replay Code") },
+            text = {
+                Column {
+                    Text("Choose a match to share its Timeline and reviewed findings with ${conversation?.let { conversationTitle(it, state) }.orEmpty()}. Original images and audio stay on this device.")
+                    if (shareChoices.isEmpty()) Text("No saved matches.")
+                    LazyColumn(Modifier.heightIn(max = 300.dp)) {
+                        itemsIndexed(shareChoices, key = { _, item -> item.name }) { _, item ->
+                            TextButton(onClick = {
+                                val account = state.accountId
+                                val room = conversation
+                                if (account != null && room != null) copyReplayCode(item.uri, account, room.id)
+                            }) {
+                                Text(item.name.substringBefore('_') + "  " +
+                                    item.name.substringAfter('_').substringBefore('_').substringBefore(".odxmatch"))
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val account = state.accountId
+                    val room = conversation
+                    if (account != null && room != null) {
+                        exportedReplayTarget = listOf(account, room.id)
+                        dialog = null
+                        openExportedReplay.launch(arrayOf("application/zip", "application/octet-stream", "*/*"))
+                    }
+                }) { Text("Choose exported match") }
+            },
+            dismissButton = { TextButton(onClick = { dialog = null }) { Text("Cancel") } },
+        )
+        "openReplay" -> CommsTextDialog(
+            "Open Replay Code", listOf("Replay code"), listOf(
+                clipboard.getText()?.text?.takeIf { runCatching { TrainerReplayCode.parse(it) }.isSuccess }.orEmpty()
+            ), "Use the account that belongs to the conversation where the Replay was shared.",
+            { dialog = null }, replayCodeField = true, onSave = { fields ->
+                val account = requireNotNull(state.accountId)
+                openReplayCode(fields.single(), account)
+            },
+        )
         "signin", "create" -> CommsSignInDialog(create = dialog == "create", services = services,
             onClose = { dialog = null }, onNotice = { notice = it })
         "profile" -> CommsTextDialog(
@@ -379,6 +525,16 @@ fun TrainerCommsScreen(
             } },
             confirmButton = { TextButton(onClick = { dialog = null; work { services.signOut() } }) { Text("SIGN OUT") } },
             dismissButton = { TextButton(onClick = { dialog = null }) { Text("BACK") } })
+    }
+}
+
+@Composable
+private fun CommsLcdButton(action: CommsAction, selected: Boolean, busy: Boolean, modifier: Modifier,
+                           onSelect: () -> Unit) {
+    TextButton(onClick = { onSelect(); action.run() }, enabled = action.enabled && !busy, modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 2.dp)) {
+        Text((if (selected) "> " else "") + action.label,
+            color = if (action.enabled) TerminalGreen else TerminalDimGreen, fontSize = 12.sp)
     }
 }
 
@@ -448,7 +604,7 @@ private fun CommsSignInDialog(create: Boolean, services: TrainerCommsServices, o
 
 @Composable
 private fun CommsTextDialog(title: String, labels: List<String>, initial: List<String>, note: String,
-    onClose: () -> Unit, onSave: suspend (List<String>) -> Unit) {
+    onClose: () -> Unit, replayCodeField: Boolean = false, onSave: suspend (List<String>) -> Unit) {
     var values by remember { mutableStateOf(initial) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -457,10 +613,10 @@ private fun CommsTextDialog(title: String, labels: List<String>, initial: List<S
         Column(Modifier.verticalScroll(rememberScrollState())) {
             Text(note)
             labels.forEachIndexed { index, label ->
-                val code = label.contains("code", ignoreCase = true)
-                OutlinedTextField(values[index], { value -> values = values.toMutableList().also { it[index] = value.take(if (code) 20 else 80) } },
+                val trainerCode = !replayCodeField && label.contains("code", ignoreCase = true)
+                OutlinedTextField(values[index], { value -> values = values.toMutableList().also { it[index] = value.take(if (trainerCode) 20 else 80) } },
                     label = { Text(label) }, singleLine = true, enabled = !busy,
-                    keyboardOptions = KeyboardOptions(keyboardType = if (code) KeyboardType.Number else KeyboardType.Text))
+                    keyboardOptions = KeyboardOptions(keyboardType = if (trainerCode) KeyboardType.Number else KeyboardType.Text))
             }
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -472,5 +628,5 @@ private fun CommsTextDialog(title: String, labels: List<String>, initial: List<S
             catch (e: Exception) { if (e is CancellationException) throw e else error = commsErrorMessage(e) }
             finally { busy = false }
         }
-    }) { Text("SAVE") } }, dismissButton = { TextButton(onClick = onClose, enabled = !busy) { Text("BACK") } })
+    }) { Text(if (replayCodeField) "Open" else "Save") } }, dismissButton = { TextButton(onClick = onClose, enabled = !busy) { Text("BACK") } })
 }

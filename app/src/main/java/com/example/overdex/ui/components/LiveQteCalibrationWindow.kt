@@ -61,8 +61,11 @@ internal class LiveQteCalibrationWindow(
     private val guideDescription: String = "QTE Type Icons guide",
     private val controlDescription: String = "QTE",
     private val hideWhileSampling: Boolean = false,
+    private val nextRegion: ((AnchorRegion) -> Pair<String, AnchorRegion>)? = null,
+    initialRegionLabel: String? = null,
 ) {
     private var region by mutableStateOf(initialRegion.adjustPixels(0f, 0f, screenWidth, screenHeight, false))
+    private var regionLabel by mutableStateOf(initialRegionLabel)
     private var adjusting by mutableStateOf(false)
     private var resizing by mutableStateOf(false)
     private var saving by mutableStateOf(false)
@@ -115,6 +118,16 @@ internal class LiveQteCalibrationWindow(
                     color = ink, fontSize = 10.sp)
                 Text(if (adjusting) "Drag box or hold arrows to ${if (resizing) "resize" else "move"}"
                     else "VIEW ONLY · taps pass through box", color = ink, fontSize = 10.sp)
+                if (nextRegion != null) {
+                    Action("BOX · ${regionLabel.orEmpty()}  ›", enabled = !samples.sampling) {
+                        val (label, target) = nextRegion.invoke(region)
+                        regionLabel = label
+                        region = target.adjustPixels(0f, 0f, screenWidth, screenHeight, false)
+                        adjusting = false
+                        saveFailed = false
+                        updateGuide()
+                    }
+                }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Action(if (adjusting) "VIEW ONLY" else "ADJUST", enabled = !samples.sampling) {
                         adjusting = !adjusting

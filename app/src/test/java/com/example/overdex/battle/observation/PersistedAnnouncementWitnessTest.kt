@@ -5,6 +5,8 @@ import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.InMemoryTestimonyCustody
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
+import com.example.overdex.battle.custody.TestimonyCustody
+import com.example.overdex.battle.custody.TestimonyRecord
 import com.example.overdex.battle.reality.InMemoryRealityTimeline
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.data.observation.OcrHeightProfile
@@ -20,6 +22,8 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -31,6 +35,62 @@ import java.util.concurrent.atomic.AtomicLong
 
 /** Exercises admission, immutable source custody and cancellation without Android/native OCR. */
 class PersistedAnnouncementWitnessTest {
+    @Test fun `direct reader records two crops while Timeline publication is held`() = runBlocking {
+        val gate = CompletableDeferred<Unit>()
+        val ledger = InMemoryTestimonyCustody()
+        val custody = object : TestimonyCustody by ledger {
+            override val testimonyFlow = flow {
+                gate.await()
+                emitAll(ledger.testimonyFlow)
+            }
+        }
+        val timeline = InMemoryRealityTimeline()
+        val match = Match("direct-announcement-test", custody = custody, realityTimeline = timeline,
+            pokemonKnowledge = FakePokemonKnowledge())
+        val at = System.nanoTime() - 1_000_000L
+        val recordedText = "Cradily used Rock Tomb!\nE"
+        val reader = ControlledReader(read = { listOf(text(recordedText)) })
+        val witness = PersistedAnnouncementWitness(reader, directCapture = true)
+        try {
+            witness.start(match)
+            for (index in 0..1) {
+                val record = ledger.submitTestimony(SourceId(BattleWitnessContracts.announcementCropCapture.witnessId),
+                    CropCaptured(CropArtifactReference("artifacts/crops/crop-$index.png", "a".repeat(64), 1),
+                        BattleCropProvenance("AnnouncementCrop", 1080, 2400, BattleCropBounds(100, 400, 900, 600))),
+                    987L + index, null, emptyList(), at + index)
+                match.offerAnnouncementCrop(record)
+                reader.request(index).admit.complete(Unit)
+                await { ledger.getRecords().filterIsInstance<TestimonyRecord>()
+                    .count { it.sourceId.id == "ANNOUNCEMENT_WITNESS" } == index + 1 }
+            }
+            assertTrue(timeline.getArticles().isEmpty())
+            gate.complete(Unit)
+            withTimeout(5_000) { match.awaitAcceptedEvidencePublished() }
+            val articles = timeline.getArticles()
+            val byId = articles.associateBy { it.id.value }
+            val accepted = articles.filter { it.sourceId.id == "ANNOUNCEMENT_WITNESS" }
+            assertEquals(2, accepted.size)
+            accepted.forEach { row ->
+                assertEquals("Cradily used Rock Tomb!", (row.payload as RawTestimony).data)
+                val (cropId, rawId) = row.evidenceReferences.orEmpty()
+                val crop = byId.getValue(cropId)
+                val raw = byId.getValue(rawId)
+                assertEquals(recordedText, (raw.payload as RawTestimony).data)
+                assertEquals(crop.monotonicTimeNanos, row.monotonicTimeNanos)
+                assertEquals(crop.perceivedAt, row.perceivedAt)
+            }
+        } finally {
+            gate.complete(Unit)
+            witness.stop()
+            match.release()
+        }
+    }
+
+    @Test fun `line selection leaves wrapped or competing moves to existing interpretation`() {
+        listOf("Cradily used\nRock Tomb!", "Cradily used Rock Tomb!\nCradily used Grass Knot!",
+            "Get Ready!\nE").forEach { assertEquals(it, extractCompleteUsedAnnouncement(it)) }
+    }
+
     @Test fun `readable banner survives a later blank across eight seconds of shared backend contention`() = runBlocking {
         val reader = ControlledReader(read = { article ->
             listOf(text(if (article.label() == "banner") "Camerupt used Rock Tomb!" else ""))

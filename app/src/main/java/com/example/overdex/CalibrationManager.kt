@@ -3,6 +3,8 @@ package com.example.overdex
 import android.content.Context
 import android.util.Log
 import com.example.overdex.data.BattleCalibration
+import com.example.overdex.data.QteGlyphCrop
+import com.example.overdex.data.qteGlyphRegion
 import com.example.overdex.data.MatchCalibrationProfileStore
 import com.example.overdex.model.AnchorRegion
 
@@ -287,6 +289,15 @@ class CalibrationManager(context: Context) {
             .putFloat("out_of_battle_menu_h", calibration.outOfBattleMenuRegion.height)
             .putInt(CALIBRATION_PROFILE_VERSION, 3)
             .putLong(CALIBRATION_SAVED_AT_MILLIS, savedAtMillis)
+            .apply {
+                for (crop in QteGlyphCrop.entries) {
+                    val region = calibration.qteGlyphRegion(crop)
+                    putFloat("${crop.storageKey}_x", region.x)
+                    putFloat("${crop.storageKey}_y", region.y)
+                    putFloat("${crop.storageKey}_w", region.width)
+                    putFloat("${crop.storageKey}_h", region.height)
+                }
+            }
             .commit()
     }
 
@@ -710,6 +721,10 @@ class CalibrationManager(context: Context) {
                     BattleCalibration.widenPreviousQteProgressDefault(it) else it
             },
             qteTypeIconsRegion = loadExtraRegion("qte_type_icons", BattleCalibration().qteTypeIconsRegion),
+            qteGlyphRegions = QteGlyphCrop.entries.mapNotNull { crop ->
+                val region = loadExtraRegion(crop.storageKey, crop.defaultRegion)
+                region.takeIf { it != crop.defaultRegion }?.let { crop to it }
+            }.toMap(),
             exitIconRegion = loadExtraRegion("exit_icon", BattleCalibration().exitIconRegion),
             trainerChargeMoveControlsRegion = trainerChargeMoveControlsRegion,
             pointerCoordinatesRegion = loadExtraRegion("pointer_coordinates", BattleCalibration().pointerCoordinatesRegion),

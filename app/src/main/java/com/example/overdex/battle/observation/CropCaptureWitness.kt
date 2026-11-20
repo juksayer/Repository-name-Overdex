@@ -143,7 +143,7 @@ class CropCaptureWitness(
             currentCoroutineContext().ensureActive()
             val testimony = CropCaptured(artifact, resolved.provenance,
                 resolved.provenance.overlayBounds(frame.overlayRegion))
-            match.custody.submitTestimony(
+            val receipt = match.custody.submitTestimony(
                 sourceId = SourceId(contract.witnessId),
                 payload = testimony,
                 timestamp = frame.capturedAtWallTimeMillis,
@@ -151,6 +151,7 @@ class CropCaptureWitness(
                 evidenceReferences = emptyList(),
                 monotonicTimeNanos = frame.capturedAtMonotonicTimeNanos,
             )
+            if (contract.crop == BattleCropContracts.announcement) match.offerAnnouncementCrop(receipt)
             onCaptured?.invoke(testimony, frame.capturedAtWallTimeMillis, frame.capturedAtMonotonicTimeNanos)
         } catch (cancelled: CancellationException) {
             throw cancelled

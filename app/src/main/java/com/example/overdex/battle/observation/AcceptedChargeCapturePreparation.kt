@@ -5,7 +5,7 @@ import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.model.observation.OcrTextEvidence
 
 internal enum class AcceptedChargeCaptureCueKind { GET_READY, ATTACK_INCOMING, PLAYER_QTE_PROGRESS }
-internal enum class AcceptedChargeCaptureConsumer { HP, TERMINAL_VISUAL, HUD }
+internal enum class AcceptedChargeCaptureConsumer { HP, TERMINAL_VISUAL, HUD, QTE_GLYPH }
 
 /** A reader scheduling hint, not testimony of a move, impact, HP loss, or faint. */
 internal data class AcceptedChargeCaptureCue(

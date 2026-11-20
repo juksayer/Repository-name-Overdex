@@ -81,13 +81,16 @@ internal object ReplayTerminalAudioAssociation {
                 core.area >= .005 * frame.sourceWidth * frame.sourceHeight
             }
         }.singleOrNull()
-        if (cry is ReplayPartialCryCandidate) {
-            val flash = departure ?: return null
+        val exactAnnouncement = run {
             val expected = "${BattleSpeciesDisplay.name(owner.speciesName)} used ${charge.moveName}"
-            val announcement = ordered.firstOrNull { row ->
+            ordered.firstOrNull { row ->
                 row.sourceId == "ANNOUNCEMENT_WITNESS" && row.articleId in named.predecessorIds &&
                     (row.payload as? ArchivedRawText)?.value?.trim()?.trimEnd('!', '.')?.equals(expected, true) == true
-            } ?: return null
+            }
+        }
+        if (cry is ReplayPartialCryCandidate) {
+            val flash = departure ?: return null
+            val announcement = exactAnnouncement ?: return null
             // Only the captured part of the cry can corroborate a flash. The
             // back-projected onset can precede the clip by over a second.
             val overlaps = cry.fragments.any { fragment ->
@@ -106,7 +109,10 @@ internal object ReplayTerminalAudioAssociation {
                 emptyList(), ANNOUNCED_PARTIAL, departedBy = ReplayTimeBound(flash.clearedAt, clearFrame.articleId),
             )
         }
-        val departureRefs = departure?.evidenceReferences ?: run {
+        val repeatDeparture = if (departure == null && exactAnnouncement != null && cry is ReplayRecoveredCry) {
+            repeatDepartureSupport(ordered, cry, charge, target, badge, end, appearanceAt, witnessedDamagedBar)
+        } else null
+        val departureRefs = departure?.evidenceReferences ?: repeatDeparture?.first ?: run {
             // During an established appearance a second capture can corroborate
             // the same cry when the departure flash is incomplete. It is one cry.
             val whole = cry.fragments.filter { it.correlation >= .95f }
@@ -134,9 +140,79 @@ internal object ReplayTerminalAudioAssociation {
         return ReplayFinishingChargeAssociation(
             "PLAYER", owner.speciesName, appearanceAt("PLAYER", start),
             "OPPONENT", target.speciesName, appearanceAt("OPPONENT", start), charge.moveName,
-            start, at, at, null, charge.articleIds.toList(), refs.distinct(), emptyList(), ANNOUNCED,
+            start, at, at, null, charge.articleIds.toList(), refs.distinct(), listOfNotNull(repeatDeparture?.second), ANNOUNCED,
             departedBy = ReplayTimeBound(at, cry.fragments.first().articleId),
         )
+    }
+
+    // The last opponent cannot make a voluntary living switch. A distinct repeat
+    // cry, after a completed charge on an already-damaged appearance with no
+    // shields left, can bound departure while the impact camera was unreadable.
+    private fun repeatDepartureSupport(
+        rows: List<ArchivedRealityArticle>,
+        cry: ReplayRecoveredCry,
+        charge: ReplayFinishingChargeCandidate,
+        target: ReplayCombatant,
+        badge: ArchivedRealityArticle,
+        end: Long,
+        appearanceAt: (String, Long) -> Long,
+        witnessedDamagedBar: (ArchivedRealityArticle, String, Long) -> Boolean,
+    ): Pair<List<String>, String>? {
+        val start = charge.sourceAtNanos
+        val at = cry.estimatedOnsetNanos
+        if (at <= start || at - start > 3 * S || end - at > 15 * S) return null
+        val audio = cry.fragments.firstOrNull {
+            it.referenceOffsetNanos == 0L && it.durationNanos == cry.referenceDurationNanos &&
+                it.correlation in .92f..1f && it.correlation - (it.runnerUpCorrelation ?: 1f) >= .35f &&
+                it.captureAtNanos + it.queryOffsetNanos == at
+        } ?: return null
+        if (rows.none { row ->
+                val clip = row.payload as? ArchivedAudioCaptured
+                row.articleId == audio.articleId && clip?.sha256 == audio.audioSha256 &&
+                    row.monotonicTimeNanos == audio.captureAtNanos &&
+                    audio.queryOffsetNanos >= 0 && audio.queryOffsetNanos + audio.durationNanos <= clip.durationNanos
+            }) return null
+        if (rows.any { row ->
+                when (val p = row.payload) {
+                    is ArchivedPlayerTeamSlotConfigured -> p.speciesId == cry.speciesId
+                    is ArchivedPlayerTeamRosterSlotWitnessed -> p.speciesId == cry.speciesId ||
+                        BattleSpeciesDisplay.name(p.speciesName) == BattleSpeciesDisplay.name(target.speciesName)
+                    is ArchivedActivePokemonSpeciesWitnessed -> p.side == "PLAYER" &&
+                        (p.speciesId == cry.speciesId ||
+                            BattleSpeciesDisplay.name(p.speciesName) == BattleSpeciesDisplay.name(target.speciesName))
+                    else -> false
+                }
+            }) return null
+        val appearance = appearanceAt("OPPONENT", start)
+        val live = rows.lastOrNull { row ->
+            row.monotonicTimeNanos!! in maxOf(appearance, start - 10 * S) until start &&
+                witnessedDamagedBar(row, "OPPONENT", appearance)
+        } ?: return null
+        // A second detection of the terminal fit is not a second occurrence.
+        // The first cry can precede the first successful name read.
+        val earlier = rows.lastOrNull { row ->
+            val localized = row.payload as? ArchivedBattleCryLocalized
+            row.monotonicTimeNanos!! in (appearance - 7 * S)..minOf(appearance + 7 * S, live.monotonicTimeNanos!!, start - 2 * S) &&
+                localized?.speciesId == cry.speciesId && localized.referenceSha256 == audio.referenceSha256 &&
+                localized.correlation in .9f..1f && localized.durationNanos > 0
+        } ?: return null
+        val entranceAt = earlier.monotonicTimeNanos!!
+        if (rows.none { row ->
+                val clip = row.payload as? ArchivedAudioCaptured
+                val capturedAt = row.monotonicTimeNanos!!
+                row.articleId in earlier.evidenceReferences.orEmpty() && clip != null &&
+                    clip.sha256 != audio.audioSha256 && entranceAt >= capturedAt &&
+                    entranceAt + (earlier.payload as ArchivedBattleCryLocalized).durationNanos <= capturedAt + clip.durationNanos
+            }) return null
+        fun shields(row: ArchivedRealityArticle) = (row.payload as? ArchivedOpponentBattleResourceCountMeasured)
+            ?.takeIf { row.sourceId == "OPPONENT_SHIELDS_WITNESS" && it.resource == "SHIELDS" && it.maximumCount == 2 }
+        val shield = rows.lastOrNull { it.monotonicTimeNanos!! <= start && shields(it) != null } ?: return null
+        if (start - shield.monotonicTimeNanos!! > 40 * S || start - badge.monotonicTimeNanos!! > 40 * S ||
+            shields(shield)?.visibleCount != 0 ||
+            rows.any { it.monotonicTimeNanos!! in shield.monotonicTimeNanos..end &&
+                shields(it)?.let { count -> count.visibleCount != 0 } == true } ||
+            rows.any { isReplayConnectionInterruption(it) && it.monotonicTimeNanos!! in start..end }) return null
+        return listOf(live.articleId, earlier.articleId) to shield.articleId
     }
 
     private val departureConflict = Regex("""\b(blocked|go,)""", RegexOption.IGNORE_CASE)

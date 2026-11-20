@@ -36,6 +36,7 @@ class PersistedAnnouncementWitness internal constructor(
     override val name: String = "Announcement",
     private val cropContract: BattleCropContract = BattleCropContracts.announcement,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val directCapture: Boolean = false,
 ) : Observer {
     constructor(
         artifactStore: FileCropArtifactStore,
@@ -45,7 +46,7 @@ class PersistedAnnouncementWitness internal constructor(
     ) : this(ArtifactAnnouncementCropReader(artifactStore), System::nanoTime, observerId, name, cropContract)
 
     internal constructor(store: FileCropArtifactStore, preview: LiveAnnouncementPreview) :
-        this(ArtifactAnnouncementCropReader(store, preview))
+        this(ArtifactAnnouncementCropReader(store, preview), directCapture = true)
 
     private var scope: CoroutineScope? = null
 
@@ -65,7 +66,8 @@ class PersistedAnnouncementWitness internal constructor(
                 wake.close()
             }
             witnessScope.launch(start = CoroutineStart.UNDISPATCHED) {
-                match.articles.filter { article ->
+                val crops = if (directCapture) match.capturedAnnouncements else match.articles
+                crops.filter { article ->
                     (article.payload as? CropCaptured)?.cropProvenance?.cropName == cropContract.cropName
                 }.collect { article ->
                     if (!pending.canOffer(article)) return@collect
@@ -124,6 +126,9 @@ class PersistedAnnouncementWitness internal constructor(
                         val capturedAt = article.monotonicTimeNanos ?: continue
                         val completedAt = now()
                         var acceptedText = readings.firstOrNull { it.acceptedText.isNotBlank() }?.acceptedText.orEmpty()
+                        if (cropContract == BattleCropContracts.announcement) {
+                            acceptedText = extractCompleteUsedAnnouncement(acceptedText)
+                        }
                         val vocabularyResolution = if (observerId.id == "QTE_PROGRESS_TEXT_WITNESS" &&
                             cropContract == BattleCropContracts.qteProgressText)
                             resolveQteProgressText(acceptedText) else null
@@ -165,8 +170,8 @@ class PersistedAnnouncementWitness internal constructor(
                             val receipt = match.custody.submitTestimony(rawSourceId,
                                 RawTestimony(reading.rawText, reading), article.perceivedAt, null,
                                 listOf(article.id.value), capturedAt)
-                            val rawArticle = match.awaitRawArticlePublished(receipt.sequenceNumber)
-                            references += rawArticle.id.value
+                            references += if (directCapture) match.announcementEvidenceId(receipt).value
+                                else match.awaitRawArticlePublished(receipt.sequenceNumber).id.value
                             val announcedSpecies = ENTRY.matchEntire(reading.acceptedText.trim())?.groupValues?.get(1)
                             heightProfile.learn(reading, context, announcedSpecies != null &&
                                 speciesNames.any { it.equals(announcedSpecies, ignoreCase = true) })
@@ -204,6 +209,15 @@ class PersistedAnnouncementWitness internal constructor(
         val ENTRY = Regex("^Go,\\s+(.+?)[!.]?$", RegexOption.IGNORE_CASE)
     }
 
+}
+
+private val USED_WORD = Regex("\\bused\\b", RegexOption.IGNORE_CASE)
+private val COMPLETE_USED_LINE = Regex("^.+\\s+used\\s+[\\p{L}\\p{N}][\\p{L}\\p{N} '’\\-]*!$", RegexOption.IGNORE_CASE)
+
+/** Keep wrapped or competing announcements intact for the existing resolver. */
+internal fun extractCompleteUsedAnnouncement(text: String): String {
+    val moveLines = text.lineSequence().map(String::trim).filter { USED_WORD.containsMatchIn(it) }.toList()
+    return moveLines.singleOrNull()?.takeIf(COMPLETE_USED_LINE::matches) ?: text
 }
 
 /** The backend grants a turn before the witness chooses its current crop. */

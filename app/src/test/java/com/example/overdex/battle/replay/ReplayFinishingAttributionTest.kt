@@ -291,6 +291,10 @@ class ReplayFinishingAttributionTest {
         val expected = ReplayFaintTiming.Cry(ReplayTimeBound(6*S, "heard"))
         assertEquals(expected, timing(cry).faintTiming)
         assertEquals(6*S, timing(cry).atNanos)
+        val replay = MatchReplayModel(match(listOf(live, faint, cry)))
+        assertFalse(replay.sceneAt(6*S - 1).opponent!!.isFainted)
+        assertTrue(replay.sceneAt(6*S).opponent!!.isFainted)
+        assertEquals(faint.monotonicTimeNanos, replay.sceneAt(6*S).opponent!!.faintedAtNanos)
         assertEquals(expected, timing(cry.copy(recordedAt = 1000000)).faintTiming)
         for (control in listOf(
             listOf(cry.copy(payload = sound.copy(speciesId = 323))),

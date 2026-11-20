@@ -83,16 +83,22 @@ internal object ChargedImpactHpBarMeasurer {
 
     internal fun acquireComplete(width: Int, height: Int, reference: ActiveHpBarMeasurement,
         territory: BattleCropBounds? = null, pixelAt: (Int, Int) -> Int): CompleteHpBarSample? =
-        acquireComplete(width, height, reference, territory, false, pixelAt)
+        acquireComplete(width, height, reference, territory, false, pixelAt = pixelAt)
 
     internal fun acquireComplete(width: Int, height: Int, reference: ActiveHpBarMeasurement,
-        territory: BattleCropBounds?, includeLastRail: Boolean, pixelAt: (Int, Int) -> Int): CompleteHpBarSample? {
+        territory: BattleCropBounds?, includeLastRail: Boolean,
+        pixelAt: (Int, Int) -> Int): CompleteHpBarSample? =
+        acquireComplete(width, height, reference, territory, includeLastRail, null, pixelAt)
+
+    internal fun acquireComplete(width: Int, height: Int, reference: ActiveHpBarMeasurement,
+        territory: BattleCropBounds?, includeLastRail: Boolean,
+        centerRange: ClosedFloatingPointRange<Float>?, pixelAt: (Int, Int) -> Int): CompleteHpBarSample? {
         val bounds = searchBounds(width, height, reference, territory) ?: return null
         val w = bounds.right - bounds.left
         val pixels = IntArray(w * (bounds.bottom - bounds.top))
         for (y in bounds.top until bounds.bottom) for (x in bounds.left until bounds.right)
             pixels[(y - bounds.top) * w + x - bounds.left] = pixelAt(x, y)
-        return acquireCandidates(width, height, reference, bounds, pixels, true, includeLastRail)
+        return acquireCandidates(width, height, reference, bounds, pixels, true, includeLastRail, centerRange)
     }
 
     private data class Run(val y: Int, val left: Int, val right: Int, val color: Int)
@@ -100,6 +106,7 @@ internal object ChargedImpactHpBarMeasurer {
     private fun acquireCandidates(
         width: Int, height: Int, reference: ActiveHpBarMeasurement,
         bounds: BattleCropBounds, pixels: IntArray, allowUnknownInterior: Boolean, includeLastRail: Boolean = false,
+        centerRange: ClosedFloatingPointRange<Float>? = null,
     ): CompleteHpBarSample? {
         val regionWidth = bounds.right - bounds.left
         val flags = IntArray(pixels.size) { outline(pixels[it]) }
@@ -127,13 +134,14 @@ internal object ChargedImpactHpBarMeasurer {
         }
         val candidates = mutableListOf<ActiveHpBarMeasurement>()
         val barHeight = reference.bottom - reference.top
+        fun plausibleCenter(x: Float) = centerRange?.let { x in it } ?: (abs(x - width / 2f) <= width * .06f)
         for (top in runs) for (bottom in runs) {
             if (bottom.y - top.y !in max(6, barHeight * 2 / 3)..barHeight * 3 / 2 ||
                 top.color != bottom.color || abs(top.left - bottom.left) > 3 ||
                 abs(top.right - bottom.right) > 3) continue
             val candidate = ActiveHpBarMeasurement(max(top.left, bottom.left), top.y,
                 minOf(top.right, bottom.right), bottom.y, 0f, 0f)
-            if (abs(candidate.centerX - width / 2f) > width * .06f) continue
+            if (!plausibleCenter(candidate.centerX)) continue
             if (candidates.none { abs(it.left - candidate.left) <= 3 && abs(it.right - candidate.right) <= 3 &&
                     abs(it.top - candidate.top) <= 3 && abs(it.bottom - candidate.bottom) <= 3 }) candidates += candidate
             if (candidates.size > 6) return null
@@ -143,7 +151,7 @@ internal object ChargedImpactHpBarMeasurer {
         // An unverified single rail is never returned as a measurement.
         if (allowUnknownInterior && candidates.isEmpty()) {
             for (run in runs) {
-                if (abs((run.left + run.right) / 2f - width / 2f) > width * .06f ||
+                if (!plausibleCenter((run.left + run.right) / 2f) ||
                     run.y + barHeight >= bounds.bottom) continue
                 candidates += ActiveHpBarMeasurement(run.left, run.y, run.right, run.y + barHeight, 0f, 0f)
                 if (candidates.size > 6) return null

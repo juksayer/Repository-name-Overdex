@@ -80,6 +80,7 @@ fun MatchArchiveViewerScreen(
     resolveSpeciesNames: suspend () -> Set<String> = { emptySet() },
     onOpenEditor: (() -> Unit)? = null,
     startInReplay: Boolean = false,
+    sharedReplay: com.example.overdex.battle.replay.SharedReplay? = null,
     onReplayVisibilityChange: (Boolean) -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -153,6 +154,9 @@ fun MatchArchiveViewerScreen(
     if (showReplay) {
         MatchReplayScreen(
             archive = archive,
+            sharedReplay = sharedReplay,
+            allowClipSave = sharedReplay == null,
+            playbackLabel = if (sharedReplay != null) "Shared Replay" else null,
             onBack = { if (startInReplay) onBack() else showReplay = false },
             onUp = onUp,
             onDown = onDown,
@@ -391,6 +395,7 @@ private fun ArchiveArticleRow(
             is ArchivedWitnessOperating -> "WITNESS ${if (p.operating) "OPERATING" else "STOPPED"}"
             is ArchivedActivePokemonTypesWitnessed -> "ACTIVE TYPES [side=${p.side}, types=${p.types.joinToString()}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}]"
             is ArchivedGetReadyWitnessed -> "GET READY"
+            is com.example.overdex.battle.archive.ArchivedQteMoveTypeWitnessed -> "QTE type · ${p.type}"
             is ArchivedChargeMoveUsedAnnounced -> "CHARGE MOVE USED"
             is ArchivedDeviceMotionPulseMeasured -> "DEVICE MOTION PULSE [${p.durationNanos / 1_000_000} ms, peak=${String.format(Locale.ROOT, "%.3f", p.peakLinearAccelerationMetersPerSecondSquared)} m/s², samples=${p.sampleCount}]"
             is ArchivedChargeMoveQteVibrationPatternInferred -> "CHARGE MOVE QTE VIBRATION [side=${p.side}, pulses=${p.pulseCount}, window=${String.format(Locale.ROOT, "%.2f", p.windowNanos / 1_000_000_000.0)}s]"
@@ -524,6 +529,7 @@ private fun ArticleDetailsOverlay(
             is ArchivedWitnessOperating -> "WITNESS ${if (p.operating) "OPERATING" else "STOPPED"}"
                 is ArchivedActivePokemonTypesWitnessed -> "ACTIVE TYPES [side=${p.side}, types=${p.types.joinToString()}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}, basis=${p.basis}]"
                 is ArchivedGetReadyWitnessed -> "GET READY"
+                is com.example.overdex.battle.archive.ArchivedQteMoveTypeWitnessed -> "QTE type · ${p.type}"
                 is ArchivedChargeMoveUsedAnnounced -> "CHARGE MOVE USED"
                 is ArchivedDeviceMotionPulseMeasured -> "DEVICE MOTION PULSE [duration=${p.durationNanos} ns, peak=${p.peakLinearAccelerationMetersPerSecondSquared} m/s², rms=${p.rmsLinearAccelerationMetersPerSecondSquared} m/s², samples=${p.sampleCount}, sensor=${p.sensorType}]"
                 is ArchivedChargeMoveQteVibrationPatternInferred -> "CHARGE MOVE QTE VIBRATION [side=${p.side}, pulses=${p.pulseCount}, window=${p.windowNanos} ns, basis=${p.basis}]"

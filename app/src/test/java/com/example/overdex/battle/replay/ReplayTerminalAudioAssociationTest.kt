@@ -89,6 +89,52 @@ class ReplayTerminalAudioAssociationTest {
             event("announcement", 5, ArchivedChargeMoveUsedAnnounced))
         assertEquals(items.map { it.articleId }, ReplayPossibleDamageClaims.collect(items.reversed()).map { it.articleId })
     }
+    @Test fun `distinct repeat cry and last damaged opponent support a named finishing charge`() {
+        val finalCry = ReplayRecoveredCry(148, 13*S, S, listOf(fragment.copy(articleId = "final-audio",
+            captureAtNanos = 11*S, queryOffsetNanos = 2*S, durationNanos = S, correlation = .935f,
+            runnerUpName = "Seed Bomb", runnerUpCorrelation = .33f)))
+        val recovery = ReplayAudioRecovery(terminalWholeCries = listOf(finalCry))
+        val source = listOf(
+            rows[0].copy(sourceId = "OPPONENT_POKE_BALLS_WITNESS"),
+            rows[1].copy(sourceId = "OPPONENT_SHIELDS_WITNESS"),
+            rows[2],
+            event("entrance-audio", 1, ArchivedAudioCaptured("prior.wav", "prior", 100, "audio/wav",
+                8000, 1, 2*S, "CRY")),
+            event("earlier", 2, ArchivedBattleCryLocalized(148, "reference", .928f, S, "cry-waveform-v1"))
+                .copy(evidenceReferences = listOf("entrance-audio")),
+            event("damaged", 5, ArchivedCompleteHpBarObserved("OPPONENT", 500, 600, 692, 617,
+                1080, 2400, 188, 50, 0, "LIVE_COLOR", null, null, 240f, 124f)).copy(confidence = .95f),
+            event("banner", 10, ArchivedRawText("Gourgeist used Seed Bomb!")).copy(sourceId = "ANNOUNCEMENT_WITNESS"),
+            event("spent", 10, ArchivedChargedMoveEnergySpent("PLAYER", "Gourgeist", "Seed Bomb", 40, "test"))
+                .copy(predecessorIds = listOf("banner")),
+            event("final-audio", 11, ArchivedAudioCaptured("final.wav", "capture", 100, "audio/wav", 8000, 1, 5*S, "CHARGED_MOVE_EFFECT")),
+        )
+        val cast = charge.copy(articleIds = setOf("banner", "spent"))
+        fun infer(input: List<ArchivedRealityArticle> = source, next: Long? = null,
+                  detected: ReplayAudioRecovery = recovery) = ReplayTerminalAudioAssociation.announcedFinish(
+            input, detected, listOf(cast),
+            { side, _ -> if (side == "PLAYER") ReplayCombatant("Gourgeist", 711, 0) else ReplayCombatant("Dragonair", 148, 0) },
+            { side, _ -> if (side == "OPPONENT") 3*S else 0L }, { _, _ -> next },
+            { row, _, _ -> row.articleId == "damaged" },
+        )
+        val link = infer()!!
+        assertEquals(ReplayTerminalAudioAssociation.ANNOUNCED, link.basis)
+        assertEquals("Seed Bomb", link.moveName)
+        assertEquals("Dragonair", link.recipientSpeciesName)
+        assertEquals(13*S, link.landingAtNanos)
+        assertEquals(ReplayTimeBound(13*S, "final-audio"), link.departedBy)
+        assertNull(link.reception)
+        assertEquals(setOf("earlier", "damaged", "final-audio", "count", "result"), link.faintArticleIds.toSet())
+        assertEquals(link, infer(source.reversed().map { it.copy(recordedAt = 9876) }))
+        for (id in listOf("earlier", "damaged", "banner", "shield", "final-audio")) {
+            assertNull(id, infer(source.filterNot { it.articleId == id }))
+        }
+        assertNull(infer(next = 14*S))
+        assertNull(infer(source + event("other", 12, ArchivedFastMoveUseObserved("use", "PLAYER", "OPPONENT",
+            evidenceKinds = emptyList(), basis = "test"))))
+        val competing = finalCry.copy(fragments = finalCry.fragments.map { it.copy(runnerUpCorrelation = .9f) })
+        assertNull(infer(detected = recovery.copy(terminalWholeCries = listOf(competing))))
+    }
     private fun event(id: String, at: Long, p: ArchivedTestimonyPayload) = ArchivedRealityArticle(id, "test", at*1000, at*1000,
         "TEST", p, emptyList(), null, null, emptyList(), at*S)
     private companion object { const val S = 1_000_000_000L }

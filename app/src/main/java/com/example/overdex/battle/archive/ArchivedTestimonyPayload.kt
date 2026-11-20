@@ -273,6 +273,8 @@ data class ArchivedActivePokemonTypesWitnessed(
 ) : ArchivedTestimonyPayload
 
 @Serializable @SerialName("get_ready_witnessed") data object ArchivedGetReadyWitnessed : ArchivedTestimonyPayload
+@Serializable @SerialName("qte_move_type_witnessed")
+data class ArchivedQteMoveTypeWitnessed(val type: String, val firstObservedAtNanos: Long) : ArchivedTestimonyPayload
 @Serializable @SerialName("charge_move_used_announced") data object ArchivedChargeMoveUsedAnnounced : ArchivedTestimonyPayload
 
 @Serializable

@@ -69,7 +69,7 @@ object ReplayRetainedAudioRecovery {
                     p.byteCount in 44..1_600_044 }
             .sortedBy { it.monotonicTimeNanos }
         val ending = clips.filter { it.monotonicTimeNanos!! >= end - 40 * SECOND }.takeLast(64)
-        val changes = ReplaySliverExchange.changes(unique)
+        val changes = ReplaySliverExchange.changesOnBothSides(unique)
         val departureCandidates = unique.mapNotNull { a ->
             a.monotonicTimeNanos.takeIf { a.payload is ArchivedRepeatCryDepartureCandidate }
         }
@@ -81,7 +81,10 @@ object ReplayRetainedAudioRecovery {
     }
 
     fun recover(archive: MatchArchive, references: List<ReplayAudioReference>,
-                unavailableReferences: List<String> = emptyList(), checkCancelled: () -> Unit = {}, captureWindow: LongRange? = null, bannerMove: String? = null, read: (ArchivedAudioCaptured) -> ByteArray?): ReplayAudioRecovery {
+                unavailableReferences: List<String> = emptyList(), checkCancelled: () -> Unit = {},
+                captureWindow: LongRange? = null, bannerMove: String? = null,
+                fastSearches: Map<Long, Set<String>> = emptyMap(),
+                read: (ArchivedAudioCaptured) -> ByteArray?): ReplayAudioRecovery {
         if (references.size > 128) return ReplayAudioRecovery(unavailableReferences = listOf("Reference pool exceeds recovery bound"))
         data class Prepared(val ref: ReplayAudioReference, val offsets: List<Int>, val duration: Long, val matcher: CryWaveformMatcher)
         data class Hit(val ref: ReplayAudioReference, val duration: Long, val fragment: ReplayAudioFragment)
@@ -110,7 +113,7 @@ object ReplayRetainedAudioRecovery {
             a.monotonicTimeNanos?.let { it to sound }
         }.groupBy({ it.first }, { it.second })
         val selected = selectedArticles(archive).filter { captureWindow == null || it.monotonicTimeNanos in captureWindow }
-        val changes = ReplaySliverExchange.changes(archive.articles.filter { it.matchId == archive.matchId })
+        val changes = ReplaySliverExchange.changesOnBothSides(archive.articles.filter { it.matchId == archive.matchId })
         val end = archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedMatchEnded }
             .mapNotNull { it.monotonicTimeNanos }.minOrNull()
         if (end != null && (selected.count { it.monotonicTimeNanos!! < end - 40 * SECOND } >= 64 ||
@@ -157,6 +160,16 @@ object ReplayRetainedAudioRecovery {
                     article.articleId, article.monotonicTimeNanos!!, p.sha256, eligible)
                 if (captureWindow == null && nearSliver && eligible.size <= 8) mixed += ReplayMixedAudioRecovery.measure(
                     audio, article.articleId, article.monotonicTimeNanos!!, p.sha256, eligible, shortFragments = true)
+                val nearbyNames = fastSearches.filterKeys { at ->
+                    article.monotonicTimeNanos!! in (at - 3 * SECOND)..at
+                }.values.flatten().toSet()
+                if (nearbyNames.size in 1..8) {
+                    val pool = references.filter { it.speciesId == null && !it.charged && it.name in nearbyNames }
+                    mixed += ReplayMixedAudioRecovery.measure(audio, article.articleId, article.monotonicTimeNanos!!,
+                        p.sha256, pool, shortFragments = true).filter { match ->
+                        match.fragments.all { it.correlation >= .8f }
+                    }
+                }
             }
             if (captureWindow != null && mono.size <= 4 * 8000) {
                 // The caller has already bounded this comparison to the two active species and

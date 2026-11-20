@@ -3,7 +3,7 @@ import { before, after, beforeEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
 import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs,
-  writeBatch, runTransaction, serverTimestamp, Timestamp } from 'firebase/firestore';
+  writeBatch, runTransaction, serverTimestamp, Timestamp, Bytes } from 'firebase/firestore';
 
 let env;
 const projectId = 'demo-overdex-comms';
@@ -184,4 +184,45 @@ test('legacy pair-ID chats and all unrelated collections stay denied', async () 
     await assertFails(getDoc(doc(db, path)));
     await assertFails(setDoc(doc(db, path), { public: true }));
   }
+});
+
+test('a replay code and all of its chunks are private to the confirmed conversation', async () => {
+  const alice = identity('alice');
+  const bob = identity('bob');
+  const charlie = identity('charlie');
+  const key = '7K4MP9TX2H6Q';
+  const replay = db => doc(db, 'trainerReplayCodes', key);
+  const chunk = (db, index = '0') => doc(db, 'trainerReplayCodes', key, 'chunks', index);
+  const pointer = { ownerId: 'alice', conversationId: 'room', byteCount: 3,
+    sha256: 'a'.repeat(64), createdAt: serverTimestamp() };
+  const payload = { index: 0, data: Bytes.fromUint8Array(new Uint8Array([1, 2, 3])) };
+  await assertFails(setDoc(chunk(alice), payload));
+  await assertFails(setDoc(replay(charlie), { ...pointer, ownerId: 'charlie' }));
+  await assertFails(setDoc(replay(bob), pointer));
+  await assertFails(setDoc(replay(alice), { ...pointer, byteCount: 8388609 }));
+  await assertFails(setDoc(replay(alice), { ...pointer, extraData: 'not a schema field' }));
+  const invalid = writeBatch(alice);
+  invalid.set(replay(alice), pointer);
+  invalid.set(chunk(alice, '1'), payload);
+  await assertFails(invalid.commit());
+  const oversized = writeBatch(alice);
+  oversized.set(replay(alice), pointer);
+  oversized.set(chunk(alice), { ...payload, data: Bytes.fromUint8Array(new Uint8Array(4)) });
+  await assertFails(oversized.commit());
+
+  const batch = writeBatch(alice);
+  batch.set(replay(alice), pointer);
+  batch.set(chunk(alice), payload);
+  await assertSucceeds(batch.commit());
+  assert.equal((await assertSucceeds(getDoc(replay(bob)))).data().ownerId, 'alice');
+  assert.deepEqual((await assertSucceeds(getDoc(chunk(bob)))).data().data.toUint8Array(), payload.data.toUint8Array());
+  await assertFails(getDocs(collection(bob, 'trainerReplayCodes')));
+  await assertFails(getDocs(collection(bob, 'trainerReplayCodes', key, 'chunks')));
+  for (const outsider of [charlie, env.unauthenticatedContext().firestore()]) {
+    await assertFails(getDoc(replay(outsider)));
+    await assertFails(getDoc(chunk(outsider)));
+  }
+  await assertFails(updateDoc(replay(alice), { conversationId: 'other-room' }));
+  await assertFails(setDoc(chunk(alice), payload));
+  await assertFails(deleteDoc(chunk(alice)));
 });

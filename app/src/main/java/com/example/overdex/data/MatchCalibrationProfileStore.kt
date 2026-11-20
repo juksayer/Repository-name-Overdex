@@ -265,6 +265,9 @@ private fun StoredProfile.toProfile(): MatchCalibrationProfile {
             if (schemaVersion < 3) BattleCalibration.widenPreviousQteProgressDefault(it) else it
         },
         qteTypeIconsRegion = battleRegions.region("qte_type_icons", battleDefaults.qteTypeIconsRegion),
+        qteGlyphRegions = QteGlyphCrop.entries.mapNotNull { crop ->
+            battleRegions[crop.storageKey]?.let { crop to battleRegions.region(crop.storageKey, crop.defaultRegion) }
+        }.filter { (crop, region) -> region != crop.defaultRegion }.toMap(),
         exitIconRegion = battleRegions.region("exit_icon", battleDefaults.exitIconRegion),
         trainerChargeMoveControlsRegion = battleRegions.region("trainer_charge_move_controls", battleDefaults.trainerChargeMoveControlsRegion),
         pointerCoordinatesRegion = battleRegions.region("pointer_coordinates", battleDefaults.pointerCoordinatesRegion),
@@ -364,7 +367,7 @@ private fun BattleCalibration.toRegionMap(): Map<String, StoredRegion> = linkedM
     "appearance_color_reference" to appearanceColorReferenceRegion.stored(),
     "appearance_background" to appearanceBackgroundRegion.stored(),
     "opponent_terminal_visual" to opponentTerminalVisualRegion.stored()
-)
+) + qteGlyphRegions.mapKeys { it.key.storageKey }.mapValues { it.value.stored() }
 
 private fun TeamSelectCalibration.toRegionMap(): Map<String, StoredRegion> = linkedMapOf(
     "roster_1" to rosterSlot1.stored(),

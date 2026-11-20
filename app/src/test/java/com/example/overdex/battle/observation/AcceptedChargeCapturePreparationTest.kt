@@ -351,7 +351,7 @@ class AcceptedChargeCapturePreparationTest {
     }
 
     @Test
-    fun `both callback failures are reported after both active consumers are called`() {
+    fun `callback failures are reported after all active consumers are called`() {
         val handoff = AcceptedChargeCapturePreparation(MATCH)
         val first = IllegalStateException("HP failed")
         val second = IllegalArgumentException("Terminal failed")
@@ -362,6 +362,7 @@ class AcceptedChargeCapturePreparationTest {
             throw second
         }
         handoff.attach(AcceptedChargeCaptureConsumer.HUD) { calls += AcceptedChargeCaptureConsumer.HUD }
+        handoff.attach(AcceptedChargeCaptureConsumer.QTE_GLYPH) { calls += AcceptedChargeCaptureConsumer.QTE_GLYPH }
         val thrown = runCatching { offer(handoff, crop("ready", 10), "Get Ready") }.exceptionOrNull()
         assertEquals(AcceptedChargeCaptureConsumer.entries.toList(), calls)
         assertSame(first, thrown)

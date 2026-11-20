@@ -45,6 +45,35 @@ class ReplayChargeFocusBoundaryTest {
         }
     }
 
+    @Test fun `the shield prompt anchors the opponent rise until the recorded announcement`() {
+        val prompt = at("prompt", 3, ArchivedRawText("Use a Protect Shield?"))
+            .copy(sourceId = "ANNOUNCEMENT_WITNESS", recordedAt = 20_000)
+        val namedAt = 12 * SECOND + SECOND / 2
+        val done = at("named", 12, spend("OPPONENT")).copy(monotonicTimeNanos = namedAt)
+        val archive = archive(done, prompt.copy(articleId = "repeat", monotonicTimeNanos = 4 * SECOND),
+            at("early-warning", 1, ArchivedAttackIncoming), prompt)
+        val original = MatchArchiveSerializer.serialize(archive)
+        val model = MatchReplayModel(archive)
+        val start = 3 * SECOND
+        assertTrue(model.sceneAt(start - 1).chargedMoveActions.isEmpty())
+        assertEquals("Opponent charging…", model.sceneAt(start).announcement)
+        assertEquals(start, model.sceneAt(start).chargeFocus?.startedAtNanos)
+        val midpoint = model.sceneAt(start + 4_750_000_000L)
+        val action = midpoint.chargedMoveActions.single()
+        assertEquals(.5f, action.progress, .0001f)
+        assertEquals(-12f, ReplayChargePose.at(action, player = false).risePixels, .0001f)
+        assertEquals("Opponent charging…", model.sceneAt(namedAt - 1).announcement)
+        val announced = model.sceneAt(namedAt)
+        assertEquals("Sneasel used Example Charge!", announced.announcement)
+        assertEquals(ReplayChargePhase.STRIKING, announced.chargedMoveActions.single().phase)
+        assertEquals(namedAt, announced.chargedMoveActions.single().startedAtNanos)
+        assertEquals(-24f, ReplayChargePose.at(announced.chargedMoveActions.single(), player = false).risePixels, 0f)
+        val flight = model.sceneAt(namedAt + 900_000_000L).chargedMoveActions.single()
+        assertEquals(.5f, ReplayChargePose.at(flight, player = false).projectileProgress, .0001f)
+        assertEquals(action, model.sceneAt(start + 4_750_000_000L).chargedMoveActions.single())
+        assertEquals(original, MatchArchiveSerializer.serialize(archive))
+    }
+
     @Test fun `unclosed shield prompt has bounded preparation and cannot invent a strike or move`() {
         val model = MatchReplayModel(archive(at("prompt", 2, ArchivedRawText("Use a Protect Shield?"))
             .copy(sourceId = "ANNOUNCEMENT_WITNESS")))
@@ -54,7 +83,10 @@ class ReplayChargeFocusBoundaryTest {
         assertNull(action.moveName)
         assertNull(action.type)
         assertNull(model.sceneAt(3 * SECOND).qteMilestone)
-        assertTrue(model.sceneAt(12 * SECOND).chargedMoveActions.isEmpty())
+        val expiry = 11 * SECOND + SECOND / 2
+        assertEquals("Opponent charging…", model.sceneAt(expiry - 1).announcement)
+        assertTrue(model.sceneAt(expiry).chargedMoveActions.isEmpty())
+        assertNull(model.sceneAt(expiry).announcement)
     }
 
     @Test fun `generic shield text unrelated crops and capture silence cannot manufacture preparation`() {
