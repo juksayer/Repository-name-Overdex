@@ -333,8 +333,8 @@ class ReplayBlanchePlaybackDeviceTest {
     }
 
     private fun displayedElapsedNanos(): Long {
-        val time = Regex("(?:PLAY|PAUSE)\\s+(\\d+):(\\d+)\\.(\\d)")
-        val match = compose.onAllNodes(hasText("PAUSE", substring = true) or hasText("PLAY", substring = true),
+        val time = Regex("^(\\d+):(\\d+)\\.(\\d)\\s*/")
+        val match = compose.onAllNodes(hasText(" / ", substring = true),
             useUnmergedTree = true).fetchSemanticsNodes().firstNotNullOfOrNull { node ->
                 node.config.getOrNull(SemanticsProperties.Text)?.firstNotNullOfOrNull { time.find(it.text) }
             } ?: error("The real replay LCD transport time is not visible")

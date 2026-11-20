@@ -10,6 +10,7 @@ import com.example.overdex.data.GameMasterLoader
 import com.example.overdex.data.LocalSpriteProvider
 import com.example.overdex.data.PokemonRepository
 import com.example.overdex.data.local.PokedexDatabase
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.screens.observatory.MatchReplayScreen
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -130,45 +131,41 @@ class RecordedReplayOpenDeviceTest {
         var rendered: com.example.overdex.battle.replay.ReplayScene? = null
         val lcd = androidx.compose.runtime.mutableStateOf<(@androidx.compose.runtime.Composable () -> Unit)?>(null)
         compose.setContent {
-            androidx.compose.foundation.layout.Column {
-                androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.weight(1f)) {
-                    MatchReplayScreen(archive, onBack = {}, initialCursorNanos = go + 91_000_000_000L,
-                        impactArchiveUri = android.net.Uri.fromFile(file), resolveSpeciesNames = repo::getAllSpeciesNames,
-                        resolveSpeciesId = { repo.getPokemonByName(it)?.id },
-                        resolveFastMoves = { repo.getPokemonByName(it)?.fastMoves.orEmpty() },
-                        resolveChargedMoves = { repo.getPokemonByName(it)?.chargedMoves.orEmpty() },
-                        resolveChargedMoveType = { species, move ->
-                            repo.getPokemonByName(species)?.chargedMoves?.firstOrNull { it.name.equals(move, true) }?.type
-                        },
-                        pairedReplayScene = { scene, at -> rendered = scene; cursor = at; scene },
-                        onLcdDrag = { drag = it },
-                        onLcdContentUpdate = { lcd.value = it })
-                }
-                androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.weight(1f)) { lcd.value?.invoke() }
+            ODXFiShell(showBattleOverlay = false, lcdContent = lcd.value, lcdEdgeToEdgeContent = true) {
+                MatchReplayScreen(archive, onBack = {}, initialCursorNanos = go + 91_000_000_000L,
+                    impactArchiveUri = android.net.Uri.fromFile(file), resolveSpeciesNames = repo::getAllSpeciesNames,
+                    resolveSpeciesId = { repo.getPokemonByName(it)?.id },
+                    resolveFastMoves = { repo.getPokemonByName(it)?.fastMoves.orEmpty() },
+                    resolveChargedMoves = { repo.getPokemonByName(it)?.chargedMoves.orEmpty() },
+                    resolveChargedMoveType = { species, move ->
+                        repo.getPokemonByName(species)?.chargedMoves?.firstOrNull { it.name.equals(move, true) }?.type
+                    },
+                    pairedReplayScene = { scene, at -> rendered = scene; cursor = at; scene },
+                    onLcdDrag = { drag = it },
+                    onLcdContentUpdate = { lcd.value = it })
             }
         }
-        val label = "Faint · Vaporeon · Dragon Pulse by Turtonator"
-        compose.waitUntil(480_000) { compose.onAllNodesWithText(label, substring = true).fetchSemanticsNodes().isNotEmpty() }
-        val marker = compose.onNodeWithText(label, substring = true)
-        marker.assertIsDisplayed()
+        compose.waitUntil(30_000) { compose.onAllNodesWithText("Events").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Events").assertIsDisplayed().performClick()
+        val heading = compose.onNodeWithText("Vaporeon fainted")
+        val credit = compose.onNodeWithText("Dragon Pulse by Turtonator")
+        val faintTime = compose.onNodeWithText("Faint cry at 01:30.5 from GO")
+        compose.waitUntil(480_000) { compose.onAllNodesWithText("Dragon Pulse by Turtonator").fetchSemanticsNodes().isNotEmpty() }
+        heading.performScrollTo().assertIsDisplayed()
+        credit.performScrollTo().assertIsDisplayed().assertReplayTextFits()
+        faintTime.performScrollTo().assertIsDisplayed().assertReplayTextFits()
         android.util.Log.i("ReplayOpenTrial", "Archive open to credited LCD faint: ${android.os.SystemClock.elapsedRealtime() - openedAt} ms")
-        compose.onNodeWithContentDescription("Previous replay event").performClick()
-        // From a cursor beyond the final marker, previous seeks to the faint itself.
-        marker.assertIsDisplayed()
-        compose.onNodeWithContentDescription("Previous replay event").performClick()
-        compose.onNodeWithContentDescription("Next replay event").performClick()
-        marker.assertIsDisplayed()
-        val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
-        marker.performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
-        val layout = layouts.single()
-        val last = layout.lineCount - 1
-        val measured = "LCD ${layout.size}, last line ${layout.getLineRight(last)} x ${layout.getLineBottom(last)}"
-        assertFalse(measured, layout.isLineEllipsized(last))
-        assertEquals(measured, layout.layoutInput.text.length, layout.getLineEnd(last, visibleEnd = true))
-        assertTrue(measured, layout.getLineRight(last) <= layout.size.width + 1)
-        assertTrue(measured, layout.getLineBottom(last) <= layout.size.height + 1)
+        val previous = compose.onNodeWithContentDescription("Previous replay event")
+        val next = compose.onNodeWithContentDescription("Next replay event")
+        // From a cursor beyond the final marker, Previous seeks to the faint itself.
+        previous.performScrollTo().performClick()
+        heading.performScrollTo().assertIsDisplayed()
+        previous.performScrollTo().performClick()
+        next.performScrollTo().performClick()
+        credit.performScrollTo().assertIsDisplayed()
         File(context.cacheDir, "recorded-vaporeon-faint-lcd.png").outputStream().use {
-            marker.captureToImage().asAndroidBitmap().compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+            compose.onNodeWithTag("instrument-lcd-surface").captureToImage()
+                .asAndroidBitmap().compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
         }
         val finish = compose.runOnIdle { requireNotNull(rendered?.opponent?.finishingChargeAssociation) }
         assertEquals("Turtonator", finish.attackerSpeciesName)
@@ -193,18 +190,17 @@ class RecordedReplayOpenDeviceTest {
         photograph("impact")
         seek(finish.faintSourceAtNanos + com.example.overdex.battle.replay.ReplayFaintPose.DURATION_NANOS + 10_000_000L)
         compose.onNodeWithContentDescription("Vaporeon, fainted").assertIsDisplayed()
-        marker.assertIsDisplayed()
+        credit.performScrollTo().assertIsDisplayed()
         photograph("faint")
 
         seek(go)
         val expected = compose.onAllNodesWithText("Expected from ", substring = true)
-        val next = compose.onNodeWithContentDescription("Next replay event")
         var visited = 0
         while (expected.fetchSemanticsNodes().isEmpty() && visited < 200) {
-            next.assertIsEnabled().performClick()
+            next.performScrollTo().assertIsEnabled().performClick()
             visited++
         }
-        expected.onFirst().assertIsDisplayed()
+        expected.onFirst().performScrollTo().assertIsDisplayed().assertReplayTextFits()
         val inferred = compose.runOnIdle { rendered!!.fastMoveActions.single {
             it.progress == 1f && it.sourceArticleIds.isEmpty()
         } }
@@ -212,11 +208,18 @@ class RecordedReplayOpenDeviceTest {
         val glyph = compose.onNodeWithContentDescription("${inferred.side} ${inferred.moveName} projectile")
         glyph.assertIsDisplayed()
         photograph("inferred-fast")
-        compose.onNodeWithContentDescription("Previous replay event").performClick()
-        next.performClick()
-        expected.onFirst().assertIsDisplayed()
+        previous.performScrollTo().performClick()
+        next.performScrollTo().performClick()
+        expected.onFirst().performScrollTo().assertIsDisplayed().assertReplayTextFits()
         glyph.assertIsDisplayed()
-        compose.runOnIdle { assertTrue(inferred in rendered!!.fastMoveActions) }
+        val inferredAt = compose.runOnIdle { cursor }
+        compose.onNodeWithText("Playback").performScrollTo().assertIsDisplayed().performClick()
+        compose.runOnIdle {
+            assertEquals(inferredAt, cursor)
+            assertTrue(inferred in rendered!!.fastMoveActions)
+        }
+        compose.onNodeWithText("Events").performScrollTo().performClick()
+        expected.onFirst().performScrollTo().assertIsDisplayed()
     }
 
     @Test fun opensNewArchivesAndRendersMissingStartMatchAfterCatalogueLoads(): Unit = runBlocking {

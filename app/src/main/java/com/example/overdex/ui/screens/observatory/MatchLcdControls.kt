@@ -2,6 +2,8 @@ package com.example.overdex.ui.screens.observatory
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -21,17 +23,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.focused
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.ui.theme.TerminalGreen
+import com.example.overdex.battle.BattleSpeciesDisplay
 import com.example.overdex.battle.replay.ReplayEventMarker
 import com.example.overdex.battle.replay.ReplayEventMarkerKind
 import com.example.overdex.battle.replay.ReplayEventMarkerNavigation
 import com.example.overdex.battle.replay.ReplayFaintTiming
+import com.example.overdex.battle.replay.ReplayFinishingFastAssociation
 
 /** Stable renderer for the separate LCD surface; its content follows screen state. */
 @Composable
@@ -95,6 +103,169 @@ internal fun MatchLcdTextButton(
         Text(label, color = TerminalGreen.copy(alpha = if (enabled) 1f else .35f), fontSize = 10.sp, lineHeight = 12.sp, fontFamily = FontFamily.Monospace,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
             maxLines = 1, softWrap = false)
+    }
+}
+
+internal enum class ReplayLcdView(val label: String) {
+    Playback("Playback"),
+    Events("Events"),
+    Menu("Menu"),
+}
+
+private val replayLcdInk = Color(0xFFE6F3E9)
+private val replayLcdMutedInk = Color(0xFFABBDB0)
+private val replayLcdBody = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 14.sp, lineHeight = 18.sp)
+private val replayLcdHeading = replayLcdBody.copy(fontSize = 16.sp, lineHeight = 21.sp, fontWeight = FontWeight.Bold)
+private val replayLcdControl = replayLcdBody.copy(fontWeight = FontWeight.Medium)
+private val replayLcdActionPadding = 6.dp
+private val replayLcdActionMinimum = 48.dp
+
+@Composable
+internal fun ReplayLcdText(text: String, modifier: Modifier = Modifier, heading: Boolean = false) {
+    Text(text, modifier, color = replayLcdInk, style = if (heading) replayLcdHeading else replayLcdBody)
+}
+
+@Composable
+internal fun ReplayLcdButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    focused: Boolean = false,
+    enabled: Boolean = true,
+    selected: Boolean? = null,
+    alignedStart: Boolean = true,
+    role: Role = Role.Button,
+    revealFocus: Boolean = focused,
+) {
+    val requester = remember { BringIntoViewRequester() }
+    LaunchedEffect(focused, revealFocus) { if (focused && revealFocus) requester.bringIntoView() }
+    val background = when {
+        focused -> Color(0xFF284731)
+        selected == true -> Color(0xFF203728)
+        else -> Color(0xFF1B241D)
+    }
+    Box(
+        modifier = modifier
+            .sizeIn(minWidth = replayLcdActionMinimum, minHeight = replayLcdActionMinimum)
+            .bringIntoViewRequester(requester)
+            .background(background)
+            .border(1.dp, if (focused) replayLcdInk else Color(0xFF53745B))
+            .semantics {
+                this.focused = focused
+                if (selected != null) this.selected = selected
+            }
+            .clickable(enabled = enabled, role = role, onClick = onClick)
+            .padding(horizontal = replayLcdActionPadding, vertical = 6.dp),
+        contentAlignment = if (alignedStart) Alignment.CenterStart else Alignment.Center,
+    ) {
+        Text(label, color = if (enabled) replayLcdInk else replayLcdMutedInk, style = replayLcdControl)
+    }
+}
+
+@Composable
+internal fun ReplayLcdViewTabs(
+    current: ReplayLcdView,
+    chooserOpen: Boolean,
+    focusedView: ReplayLcdView?,
+    changeViewFocused: Boolean,
+    onChooseView: () -> Unit,
+    onViewSelected: (ReplayLcdView) -> Unit,
+    onCompactChanged: (Boolean) -> Unit,
+) {
+    val views = ReplayLcdView.entries
+    val spacing = 4.dp
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val density = LocalDensity.current
+        val measurer = rememberTextMeasurer()
+        val widths = remember(density, measurer) {
+            views.map { view ->
+                val text = measurer.measure(view.label, style = replayLcdControl, softWrap = false)
+                with(density) { (text.size.width + 1).toDp() + replayLcdActionPadding * 2 }
+                    .coerceAtLeast(replayLcdActionMinimum)
+            }
+        }
+        val compact = maxWidth.value < widths.sumOf { it.value.toDouble() } + spacing.value * (views.size - 1)
+        val latestCallback by rememberUpdatedState(onCompactChanged)
+        LaunchedEffect(compact) { latestCallback(compact) }
+        when {
+            chooserOpen -> Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
+                views.forEach { view ->
+                    ReplayLcdButton(view.label, { onViewSelected(view) }, Modifier.fillMaxWidth(),
+                        focused = focusedView == view, selected = current == view)
+                }
+            }
+            compact -> ReplayLcdButton(
+                "Change view",
+                onChooseView,
+                Modifier.fillMaxWidth().semantics { stateDescription = "Current view ${current.label}" },
+                focused = changeViewFocused,
+            )
+            else -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spacing)) {
+                views.forEachIndexed { index, view ->
+                    ReplayLcdButton(view.label, { onViewSelected(view) }, Modifier.weight(widths[index].value),
+                        focused = focusedView == view, selected = current == view, alignedStart = false, role = Role.Tab)
+                }
+            }
+        }
+    }
+}
+
+/** Event details use the width of the display independently of the navigation buttons. */
+@Composable
+internal fun ReplayLcdEventDetails(
+    markers: List<ReplayEventMarker>,
+    cursorNanos: Long,
+    selectedId: String?,
+    startNanos: Long,
+    matchStartNanos: Long?,
+    archiveStartNanos: Long,
+) {
+    val index = ReplayEventMarkerNavigation.currentIndex(markers, cursorNanos, selectedId)
+    val current = markers.getOrNull(index)
+    if (current == null) {
+        ReplayLcdText(if (markers.isEmpty()) "No event markers" else "Select Next to see the first event.")
+        return
+    }
+    val faint = current.kind == ReplayEventMarkerKind.FAINT
+    val side = when (current.side) {
+        "PLAYER" -> "You"
+        "OPPONENT" -> "Opponent"
+        else -> if (current.kind == ReplayEventMarkerKind.MATCH_START) null else "Side unconfirmed"
+    }
+    val attribution = current.finishingAttribution
+    val standardFaint = faint && current.label.startsWith("Faint · ")
+    val faintName = when {
+        faint && attribution != null -> BattleSpeciesDisplay.name(attribution.recipientSpeciesName)
+        standardFaint -> current.label.removePrefix("Faint · ").substringBefore(" · ")
+        else -> null
+    }
+    val byline = attribution?.takeIf { faint }?.let {
+        val move = it.moveName ?: if (it is ReplayFinishingFastAssociation) "Fast Move" else "Charged Move"
+        "$move by ${BattleSpeciesDisplay.name(it.attackerSpeciesName)}"
+    }
+    val mirrorFaint = faint && attribution != null &&
+        BattleSpeciesDisplay.name(attribution.attackerSpeciesName) == faintName
+    val visibleSide = side.takeIf { !faint || attribution == null || mirrorFaint }
+    val qualification = if (standardFaint) {
+        current.label.split(" · ").drop(if (byline == null) 2 else 3).joinToString(" · ").ifBlank { null }
+    } else null
+    Column(
+        Modifier.fillMaxWidth().semantics {
+            contentDescription = "Replay event details"
+            stateDescription = listOfNotNull("Event ${index + 1} of ${markers.size}", side, current.description)
+                .joinToString(" · ")
+        },
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(7.dp).background(replayMarkerColor(current.kind)))
+            ReplayLcdText(faintName?.let { "$it fainted" } ?: current.label, Modifier.weight(1f), heading = true)
+        }
+        visibleSide?.let { ReplayLcdText(it) }
+        byline?.let { ReplayLcdText(it) }
+        qualification?.let { ReplayLcdText(it) }
+        if (faint) ReplayLcdText(formatReplayFaintTime(current.faintTiming, matchStartNanos, archiveStartNanos))
+        else ReplayLcdText(formatReplayTime(current.atNanos - startNanos))
+        current.inferenceExplanation?.let { ReplayLcdText(it) }
     }
 }
 

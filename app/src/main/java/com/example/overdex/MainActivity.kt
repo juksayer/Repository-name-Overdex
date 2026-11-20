@@ -68,6 +68,7 @@ import com.example.overdex.presentation.DroidballChoreography
 import com.example.overdex.presentation.DroidballJourney
 import com.example.overdex.presentation.DroidballJourneyPhase
 import com.example.overdex.ui.screens.observatory.MatchArchiveDirectoryScreen
+import com.example.overdex.ui.screens.observatory.ReplayOpeningLcd
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.example.overdex.model.PartnerIdentity
@@ -1710,6 +1711,7 @@ fun PokedexApp(
                         lcdLine1 = lcdLine1,
                         lcdLine2 = lcdLine2,
                         lcdContent = historyLcdContent,
+                        lcdEdgeToEdgeContent = replaySelection,
                         onUp = { upHandler?.invoke() },
                         onDown = { downHandler?.invoke() },
                         onA = { aHandler?.invoke() },
@@ -1757,6 +1759,8 @@ fun PokedexApp(
                     }
                     val archive = if (replayUri != null) loadedReplay?.getOrNull() else openedArchive.value
                     val sourceUri = replayUri ?: openedArchiveUri.value
+                    var showingReplay by remember(replayUri) { mutableStateOf(replayUri != null) }
+                    val openError = loadedReplay?.exceptionOrNull()?.let { it.message ?: "Recording unavailable." }
                     if (archive != null || replayUri != null) {
                         var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                         var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -1768,9 +1772,13 @@ fun PokedexApp(
                         var lcdTapHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                         var lcdLine1 by remember { mutableStateOf<String?>(null) }
                         var lcdLine2 by remember { mutableStateOf<String?>(null) }
+                        val openingLcd: @Composable () -> Unit = {
+                            ReplayOpeningLcd(openError) { navController.debugPopBackStack() }
+                        }
 
                         ODXFiShell(
-                            lcdContent = matchLcdContent,
+                            lcdContent = if (archive == null) openingLcd else matchLcdContent,
+                            lcdEdgeToEdgeContent = showingReplay,
                             showBattleOverlay = false,
                             viewModel = viewModel,
                             filterSettings = filterSettings,
@@ -1793,13 +1801,14 @@ fun PokedexApp(
                         ) {
                             if (archive == null) {
                                 TerminalScreen {
-                                    TerminalText(loadedReplay?.exceptionOrNull()?.let {
-                                        "Unable to read the selected match: ${it.message ?: "recording unavailable"}"
+                                    TerminalText(openError?.let {
+                                        "Unable to read the selected match: $it"
                                     } ?: "READING SAVED MATCH…")
                                 }
                             } else com.example.overdex.ui.screens.observatory.MatchArchiveViewerScreen(
                                 archive = archive,
                                 startInReplay = replayUri != null,
+                                onReplayVisibilityChange = { showingReplay = it },
                                 onOpenEditor = { navController.navigate("replay_editor") },
                                 onLcdContentUpdate = { matchLcdContent = it },
                                 onBack = {
@@ -1869,6 +1878,7 @@ fun PokedexApp(
                     filterSettings = filterSettings, onFilterSettingsChange = { filterSettings = it },
                     deploymentState = deploymentState, frameCount = frameCount,
                     lcdContent = editorLcd,
+                    lcdEdgeToEdgeContent = true,
                     onUp = { up() }, onDown = { down() }, onLeft = { left() }, onRight = { right() },
                     onA = { a() }, onB = { b() },
                 ) {

@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,8 +30,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -64,10 +64,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -295,20 +298,22 @@ fun MatchReplayScreen(
     }
     val model = preparedModel
     if (model == null) {
+        BackHandler(onBack = onBack)
         SideEffect {
             onUp { }
             onDown { }
             onLeft { }
             onRight { }
-            onA { }
+            onA { onBack() }
             onB { onBack() }
             onLcdTap { }
             onLcdDrag { }
         }
         PublishMatchLcd(onLcdContentUpdate) {
-            MatchLcdColumn {
-                MatchLcdText("PREPARING REPLAY…")
-                MatchLcdText(
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                ReplayLcdText("Preparing Replay…", heading = true)
+                ReplayLcdText(
                     cropProgress.stage +
                         if (cropProgress.total > 0) " ${cropProgress.completed}/${cropProgress.total}" else ""
                 )
@@ -324,8 +329,8 @@ fun MatchReplayScreen(
                         color = TerminalGreen,
                     )
                 }
-                cropError?.let { MatchLcdText(it) }
-                MatchLcdButton("BACK", onBack)
+                cropError?.let { ReplayLcdText(it) }
+                ReplayLcdButton("Exit Replay", onBack, focused = true, revealFocus = false)
             }
         }
         Box(
@@ -522,26 +527,13 @@ fun MatchReplayScreen(
     var clipEnd by remember(archive) { mutableStateOf<Long?>(null) }
     var savingClip by remember { mutableStateOf(false) }
     var clipStatus by remember { mutableStateOf<String?>(null) }
-    var editorAction by remember(archive, playbackWindow, allowClipSave, onOpenEditor != null) { mutableIntStateOf(0) }
-    val actionLabels = buildList {
-        add("PLAY / PAUSE")
-        if (allowClipSave) {
-            add("MARK START")
-            add("MARK END + SAVE")
-            if (onOpenEditor != null) add("CLIP LIBRARY")
-        }
-        add("ADD EVENT")
-        add("EXPORT CORRECTIONS")
-        add("IMPORT CORRECTIONS")
-        add("PREVIOUS EVENT")
-        add("NEXT EVENT")
-    }
-    val editorActionCount = actionLabels.size
-    val addEventAction = editorActionCount - 5
-    val exportEventAction = editorActionCount - 4
-    val importEventAction = editorActionCount - 3
-    val previousEventAction = editorActionCount - 2
-    val nextEventAction = editorActionCount - 1
+    var lcdView by remember(archive, playbackWindow) { mutableStateOf(ReplayLcdView.Playback) }
+    var lcdSection by remember(archive, playbackWindow) { mutableStateOf<ReplayLcdSection?>(null) }
+    var compactTabs by remember { mutableStateOf(false) }
+    var viewChooserOpen by remember(archive, playbackWindow) { mutableStateOf(false) }
+    var focusedAction by remember(archive, playbackWindow) { mutableStateOf("play") }
+    var revealFocus by remember { mutableStateOf(false) }
+    var eventScrollRevision by remember(archive, playbackWindow) { mutableIntStateOf(0) }
     val completion by rememberUpdatedState(onPlaybackComplete)
     fun addEvent() {
         playing = false
@@ -663,185 +655,176 @@ fun MatchReplayScreen(
         index?.let { seekMarker(eventMarkers[it]) }
     }
 
-    SideEffect {
-        onUp { scrubBy(-SCRUB_STEP_NANOS) }
-        onDown { scrubBy(SCRUB_STEP_NANOS) }
-        onLeft { editorAction = (editorAction + editorActionCount - 1) % editorActionCount }
-        onRight { editorAction = (editorAction + 1) % editorActionCount }
-        onA {
-            if (!savingClip && clipEnd == null) when {
-                editorAction == previousEventAction -> seekAdjacentMarker(false)
-                editorAction == nextEventAction -> seekAdjacentMarker(true)
-                editorAction == addEventAction -> addEvent()
-                editorAction == exportEventAction -> exportEntries()
-                editorAction == importEventAction -> importEntries()
-                allowClipSave && editorAction == 1 -> markClipStart()
-                allowClipSave && editorAction == 2 -> markClipEnd()
-                allowClipSave && editorAction == 3 -> { playing = false; onOpenEditor?.invoke() }
-                else -> togglePlayback()
-            }
-        }
-        onB { if (!savingClip) { playing = false; transportSounds.stop(); onBack() } }
-        onLcdTap { togglePlayback() }
-        onLcdDrag { delta ->
-            // A complete lower-LCD-width sweep spans the complete match record.
-            scrubBy((duration * (delta.x / LCD_SCRUB_WIDTH_PX)).toLong())
+    fun changeView(view: ReplayLcdView) {
+        lcdView = view
+        lcdSection = null
+        viewChooserOpen = false
+        revealFocus = false
+        focusedAction = when (view) {
+            ReplayLcdView.Playback -> "play"
+            ReplayLcdView.Events -> "next"
+            ReplayLcdView.Menu -> "settings"
         }
     }
+    fun exitReplay() {
+        if (!savingClip) {
+            playing = false
+            transportSounds.stop()
+            onBack()
+        }
+    }
+    fun returnFromLcd() {
+        when {
+            viewChooserOpen -> {
+                viewChooserOpen = false
+                focusedAction = "views"
+            }
+            lcdSection != null -> {
+                focusedAction = lcdSection!!.id
+                lcdSection = null
+            }
+            lcdView != ReplayLcdView.Playback -> changeView(ReplayLcdView.Playback)
+            else -> exitReplay()
+        }
+    }
+    fun seekEvent(forward: Boolean) {
+        seekAdjacentMarker(forward)
+        revealFocus = false
+        eventScrollRevision++
+    }
+    fun changeSpeed(delta: Float) {
+        val speed = ((playbackSpeed + delta) * 10f).roundToInt() / 10f
+        setSpeed(speed.coerceIn(ReplayPlaybackClock.MIN_SPEED, ReplayPlaybackClock.MAX_SPEED))
+    }
+    fun openSection(section: ReplayLcdSection) {
+        lcdSection = section
+        focusedAction = "menu"
+    }
 
-    PublishMatchLcd(onLcdContentUpdate) {
-        var scrubWidth by remember { mutableIntStateOf(1) }
-        val lcdScroll = rememberScrollState()
-        val marksRequester = remember { BringIntoViewRequester() }
-        LaunchedEffect(editorAction, clipStatus, savingClip) {
-            when {
-                editorAction == 0 || editorAction == previousEventAction || editorAction == nextEventAction ->
-                    lcdScroll.animateScrollTo(0)
-                allowClipSave && editorAction in 1..2 -> marksRequester.bringIntoView()
-            }
+    val tabs = ReplayLcdView.entries.map { view ->
+        ReplayLcdAction("view-${view.name}", view.name, run = { changeView(view) })
+    }
+    val chooser = ReplayLcdAction("views", "Change view", run = {
+        viewChooserOpen = true
+        focusedAction = "view-${lcdView.name}"
+    })
+    val exit = ReplayLcdAction("exit", "Exit Replay", enabled = !savingClip, run = ::exitReplay)
+    val play = ReplayLcdAction("play", if (playing) "Pause" else "Play", run = ::togglePlayback)
+    val playbackActions = listOf(
+        ReplayLcdAction("step-back", "−1 sec", "Step backward one second", run = { scrubBy(-SCRUB_STEP_NANOS) }),
+        play,
+        ReplayLcdAction("step-forward", "+1 sec", "Step forward one second", run = { scrubBy(SCRUB_STEP_NANOS) }),
+    )
+    val eventActions = listOf(
+        ReplayLcdAction("previous", "Previous", "Previous replay event",
+            ReplayEventMarkerNavigation.previousIndex(eventMarkers, cursor, selectedMarkerId) != null,
+            run = { seekEvent(false) }),
+        ReplayLcdAction("next", "Next", "Next replay event",
+            ReplayEventMarkerNavigation.nextIndex(eventMarkers, cursor, selectedMarkerId) != null,
+            run = { seekEvent(true) }),
+    )
+    val section = lcdSection
+    val menuActions = when (section) {
+        null -> buildList {
+            ReplayLcdSection.entries.filter { it != ReplayLcdSection.Clips || allowClipSave || onOpenEditor != null }
+                .forEach { entry -> add(ReplayLcdAction(entry.id, entry.title, run = { openSection(entry) })) }
+            add(exit)
         }
-        val drag by rememberUpdatedState<(Offset) -> Unit>({ delta ->
-            scrubBy((duration * delta.x / scrubWidth).toLong())
-        })
-        val toggle by rememberUpdatedState<() -> Unit>({ togglePlayback() })
-        // Only the time display/scrubber and hint handle drag-to-seek. Keeping
-        // these gestures off the parent lets the speed slider own its drags.
-        val scrubGesture = Modifier
-            .pointerInput(Unit) {
-                detectHorizontalDragGestures(
-                    onDragEnd = { transportSounds.endScrub() },
-                    onDragCancel = { transportSounds.endScrub() },
-                ) { change, delta -> change.consume(); drag(Offset(delta, 0f)) }
-            }
-            .pointerInput(Unit) { detectTapGestures { toggle() } }
-        Column(Modifier.fillMaxSize().onSizeChanged { scrubWidth = it.width.coerceAtLeast(1) }
-            .pointerInput(Unit) { detectTapGestures { toggle() } }
-            .verticalScroll(lcdScroll),
-            verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            playbackLabel?.let { MatchLcdText(it) }
-            Column(Modifier.fillMaxWidth().then(scrubGesture)) {
-                MatchLcdText("${if (playing) "PLAY" else "PAUSE"}  ${formatReplayTime(cursor - playbackStart)} / ${formatReplayTime(duration)}")
-                BoxWithConstraints(Modifier.fillMaxWidth().height(16.dp)) {
-                    androidx.compose.material3.LinearProgressIndicator(
-                        progress = { ((cursor - playbackStart).toFloat() / duration).coerceIn(0f, 1f) },
-                        modifier = Modifier.fillMaxWidth().height(8.dp).align(Alignment.Center),
-                        color = TerminalGreen,
-                    )
-                    ReplayEventMarkerStrip(eventMarkers, playbackStart, playbackEnd, Modifier.fillMaxSize())
-                    matchStartFraction?.let { fraction ->
-                        Box(
-                            Modifier.align(Alignment.CenterStart)
-                                .offset(x = (maxWidth - 3.dp) * fraction)
-                                .width(3.dp).height(14.dp).background(TerminalPurple)
-                        )
-                    }
-                }
-            }
-            ReplayEventMarkerControls(eventMarkers, cursor, selectedMarkerId, playbackStart, ::seekMarker,
-                previousSelected = editorAction == previousEventAction,
-                nextSelected = editorAction == nextEventAction,
-                matchStartNanos = model.matchStartNanos, archiveStartNanos = model.startNanos)
-            if (!reviewComplete) {
-                MatchLcdText(cropProgress.stage + if (cropProgress.total > 0) " ${cropProgress.completed}/${cropProgress.total}" else "")
-                if (cropProgress.total > 0) androidx.compose.material3.LinearProgressIndicator(
-                    progress = { cropProgress.completed.toFloat() / cropProgress.total }, modifier = Modifier.fillMaxWidth(), color = TerminalGreen)
-                else androidx.compose.material3.LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = TerminalGreen)
-            }
-            cropError?.let { MatchLcdText(it) }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                MatchLcdTextButton("BACK", { scrubBy(-SCRUB_STEP_NANOS) },
-                    Modifier.weight(1f).semantics { contentDescription = "Step backward one second" })
-                Text("TAP ▶/Ⅱ  DRAG >>", color = TerminalGreen, maxLines = 1, softWrap = false,
-                    fontSize = 10.sp, lineHeight = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    modifier = Modifier.weight(3.5f).then(scrubGesture).padding(vertical = 4.dp))
-                MatchLcdTextButton("FWD", { scrubBy(SCRUB_STEP_NANOS) },
-                    Modifier.weight(1f).semantics { contentDescription = "Step forward one second" })
-            }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                MatchLcdTextButton(String.format(Locale.ROOT, "%.1f×", playbackSpeed), { setSpeed(1f) },
-                    Modifier.width(40.dp).semantics { contentDescription = "Reset replay speed to 1x" })
-                Slider(
-                    value = playbackSpeed,
-                    onValueChange = { setSpeed((it * 10f).roundToInt() / 10f) },
-                    valueRange = ReplayPlaybackClock.MIN_SPEED..ReplayPlaybackClock.MAX_SPEED,
-                    steps = 48,
-                    modifier = Modifier.weight(1f).height(28.dp).semantics {
-                        contentDescription = "Replay speed"
-                        stateDescription = String.format(Locale.ROOT, "%.1f times", playbackSpeed)
-                    },
-                    colors = SliderDefaults.colors(thumbColor = TerminalGreen, activeTrackColor = TerminalGreen),
-                    thumb = { Box(Modifier.size(12.dp).background(TerminalGreen, CircleShape)) },
-                    track = { slider ->
-                        SliderDefaults.Track(
-                            sliderState = slider,
-                            modifier = Modifier.height(4.dp),
-                            colors = SliderDefaults.colors(activeTrackColor = TerminalGreen,
-                                inactiveTrackColor = TerminalGreen.copy(alpha = 0.25f)),
-                            drawTick = { _, _ -> },
-                            drawStopIndicator = null,
-                            thumbTrackGapSize = 0.dp,
-                        )
-                    },
-                )
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                MatchLcdTextButton("RESET", { cursor = restartPosition; playing = false; transportSounds.reset() }, Modifier.weight(1f))
-                MatchLcdTextButton(if (playing) "PAUSE" else "PLAY", toggle, Modifier.weight(1f))
-                MatchLcdTextButton(
-                    label = "BLIPS ${if (eventBlipsEnabled) "ON" else "OFF"}",
-                    onClick = {
-                        eventBlipsEnabled = !eventBlipsEnabled
-                        replayPreferences.edit().putBoolean("event_blips_enabled", eventBlipsEnabled).apply()
-                    },
-                    modifier = Modifier.weight(1.5f).semantics { contentDescription = "Replay event blips" },
-                    selected = eventBlipsEnabled,
-                )
-                MatchLcdTextButton(
-                    label = "SFX ${if (attackSfxEnabled) "ON" else "OFF"}",
-                    onClick = {
-                        attackSfxEnabled = !attackSfxEnabled
-                        if (!attackSfxEnabled) attackSounds.stop()
-                        replayPreferences.edit().putBoolean("attack_sfx_enabled", attackSfxEnabled).apply()
-                    },
-                    modifier = Modifier.weight(1.25f).semantics { contentDescription = "Replay attack sounds" },
-                    selected = attackSfxEnabled,
-                )
-                MatchLcdTextButton("BACK", { if (!savingClip) { playing = false; transportSounds.stop(); onBack() } }, Modifier.weight(1f))
-            }
-            MatchLcdText("←/→ ${actionLabels[editorAction]}   A SELECT")
-            MatchLcdButton("ADD EVENT", { editorAction = addEventAction; addEvent() }, selected = editorAction == addEventAction)
-            MatchLcdButton("EXPORT CORRECTIONS", { editorAction = exportEventAction; exportEntries() }, selected = editorAction == exportEventAction)
-            MatchLcdText("SELECT A TRAINER MARKER TO EXPORT IT; OTHERWISE EXPORT ALL")
-            MatchLcdButton("IMPORT CORRECTIONS", { editorAction = importEventAction; importEntries() }, selected = editorAction == importEventAction)
-            MatchLcdButton("PAIR MATCH", { pairFile.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) })
-            pairStatus?.let { MatchLcdText(it) }
-            pairedEvidence?.let { paired -> MatchLcdText("PAIRED CANDIDATES: ${paired.events.count { it.ambiguous }} · TIMING APPROXIMATE") }
-            correctionStatus?.let { MatchLcdText(it) }
-            corrections.forEach { entry ->
-                val credited = entry.finishingMoveId?.let { id -> corrections.firstOrNull { it.id == id } }
-                MatchLcdText("TRAINER ENTRY ${formatReplayTime(entry.matchOffsetNanos)} · ${entry.side.name} · ${entry.speciesName} · ${entry.moveName ?: "FAINT"} · ${entry.authorName}" +
-                    (credited?.let { " · KO CREDIT: ${it.moveName}" } ?: ""))
-            }
+        ReplayLcdSection.Settings -> listOf(
+            ReplayLcdAction("slower", "Slower by 0.1×", enabled = playbackSpeed > ReplayPlaybackClock.MIN_SPEED,
+                run = { changeSpeed(-0.1f) }),
+            ReplayLcdAction("faster", "Faster by 0.1×", enabled = playbackSpeed < ReplayPlaybackClock.MAX_SPEED,
+                run = { changeSpeed(0.1f) }),
+            ReplayLcdAction("speed-reset", "Reset speed to 1×", "Reset replay speed to 1x", run = { setSpeed(1f) }),
+            ReplayLcdAction("blips", "Event blips: ${if (eventBlipsEnabled) "On" else "Off"}", "Replay event blips",
+                selected = eventBlipsEnabled, run = {
+                    eventBlipsEnabled = !eventBlipsEnabled
+                    replayPreferences.edit().putBoolean("event_blips_enabled", eventBlipsEnabled).apply()
+                }),
+            ReplayLcdAction("sounds", "Attack sounds: ${if (attackSfxEnabled) "On" else "Off"}", "Replay attack sounds",
+                selected = attackSfxEnabled, run = {
+                    attackSfxEnabled = !attackSfxEnabled
+                    if (!attackSfxEnabled) attackSounds.stop()
+                    replayPreferences.edit().putBoolean("attack_sfx_enabled", attackSfxEnabled).apply()
+                }),
+            ReplayLcdAction("restart", "Restart Replay", run = {
+                cursor = restartPosition
+                playing = false
+                transportSounds.reset()
+            }),
+        )
+        ReplayLcdSection.Corrections -> listOf(
+            ReplayLcdAction("add-event", "Add event", run = ::addEvent),
+            ReplayLcdAction("export", "Export corrections", run = ::exportEntries),
+            ReplayLcdAction("import", "Import corrections", run = ::importEntries),
+            ReplayLcdAction("pair", "Pair match", run = {
+                pairFile.launch(arrayOf("application/zip", "application/octet-stream", "*/*"))
+            }),
+        )
+        ReplayLcdSection.Clips -> buildList {
             if (allowClipSave) {
-                Column(Modifier.fillMaxWidth().bringIntoViewRequester(marksRequester)) {
-                    MatchLcdText("CLIP AT ${formatReplayTime(cursor - model.startNanos)}   ↑/↓ STEP")
-                    Row(Modifier.fillMaxWidth()) {
-                        MatchLcdTextButton("MARK START", { if (!savingClip) { editorAction = 1; markClipStart() } }, Modifier.weight(1f), editorAction == 1)
-                        MatchLcdTextButton("END + SAVE", { if (!savingClip) { editorAction = 2; markClipEnd() } }, Modifier.weight(1f), editorAction == 2)
-                    }
-                    if (savingClip) MatchLcdText("SAVING CLIP…")
-                    clipStatus?.let { MatchLcdText(it) }
-                }
-                onOpenEditor?.let { open ->
-                    MatchLcdButton("CLIP LIBRARY", { playing = false; open() }, selected = editorAction == 3, enabled = !savingClip)
-                }
+                add(ReplayLcdAction("mark-start", "Mark start", enabled = !savingClip, run = ::markClipStart))
+                add(ReplayLcdAction("mark-end", "End and save", enabled = !savingClip, run = ::markClipEnd))
             }
-            scene.countdownFrame?.let { MatchLcdText(it.lcdLabel) }
-            MatchLcdText("RECORDED ENERGY\nP ${energyLedger(scene.playerEnergy)}  O ${energyLedger(scene.opponentEnergy)}")
-            scene.statChanges.filter { it.side == null }.forEach {
-                MatchLcdText("${it.label}${it.moveName?.let { move -> " · $move" }.orEmpty()} · SIDE UNCONFIRMED")
+            onOpenEditor?.let { open ->
+                add(ReplayLcdAction("clip-library", "Clip library", enabled = !savingClip, run = {
+                    playing = false
+                    open()
+                }))
             }
         }
+        ReplayLcdSection.Details -> emptyList()
+    }
+    val menuBack = ReplayLcdAction("menu", "Back to Menu", run = ::returnFromLcd)
+    val viewActions = when {
+        viewChooserOpen -> tabs
+        section != null -> listOf(menuBack) + menuActions
+        else -> (if (compactTabs) listOf(chooser) else tabs) + when (lcdView) {
+            ReplayLcdView.Playback -> playbackActions
+            ReplayLcdView.Events -> eventActions
+            ReplayLcdView.Menu -> menuActions
+        }
+    }
+    val enabledActions = viewActions.filter { it.enabled }
+    val activeAction = enabledActions.firstOrNull { it.id == focusedAction }
+        ?: enabledActions.firstOrNull { it.id == "previous" || it.id == "next" }
+        ?: enabledActions.firstOrNull()
+    fun moveFocus(delta: Int) {
+        if (enabledActions.isEmpty()) return
+        val current = enabledActions.indexOf(activeAction)
+        focusedAction = enabledActions[Math.floorMod(current + delta, enabledActions.size)].id
+        revealFocus = true
+    }
+    fun activate() {
+        if (addingCorrection || correctionImport != null || clipEnd != null || savingClip) return
+        activeAction?.run?.invoke()
+    }
+    BackHandler(enabled = !addingCorrection && correctionImport == null && clipEnd == null) { returnFromLcd() }
+    SideEffect {
+        onUp {
+            when {
+                viewChooserOpen -> moveFocus(-1)
+                section == ReplayLcdSection.Clips -> scrubBy(-SCRUB_STEP_NANOS)
+                lcdView == ReplayLcdView.Menu -> moveFocus(-1)
+                lcdView == ReplayLcdView.Events -> seekEvent(false)
+                else -> scrubBy(-SCRUB_STEP_NANOS)
+            }
+        }
+        onDown {
+            when {
+                viewChooserOpen -> moveFocus(1)
+                section == ReplayLcdSection.Clips -> scrubBy(SCRUB_STEP_NANOS)
+                lcdView == ReplayLcdView.Menu -> moveFocus(1)
+                lcdView == ReplayLcdView.Events -> seekEvent(true)
+                else -> scrubBy(SCRUB_STEP_NANOS)
+            }
+        }
+        onLeft { moveFocus(-1) }
+        onRight { moveFocus(1) }
+        onA { activate() }
+        onB { returnFromLcd() }
+        onLcdTap { togglePlayback() }
+        onLcdDrag { delta -> scrubBy((duration * delta.x / LCD_SCRUB_WIDTH_PX).toLong()) }
     }
 
     // A first-pass scene can only show the result withdrawal while the ending sounds are pending.
@@ -850,6 +833,126 @@ fun MatchReplayScreen(
         model.matchEndNanos?.let { (it - 20_000_000_000L).coerceAtLeast(model.matchStartNanos ?: model.startNanos) }
             ?.takeIf { it <= playbackEnd }?.coerceAtLeast(playbackStart)
     else null
+    PublishMatchLcd(onLcdContentUpdate) {
+        val scroll = rememberScrollState()
+        LaunchedEffect(lcdView, section, viewChooserOpen, eventScrollRevision) { scroll.scrollTo(0) }
+
+        @Composable fun Action(
+            action: ReplayLcdAction,
+            modifier: Modifier = Modifier.fillMaxWidth(),
+            alignedStart: Boolean = true,
+        ) {
+            ReplayLcdButton(action.label, {
+                focusedAction = action.id
+                revealFocus = true
+                action.run()
+            }, modifier.semantics { action.description?.let { contentDescription = it } },
+                focused = activeAction?.id == action.id, enabled = action.enabled,
+                selected = action.selected, alignedStart = alignedStart, revealFocus = revealFocus)
+        }
+
+        BoxWithConstraints(Modifier.fillMaxSize().padding(horizontal = 4.dp)) {
+            val stackControls = maxWidth < 184.dp || LocalDensity.current.fontScale > 1.35f
+            Column(Modifier.fillMaxSize().verticalScroll(scroll), verticalArrangement = Arrangement.spacedBy(
+                if (lcdView == ReplayLcdView.Playback && !viewChooserOpen) 0.dp else 2.dp)) {
+                if (section == null) {
+                    ReplayLcdViewTabs(lcdView, viewChooserOpen, ReplayLcdView.entries.firstOrNull {
+                        activeAction?.id == "view-${it.name}"
+                    }, activeAction?.id == "views", chooser.run, ::changeView, { compactTabs = it })
+                } else {
+                    Action(menuBack)
+                    ReplayLcdText(section.title, heading = true)
+                }
+                if (viewChooserOpen) return@Column
+                when (lcdView) {
+                    ReplayLcdView.Playback -> {
+                        playbackLabel?.let { ReplayLcdText(it) }
+                        ReplayLcdTimeline(cursor, playbackStart, duration, playing, eventMarkers, matchStartFraction,
+                            waitingForReview = pendingFinishStart != null && cursor >= pendingFinishStart,
+                            ::scrubBy, transportSounds::endScrub)
+                        ReplayLcdActionRow(playbackActions, stackControls) { action, modifier ->
+                            Action(action, modifier, alignedStart = stackControls)
+                        }
+                    }
+                    ReplayLcdView.Events -> {
+                        ReplayLcdEventDetails(eventMarkers, cursor, selectedMarkerId, playbackStart,
+                            model.matchStartNanos, model.startNanos)
+                        ReplayLcdActionRow(eventActions, stackControls) { action, modifier ->
+                            Action(action, modifier, alignedStart = stackControls)
+                        }
+                    }
+                    ReplayLcdView.Menu -> {
+                        if (section == ReplayLcdSection.Settings) {
+                            ReplayLcdText("Playback speed ${String.format(Locale.ROOT, "%.1f×", playbackSpeed)}")
+                            Slider(
+                                value = playbackSpeed,
+                                onValueChange = { setSpeed((it * 10f).roundToInt() / 10f) },
+                                valueRange = ReplayPlaybackClock.MIN_SPEED..ReplayPlaybackClock.MAX_SPEED,
+                                steps = 48,
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).semantics {
+                                    contentDescription = "Replay speed"
+                                    stateDescription = String.format(Locale.ROOT, "%.1f times", playbackSpeed)
+                                },
+                                colors = SliderDefaults.colors(thumbColor = TerminalGreen, activeTrackColor = TerminalGreen),
+                                thumb = { Box(Modifier.size(12.dp).background(TerminalGreen, CircleShape)) },
+                                track = { state ->
+                                    SliderDefaults.Track(
+                                        sliderState = state,
+                                        modifier = Modifier.height(4.dp),
+                                        colors = SliderDefaults.colors(
+                                            activeTrackColor = TerminalGreen,
+                                            inactiveTrackColor = TerminalGreen.copy(alpha = 0.25f),
+                                        ),
+                                        drawTick = { _, _ -> },
+                                        drawStopIndicator = null,
+                                        thumbTrackGapSize = 0.dp,
+                                    )
+                                },
+                            )
+                        }
+                        if (section == ReplayLcdSection.Clips) {
+                            ReplayLcdText("Clip at ${formatReplayTime(cursor - model.startNanos)}")
+                        }
+                        menuActions.forEach { Action(it) }
+                        when (section) {
+                            ReplayLcdSection.Corrections -> {
+                                ReplayLcdText("Select a trainer event to export it, or export all corrections.")
+                                pairStatus?.let { ReplayLcdText(it) }
+                                pairedEvidence?.let { paired ->
+                                    ReplayLcdText("Paired candidates ${paired.events.count { it.ambiguous }} · Approximate timing")
+                                }
+                                correctionStatus?.let { ReplayLcdText(it) }
+                                corrections.forEach { entry ->
+                                    val credited = entry.finishingMoveId?.let { id -> corrections.firstOrNull { it.id == id } }
+                                    ReplayLcdText("${formatReplayTime(entry.matchOffsetNanos)} · ${entry.side.name} · " +
+                                        "${entry.speciesName} · ${entry.moveName ?: "Faint"} · ${entry.authorName}" +
+                                        (credited?.let { " · KO credit ${it.moveName}" } ?: ""))
+                                }
+                            }
+                            ReplayLcdSection.Clips -> {
+                                if (savingClip) ReplayLcdText("Saving clip…")
+                                clipStatus?.let { ReplayLcdText(it) }
+                            }
+                            ReplayLcdSection.Details -> {
+                                scene.countdownFrame?.let { ReplayLcdText(it.lcdLabel) }
+                                ReplayLcdText("Recorded energy", heading = true)
+                                ReplayLcdText("Player ${energyLedger(scene.playerEnergy)}")
+                                ReplayLcdText("Opponent ${energyLedger(scene.opponentEnergy)}")
+                                scene.statChanges.filter { it.side == null }.forEach {
+                                    ReplayLcdText("${it.label}${it.moveName?.let { move -> " · $move" }.orEmpty()} · Side unconfirmed")
+                                }
+                                ReplayLcdText(if (reviewComplete) "Review complete" else cropProgress.stage +
+                                    if (cropProgress.total > 0) " ${cropProgress.completed}/${cropProgress.total}" else "")
+                                cropError?.let { ReplayLcdText(it) }
+                            }
+                            else -> Unit
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     LaunchedEffect(playing, playbackSpeed, playbackEnd, pendingFinishStart) {
         // Cursor is deliberately not an effect key. A frame is a chance to draw,
         // not a fixed amount of Match time; slow frames must not slow the clock.
@@ -1151,6 +1254,93 @@ private fun FastMoveReplayIndicator(
                 .size(12.dp)
                 .border(1.dp, indicatorColor, CircleShape)
         )
+    }
+}
+
+private enum class ReplayLcdSection(val id: String, val title: String) {
+    Settings("settings", "Playback settings"),
+    Corrections("corrections", "Trainer corrections"),
+    Clips("clips", "Clips"),
+    Details("details", "Match details"),
+}
+
+private data class ReplayLcdAction(
+    val id: String,
+    val label: String,
+    val description: String? = null,
+    val enabled: Boolean = true,
+    val selected: Boolean? = null,
+    val run: () -> Unit,
+)
+
+@Composable
+private fun ReplayLcdActionRow(
+    actions: List<ReplayLcdAction>,
+    stacked: Boolean,
+    content: @Composable (ReplayLcdAction, Modifier) -> Unit,
+) {
+    if (stacked) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            actions.forEach { content(it, Modifier.fillMaxWidth()) }
+        }
+    } else {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            actions.forEach { content(it, Modifier.weight(1f)) }
+        }
+    }
+}
+
+@Composable
+private fun ReplayLcdTimeline(
+    cursor: Long,
+    start: Long,
+    duration: Long,
+    playing: Boolean,
+    markers: List<ReplayEventMarker>,
+    goFraction: Float?,
+    waitingForReview: Boolean,
+    scrubBy: (Long) -> Unit,
+    onScrubFinished: () -> Unit,
+) {
+    val scrub by rememberUpdatedState(scrubBy)
+    val finish by rememberUpdatedState(onScrubFinished)
+    val elapsed = (cursor - start).coerceIn(0L, duration)
+    val currentElapsed by rememberUpdatedState(elapsed)
+    val fraction = (elapsed.toDouble() / duration).toFloat()
+    Column(Modifier.fillMaxWidth().heightIn(min = 48.dp).semantics {
+        contentDescription = "Replay timeline"
+        progressBarRangeInfo = ProgressBarRangeInfo(fraction, 0f..1f)
+        setProgress { progress ->
+            scrubBy((duration * progress.coerceIn(0f, 1f)).toLong() - elapsed)
+            onScrubFinished()
+            true
+        }
+    }.pointerInput(duration) {
+        detectHorizontalDragGestures(onDragEnd = { finish() }, onDragCancel = { finish() }) { change, delta ->
+            change.consume()
+            scrub((duration * delta / size.width.coerceAtLeast(1)).toLong())
+        }
+    }.pointerInput(duration) {
+        detectTapGestures { offset ->
+            val target = (duration * (offset.x / size.width.coerceAtLeast(1)).coerceIn(0f, 1f)).toLong()
+            scrub(target - currentElapsed)
+            finish()
+        }
+    }, verticalArrangement = Arrangement.Center) {
+        ReplayLcdText("${formatReplayTime(elapsed)} / ${formatReplayTime(duration)}", heading = true)
+        ReplayLcdText(when {
+            playing && waitingForReview -> "Reviewing ending…"
+            playing -> "Playing"
+            else -> "Paused"
+        })
+        BoxWithConstraints(Modifier.fillMaxWidth().height(9.dp)) {
+            androidx.compose.material3.LinearProgressIndicator(progress = { fraction },
+                modifier = Modifier.fillMaxWidth().height(4.dp).align(Alignment.Center), color = TerminalGreen)
+            ReplayEventMarkerStrip(markers, start, start + duration, Modifier.fillMaxSize())
+            goFraction?.let {
+                Box(Modifier.offset(x = (maxWidth - 3.dp) * it).width(3.dp).height(9.dp).background(TerminalPurple))
+            }
+        }
     }
 }
 

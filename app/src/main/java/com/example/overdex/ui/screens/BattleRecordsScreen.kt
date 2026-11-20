@@ -21,8 +21,10 @@ import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.screens.observatory.MatchReplayScreen
+import com.example.overdex.ui.screens.observatory.ReplayOpeningLcd
 import com.example.overdex.ui.theme.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -42,12 +44,16 @@ fun BattleRecordsScreen(viewModel: PokedexViewModel, ownedId: String? = null, on
     var field by remember { mutableIntStateOf(0) }
     var selected by remember { mutableIntStateOf(0) }
     var opening by remember { mutableStateOf(false) }
+    var openingJob by remember { mutableStateOf<Job?>(null) }
+    var replayError by remember { mutableStateOf<String?>(null) }
     var replay by remember { mutableStateOf<MatchArchive?>(null) }
     var replayUri by remember { mutableStateOf<Uri?>(null) }
     var replayAt by remember { mutableStateOf<Long?>(null) }
     val keyboard = rememberTerminalKeyboardController()
     var replayUp by remember { mutableStateOf<() -> Unit>({}) }
     var replayDown by remember { mutableStateOf<() -> Unit>({}) }
+    var replayLeft by remember { mutableStateOf<() -> Unit>({}) }
+    var replayRight by remember { mutableStateOf<() -> Unit>({}) }
     var replayA by remember { mutableStateOf<() -> Unit>({}) }
     var replayB by remember { mutableStateOf<() -> Unit>({}) }
     var replayLcd by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
@@ -85,39 +91,80 @@ fun BattleRecordsScreen(viewModel: PokedexViewModel, ownedId: String? = null, on
     fun openReplay(index: Int = selected) {
         val choice = rows.getOrNull(index) ?: return
         if (opening) return
-        opening = true; error = null
-        scope.launch {
+        opening = true
+        replayError = null
+        openingJob = scope.launch {
             try {
                 val uri = Uri.parse(choice.first.archiveUri)
                 replay = withContext(Dispatchers.IO) { store.readArchive(uri) }
                 replayUri = uri
                 replayAt = choice.second.atNanos - 2_000_000_000L
-            } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; error = e.message }
-            finally { opening = false }
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                replayError = e.message ?: "Recording unavailable."
+            } finally {
+                opening = false
+                openingJob = null
+            }
         }
     }
     fun back() {
-        when { replay != null -> replay = null; keyboard.isVisible -> keyboard.handleB(); filters -> filters = false; else -> onBack() }
+        when {
+            replay != null -> replay = null
+            opening -> openingJob?.cancel()
+            replayError != null -> replayError = null
+            keyboard.isVisible -> keyboard.handleB()
+            filters -> filters = false
+            else -> onBack()
+        }
     }
+    val openingReplay = opening || replayError != null
     BackHandler { back() }
     ODXFiShell(viewModel = viewModel, showBattleOverlay = false, keyboardController = keyboard,
+        lcdEdgeToEdgeContent = replay != null || openingReplay,
         onKeyActivated = ::key,
-        onUp = { when { replay != null -> replayUp(); keyboard.isVisible -> keyboard.handleUp(); filters -> field = (field - 1).coerceAtLeast(0); else -> selected = (selected - 1).coerceAtLeast(0) } },
-        onDown = { when { replay != null -> replayDown(); keyboard.isVisible -> keyboard.handleDown(); filters -> field = (field + 1).coerceAtMost(5); else -> selected = (selected + 1).coerceAtMost((rows.size - 1).coerceAtLeast(0)) } },
-        onLeft = { if (keyboard.isVisible) keyboard.handleLeft() }, onRight = { if (keyboard.isVisible) keyboard.handleRight() },
-        onA = { when { replay != null -> replayA(); keyboard.isVisible -> keyboard.handleA("") { key(it) }; filters -> edit(); else -> openReplay() } },
+        onUp = {
+            when {
+                replay != null -> replayUp()
+                openingReplay -> Unit
+                keyboard.isVisible -> keyboard.handleUp()
+                filters -> field = (field - 1).coerceAtLeast(0)
+                else -> selected = (selected - 1).coerceAtLeast(0)
+            }
+        },
+        onDown = {
+            when {
+                replay != null -> replayDown()
+                openingReplay -> Unit
+                keyboard.isVisible -> keyboard.handleDown()
+                filters -> field = (field + 1).coerceAtMost(5)
+                else -> selected = (selected + 1).coerceAtMost((rows.size - 1).coerceAtLeast(0))
+            }
+        },
+        onLeft = { if (replay != null) replayLeft() else if (keyboard.isVisible) keyboard.handleLeft() },
+        onRight = { if (replay != null) replayRight() else if (keyboard.isVisible) keyboard.handleRight() },
+        onA = {
+            when {
+                replay != null -> replayA()
+                openingReplay -> Unit
+                keyboard.isVisible -> keyboard.handleA("") { key(it) }
+                filters -> edit()
+                else -> openReplay()
+            }
+        },
         onB = { if (replay != null) replayB() else back() },
-        onSelect = { if (keyboard.isVisible) keyboard.handleModeSwitch() else if (replay == null) { field = 5; edit() } },
-        onStart = { if (keyboard.isVisible) keyboard.handleStart() else if (replay == null) filters = !filters },
+        onSelect = { if (keyboard.isVisible) keyboard.handleModeSwitch() else if (replay == null && !openingReplay) { field = 5; edit() } },
+        onStart = { if (keyboard.isVisible) keyboard.handleStart() else if (replay == null && !openingReplay) filters = !filters },
         startLabel = if (replay != null) "START" else if (filters) "DONE" else "FILTER",
         lcdContent = {
-            if (replay != null) replayLcd?.invoke() else Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            if (replay != null) replayLcd?.invoke() else if (openingReplay) ReplayOpeningLcd(replayError, ::back)
+            else Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 if (filters) {
                     TerminalText("${fieldLabels[field]}: ${fieldValue(field).ifBlank { "ANY" }}", fontSize = 14.sp)
                     TerminalButton(text = "EDIT / CHANGE", onClick = ::edit)
                     TerminalButton(text = "SHOW RESULTS", onClick = { filters = false })
                 } else {
-                    TerminalText(if (opening) "READING MATCH…" else picked?.second?.let { "${it.speciesName} · ${it.kind.name.replace('_', ' ')}" } ?: "BATTLE RECORDS", fontSize = 13.sp)
+                    TerminalText(picked?.second?.let { "${it.speciesName} · ${it.kind.name.replace('_', ' ')}" } ?: "BATTLE RECORDS", fontSize = 13.sp)
                     picked?.let { (record, event) ->
                         TerminalText("${record.record.result ?: "Result not recorded"} · +${((event.atNanos - (record.record.matchStartNanos ?: event.atNanos)) / 1_000_000_000L)}s", fontSize = 11.sp)
                         if (event.kind == BattleMetricKind.KNOCKOUT) TerminalText("Credit supported by a recent hit and a witnessed faint.", fontSize = 10.sp)
@@ -133,6 +180,7 @@ fun BattleRecordsScreen(viewModel: PokedexViewModel, ownedId: String? = null, on
         val activeReplay = replay
         if (activeReplay != null) MatchReplayScreen(activeReplay, onBack = { replay = null },
             onUp = { replayUp = it }, onDown = { replayDown = it }, onA = { replayA = it }, onB = { replayB = it },
+            onLeft = { replayLeft = it }, onRight = { replayRight = it },
             onLcdContentUpdate = { replayLcd = it }, initialCursorNanos = replayAt, impactArchiveUri = replayUri,
             resolveSpeciesNames = viewModel::getAllSpeciesNames,
             resolveSpeciesId = { viewModel.getPokemonByName(it)?.id },

@@ -8,8 +8,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -180,7 +183,33 @@ fun MatchArchiveDirectoryScreen(
     }
 
     PublishMatchLcd(onLcdContentUpdate) {
-        MatchLcdColumn {
+        if (replaySelection) {
+            Column(
+                Modifier.fillMaxSize().padding(horizontal = 4.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                when {
+                    busy -> {
+                        ReplayLcdText("Reading saved matches…", heading = true)
+                        LinearProgressIndicator(Modifier.fillMaxWidth(), color = TerminalGreen)
+                    }
+                    selectedEntry != null -> {
+                        ReplayLcdText(dateLabel(selectedEntry), heading = true)
+                        ReplayLcdText(selectedEntry.resultLabel)
+                        ReplayLcdButton(
+                            "Play match", ::openSelected, Modifier.fillMaxWidth(),
+                            enabled = selectedEntry.readError == null,
+                        )
+                        ReplayLcdText("You · ${teamLabel(selectedEntry.summary?.player?.species)}")
+                        ReplayLcdText("Opponent · ${teamLabel(selectedEntry.summary?.opponent?.species)}")
+                        selectedEntry.readError?.let { ReplayLcdText(it) }
+                    }
+                    else -> ReplayLcdText("No saved matches yet.", heading = true)
+                }
+                errorMessage?.let { ReplayLcdText(it) }
+                ReplayLcdButton("Back", { latestBack() }, Modifier.fillMaxWidth())
+            }
+        } else MatchLcdColumn {
             when {
                 busy -> MatchLcdText("READING SAVED MATCHES…")
                 selectedEntry != null -> {
@@ -190,7 +219,7 @@ fun MatchArchiveDirectoryScreen(
                 else -> MatchLcdText("No saved matches yet.")
             }
             errorMessage?.let { MatchLcdText(it) }
-            MatchLcdButton(if (replaySelection) "PLAY MATCH" else "OPEN SUMMARY", ::openSelected, selected = selectedEntry != null,
+            MatchLcdButton("OPEN SUMMARY", ::openSelected, selected = selectedEntry != null,
                 enabled = !busy && selectedEntry != null)
             MatchLcdButton("BACK", { latestBack() })
         }
@@ -237,5 +266,20 @@ fun MatchArchiveDirectoryScreen(
             TerminalText(if (busy) "READING SAVED MATCHES…" else "↑/↓ MATCH   A $action   B BACK",
                 color = TerminalDimGreen, fontSize = 11.sp)
         }
+    }
+}
+
+@Composable
+internal fun ReplayOpeningLcd(error: String?, onBack: () -> Unit) {
+    Column(
+        Modifier.fillMaxSize().padding(horizontal = 4.dp).verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        ReplayLcdText(if (error == null) "Reading saved match…" else "Unable to open match", heading = true)
+        if (error == null) {
+            LinearProgressIndicator(Modifier.fillMaxWidth(), color = TerminalGreen)
+        }
+        ReplayLcdButton("Back", onBack, Modifier.fillMaxWidth())
+        error?.let { ReplayLcdText(it) }
     }
 }

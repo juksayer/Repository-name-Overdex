@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -110,7 +112,7 @@ fun ReplayEditorScreen(
         queue = items
         playback = null
         completed = false
-        work("OPENING CLIP…") {
+        work("Opening clip…") {
             val archive = withContext(Dispatchers.IO) { store.loadSource(clip) }
             val model = withContext(Dispatchers.Default) { MatchReplayModel(archive) }
             check(clip.startMonotonicTimeNanos >= model.startNanos &&
@@ -160,7 +162,6 @@ fun ReplayEditorScreen(
                 },
             )
         }
-        BackHandler { playback = null }
         return
     }
 
@@ -173,9 +174,9 @@ fun ReplayEditorScreen(
         EditorPage.EDIT -> draft?.entries?.size ?: 0
     }
     val actions = when (page) {
-        EditorPage.CLIPS -> listOf("PREVIEW CLIP", "ADD TO COMPILATION", "NAME / NOTES", "COMPILATIONS", "OPEN MATCHES", "BACK")
-        EditorPage.COMPILATIONS -> listOf("PLAY", "EDIT", "NEW COMPILATION", "CLIPS", "BACK")
-        EditorPage.EDIT -> listOf("PREVIEW", "MOVE EARLIER", "MOVE LATER", "REMOVE FROM ORDER", "ADD CLIPS", "SAVE COMPILATION", "BACK")
+        EditorPage.CLIPS -> listOf("Preview clip", "Add to compilation", "Name and notes", "Compilations", "Open matches", "Back")
+        EditorPage.COMPILATIONS -> listOf("Play compilation", "Edit compilation", "New compilation", "Clips", "Back")
+        EditorPage.EDIT -> listOf("Preview compilation", "Move earlier", "Move later", "Remove from order", "Add clips", "Save compilation", "Back")
     }
     LaunchedEffect(page, selected, count) {
         if (count > 0) listState.animateScrollToItem(selected.coerceIn(0, count - 1))
@@ -269,31 +270,38 @@ fun ReplayEditorScreen(
     }
 
     PublishMatchLcd(onLcdContentUpdate) {
-        MatchLcdColumn {
-            MatchLcdText(when (page) {
-                EditorPage.CLIPS -> clip?.title ?: "CLIP LIBRARY"
-                EditorPage.COMPILATIONS -> compilation?.title ?: "COMPILATIONS"
+        val scroll = rememberScrollState()
+        LaunchedEffect(page, busy, message) {
+            if (busy || message != null) scroll.scrollTo(0)
+        }
+        Column(
+            Modifier.fillMaxSize().padding(horizontal = 4.dp).verticalScroll(scroll),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            ReplayLcdText(when (page) {
+                EditorPage.CLIPS -> clip?.title ?: "Clip library"
+                EditorPage.COMPILATIONS -> compilation?.title ?: "Compilations"
                 EditorPage.EDIT -> "${draft?.title.orEmpty()}${if (dirty) " *" else ""}"
-            })
-            if (busy) { MatchLcdText(message ?: "WORKING…"); LinearProgressIndicator(Modifier.fillMaxWidth()) }
-            else message?.let { MatchLcdText(it) }
-            // Keep progress visible even when the user was scrolled to a lower action.
+            }, heading = true)
+            if (busy) {
+                ReplayLcdText(message ?: "Working…")
+                LinearProgressIndicator(Modifier.fillMaxWidth(), color = TerminalGreen)
+            } else message?.let { ReplayLcdText(it) }
             if (!busy) {
-                MatchLcdText("↑/↓ ITEM   ←/→ ACTION   A SELECT")
                 actions.forEachIndexed { index, title ->
-                    MatchLcdButton(title, { act(index) }, selected = action == index)
+                    ReplayLcdButton(title, { act(index) }, Modifier.fillMaxWidth(), focused = action == index)
                 }
             }
             if (page == EditorPage.EDIT && !busy) {
-                MatchLcdText("HOLD AND DRAG A CLIP TO REORDER")
+                ReplayLcdText("Hold and drag a clip to reorder.")
                 draft?.entries.orEmpty().forEach { item ->
                     key(item.id) {
                         val index = draft!!.entries.indexOfFirst { it.id == item.id }
                         val name = clips.firstOrNull { it.excerptId == item.excerptId }?.title ?: "Missing clip"
-                        val step = with(LocalDensity.current) { 40.dp.toPx() }
+                        val step = with(LocalDensity.current) { 48.dp.toPx() }
                         val latestMove by rememberUpdatedState<(Int) -> Unit>({ delta -> move(item.id, delta) })
-                        Text("${index + 1}. $name", color = TerminalGreen, fontSize = 11.sp,
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp)
+                        ReplayLcdText("${index + 1}. $name",
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
                                 .border(1.dp, TerminalGreen.copy(alpha = .35f)).padding(6.dp)
                                 .pointerInput(item.id) {
                                     var distance = 0f
@@ -316,7 +324,7 @@ fun ReplayEditorScreen(
         TerminalHeader(if (page == EditorPage.EDIT) "COMPILATION EDITOR" else if (page == EditorPage.CLIPS) "CLIP LIBRARY" else "COMPILATIONS")
         if (count == 0) Text(
             if (page == EditorPage.CLIPS) "Open a match, choose Open Replay, then mark a start and end on its LCD to save your first clip."
-            else if (page == EditorPage.EDIT) "Choose ADD CLIPS to build this compilation."
+            else if (page == EditorPage.EDIT) "Choose Add clips to build this compilation."
             else "Create a compilation to arrange clips from different matches.",
             color = TerminalGreen, modifier = Modifier.padding(8.dp))
         LazyColumn(state = listState, verticalArrangement = Arrangement.spacedBy(12.dp)) {

@@ -79,6 +79,7 @@ fun MatchArchiveViewerScreen(
     resolveSpeciesNames: suspend () -> Set<String> = { emptySet() },
     onOpenEditor: (() -> Unit)? = null,
     startInReplay: Boolean = false,
+    onReplayVisibilityChange: (Boolean) -> Unit = {},
 ) {
     val context = LocalContext.current
     var selectedIndex by remember { mutableIntStateOf(0) }
@@ -95,6 +96,7 @@ fun MatchArchiveViewerScreen(
     val scope = rememberCoroutineScope()
 
     val selectedArticle = archive.articles.getOrNull(selectedIndex)
+    SideEffect { onReplayVisibilityChange(showReplay) }
 
     fun markStart() {
         if (savingExcerpt || excerptEnd != null) return
