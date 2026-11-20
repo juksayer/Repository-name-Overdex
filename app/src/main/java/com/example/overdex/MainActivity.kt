@@ -1854,6 +1854,7 @@ fun PokedexApp(
                                     viewModel.getPokemonByName(speciesName)?.chargedMoves.orEmpty()
                                 },
                                 impactArchiveUri = sourceUri,
+                                replayPreparation = viewModel.replayPreparation,
                                 resolveSpeciesNames = viewModel::getAllSpeciesNames,
                             )
                         }

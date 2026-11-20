@@ -2,6 +2,7 @@ package com.example.overdex.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
@@ -24,10 +25,13 @@ import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.example.overdex.battle.archive.MatchArchiveSerializer
 import com.example.overdex.battle.replay.MatchReplayModel
+import com.example.overdex.battle.replay.ReplayEnergyState
+import com.example.overdex.battle.replay.ReplayTeamResources
 import com.example.overdex.data.GameMasterLoader
 import com.example.overdex.model.Move
 import com.example.overdex.model.PokemonType
 import com.example.overdex.ui.screens.observatory.ReplayBattlefield
+import com.example.overdex.ui.screens.observatory.ReplayResourceBadge
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -38,6 +42,18 @@ import kotlin.math.abs
 /** Uses the October 16 SFX recording and the installed reference catalogue at CRT dimensions. */
 class ReplayChargeLayoutDeviceTest {
     @get:Rule val compose = createComposeRule()
+
+    @Test fun badgeShowsAnEstimatedRangeAndKeepsUnknownDistinctFromZero() {
+        compose.setContent {
+            Row {
+                ReplayResourceBadge(ReplayTeamResources(), "Player", ReplayEnergyState(0, 0, 60, 40))
+                ReplayResourceBadge(ReplayTeamResources(), "Opponent")
+            }
+        }
+        compose.onNodeWithText("E ~0–40/100").assertIsDisplayed()
+        compose.onNodeWithText("E —").assertIsDisplayed()
+        compose.onNodeWithText("E ~0/100").assertDoesNotExist()
+    }
 
     @Test fun recordedLoadoutsAndEnergyFollowSwitchAndRewind() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -83,7 +99,11 @@ class ReplayChargeLayoutDeviceTest {
                 listOf("Player" to scene.playerEnergy, "Opponent" to scene.opponentEnergy).forEach { (side, energy) ->
                     compose.onNodeWithContentDescription("$side energy", useUnmergedTree = true)
                         .assertIsDisplayed().assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription,
-                            "Approximately ${energy!!.recordedEnergy} of 100, from recorded moves"))
+                            when {
+                                energy == null -> "Energy unknown"
+                                energy.isRange -> "Estimated energy between ${energy.recordedEnergy} and ${energy.maximumEnergy} of 100"
+                                else -> "Approximately ${energy.recordedEnergy} of 100, from recorded moves"
+                            }))
                 }
                 val stage = compose.onNodeWithTag("replay-stage").fetchSemanticsNode().boundsInRoot
                 val buttons = names.mapIndexed { index, name ->

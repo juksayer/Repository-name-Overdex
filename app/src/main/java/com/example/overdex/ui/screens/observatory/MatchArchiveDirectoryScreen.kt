@@ -199,6 +199,7 @@ fun MatchArchiveDirectoryScreen(
                         ReplayLcdButton(
                             "Play match", ::openSelected, Modifier.fillMaxWidth(),
                             enabled = selectedEntry.readError == null,
+                            compact = true,
                         )
                         ReplayLcdText("You · ${teamLabel(selectedEntry.summary?.player?.species)}")
                         ReplayLcdText("Opponent · ${teamLabel(selectedEntry.summary?.opponent?.species)}")
@@ -207,7 +208,7 @@ fun MatchArchiveDirectoryScreen(
                     else -> ReplayLcdText("No saved matches yet.", heading = true)
                 }
                 errorMessage?.let { ReplayLcdText(it) }
-                ReplayLcdButton("Back", { latestBack() }, Modifier.fillMaxWidth())
+                ReplayLcdButton("Back", { latestBack() }, Modifier.fillMaxWidth(), compact = true)
             }
         } else MatchLcdColumn {
             when {
@@ -279,7 +280,7 @@ internal fun ReplayOpeningLcd(error: String?, onBack: () -> Unit) {
         if (error == null) {
             LinearProgressIndicator(Modifier.fillMaxWidth(), color = TerminalGreen)
         }
-        ReplayLcdButton("Back", onBack, Modifier.fillMaxWidth())
+        ReplayLcdButton("Back", onBack, Modifier.fillMaxWidth(), compact = true)
         error?.let { ReplayLcdText(it) }
     }
 }

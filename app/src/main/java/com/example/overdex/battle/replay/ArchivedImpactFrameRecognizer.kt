@@ -17,6 +17,7 @@ import kotlin.math.abs
 
 /** Independent observations in Replay. The full-frame digest and its pixel-matched crop
  * identify the source. Orange records impact support, never a zero-HP measurement. */
+@kotlinx.serialization.Serializable
 data class ReplayImpactFrame(
     val announcementCropId: String, val frameSha256: String, val at: Long,
     val actor: ArchivedPlayerTeamSlotConfigured, val move: String,

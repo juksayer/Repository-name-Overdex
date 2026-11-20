@@ -95,9 +95,12 @@ internal fun ReplayResourceBadge(resources: ReplayTeamResources, side: String, e
 
 @Composable
 private fun ReplayEnergyLabel(energy: ReplayEnergyState?, side: String) {
-    Text(energy?.let { "E ~${it.recordedEnergy}/100" } ?: "E —", color = Color(0xFFDBEDE4), fontSize = 12.sp,
+    Text(energy?.let { "E ~${it.balanceLabel}/100" } ?: "E —", color = Color(0xFFDBEDE4), fontSize = 12.sp,
         maxLines = 1, softWrap = false, modifier = Modifier.semantics {
             contentDescription = "$side energy"
-            stateDescription = energy?.let { "Approximately ${it.recordedEnergy} of 100, from recorded moves" } ?: "Not recorded"
+            stateDescription = energy?.let {
+                if (it.isRange) "Estimated energy between ${it.recordedEnergy} and ${it.maximumEnergy} of 100"
+                else "Approximately ${it.recordedEnergy} of 100, from recorded moves"
+            } ?: "Energy unknown"
         })
 }

@@ -66,6 +66,10 @@ class ReplayStatChangesTest {
         assertEquals("Crunch", crunch.moveName)
         assertEquals("DEF ↓", crunch.label)
         assertEquals("Golbat", model.sceneAt(crunchSound.monotonicTimeNanos!!).player?.speciesName)
+        val crunchMarker = model.eventMarkers.single { it.label.contains("Crunch") && it.kind == ReplayEventMarkerKind.DEBUFF }
+        assertEquals("PLAYER", crunchMarker.side)
+        assertEquals("OPPONENT", crunchMarker.initiatingSide)
+        assertNull(model.eventMarkers.single { it.atNanos == third.monotonicTimeNanos }.initiatingSide)
         val missingAnnouncement = model.sceneAt(third.monotonicTimeNanos!!).statChanges.single()
         assertNull(missingAnnouncement.side)
         assertNull(missingAnnouncement.moveName)

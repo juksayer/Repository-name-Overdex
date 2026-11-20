@@ -7,6 +7,7 @@ import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.battle.observation.BattleCropContracts
 import com.example.overdex.battle.observation.SpeciesTextResolver
 import com.example.overdex.data.observation.SpeciesNameRecognizer
+import com.example.overdex.data.observation.OcrPriority
 import com.example.overdex.data.observation.OcrField
 import com.example.overdex.data.observation.OcrHeightProfile
 import com.example.overdex.data.observation.OcrSourceContext
@@ -42,6 +43,7 @@ object ArchivedSpeciesCropRecognizer {
         resolveSpeciesId: suspend (String) -> Int?,
         onProgress: (ReplayCropProgress) -> Unit,
         cache: ReplayReviewCache?,
+        onIncomplete: () -> Unit = {},
     ): List<ReplayIdentityObservation> = withContext(Dispatchers.IO) {
         if (!archive.mediaIncluded || knownSpeciesNames.isEmpty()) return@withContext emptyList()
         val targets = listOf(
@@ -55,7 +57,11 @@ object ArchivedSpeciesCropRecognizer {
         val names = cached?.takeIf { it.size == targets.size } ?: run readTargets@{
             val artifactTargets = targets.associateBy { it.payload.artifactPath }
             onProgress(ReplayCropProgress("READING CROPS", 0, artifactTargets.size))
-            val encodedArtifacts = readSelectedArtifacts(openArchive() ?: return@readTargets emptyList<String?>(), artifactTargets) { completed ->
+            val input = openArchive() ?: run {
+                onIncomplete()
+                return@readTargets emptyList<String?>()
+            }
+            val encodedArtifacts = readSelectedArtifacts(input, artifactTargets) { completed ->
                 onProgress(ReplayCropProgress("READING CROPS", completed, artifactTargets.size))
             }
             Log.d("REPLAY_SPECIES", "selected=${targets.size} artifacts=${encodedArtifacts.size}")
@@ -78,11 +84,14 @@ object ArchivedSpeciesCropRecognizer {
                     } else try {
                         // New recordings retain the HUD footprint from capture time.
                         // Never use today's HUD position to classify an archived word.
-                        SpeciesNameRecognizer.withReadingTurn {
+                        SpeciesNameRecognizer.withReadingTurn(OcrPriority.NORMAL) {
                             val candidates = recognizeCandidates(bitmap,
                                 OcrSourceContext(target.payload.sourceWidth, target.payload.overlayBounds),
                                 heightProfiles.getValue(target.side))
-                            if (hadReadFailure) complete = false
+                            if (hadReadFailure) {
+                                complete = false
+                                onIncomplete()
+                            }
                             candidates
                         }
                             .firstNotNullOfOrNull { SpeciesTextResolver.resolve(it.text, knownSpeciesNames) }

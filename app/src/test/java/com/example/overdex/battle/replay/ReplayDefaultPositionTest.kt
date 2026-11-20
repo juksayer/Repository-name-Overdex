@@ -4,7 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ReplayDefaultPositionTest {
-    @Test fun `normal replay skips setup while retaining original seek origin`() {
+    @Test fun `normal replay uses recorded match start as seek origin`() {
         val recordingStart = 10L
         assertEquals(70L, replayDefaultPosition(recordingStart, 200, 70, false))
     }

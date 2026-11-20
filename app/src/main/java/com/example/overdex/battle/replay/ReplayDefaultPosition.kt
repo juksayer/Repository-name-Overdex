@@ -1,5 +1,5 @@
 package com.example.overdex.battle.replay
 
-/** Navigation only: the full recording remains available for backwards seeking. */
+/** Start of the playback window, in the original recording clock. Clips use their own bounds. */
 internal fun replayDefaultPosition(start: Long, end: Long, matchStart: Long?, clip: Boolean): Long =
     (if (clip) start else matchStart ?: start).coerceIn(start, end)

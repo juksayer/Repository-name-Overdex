@@ -14,12 +14,12 @@ class ReplayRosterConfirmationTest {
         val actions = (0..60).flatMap { model.sceneAt(it * 100_000_000L).fastMoveActions }.filter { it.side == "PLAYER" }
         assertTrue(actions.isNotEmpty())
         assertTrue(actions.all { it.moveName == null })
-        assertEquals(0, model.sceneAt(6_000_000_000L).playerEnergy?.generated)
+        assertNull(model.sceneAt(6_000_000_000L).playerEnergy)
         assertTrue(model.sceneAt(6_000_000_000L).playerChargedMoves.isEmpty())
         assertEquals(original, MatchArchiveSerializer.serialize(archive))
     }
 
-    @Test fun `observed move evidence after roster confirmation remains usable`() {
+    @Test fun `unconfirmed cadence after roster confirmation can name a move while energy stays unknown`() {
         val base = archive()
         val observation = event("observed", 3.0, ArchivedFastMoveIdentified("PLAYER", "Camerupt", "Incinerate",
             2_500_000_000L, cadenceSampleCount = 3, basis = "HP_BORDER_CADENCE"))
@@ -27,7 +27,7 @@ class ReplayRosterConfirmationTest {
         val actions = (0..60).flatMap { model.sceneAt(it * 100_000_000L).fastMoveActions }.filter { it.side == "PLAYER" }
         assertTrue(actions.isNotEmpty())
         assertEquals(setOf("Incinerate"), actions.map { it.moveName }.toSet())
-        assertEquals(0, model.sceneAt(6_000_000_000L).playerEnergy?.generated)
+        assertNull(model.sceneAt(6_000_000_000L).playerEnergy)
     }
 
     private fun archive(): MatchArchive {

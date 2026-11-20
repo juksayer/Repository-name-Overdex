@@ -6,6 +6,7 @@ import java.io.File
 import java.io.InputStream
 import kotlin.math.abs
 
+@kotlinx.serialization.Serializable
 data class ReplayImpactEvidence(val frame: ReplayImpactFrame, val sounds: ReplayAudioRecovery)
 
 internal object ReplayImpactFinish {

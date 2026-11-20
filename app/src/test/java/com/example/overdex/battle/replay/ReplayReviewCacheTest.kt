@@ -47,4 +47,29 @@ class ReplayReviewCacheTest {
         cache.write(huge, "a".repeat(512 * 1024))
         assertNull(cache.read<String>(huge))
     }
+
+    @Test fun `complete review keeps its move and hit provenance across cache reopen`() = runBlocking {
+        val archive = MatchArchive(matchId = "match", articles = emptyList())
+        val actor = com.example.overdex.battle.archive.ArchivedPlayerTeamSlotConfigured(
+            1, "Turtonator", 776, "Incinerate", listOf("Dragon Pulse"),
+        )
+        val fragment = ReplayAudioFragment("source-audio", 42L, "clip", "ref", 3, 2, 12, .97f)
+        val charge = ReplayRecoveredCharge("Dragon Pulse", 43L, 18L, listOf(fragment))
+        val audio = ReplayAudioRecovery(charges = listOf(charge))
+        val evidence = ReplayReviewEvidence(
+            listOf(ReplayIdentityObservation("OPPONENT", "Vaporeon", 134, 41L, "CROP", articleId = "species-crop")),
+            audio,
+            ReplayImpactEvidence(ReplayImpactFrame("banner", "frame", 43L, actor, "Dragon Pulse",
+                "impact", 45L, listOf("departure"), 47L, charge), audio),
+            ReplayLastOpponentFastEvidence(audio, emptyMap(), setOf("Water Gun"), "source-cry"),
+        )
+        suspend fun open(zip: String) =
+            requireNotNull(ReplayReviewCache.open(temp.root, 1L, archive) { zip.byteInputStream() })
+        val cache = open("recording")
+        val key = cache.key(listOf("prepared-review-v1"))
+        cache.write(key, evidence)
+        assertEquals(evidence, open("recording").read<ReplayReviewEvidence>(key))
+        val refreshed = open("recording-with-late-evidence")
+        assertNull(refreshed.read<ReplayReviewEvidence>(refreshed.key(listOf("prepared-review-v1"))))
+    }
 }

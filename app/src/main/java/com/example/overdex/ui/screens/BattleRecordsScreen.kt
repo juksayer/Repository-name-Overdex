@@ -182,6 +182,7 @@ fun BattleRecordsScreen(viewModel: PokedexViewModel, ownedId: String? = null, on
             onUp = { replayUp = it }, onDown = { replayDown = it }, onA = { replayA = it }, onB = { replayB = it },
             onLeft = { replayLeft = it }, onRight = { replayRight = it },
             onLcdContentUpdate = { replayLcd = it }, initialCursorNanos = replayAt, impactArchiveUri = replayUri,
+            replayPreparation = viewModel.replayPreparation,
             resolveSpeciesNames = viewModel::getAllSpeciesNames,
             resolveSpeciesId = { viewModel.getPokemonByName(it)?.id },
             resolveSpeciesTypes = { viewModel.getPokemonByName(it)?.types.orEmpty() },

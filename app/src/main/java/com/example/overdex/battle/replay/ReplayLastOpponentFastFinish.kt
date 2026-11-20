@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /** Retrospective audio inference. The cry is a presentation boundary, never a measured damage tick. */
+@kotlinx.serialization.Serializable
 data class ReplayLastOpponentFastEvidence(
     val audio: ReplayAudioRecovery,
     val playerMoves: Map<String, Move>,

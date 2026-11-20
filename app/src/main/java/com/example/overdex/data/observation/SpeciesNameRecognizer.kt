@@ -19,9 +19,12 @@ object SpeciesNameRecognizer {
     /** Initialize ML Kit during deployment, before an entry cue starts the latency budget. */
     suspend fun warmUp() = PrioritySpeciesTextRecognizer.warmUp()
 
-    /** One urgent turn, with no outer species mutex hiding work from the scheduler. */
-    internal suspend fun <T> withReadingTurn(block: suspend ReadingTurn.() -> T): T =
-        SharedLatinTextRecognizer.withReadingTurn(OcrPriority.URGENT) { read ->
+    /** Reserve one turn with the scheduler before selecting OCR treatments. */
+    internal suspend fun <T> withReadingTurn(
+        priority: OcrPriority = OcrPriority.URGENT,
+        block: suspend ReadingTurn.() -> T,
+    ): T =
+        SharedLatinTextRecognizer.withReadingTurn(priority) { read ->
             ReadingTurn(read).block()
         }
 

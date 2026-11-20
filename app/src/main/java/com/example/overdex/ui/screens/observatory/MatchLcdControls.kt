@@ -24,13 +24,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.focused
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.ui.theme.TerminalGreen
@@ -119,6 +123,8 @@ private val replayLcdHeading = replayLcdBody.copy(fontSize = 16.sp, lineHeight =
 private val replayLcdControl = replayLcdBody.copy(fontWeight = FontWeight.Medium)
 private val replayLcdActionPadding = 6.dp
 private val replayLcdActionMinimum = 48.dp
+private val replayLcdCompactPadding = 2.dp
+private val replayLcdCompactControl = replayLcdControl.copy(fontSize = 13.sp, lineHeight = 16.sp)
 
 @Composable
 internal fun ReplayLcdText(text: String, modifier: Modifier = Modifier, heading: Boolean = false) {
@@ -136,29 +142,45 @@ internal fun ReplayLcdButton(
     alignedStart: Boolean = true,
     role: Role = Role.Button,
     revealFocus: Boolean = focused,
+    compact: Boolean = false,
 ) {
     val requester = remember { BringIntoViewRequester() }
     LaunchedEffect(focused, revealFocus) { if (focused && revealFocus) requester.bringIntoView() }
-    val background = when {
-        focused -> Color(0xFF284731)
-        selected == true -> Color(0xFF203728)
-        else -> Color(0xFF1B241D)
+    val frame = if (compact) Modifier else {
+        val background = when {
+            focused -> Color(0xFF284731)
+            selected == true -> Color(0xFF203728)
+            else -> Color(0xFF1B241D)
+        }
+        Modifier.sizeIn(minWidth = replayLcdActionMinimum, minHeight = replayLcdActionMinimum)
+            .background(background)
+            .border(1.dp, if (focused) replayLcdInk else Color(0xFF53745B))
     }
     Box(
         modifier = modifier
-            .sizeIn(minWidth = replayLcdActionMinimum, minHeight = replayLcdActionMinimum)
+            .then(frame)
             .bringIntoViewRequester(requester)
-            .background(background)
-            .border(1.dp, if (focused) replayLcdInk else Color(0xFF53745B))
             .semantics {
                 this.focused = focused
                 if (selected != null) this.selected = selected
             }
             .clickable(enabled = enabled, role = role, onClick = onClick)
-            .padding(horizontal = replayLcdActionPadding, vertical = 6.dp),
+            .padding(
+                horizontal = if (compact) replayLcdCompactPadding else replayLcdActionPadding,
+                vertical = if (compact) 1.dp else 6.dp,
+            ),
         contentAlignment = if (alignedStart) Alignment.CenterStart else Alignment.Center,
     ) {
-        Text(label, color = if (enabled) replayLcdInk else replayLcdMutedInk, style = replayLcdControl)
+        Text(
+            label,
+            color = when {
+                !enabled -> replayLcdMutedInk
+                compact && (focused || selected == true) -> Color(0xFFABF5BA)
+                else -> replayLcdInk
+            },
+            style = if (compact) replayLcdCompactControl else replayLcdControl,
+            textDecoration = TextDecoration.Underline.takeIf { compact && focused },
+        )
     }
 }
 
@@ -179,9 +201,8 @@ internal fun ReplayLcdViewTabs(
         val measurer = rememberTextMeasurer()
         val widths = remember(density, measurer) {
             views.map { view ->
-                val text = measurer.measure(view.label, style = replayLcdControl, softWrap = false)
-                with(density) { (text.size.width + 1).toDp() + replayLcdActionPadding * 2 }
-                    .coerceAtLeast(replayLcdActionMinimum)
+                val text = measurer.measure(view.label, style = replayLcdCompactControl, softWrap = false)
+                with(density) { (text.size.width + 1).toDp() + replayLcdCompactPadding * 2 }
             }
         }
         val compact = maxWidth.value < widths.sumOf { it.value.toDouble() } + spacing.value * (views.size - 1)
@@ -191,26 +212,27 @@ internal fun ReplayLcdViewTabs(
             chooserOpen -> Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
                 views.forEach { view ->
                     ReplayLcdButton(view.label, { onViewSelected(view) }, Modifier.fillMaxWidth(),
-                        focused = focusedView == view, selected = current == view)
+                        focused = focusedView == view, selected = current == view, compact = true)
                 }
             }
             compact -> ReplayLcdButton(
                 "Change view",
                 onChooseView,
                 Modifier.fillMaxWidth().semantics { stateDescription = "Current view ${current.label}" },
-                focused = changeViewFocused,
+                focused = changeViewFocused, compact = true,
             )
             else -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spacing)) {
                 views.forEachIndexed { index, view ->
                     ReplayLcdButton(view.label, { onViewSelected(view) }, Modifier.weight(widths[index].value),
-                        focused = focusedView == view, selected = current == view, alignedStart = false, role = Role.Tab)
+                        focused = focusedView == view, selected = current == view, alignedStart = false,
+                        role = Role.Tab, compact = true)
                 }
             }
         }
     }
 }
 
-/** Event details use the width of the display independently of the navigation buttons. */
+/** Each side shows its latest event at the cursor. A selected event wins ties in its own column. */
 @Composable
 internal fun ReplayLcdEventDetails(
     markers: List<ReplayEventMarker>,
@@ -222,10 +244,46 @@ internal fun ReplayLcdEventDetails(
 ) {
     val index = ReplayEventMarkerNavigation.currentIndex(markers, cursorNanos, selectedId)
     val current = markers.getOrNull(index)
+    val visible = markers.asReversed().asSequence().dropWhile { it.atNanos > cursorNanos }
+    val player = current?.takeIf { it.initiatingSide == "PLAYER" }
+        ?: visible.firstOrNull { it.initiatingSide == "PLAYER" }
+    val opponent = current?.takeIf { it.initiatingSide == "OPPONENT" }
+        ?: visible.firstOrNull { it.initiatingSide == "OPPONENT" }
+
     if (current == null) {
-        ReplayLcdText(if (markers.isEmpty()) "No event markers" else "Select Next to see the first event.")
+        if (markers.isEmpty()) ReplayLcdText("No event markers")
         return
     }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (current.initiatingSide == null) {
+            ReplayLcdEvent(current, startNanos, matchStartNanos, archiveStartNanos,
+                Modifier.testTag("replay-events-shared"))
+        }
+        if (player != null || opponent != null) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.weight(1f).testTag("replay-events-player")) {
+                        ReplayLcdText("You")
+                        player?.let { ReplayLcdEvent(it, startNanos, matchStartNanos, archiveStartNanos) }
+                    }
+                    Column(Modifier.weight(1f).testTag("replay-events-opponent")) {
+                        ReplayLcdText("Opponent")
+                        opponent?.let { ReplayLcdEvent(it, startNanos, matchStartNanos, archiveStartNanos) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReplayLcdEvent(
+    current: ReplayEventMarker,
+    startNanos: Long,
+    matchStartNanos: Long?,
+    archiveStartNanos: Long,
+    modifier: Modifier = Modifier,
+) {
     val faint = current.kind == ReplayEventMarkerKind.FAINT
     val side = when (current.side) {
         "PLAYER" -> "You"
@@ -245,26 +303,44 @@ internal fun ReplayLcdEventDetails(
     }
     val mirrorFaint = faint && attribution != null &&
         BattleSpeciesDisplay.name(attribution.attackerSpeciesName) == faintName
-    val visibleSide = side.takeIf { !faint || attribution == null || mirrorFaint }
+    val affectedSide = side.takeIf {
+        mirrorFaint || (current.initiatingSide != current.side &&
+            (faint && attribution == null || current.kind in setOf(ReplayEventMarkerKind.BUFF, ReplayEventMarkerKind.DEBUFF)))
+    }
     val qualification = if (standardFaint) {
         current.label.split(" · ").drop(if (byline == null) 2 else 3).joinToString(" · ").ifBlank { null }
     } else null
+    val title = when {
+        faintName != null -> "$faintName fainted"
+        current.label.startsWith("Fast move · name unknown") ->
+            current.label.replaceFirst("Fast move · name unknown", "Unknown fast move")
+        current.label.startsWith("Charged move · name unknown") ->
+            current.label.replaceFirst("Charged move · name unknown", "Unknown charged move")
+        else -> current.label.removePrefix("Fast move · ").removePrefix("Charged move · ")
+    }
+    val shared = current.initiatingSide == null
     Column(
-        Modifier.fillMaxWidth().semantics {
+        modifier.fillMaxWidth().semantics {
             contentDescription = "Replay event details"
-            stateDescription = listOfNotNull("Event ${index + 1} of ${markers.size}", side, current.description)
-                .joinToString(" · ")
+            stateDescription = current.description
         },
+        horizontalAlignment = if (shared) Alignment.CenterHorizontally else Alignment.Start,
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Box(Modifier.size(7.dp).background(replayMarkerColor(current.kind)))
-            ReplayLcdText(faintName?.let { "$it fainted" } ?: current.label, Modifier.weight(1f), heading = true)
+            ReplayLcdText(title, Modifier.weight(1f, fill = !shared), heading = true)
         }
-        visibleSide?.let { ReplayLcdText(it) }
+        affectedSide?.let { ReplayLcdText(it) }
+        if (shared && current.kind != ReplayEventMarkerKind.MATCH_START) {
+            ReplayLcdText(if (faint) "Cause unconfirmed" else "Initiating side unconfirmed")
+        }
         byline?.let { ReplayLcdText(it) }
         qualification?.let { ReplayLcdText(it) }
         if (faint) ReplayLcdText(formatReplayFaintTime(current.faintTiming, matchStartNanos, archiveStartNanos))
-        else ReplayLcdText(formatReplayTime(current.atNanos - startNanos))
+        else if (current.kind != ReplayEventMarkerKind.MATCH_START) ReplayLcdText(formatReplayTime(current.atNanos - startNanos))
         current.inferenceExplanation?.let { ReplayLcdText(it) }
     }
 }
@@ -292,7 +368,7 @@ internal fun ReplayEventMarkerStrip(
         } }.forEach { marker ->
             val x = radius + (size.width - 2 * radius).coerceAtLeast(0f) *
                 ((marker.atNanos - startNanos).toDouble() / duration).toFloat()
-            val y = when (marker.side) {
+            val y = when (marker.initiatingSide) {
                 "PLAYER" -> radius
                 "OPPONENT" -> size.height - radius
                 else -> size.height / 2

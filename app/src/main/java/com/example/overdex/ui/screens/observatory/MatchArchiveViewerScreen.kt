@@ -76,6 +76,7 @@ fun MatchArchiveViewerScreen(
     resolveChargedMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
     resolveFastMoves: suspend (speciesName: String) -> List<com.example.overdex.model.Move> = { emptyList() },
     impactArchiveUri: android.net.Uri? = null,
+    replayPreparation: com.example.overdex.battle.replay.ReplayPreparationCoordinator? = null,
     resolveSpeciesNames: suspend () -> Set<String> = { emptySet() },
     onOpenEditor: (() -> Unit)? = null,
     startInReplay: Boolean = false,
@@ -171,6 +172,7 @@ fun MatchArchiveViewerScreen(
             resolveChargedMoves = resolveChargedMoves,
             resolveFastMoves = resolveFastMoves,
             impactArchiveUri = impactArchiveUri,
+            replayPreparation = replayPreparation,
             resolveSpeciesNames = resolveSpeciesNames
         )
         return

@@ -2,7 +2,10 @@ package com.example.overdex.battle.replay
 
 import com.example.overdex.battle.archive.*
 import com.example.overdex.model.PokemonType
+import java.io.File
+import java.util.zip.ZipFile
 import org.junit.Assert.*
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 
 class ReplayEnergyTimingTest {
@@ -13,6 +16,49 @@ class ReplayEnergyTimingTest {
     private fun energy(id: String, at: Double, use: String) = event(id, at, ArchivedFastMoveEnergyDerived("OPPONENT", "Powder Snow", 1, 8, 8, "OBSERVED_USE"), listOf(use))
     private fun witness(id: String, at: Double) = ReplayFastMoveWitness("OPPONENT", (at * 1e9).toLong(), "Powder Snow", PokemonType.ICE,
         1_000_000_000, 0, 20_000_000_000, setOf("HP_DAMAGE_TICK"), setOf(id), setOf((at * 1e9).toLong()))
+
+    @Test fun `Moondrop Moonblast with missing fast move identity shows a bounded remainder`() {
+        val folder = System.getenv("OVERDEX_REPLAY_ENERGY_RECORDINGS")
+        assumeTrue("Set OVERDEX_REPLAY_ENERGY_RECORDINGS to the original match backups", !folder.isNullOrBlank())
+        val file = File(folder, "2026-11-19_19-51-11_60de85bb-24d4-468c-910a-814a3105f26e.odxmatch.zip")
+        val archive = ZipFile(file).use { zip ->
+            zip.getInputStream(zip.getEntry("timeline.json")).bufferedReader().use {
+                MatchArchiveSerializer.deserialize(it.readText())
+            }
+        }
+        val charge = archive.articles.single {
+            val spend = it.payload as? ArchivedChargedMoveEnergySpent
+            spend?.speciesName == "Cresselia" && spend.side == "PLAYER" && spend.moveName == "Moonblast"
+        }
+        val cost = (charge.payload as ArchivedChargedMoveEnergySpent).energyCost
+        val replay = MatchReplayModel(archive)
+        val scene = replay.sceneAt(requireNotNull(charge.monotonicTimeNanos))
+        assertEquals("Cresselia", scene.player?.speciesName)
+        assertEquals(ReplayEnergyState(0, 0, cost, 100 - cost), scene.playerEnergy)
+        println("Moonblast cost $cost; Replay estimated remainder ${scene.playerEnergy?.balanceLabel}")
+    }
+
+    @Test fun `a supported hit with trusted reference gain earns energy without a saved derivation`() {
+        val records = listOf(use("hit", 3.0))
+        val hit = witness("hit", 3.0).copy(supportedReferenceGain = 8)
+        val predicted = hit.copy(observedAtNanos = 4_000_000_000L, articleIds = emptySet(),
+            evidenceKinds = setOf(ReplayFastMoveRhythm.INFERRED))
+        val cycles = ReplayFastMoveSchedule.build(listOf(hit, predicted))
+        val track = ReplayEnergyTrack(records, { _, _ -> ReplayCombatant("Sealeo", 364, 0) }, cycles)
+        assertEquals(0, track.stateAt("OPPONENT", "Sealeo", 2_999_999_999L)?.recordedEnergy)
+        assertEquals(ReplayEnergyState(8, 8, 0), track.stateAt("OPPONENT", "Sealeo", 4_100_000_000L))
+    }
+
+    @Test fun `an underfunded witnessed charge narrows an incomplete balance without creating energy`() {
+        val charge = event("charge", 6.0, ArchivedChargedMoveEnergySpent("OPPONENT", "Sealeo", "Test Charge", 45, "TEST"))
+        val first = witness("first", 3.0).copy(supportedReferenceGain = 8)
+        val second = witness("second", 8.0).copy(supportedReferenceGain = 8)
+        val track = ReplayEnergyTrack(listOf(charge), { _, _ -> ReplayCombatant("Sealeo", 364, 0) },
+            ReplayFastMoveSchedule.build(listOf(first, second)))
+        assertEquals(ReplayEnergyState(0, 8, 45, 55), track.stateAt("OPPONENT", "Sealeo", 6_100_000_000L))
+        assertEquals(ReplayEnergyState(8, 16, 45, 63), track.stateAt("OPPONENT", "Sealeo", 8_100_000_000L))
+        assertEquals(ReplayEnergyState(8, 8, 0), track.stateAt("OPPONENT", "Sealeo", 3_100_000_000L))
+    }
 
     @Test fun `merged and excluded attacks cannot add extra energy while replay is idle`() {
         val records = listOf(use("one", 10.0), energy("energy1", 10.0, "one"),

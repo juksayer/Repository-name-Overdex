@@ -670,6 +670,16 @@ invalidates that estimate. The uncertainty window supplies no faint or KO time.
 Only evidence-supported events can change HP, count toward recorded energy or
 receive faint credit. The archive retains its original clocks.
 
+**MOVE-04b — Energy balance in completed Replay.** Use the matching archived
+energy gain for each admitted Fast Move. When that derivation is missing, a
+confirmed move identity or a matching saved team move can supply the reference
+gain at the supported impact. If accepted hits lack an energy value, widen the
+estimate. A recorded spend greater than the accounted balance establishes that
+some gains are missing. Show the possible remainder up to the cap less the
+recorded cost, or unknown when the estimate spans the entire bar. These are
+presentation estimates from the available record. Rhythm-only animations and
+a higher-energy identity tie-break supply no energy gain.
+
 **MOVE-05 — finishing association; bounded Replay implementation November 14.** If an
 existing supported move is directed at the same opposing appearance that an
 independent evidence chain establishes fainted, and source-time ordering and

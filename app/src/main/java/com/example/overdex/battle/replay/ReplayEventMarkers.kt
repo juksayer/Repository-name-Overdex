@@ -19,7 +19,16 @@ data class ReplayEventMarker(
     val faintTiming: ReplayFaintTiming? = null,
     val corroboratedFaintId: String? = null,
     val inferenceExplanation: String? = null,
+    /** Recorded performer for an effect whose subject is the affected Pokémon. */
+    val causeSide: String? = null,
 ) {
+    internal val initiatingSide: String? get() = when (kind) {
+        ReplayEventMarkerKind.MATCH_START -> null
+        ReplayEventMarkerKind.FAINT -> finishingAttribution?.attackingSide ?: causeSide
+        ReplayEventMarkerKind.BUFF, ReplayEventMarkerKind.DEBUFF -> causeSide
+        else -> side
+    }?.takeIf { it == "PLAYER" || it == "OPPONENT" }
+
     val sideLabel: String get() = when (side) {
         "PLAYER" -> "YOU"
         "OPPONENT" -> "OPP"

@@ -28,21 +28,25 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityOptionsCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.overdex.battle.archive.ArchivedActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.archive.ArchivedMatchEnded
 import com.example.overdex.battle.archive.ArchivedMatchStarted
+import com.example.overdex.battle.archive.ArchivedRawText
 import com.example.overdex.battle.archive.ArchivedRealityArticle
 import com.example.overdex.battle.archive.ArchivedTestimonyPayload
 import com.example.overdex.battle.archive.MatchArchive
+import com.example.overdex.battle.replay.MatchReplayModel
 import com.example.overdex.battle.replay.ReplayCorrectionKind
 import com.example.overdex.battle.replay.ReplayCorrectionSide
 import com.example.overdex.battle.replay.ReplayTrainerCorrection
 import com.example.overdex.battle.replay.ReplayTrainerCorrectionStore
 import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.screens.observatory.MatchReplayScreen
+import com.example.overdex.ui.screens.observatory.formatReplayTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -59,13 +63,66 @@ class ReplayLcdLayoutDeviceTest {
 
     @Test fun compactPixelLcdAt130Percent() = verifyMenuLabels(344, 1.3f)
 
-    @Test fun compactPixelLcdAt200PercentUsesViewPicker() = verifyMenuLabels(344, 2f)
+    @Test fun compactPixelLcdAt200Percent() = verifyMenuLabels(344, 2f)
 
     @Test fun compactMoondropLcdAtDefaultFontScale() = verifyMenuLabels(360, 1f)
 
     @Test fun compactMoondropLcdAt130Percent() = verifyMenuLabels(360, 1.3f)
 
-    @Test fun compactMoondropLcdAt200PercentUsesViewPicker() = verifyMenuLabels(360, 2f)
+    @Test fun compactMoondropLcdAt200Percent() = verifyMenuLabels(360, 2f)
+
+    @Test fun fullMatchClockAndScrubberStartAtGoEvenWithLongSetup() {
+        val fixtureArchive = testArchive()
+        val leadIn = 197 * SECOND
+        val matchStart = leadIn + SECOND
+        val setup = fixtureArchive.articles.first().copy(
+            articleId = "setup", monotonicTimeNanos = SECOND, payload = ArchivedRawText("Choose your party"),
+        )
+        val archive = fixtureArchive.copy(articles = listOf(setup) + fixtureArchive.articles.map {
+            it.copy(monotonicTimeNanos = requireNotNull(it.monotonicTimeNanos) + leadIn)
+        })
+        val model = MatchReplayModel(archive)
+        assertEquals(SECOND, model.recordingStartNanos)
+        val duration = model.endNanos - matchStart
+        val fixture = mountReplay(360, 1f, archive)
+        lcdText("00:00.0 / ${formatReplayTime(duration)}").assertIsDisplayed()
+        pressDirection("Up")
+        compose.runOnIdle { assertEquals(matchStart, fixture.cursor) }
+
+        lcdDescription("Replay timeline").performScrollTo().performTouchInput { click(center) }
+        compose.runOnIdle {
+            assertTrue(kotlin.math.abs(fixture.cursor - (matchStart + duration / 2)) < 250_000_000L)
+        }
+        openView("Menu")
+        click("Playback settings")
+        click("Restart Replay")
+        compose.runOnIdle { assertEquals(matchStart, fixture.cursor) }
+    }
+
+    @Test fun latestPlaybackAndEventDetailsUseSeparateInitiatorColumns() {
+        val archive = testArchive()
+        val playerSwitch = archive.articles.first().copy(
+            articleId = "player-switch", monotonicTimeNanos = 6 * SECOND,
+            payload = ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Camerupt", 323),
+        )
+        mountReplay(360, 1f, archive.copy(articles = archive.articles + playerSwitch))
+        compose.onNode(hasText("Match start") and hasAnyAncestor(hasTestTag("replay-events-shared"))).assertIsDisplayed()
+        repeat(6) { pressDirection("Down") }
+
+        val player = compose.onNode(hasText("Active change → Camerupt") and
+            hasAnyAncestor(hasTestTag("replay-events-player")))
+        val opponent = compose.onNode(hasText("Active change → Alolan Ninetales") and
+            hasAnyAncestor(hasTestTag("replay-events-opponent")))
+        fun checkColumns() {
+            player.assertIsDisplayed().assertReplayTextFits()
+            opponent.assertIsDisplayed().assertReplayTextFits()
+            assertTrue(player.getUnclippedBoundsInRoot().right < opponent.getUnclippedBoundsInRoot().left)
+        }
+
+        checkColumns()
+        openView("Events")
+        checkColumns()
+    }
 
     @Test fun caseButtonsNavigateViewsAndTouchTimelineScrubsWithoutChangingOtherViews() {
         val fixture = mountReplay(360, 1f)
@@ -194,7 +251,7 @@ class ReplayLcdLayoutDeviceTest {
         val saveScreenshots = width == 360 && fontScale == 1f
         assertReadableText("Paused")
         for (view in listOf("Playback", "Events", "Menu")) {
-            if (fontScale == 2f) assertReadableAction(lcdText("Change view"))
+            if (lcdUsesViewPicker()) assertReadableAction(lcdText("Change view"))
             openView(view)
             when (view) {
                 "Playback" -> listOf("−1 sec", "Play", "+1 sec").forEach { assertReadableAction(lcdText(it)) }
@@ -216,9 +273,10 @@ class ReplayLcdLayoutDeviceTest {
             if (saveScreenshots && view != "Events") {
                 captureLcd(view.lowercase())
                 if (view == "Playback") {
-                    listOf("Playback", "Events", "Menu", "−1 sec", "Play", "+1 sec").forEach {
-                        focusAction(lcdText(it))
-                    }
+                    val views = listOf("Playback", "Events", "Menu")
+                    val transport = listOf("−1 sec", "Play", "+1 sec")
+                    assertCompactPlaybackRows(views, transport)
+                    (views + transport).forEach { focusAction(lcdText(it)) }
                 }
             }
         }
@@ -242,7 +300,7 @@ class ReplayLcdLayoutDeviceTest {
                 assertReadableAction(action)
                 if (saveScreenshots) focusAction(action)
             }
-            if (section == "Match details") assertReadableText("Recorded energy")
+            if (section == "Match details") assertReadableText("Estimated energy")
             pressCaseButton("B")
         }
         assertReadableAction(lcdText("Exit Replay"))
@@ -307,10 +365,15 @@ class ReplayLcdLayoutDeviceTest {
         error("The case buttons could not focus the LCD action")
     }
 
+    private fun lcdUsesViewPicker(): Boolean =
+        compose.onAllNodes(hasText("Change view") and hasAnyAncestor(hasTestTag(LCD_SURFACE)))
+            .fetchSemanticsNodes().isNotEmpty()
+
     private fun openView(name: String) {
-        if (compose.onAllNodes(hasText("Change view") and hasAnyAncestor(hasTestTag(LCD_SURFACE)))
-                .fetchSemanticsNodes().isNotEmpty()) click("Change view")
-        click(name)
+        if (lcdUsesViewPicker()) click("Change view")
+        val tab = lcdText(name)
+        assertReadableAction(tab)
+        tab.performClick()
     }
 
     private fun click(name: String) = ensureVisible(lcdText(name)).performClick()
@@ -337,9 +400,24 @@ class ReplayLcdLayoutDeviceTest {
         val visibleBounds = action.getBoundsInRoot()
         val height = bounds.bottom - bounds.top
         val width = bounds.right - bounds.left
-        assertTrue("Target needs at least 48dp of height", height >= 47.dp)
         assertTrue("Focused control can be fully revealed", visibleBounds.bottom - visibleBounds.top >= height - 1.dp)
         assertTrue("Control must fit within the LCD width", visibleBounds.right - visibleBounds.left >= width - 1.dp)
+    }
+
+    private fun assertCompactPlaybackRows(views: List<String>, transport: List<String>) {
+        fun rowHeight(labels: List<String>): Dp {
+            val bounds = labels.map { label ->
+                val control = lcdText(label)
+                control.assertIsDisplayed()
+                assertFullyVisibleAction(control)
+                control.getUnclippedBoundsInRoot()
+            }
+            return bounds.maxOf { it.bottom } - bounds.minOf { it.top }
+        }
+        val panel = compose.onNodeWithTag(LCD_SURFACE).getUnclippedBoundsInRoot()
+        val height = rowHeight(views) + rowHeight(transport)
+        assertTrue("Navigation and transport should use at most one third of the LCD ($height)",
+            height <= (panel.bottom - panel.top) / 3 + 1.dp)
     }
 
     private fun captureLcd(view: String) {

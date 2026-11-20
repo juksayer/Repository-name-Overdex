@@ -2,8 +2,16 @@ package com.example.overdex.battle.replay
 
 import com.example.overdex.battle.archive.*
 
-/** Evidence-based balance on the replay's reconstructed hit clock, never a wall-clock forecast. */
-data class ReplayEnergyState(val recordedEnergy: Int, val generated: Int, val spent: Int)
+/** Balance at the supported action clock. [recordedEnergy] is the lower endpoint when the estimate is a range. */
+data class ReplayEnergyState(
+    val recordedEnergy: Int,
+    val generated: Int,
+    val spent: Int,
+    val maximumEnergy: Int = recordedEnergy,
+) {
+    val isRange: Boolean get() = maximumEnergy != recordedEnergy
+    val balanceLabel: String get() = if (isRange) "$recordedEnergy–$maximumEnergy" else "$recordedEnergy"
+}
 
 internal class ReplayEnergyTrack(
     articles: List<ArchivedRealityArticle>,
@@ -20,7 +28,10 @@ internal class ReplayEnergyTrack(
                              val spend: Int = 0, val faint: Boolean = false, val unavailable: Boolean = false)
     private val hasCanonicalUses = articles.any { it.payload is ArchivedFastMoveUseObserved }
     private val byId = articles.associateBy { it.articleId }
-    private val cycleByEvidence = cycles.flatMap { cycle -> cycle.witness.articleIds.map { it to cycle } }.toMap()
+    private val supportedCycles = cycles.filter {
+        it.witness.articleIds.isNotEmpty() && ReplayFastMoveRhythm.INFERRED !in it.witness.evidenceKinds
+    }
+    private val cycleByEvidence = supportedCycles.flatMap { cycle -> cycle.witness.articleIds.map { it to cycle } }.toMap()
     private val entries = buildList {
         val energyByCycle = linkedMapOf<ReplayFastMoveCycle, MutableList<ArchivedRealityArticle>>()
         for (article in articles) {
@@ -53,45 +64,53 @@ internal class ReplayEnergyTrack(
                 else -> Unit
             }
         }
-        for ((cycle, candidates) in energyByCycle) {
+        for (cycle in supportedCycles) {
+            val candidates = energyByCycle[cycle].orEmpty()
             // Replay can resolve identity using later evidence. Select a matching
             // derivation before deduplication so an earlier wrong guess cannot
             // supply its energy gain or block the corrected derivation.
             val matching = candidates.firstOrNull { article ->
                 val p = article.payload as ArchivedFastMoveEnergyDerived
                 cycle.hasReferenceDuration && cycle.witness.moveName?.let { key(it) == key(p.moveName) } == true &&
-                    p.energyPerUse >= 0
+                    p.energyPerUse in 0..100
             }
-            val source = matching ?: candidates.first()
-            val use = source.predecessorIds.mapNotNull(byId::get)
-                .mapNotNull { it.payload as? ArchivedFastMoveUseObserved }.firstOrNull()
+            val source = matching ?: candidates.firstOrNull()
+            val use = (source?.predecessorIds.orEmpty() + cycle.witness.articleIds).asSequence()
+                .mapNotNull { byId[it]?.payload as? ArchivedFastMoveUseObserved }.firstOrNull()
             val at = if (cycle.hasReferenceDuration) cycle.impactAtNanos else cycle.witness.observedAtNanos
             val species = appearanceName(cycle.witness.side, use?.attackerSpeciesName,
                 cycle.witness.observedAtNanos, combatantAt) ?: continue
             val gain = (matching?.payload as? ArchivedFastMoveEnergyDerived)?.energyPerUse
-            add(Entry(at, cycle.witness.side, species, gain = gain ?: 0, unavailable = matching == null))
+                ?: cycle.witness.supportedReferenceGain?.takeIf { cycle.hasReferenceDuration }
+            add(Entry(at, cycle.witness.side, species, gain = gain ?: 0, unavailable = gain == null))
         }
     }.sortedBy { it.at }
 
-    /** Null means recorded evidence cannot support a physically bounded balance. */
+    /** Null means the evidence cannot narrow the balance beyond 0–100. */
     fun stateAt(side: String, species: String, cursor: Long): ReplayEnergyState? {
-        var energy = 0
+        var minimum = 0
+        var maximum = 0
         var generated = 0
         var spent = 0
-        var fainted = false
-        var unavailable = false
+        val speciesKey = key(species)
         for (entry in entries) {
             if (entry.at > cursor) break
-            if (entry.side != side || key(entry.species) != key(species)) continue
-            if (entry.faint) { energy = 0; fainted = true; unavailable = false }
-            if (fainted) continue
-            unavailable = unavailable || entry.unavailable
+            if (entry.side != side || key(entry.species) != speciesKey) continue
+            if (entry.faint) return ReplayEnergyState(0, generated, spent)
             generated += entry.gain
             spent += entry.spend
-            energy = (energy + entry.gain).coerceAtMost(100)
-            energy = (energy - entry.spend).coerceAtLeast(0)
+            minimum = (minimum + entry.gain).coerceAtMost(100)
+            maximum = if (entry.unavailable) 100 else (maximum + entry.gain).coerceAtMost(100)
+            if (entry.spend > maximum) {
+                // A witnessed charge proves the recorded gains were incomplete.
+                // Before spending, the true balance could have been anywhere from cost to cap.
+                minimum = 0
+                maximum = 100
+            }
+            minimum = (minimum - entry.spend).coerceAtLeast(0)
+            maximum = (maximum - entry.spend).coerceAtLeast(0)
         }
-        return if (unavailable) null else ReplayEnergyState(energy, generated, spent)
+        return if (minimum == 0 && maximum == 100) null else ReplayEnergyState(minimum, generated, spent, maximum)
     }
     private fun key(name: String) = name.uppercase().filter(Char::isLetterOrDigit)
 }

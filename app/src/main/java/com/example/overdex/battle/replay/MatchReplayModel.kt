@@ -35,6 +35,7 @@ import com.example.overdex.battle.custody.FastMoveSoundMeasured
 import com.example.overdex.battle.custody.FastMoveSoundCandidate
 import com.example.overdex.battle.custody.FastMoveSoundSearchScope
 import com.example.overdex.battle.inference.RecipientAudioSupport
+import com.example.overdex.battle.inference.fastMoveIdentitySupportsEnergy
 import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillIncreased
 import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.archive.ArchivedPlayerActiveIdentityResolved
@@ -1965,7 +1966,8 @@ class MatchReplayModel(
             val bufferedMove = bufferedMoveFor(use.side, at)
             val name = identifiedMoveFor(use.side, at) ?: use.moveName ?: bufferedMove?.name
             val reference = name?.let { possibleMoveFor(use.side, at, it) }
-            val species = combatantFor(use.side, at)?.speciesName
+            val actor = combatantFor(use.side, at)
+            val species = actor?.speciesName
             val identified = identifiedFastMoves.lastOrNull {
                 it.side == use.side && name != null && normalizeSpeciesName(it.moveName) == normalizeSpeciesName(name) &&
                     species != null && normalizeSpeciesName(it.speciesName) == normalizeSpeciesName(species)
@@ -1993,9 +1995,20 @@ class MatchReplayModel(
                 },
                 endsAtTerminalBoundary = windowEnd in terminalBoundaries,
                 archivedUseWithDamage = use.canonical && "HP_DAMAGE_TICK" in use.evidenceKinds,
+                supportedReferenceGain = reference?.takeIf { it.isFast && it.energy in 1..100 }?.let { move ->
+                    val configured = if (use.side == "PLAYER" && actor != null && !ambiguousPlayerFastMoveOwner(actor))
+                        configuredPlayerMovesBySpecies[normalizeSpeciesName(actor.speciesName)] else null
+                    val fromTeam = configured != null && normalizeSpeciesName(configured) == normalizeSpeciesName(move.name)
+                    move.energy.takeIf { fromTeam || identified?.basis?.let(::fastMoveIdentitySupportsEnergy) == true }
+                },
             )
         })
     }
+
+    private fun ambiguousPlayerFastMoveOwner(actor: ReplayCombatant): Boolean =
+        '(' !in actor.speciesName && actor.playerTeamSlot == null && configuredPlayerMembers.count {
+            TeamRosterSpeciesAttributor.speciesKey(it.speciesName) == TeamRosterSpeciesAttributor.speciesKey(actor.speciesName)
+        } > 1
 
     private fun identifiedMoveFor(side: String, atNanos: Long): String? {
         val speciesName = when (side) {
@@ -2005,10 +2018,7 @@ class MatchReplayModel(
         }
         if (side == "PLAYER" && speciesName != null) {
             val active = playerIdentityTrack.combatantAt(atNanos)
-            val ambiguousBareName = '(' !in speciesName && active?.playerTeamSlot == null &&
-                configuredPlayerMembers.count {
-                    TeamRosterSpeciesAttributor.speciesKey(it.speciesName) == TeamRosterSpeciesAttributor.speciesKey(speciesName)
-                } > 1
+            val ambiguousBareName = active?.let(::ambiguousPlayerFastMoveOwner) == true
             if (!ambiguousBareName) configuredPlayerMovesBySpecies[normalizeSpeciesName(speciesName)]?.let { return it }
             if (ambiguousBareName) {
                 val start = playerIdentityTrack.appearanceStartAt(atNanos)

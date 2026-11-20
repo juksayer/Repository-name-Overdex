@@ -31,8 +31,12 @@ internal fun ReplayChargeButtons(moves: List<ReplayChargedMoveSlot>, energy: Rep
                 (energy.recordedEnergy.toFloat() / move.energyCost).coerceIn(0f, 1f) else 0f
             Column(Modifier.widthIn(max = 132.dp).semantics(mergeDescendants = true) {
                 contentDescription = "Player charged move $slot: ${move?.moveName ?: "not recorded"}"
-                stateDescription = if (move?.energyCost != null && energy != null)
-                    "Recorded energy approximately ${energy.recordedEnergy}, cost ${move.energyCost}" else "Energy requirement unknown"
+                stateDescription = when {
+                    move?.energyCost == null -> "Energy requirement unknown"
+                    energy == null -> "Energy unknown, cost ${move.energyCost}"
+                    energy.isRange -> "Estimated energy ${energy.balanceLabel}, cost ${move.energyCost}"
+                    else -> "Recorded energy approximately ${energy.recordedEnergy}, cost ${move.energyCost}"
+                }
             }, horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(Modifier.size(52.dp).clip(CircleShape)
                     .background(Color(0xB812211C))

@@ -18,6 +18,7 @@ internal data class ReplayFastMoveWitness(
     val damageTicks: List<ReplayFastMoveDamage> = emptyList(),
     val endsAtTerminalBoundary: Boolean = false,
     val archivedUseWithDamage: Boolean = false,
+    val supportedReferenceGain: Int? = null,
 )
 
 /** Settled damage on the recipient, linked by the use's source Article IDs. */

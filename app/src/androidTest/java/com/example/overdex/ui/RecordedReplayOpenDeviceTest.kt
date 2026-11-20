@@ -125,7 +125,7 @@ class RecordedReplayOpenDeviceTest {
         val repo = PokemonRepository(PokedexDatabase.getDatabase(context).pokemonDao(),
             LocalSpriteProvider(context.assets), GameMasterLoader(context))
         val model = MatchReplayModel(archive)
-        val duration = model.endNanos - model.startNanos
+        val duration = model.endNanos - go
         var drag: (androidx.compose.ui.geometry.Offset) -> Unit = {}
         var cursor = 0L
         var rendered: com.example.overdex.battle.replay.ReplayScene? = null
@@ -147,8 +147,9 @@ class RecordedReplayOpenDeviceTest {
         }
         compose.waitUntil(30_000) { compose.onAllNodesWithText("Events").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Events").assertIsDisplayed().performClick()
-        val heading = compose.onNodeWithText("Vaporeon fainted")
-        val credit = compose.onNodeWithText("Dragon Pulse by Turtonator")
+        val playerLane = hasAnyAncestor(hasTestTag("replay-events-player"))
+        val heading = compose.onNode(hasText("Vaporeon fainted") and playerLane)
+        val credit = compose.onNode(hasText("Dragon Pulse by Turtonator") and playerLane)
         val faintTime = compose.onNodeWithText("Faint cry at 01:30.5 from GO")
         compose.waitUntil(480_000) { compose.onAllNodesWithText("Dragon Pulse by Turtonator").fetchSemanticsNodes().isNotEmpty() }
         heading.performScrollTo().assertIsDisplayed()

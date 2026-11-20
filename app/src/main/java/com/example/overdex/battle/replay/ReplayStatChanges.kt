@@ -23,7 +23,7 @@ internal class ReplayStatChanges(
     private val combatantAt: (String, Long) -> ReplayCombatant?,
 ) {
     private data class Change(val at: Long, val targetAt: Long, val side: String?, val stat: String,
-        val direction: Int, val moveName: String?, val sourceArticleIds: List<String>)
+        val direction: Int, val moveName: String?, val causeSide: String?, val sourceArticleIds: List<String>)
     private val changes: List<Change>
     init {
         val byId = articles.associateBy { it.articleId }
@@ -39,10 +39,11 @@ internal class ReplayStatChanges(
             val resolved = resolution?.payload as? ArchivedStatChangeObserved
             // The sound can lag the announcement by seconds. Identify the recipient
             // at the cited move, so a later entrant never inherits the departing one's effect.
-            val targetAt = resolution?.evidenceReferences.orEmpty().mapNotNull(byId::get)
-                .singleOrNull { it.payload is ArchivedChargedMoveEnergySpent }?.monotonicTimeNanos ?: at
-            Change(at, targetAt, resolved?.affectedSide, cue.stat, cue.direction,
+            val cause = resolution?.evidenceReferences.orEmpty().mapNotNull(byId::get)
+                .singleOrNull { it.payload is ArchivedChargedMoveEnergySpent }
+            Change(at, cause?.monotonicTimeNanos ?: at, resolved?.affectedSide, cue.stat, cue.direction,
                 resolved?.moveName?.takeIf(String::isNotBlank),
+                (cause?.payload as? ArchivedChargedMoveEnergySpent)?.side,
                 (listOf(article.articleId) + listOfNotNull(resolution?.articleId) +
                     resolution?.evidenceReferences.orEmpty()).distinct())
         }
@@ -55,7 +56,7 @@ internal class ReplayStatChanges(
             change.at, change.side,
             "$stat ${if (change.direction > 0) "↑" else "↓"}" +
                 change.moveName?.let { " · $it" }.orEmpty(),
-            sourceArticleIds = change.sourceArticleIds)
+            sourceArticleIds = change.sourceArticleIds, causeSide = change.causeSide)
     }
     fun at(cursor: Long): List<ReplayStatChangeAction> = changes.mapNotNull { change ->
         val age = cursor - change.at

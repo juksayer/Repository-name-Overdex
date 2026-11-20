@@ -5,6 +5,22 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ReplayEventMarkersTest {
+    @Test fun `LCD credits a finishing faint to its attacker while keeping the recipient`() {
+        val finish = ReplayFinishingChargeAssociation(
+            "PLAYER", "Turtonator", 1, "OPPONENT", "Vaporeon", 2, "Dragon Pulse",
+            20, 30, 29, null, listOf("move"), listOf("faint"), emptyList(),
+        )
+        val faint = ReplayEventMarker("faint", ReplayEventMarkerKind.FAINT, 30, "OPPONENT", "Faint",
+            finishingAttribution = finish)
+        assertEquals("PLAYER", faint.initiatingSide)
+        assertEquals("OPPONENT", faint.side)
+        assertNull(faint.copy(finishingAttribution = null).initiatingSide)
+        assertEquals("PLAYER", faint.copy(finishingAttribution = null, causeSide = "PLAYER").initiatingSide)
+        assertNull(ReplayEventMarker("go", ReplayEventMarkerKind.MATCH_START, 0, null, "Match start").initiatingSide)
+        assertEquals("OPPONENT",
+            ReplayEventMarker("shield", ReplayEventMarkerKind.SHIELD, 10, "OPPONENT", "Shield used").initiatingSide)
+    }
+
     @Test fun `overlapping clips can support the same cry but a different reference or entrance cannot`() {
         val onset = 90_542_000_000L
         val fit = ReplayAudioFragment("whole", onset, "clip1", "vaporeon", 0, 0, 200_000_000, .99f)

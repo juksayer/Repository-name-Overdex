@@ -79,8 +79,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.overdex.battle.archive.MatchArchive
-import com.example.overdex.battle.archive.ArchivedFastMoveIdentified
-import com.example.overdex.battle.archive.ArchivedChargedMoveEnergySpent
 import com.example.overdex.battle.replay.ReplayFastMoveAction
 import com.example.overdex.battle.replay.ReplayChargedMoveAction
 import com.example.overdex.battle.replay.ReplayChargePhase
@@ -98,10 +96,11 @@ import com.example.overdex.battle.replay.ReplayTransportSounds
 import com.example.overdex.battle.replay.ReplayPlaybackClock
 import com.example.overdex.battle.replay.ReplayEventMarker
 import com.example.overdex.battle.replay.ReplayEventMarkers
-import com.example.overdex.battle.replay.ArchivedEndingAudioRecognizer
-import com.example.overdex.battle.replay.ArchivedSpeciesCropRecognizer
-import com.example.overdex.battle.replay.ReplayReviewCache
 import com.example.overdex.battle.replay.ReplayAudioRecovery
+import com.example.overdex.battle.replay.ReplayPreparationCoordinator
+import com.example.overdex.battle.replay.ReplayPreparationState
+import com.example.overdex.battle.replay.ReplayReferenceLookup
+import com.example.overdex.battle.replay.prepareReplay
 import com.example.overdex.battle.replay.ReplayEventMarkerNavigation
 import com.example.overdex.data.LocalSpriteProvider
 import com.example.overdex.model.Move
@@ -141,6 +140,7 @@ fun MatchReplayScreen(
     resolveFastMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
     resolveChargedMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
     impactArchiveUri: android.net.Uri? = null,
+    replayPreparation: ReplayPreparationCoordinator? = null,
     resolveSpeciesNames: suspend () -> Set<String> = { emptySet() },
     resolveArchivedAudio: (suspend (MatchArchive, List<Move>, Set<Int>) -> ReplayAudioRecovery)? = null,
     resolveArchivedSpeciesCrops: (suspend (MatchArchive, (ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation>)? = null,
@@ -157,146 +157,32 @@ fun MatchReplayScreen(
     onPlaybackSpeedChange: (Float) -> Unit = {},
     pairedReplayScene: ((com.example.overdex.battle.replay.ReplayScene, Long) -> com.example.overdex.battle.replay.ReplayScene)? = null,
 ) {
-    val referencedNames = remember(archive) { MatchReplayModel.referencedSpeciesNames(archive) }
-    var speciesResolved by remember(archive) { mutableStateOf(false) }
-    var fastMoveTypesResolved by remember(archive) { mutableStateOf(false) }
-    var fastMovesResolved by remember(archive) { mutableStateOf(false) }
-    var chargedMoveTypesResolved by remember(archive) { mutableStateOf(false) }
-    var chargedMovesResolved by remember(archive) { mutableStateOf(false) }
-    val speciesIds by produceState<Map<String, Int>>(emptyMap(), archive) {
-        value = referencedNames.mapNotNull { name -> resolveSpeciesId(name)?.let { name to it } }.toMap()
-        speciesResolved = true
-    }
-    var cropProgress by remember(archive) { mutableStateOf(ReplayCropProgress("READING ARCHIVE")) }
-    var cropError by remember(archive) { mutableStateOf<String?>(null) }
-    var archivedCropIdentities by remember(archive, impactArchiveUri) {
-        mutableStateOf<List<ReplayIdentityObservation>?>(null)
-    }
-    val typeSpeciesNames = remember(referencedNames, archivedCropIdentities) {
-        (referencedNames + archivedCropIdentities.orEmpty().map { it.speciesName }).distinct()
-    }
-    val speciesTypes by produceState<Map<String, List<PokemonType>>>(emptyMap(), archive, typeSpeciesNames) {
-        value = typeSpeciesNames.associate { name ->
-            name.uppercase().filter(Char::isLetterOrDigit) to resolveSpeciesTypes(name).distinct()
-        }
-    }
-    val fastMoveTypes by produceState<Map<String, PokemonType>>(emptyMap(), archive) {
-        value = archive.articles.mapNotNull { it.payload as? ArchivedFastMoveIdentified }
-            .distinctBy { it.speciesName to it.moveName }
-            .mapNotNull { identified ->
-                resolveFastMoveType(identified.speciesName, identified.moveName)
-                    ?.let { identified.moveName.uppercase().filter(Char::isLetterOrDigit) to it }
-            }.toMap()
-        fastMoveTypesResolved = true
-    }
-    val fastMovesBySpecies by produceState<Map<String, List<Move>>>(emptyMap(), archive, referencedNames) {
-        value = referencedNames.associateWith { resolveFastMoves(it) }
-        fastMovesResolved = true
-    }
-    val chargedMovesBySpecies by produceState<Map<String, List<Move>>>(emptyMap(), archive, referencedNames) {
-        value = referencedNames.associateWith { resolveChargedMoves(it) }
-        chargedMovesResolved = true
-    }
-    val chargedMoveTypes by produceState<Map<String, PokemonType>>(emptyMap(), archive) {
-        value = archive.articles.mapNotNull { it.payload as? ArchivedChargedMoveEnergySpent }
-            .distinctBy { it.speciesName to it.moveName }.mapNotNull { move ->
-                resolveChargedMoveType(move.speciesName, move.moveName)?.let {
-                    move.moveName.uppercase().filter(Char::isLetterOrDigit) to it
-                }
-            }.toMap()
-        chargedMoveTypesResolved = true
-    }
-    val modelInputsReady = speciesResolved && fastMoveTypesResolved && fastMovesResolved &&
-        chargedMoveTypesResolved && chargedMovesResolved
     val replayContext = LocalContext.current
-    var preparedModel by remember(archive, impactArchiveUri) { mutableStateOf<MatchReplayModel?>(null) }
-    var reviewComplete by remember(archive, impactArchiveUri) { mutableStateOf(false) }
-    LaunchedEffect(archive, impactArchiveUri, modelInputsReady) {
-        if (modelInputsReady) {
-            fun prepare(model: MatchReplayModel) = model.also {
-                // Resolve the indexes off the UI thread before publishing either snapshot.
-                it.eventMarkers
-                it.attackSoundEvents
+    var preparation by remember(archive, impactArchiveUri, replayPreparation) {
+        mutableStateOf(ReplayPreparationState())
+    }
+    LaunchedEffect(archive, impactArchiveUri, replayPreparation) {
+        try {
+            if (replayPreparation != null && impactArchiveUri != null && replayPreparation.owns(impactArchiveUri) &&
+                resolveArchivedAudio == null && resolveArchivedSpeciesCrops == null) {
+                replayPreparation.observe(impactArchiveUri).collect { preparation = it }
+            } else {
+                preparation = prepareReplay(
+                    replayContext, archive, impactArchiveUri,
+                    ReplayReferenceLookup(resolveSpeciesId, resolveSpeciesNames, resolveFastMoves,
+                        resolveChargedMoves, resolveFastMoveType, resolveChargedMoveType),
+                    { preparation = it }, resolveArchivedAudio, resolveArchivedSpeciesCrops,
+                )
             }
-            preparedModel = withContext(Dispatchers.Default) {
-                prepare(MatchReplayModel(archive, speciesIds, emptyList(), fastMoveTypes,
-                    fastMovesBySpecies, chargedMoveTypes, chargedMovesBySpecies))
-            }
-            val openArchive = { impactArchiveUri?.let { replayContext.contentResolver.openInputStream(it) } }
-            val cache = if (impactArchiveUri != null) ReplayReviewCache.open(
-                java.io.File(replayContext.cacheDir, "replay-review"),
-                replayContext.packageManager.getPackageInfo(replayContext.packageName, 0).lastUpdateTime, archive, openArchive)
-            else null
-            val crops = try {
-                val progress: (ReplayCropProgress) -> Unit = { cropProgress = it }
-                resolveArchivedSpeciesCrops?.invoke(archive, progress) ?: if (impactArchiveUri != null)
-                    ArchivedSpeciesCropRecognizer.recognize(archive, openArchive, resolveSpeciesNames(), resolveSpeciesId, progress, cache)
-                else emptyList()
-            } catch (cancelled: kotlinx.coroutines.CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                cropError = "Crop verification failed: ${error.message}"
-                emptyList()
-            }
-            archivedCropIdentities = crops
-            cropProgress = ReplayCropProgress("CHECKING ENDING AUDIO")
-            val extraNames = crops.map { it.speciesName }.distinct() - referencedNames
-            val allFast = fastMovesBySpecies + extraNames.associateWith { resolveFastMoves(it) }
-            val allCharged = chargedMovesBySpecies + extraNames.associateWith { resolveChargedMoves(it) }
-            val allIds = speciesIds + extraNames.mapNotNull { name -> resolveSpeciesId(name)?.let { name to it } }.toMap()
-            val recoveredAudio = try {
-                val participants = MatchReplayModel.audioParticipantNames(archive, crops)
-                val moves = participants.flatMap { allFast[it].orEmpty() + allCharged[it].orEmpty() }.distinct()
-                val ids = participants.mapNotNull { allIds[it] }.toSet()
-                resolveArchivedAudio?.invoke(archive, moves, ids) ?: if (impactArchiveUri != null)
-                    ArchivedEndingAudioRecognizer.recognize(archive, moves, ids, openArchive, null, null,
-                        { path -> replayContext.assets.open(path).use { it.readBytes() } }, cache)
-                else ReplayAudioRecovery()
-            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
-              catch (error: Exception) {
-                com.example.overdex.battle.replay.ReplayAudioRecovery(unavailableArtifacts = listOf("Audio recovery failed: ${error.message}"))
-            }
-            val impact = try {
-                impactArchiveUri?.let { uri -> com.example.overdex.battle.replay.ReplayImpactFinish.read(archive,
-                    java.io.File(replayContext.filesDir, "artifacts/frames/sha256"),
-                    (allFast.keys + allCharged.keys).associateWith {
-                    allFast[it].orEmpty() + allCharged[it].orEmpty()
-                    }, recoveredAudio, { replayContext.contentResolver.openInputStream(uri) },
-                    { path -> replayContext.assets.open(path).use { it.readBytes() } }, cache)
-                }
-            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
-              catch (error: Exception) {
-                android.util.Log.w("REPLAY_IMPACT", "Retained impact frame unavailable", error)
-                null
-            }
-            val fastFinish = try {
-                impactArchiveUri?.let { uri ->
-                    com.example.overdex.battle.replay.ReplayLastOpponentFastFinish.read(archive,
-                        com.example.overdex.data.GameMasterLoader(replayContext),
-                        { replayContext.contentResolver.openInputStream(uri) },
-                        { path -> replayContext.assets.open(path).use { it.readBytes() } }, cache)
-                }
-            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
-              catch (error: Exception) {
-                android.util.Log.w("REPLAY_FAST", "Ending evidence unavailable", error)
-                null
-            }
-            preparedModel = withContext(Dispatchers.Default) {
-                prepare(MatchReplayModel(
-                    archive,
-                    allIds,
-                    crops,
-                    fastMoveTypes,
-                    allFast,
-                    chargedMoveTypes,
-                    allCharged,
-                    recoveredAudio, impact, fastFinish,
-                ))
-            }
-            reviewComplete = true
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            preparation = preparation.copy(complete = true, error = error.message ?: "Replay preparation failed.")
         }
     }
-    val model = preparedModel
+    val model = preparation.replay?.model
+    val cropProgress = preparation.progress
+    val cropError = preparation.error
     if (model == null) {
         BackHandler(onBack = onBack)
         SideEffect {
@@ -330,7 +216,7 @@ fun MatchReplayScreen(
                     )
                 }
                 cropError?.let { ReplayLcdText(it) }
-                ReplayLcdButton("Exit Replay", onBack, focused = true, revealFocus = false)
+                ReplayLcdButton("Exit Replay", onBack, focused = true, revealFocus = false, compact = true)
             }
         }
         Box(
@@ -347,16 +233,29 @@ fun MatchReplayScreen(
         }
         return
     }
+    val reviewed = requireNotNull(preparation.replay)
+    val archivedCropIdentities = reviewed.identities
+    val fastMovesBySpecies = reviewed.fastMoves
+    val chargedMovesBySpecies = reviewed.chargedMoves
+    val reviewComplete = preparation.complete
+    val replayArchive = reviewed.archive
+    val typeSpeciesNames = remember(replayArchive, archivedCropIdentities) {
+        (MatchReplayModel.referencedSpeciesNames(replayArchive) + archivedCropIdentities.map { it.speciesName }).distinct()
+    }
+    val speciesTypes by produceState<Map<String, List<PokemonType>>>(emptyMap(), replayArchive, typeSpeciesNames) {
+        value = typeSpeciesNames.associate { name ->
+            name.uppercase().filter(Char::isLetterOrDigit) to resolveSpeciesTypes(name).distinct()
+        }
+    }
     val context = LocalContext.current
     val correctionStore = remember(context) { com.example.overdex.battle.replay.ReplayTrainerCorrectionStore(context.filesDir) }
-    var corrections by remember(archive) { mutableStateOf(correctionStore.list(archive.matchId)) }
+    var corrections by remember(replayArchive) { mutableStateOf(correctionStore.list(replayArchive.matchId)) }
     val trainerEnd = model.matchStartNanos?.let { start -> corrections.mapNotNull { entry ->
         runCatching { Math.addExact(Math.addExact(start, entry.matchOffsetNanos), 1_000_000_000L) }.getOrNull()
     }.maxOrNull() }
-    val playbackStart = playbackWindow?.startNanos ?: model.startNanos
     val playbackEnd = playbackWindow?.endNanos ?: maxOf(model.endNanos, trainerEnd ?: model.endNanos)
-    val restartPosition = com.example.overdex.battle.replay.replayDefaultPosition(
-        playbackStart, playbackEnd, model.matchStartNanos, playbackWindow != null)
+    val playbackStart = com.example.overdex.battle.replay.replayDefaultPosition(
+        playbackWindow?.startNanos ?: model.startNanos, playbackEnd, model.matchStartNanos, playbackWindow != null)
 
     val eventMarkers = remember(model, playbackStart, playbackEnd, corrections) {
         val trainerMarkers = model.matchStartNanos?.let { start ->
@@ -375,20 +274,21 @@ fun MatchReplayScreen(
                     "Trainer entry · ${entry.speciesName} · ${entry.moveName ?: "faint"} · ${entry.authorName}" +
                         (credited?.let { " · KO by ${it.moveName}" } ?: ""),
                     faintTiming = if (entry.kind == com.example.overdex.battle.replay.ReplayCorrectionKind.FAINT)
-                        com.example.overdex.battle.replay.ReplayFaintTiming.TrainerMark(at) else null)
+                        com.example.overdex.battle.replay.ReplayFaintTiming.TrainerMark(at) else null,
+                    causeSide = credited?.side?.name)
             }
         }.orEmpty()
         ReplayEventMarkers.lcdMarkers((model.eventMarkers + trainerMarkers)
             .filter { it.atNanos in playbackStart..playbackEnd }.sortedBy { it.atNanos })
     }
-    var selectedMarkerId by remember(archive, playbackWindow) { mutableStateOf<String?>(null) }
-    var cursor by remember(archive, initialCursorNanos, playbackWindow) {
-        mutableLongStateOf((initialCursorNanos ?: restartPosition).coerceIn(playbackStart, playbackEnd))
+    var selectedMarkerId by remember(replayArchive.matchId, playbackWindow) { mutableStateOf<String?>(null) }
+    var cursor by remember(replayArchive.matchId, initialCursorNanos, playbackWindow) {
+        mutableLongStateOf((initialCursorNanos ?: playbackStart).coerceIn(playbackStart, playbackEnd))
     }
-    var playing by remember(archive, playbackWindow) { mutableStateOf(false) }
-    var autoStarted by remember(archive, playbackWindow) { mutableStateOf(false) }
-    var playbackSpeed by remember(archive, playbackWindow) { mutableFloatStateOf(initialPlaybackSpeed) }
-    LaunchedEffect(autoplay, archive, playbackWindow) {
+    var playing by remember(replayArchive.matchId, playbackWindow) { mutableStateOf(false) }
+    var autoStarted by remember(replayArchive.matchId, playbackWindow) { mutableStateOf(false) }
+    var playbackSpeed by remember(replayArchive.matchId, playbackWindow) { mutableFloatStateOf(initialPlaybackSpeed) }
+    LaunchedEffect(autoplay, replayArchive.matchId, playbackWindow) {
         if (autoplay && !autoStarted) {
             autoStarted = true
             playing = true
@@ -399,24 +299,24 @@ fun MatchReplayScreen(
         onPlaybackSpeedChange(speed)
     }
     val currentModel by rememberUpdatedState(model)
-    val trainerProjection = remember(archive, corrections, model.matchStartNanos, fastMovesBySpecies, chargedMovesBySpecies) {
-        model.matchStartNanos?.let { com.example.overdex.battle.replay.ReplayTrainerProjection(archive.matchId, it, corrections,
+    val trainerProjection = remember(replayArchive, corrections, model.matchStartNanos, fastMovesBySpecies, chargedMovesBySpecies) {
+        model.matchStartNanos?.let { com.example.overdex.battle.replay.ReplayTrainerProjection(replayArchive.matchId, it, corrections,
             (fastMovesBySpecies.keys + chargedMovesBySpecies.keys).associateWith { name ->
                 fastMovesBySpecies[name].orEmpty() + chargedMovesBySpecies[name].orEmpty()
             }) }
     }
     val pairScope = rememberCoroutineScope()
-    var pairedEvidence by remember(archive) { mutableStateOf<com.example.overdex.battle.replay.PairedReplayEvidence?>(null) }
-    var pendingPair by remember(archive) { mutableStateOf<com.example.overdex.battle.replay.PairedReplayEvidence?>(null) }
-    var pairStatus by remember(archive) { mutableStateOf<String?>(null) }
+    var pairedEvidence by remember(replayArchive) { mutableStateOf<com.example.overdex.battle.replay.PairedReplayEvidence?>(null) }
+    var pendingPair by remember(replayArchive) { mutableStateOf<com.example.overdex.battle.replay.PairedReplayEvidence?>(null) }
+    var pairStatus by remember(replayArchive) { mutableStateOf<String?>(null) }
     val pairFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) pairScope.launch {
             try {
                 val evidence = withContext(Dispatchers.IO) {
                     val stream = requireNotNull(context.contentResolver.openInputStream(uri))
                     val other = com.example.overdex.battle.archive.MatchArchivePackageReader.read(stream)
-                    val anchors = com.example.overdex.battle.replay.PairedReplayEvidenceBuilder.proposedAnchors(archive, other)
-                    com.example.overdex.battle.replay.PairedReplayEvidenceBuilder.build(archive, other, anchors)
+                    val anchors = com.example.overdex.battle.replay.PairedReplayEvidenceBuilder.proposedAnchors(replayArchive, other)
+                    com.example.overdex.battle.replay.PairedReplayEvidenceBuilder.build(replayArchive, other, anchors)
                 }
                 pendingPair = evidence
             } catch (error: Exception) {
@@ -447,7 +347,7 @@ fun MatchReplayScreen(
     }
     val pairedProjection = remember(pairedEvidence, model.matchStartNanos, pairedChargedTypes) {
         pairedEvidence?.let { evidence -> model.matchStartNanos?.let {
-            com.example.overdex.battle.replay.PairedReplayProjection(archive.matchId, it, evidence, pairedChargedTypes)
+            com.example.overdex.battle.replay.PairedReplayProjection(replayArchive.matchId, it, evidence, pairedChargedTypes)
         } }
     }
     val primaryScene = trainerProjection?.apply(model.sceneAt(cursor), cursor) ?: model.sceneAt(cursor)
@@ -464,8 +364,8 @@ fun MatchReplayScreen(
         ((matchStartNanos - playbackStart).toFloat() / duration).coerceIn(0f, 1f)
     }
     val saveScope = rememberCoroutineScope()
-    var addingCorrection by remember(archive) { mutableStateOf(false) }
-    var correctionStatus by remember(archive) { mutableStateOf<String?>(null) }
+    var addingCorrection by remember(replayArchive) { mutableStateOf(false) }
+    var correctionStatus by remember(replayArchive) { mutableStateOf<String?>(null) }
     var correctionExport by remember { mutableStateOf<ByteArray?>(null) }
     var correctionImport by remember { mutableStateOf<ByteArray?>(null) }
     val exportCorrection = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -491,7 +391,7 @@ fun MatchReplayScreen(
         val toExport = if (selected == null) corrections else
             listOfNotNull(selected.finishingMoveId?.let { id -> corrections.singleOrNull { it.id == id } }, selected).distinctBy { it.id }
         runCatching { com.example.overdex.battle.replay.ReplayCorrectionTransfer.encode(
-            com.example.overdex.battle.replay.ReplayCorrectionFile(sourceMatchId = archive.matchId, entries = toExport))
+            com.example.overdex.battle.replay.ReplayCorrectionFile(sourceMatchId = replayArchive.matchId, entries = toExport))
         }.onSuccess { correctionExport = it; exportCorrection.launch("overdex-correction.json") }
             .onFailure { correctionStatus = it.message ?: "NO ENTRIES TO EXPORT" }
     }
@@ -505,8 +405,8 @@ fun MatchReplayScreen(
             confirmButton = { androidx.compose.material3.TextButton(onClick = {
                 correctionImport = null
                 saveScope.launch {
-                    try { val count = withContext(Dispatchers.IO) { correctionStore.importFile(bytes, archive.matchId, true) }
-                        corrections = withContext(Dispatchers.IO) { correctionStore.list(archive.matchId) }; correctionStatus = "IMPORTED $count ENTRIES · SIDES REVERSED"
+                    try { val count = withContext(Dispatchers.IO) { correctionStore.importFile(bytes, replayArchive.matchId, true) }
+                        corrections = withContext(Dispatchers.IO) { correctionStore.list(replayArchive.matchId) }; correctionStatus = "IMPORTED $count ENTRIES · SIDES REVERSED"
                     } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; correctionStatus = "IMPORT FAILED: ${e.message}" }
                 }
             }) { Text("Opposite sides") } },
@@ -514,8 +414,8 @@ fun MatchReplayScreen(
                 androidx.compose.material3.TextButton(onClick = {
                     correctionImport = null
                     saveScope.launch {
-                        try { val count = withContext(Dispatchers.IO) { correctionStore.importFile(bytes, archive.matchId, false) }
-                            corrections = withContext(Dispatchers.IO) { correctionStore.list(archive.matchId) }; correctionStatus = "IMPORTED $count ENTRIES"
+                        try { val count = withContext(Dispatchers.IO) { correctionStore.importFile(bytes, replayArchive.matchId, false) }
+                            corrections = withContext(Dispatchers.IO) { correctionStore.list(replayArchive.matchId) }; correctionStatus = "IMPORTED $count ENTRIES"
                         } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; correctionStatus = "IMPORT FAILED: ${e.message}" }
                     }
                 }) { Text("Same sides") }
@@ -523,17 +423,17 @@ fun MatchReplayScreen(
             } },
         )
     }
-    var clipStart by remember(archive) { mutableStateOf<Long?>(null) }
-    var clipEnd by remember(archive) { mutableStateOf<Long?>(null) }
+    var clipStart by remember(replayArchive) { mutableStateOf<Long?>(null) }
+    var clipEnd by remember(replayArchive) { mutableStateOf<Long?>(null) }
     var savingClip by remember { mutableStateOf(false) }
     var clipStatus by remember { mutableStateOf<String?>(null) }
-    var lcdView by remember(archive, playbackWindow) { mutableStateOf(ReplayLcdView.Playback) }
-    var lcdSection by remember(archive, playbackWindow) { mutableStateOf<ReplayLcdSection?>(null) }
+    var lcdView by remember(replayArchive.matchId, playbackWindow) { mutableStateOf(ReplayLcdView.Playback) }
+    var lcdSection by remember(replayArchive.matchId, playbackWindow) { mutableStateOf<ReplayLcdSection?>(null) }
     var compactTabs by remember { mutableStateOf(false) }
-    var viewChooserOpen by remember(archive, playbackWindow) { mutableStateOf(false) }
-    var focusedAction by remember(archive, playbackWindow) { mutableStateOf("play") }
+    var viewChooserOpen by remember(replayArchive.matchId, playbackWindow) { mutableStateOf(false) }
+    var focusedAction by remember(replayArchive.matchId, playbackWindow) { mutableStateOf("play") }
     var revealFocus by remember { mutableStateOf(false) }
-    var eventScrollRevision by remember(archive, playbackWindow) { mutableIntStateOf(0) }
+    var eventScrollRevision by remember(replayArchive.matchId, playbackWindow) { mutableIntStateOf(0) }
     val completion by rememberUpdatedState(onPlaybackComplete)
     fun addEvent() {
         playing = false
@@ -542,7 +442,7 @@ fun MatchReplayScreen(
         else addingCorrection = true
     }
     if (addingCorrection) ReplayCorrectionDialog(
-        matchId = archive.matchId,
+        matchId = replayArchive.matchId,
         offsetNanos = cursor - requireNotNull(model.matchStartNanos),
         priorEntries = corrections,
         onDismiss = { addingCorrection = false },
@@ -551,7 +451,7 @@ fun MatchReplayScreen(
             saveScope.launch {
                 try {
                     withContext(Dispatchers.IO) { correctionStore.add(correction) }
-                    corrections = withContext(Dispatchers.IO) { correctionStore.list(archive.matchId) }
+                    corrections = withContext(Dispatchers.IO) { correctionStore.list(replayArchive.matchId) }
                     correctionStatus = "TRAINER ENTRY SAVED"
                 } catch (e: Exception) {
                     if (e is kotlinx.coroutines.CancellationException) throw e
@@ -563,7 +463,7 @@ fun MatchReplayScreen(
     fun markClipStart() {
         playing = false
         clipStart = cursor
-        clipStatus = "START ${formatReplayTime(cursor - model.startNanos)}"
+        clipStatus = "START ${formatReplayTime(cursor - playbackStart)}"
     }
     fun markClipEnd() {
         playing = false
@@ -582,8 +482,8 @@ fun MatchReplayScreen(
             saveScope.launch {
                 try {
                     val clip = withContext(Dispatchers.IO) {
-                        ReplayExcerptStore(context.filesDir).saveRange(archive, start, end, title, notes,
-                            recoveredIdentities = archivedCropIdentities.orEmpty())
+                        ReplayExcerptStore(context.filesDir).saveRange(replayArchive, start, end, title, notes,
+                            recoveredIdentities = archivedCropIdentities)
                     }
                     clipStatus = "SAVED: ${clip.title}"
                     clipStart = null
@@ -629,7 +529,7 @@ fun MatchReplayScreen(
     }
 
     fun togglePlayback() {
-        if (!playing && cursor >= playbackEnd) cursor = restartPosition
+        if (!playing && cursor >= playbackEnd) cursor = playbackStart
         playing = !playing
         if (playing) transportSounds.play() else transportSounds.pause()
     }
@@ -748,7 +648,7 @@ fun MatchReplayScreen(
                     replayPreferences.edit().putBoolean("attack_sfx_enabled", attackSfxEnabled).apply()
                 }),
             ReplayLcdAction("restart", "Restart Replay", run = {
-                cursor = restartPosition
+                cursor = playbackStart
                 playing = false
                 transportSounds.reset()
             }),
@@ -829,7 +729,7 @@ fun MatchReplayScreen(
 
     // A first-pass scene can only show the result withdrawal while the ending sounds are pending.
     // Keep the selected seek position, but never play a provisional departure past the user.
-    val pendingFinishStart = if (!reviewComplete && archive.mediaIncluded && impactArchiveUri != null)
+    val pendingFinishStart = if (!reviewComplete && replayArchive.mediaIncluded && impactArchiveUri != null)
         model.matchEndNanos?.let { (it - 20_000_000_000L).coerceAtLeast(model.matchStartNanos ?: model.startNanos) }
             ?.takeIf { it <= playbackEnd }?.coerceAtLeast(playbackStart)
     else null
@@ -848,13 +748,12 @@ fun MatchReplayScreen(
                 action.run()
             }, modifier.semantics { action.description?.let { contentDescription = it } },
                 focused = activeAction?.id == action.id, enabled = action.enabled,
-                selected = action.selected, alignedStart = alignedStart, revealFocus = revealFocus)
+                selected = action.selected, alignedStart = alignedStart, revealFocus = revealFocus, compact = true)
         }
 
         BoxWithConstraints(Modifier.fillMaxSize().padding(horizontal = 4.dp)) {
             val stackControls = maxWidth < 184.dp || LocalDensity.current.fontScale > 1.35f
-            Column(Modifier.fillMaxSize().verticalScroll(scroll), verticalArrangement = Arrangement.spacedBy(
-                if (lcdView == ReplayLcdView.Playback && !viewChooserOpen) 0.dp else 2.dp)) {
+            Column(Modifier.fillMaxSize().verticalScroll(scroll), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 if (section == null) {
                     ReplayLcdViewTabs(lcdView, viewChooserOpen, ReplayLcdView.entries.firstOrNull {
                         activeAction?.id == "view-${it.name}"
@@ -873,6 +772,8 @@ fun MatchReplayScreen(
                         ReplayLcdActionRow(playbackActions, stackControls) { action, modifier ->
                             Action(action, modifier, alignedStart = stackControls)
                         }
+                        ReplayLcdEventDetails(eventMarkers, cursor, selectedMarkerId, playbackStart,
+                            model.matchStartNanos, model.startNanos)
                     }
                     ReplayLcdView.Events -> {
                         ReplayLcdEventDetails(eventMarkers, cursor, selectedMarkerId, playbackStart,
@@ -889,7 +790,7 @@ fun MatchReplayScreen(
                                 onValueChange = { setSpeed((it * 10f).roundToInt() / 10f) },
                                 valueRange = ReplayPlaybackClock.MIN_SPEED..ReplayPlaybackClock.MAX_SPEED,
                                 steps = 48,
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).semantics {
+                                modifier = Modifier.fillMaxWidth().height(28.dp).semantics {
                                     contentDescription = "Replay speed"
                                     stateDescription = String.format(Locale.ROOT, "%.1f times", playbackSpeed)
                                 },
@@ -911,7 +812,7 @@ fun MatchReplayScreen(
                             )
                         }
                         if (section == ReplayLcdSection.Clips) {
-                            ReplayLcdText("Clip at ${formatReplayTime(cursor - model.startNanos)}")
+                            ReplayLcdText("Clip at ${formatReplayTime(cursor - playbackStart)}")
                         }
                         menuActions.forEach { Action(it) }
                         when (section) {
@@ -935,7 +836,7 @@ fun MatchReplayScreen(
                             }
                             ReplayLcdSection.Details -> {
                                 scene.countdownFrame?.let { ReplayLcdText(it.lcdLabel) }
-                                ReplayLcdText("Recorded energy", heading = true)
+                                ReplayLcdText("Estimated energy", heading = true)
                                 ReplayLcdText("Player ${energyLedger(scene.playerEnergy)}")
                                 ReplayLcdText("Opponent ${energyLedger(scene.opponentEnergy)}")
                                 scene.statChanges.filter { it.side == null }.forEach {
@@ -981,10 +882,10 @@ fun MatchReplayScreen(
         }
     }
 
-    val playerTypeReference = remember(archive, scene.player?.speciesName) {
+    val playerTypeReference = remember(replayArchive, scene.player?.speciesName) {
         scene.player?.speciesName?.let { name ->
             com.example.overdex.data.PokemonFormReference.playerReferenceName(name,
-                com.example.overdex.battle.replay.latestArchivedPlayerRoster(archive.articles, Long.MAX_VALUE))
+                com.example.overdex.battle.replay.latestArchivedPlayerRoster(replayArchive.articles, Long.MAX_VALUE))
         }
     }
     if (pendingFinishStart != null && cursor >= pendingFinishStart) {
@@ -1199,7 +1100,7 @@ private class ReplayHaptics(context: Context) {
 }
 
 private fun energyLedger(state: com.example.overdex.battle.replay.ReplayEnergyState?): String =
-    state?.let { "~${it.recordedEnergy}/100" } ?: "—"
+    state?.let { "~${it.balanceLabel}/100" } ?: "—"
 
 private fun replayOutcomeLabel(outcome: String): String = when (
     outcome.uppercase().filter(Char::isLetterOrDigit)

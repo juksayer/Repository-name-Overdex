@@ -261,6 +261,22 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     val activeMatch = _activeMatch.asStateFlow()
     private val _droidballSession = MutableStateFlow<DroidballSession?>(null)
     val droidballSession = _droidballSession.asStateFlow()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    internal val replayPreparation by lazy {
+        com.example.overdex.battle.replay.ReplayPreparationCoordinator(
+            application, archiveScope,
+            _droidballSession.flatMapLatest { session ->
+                session?.phase?.map { phase ->
+                    phase == com.example.overdex.battle.observation.DroidballSessionPhase.ENDED ||
+                        (session.hasCompletedMatch && phase in setOf(
+                            com.example.overdex.battle.observation.DroidballSessionPhase.RESULT,
+                            com.example.overdex.battle.observation.DroidballSessionPhase.NAVIGATION_IDLE,
+                        ))
+                } ?: flowOf(true)
+            },
+            pokemonRepository::getPokemonByName, pokemonRepository::getAllSpeciesNames,
+        )
+    }
     val fieldTeamEditor by lazy {
         com.example.overdex.battle.team.FieldTeamEditor(
             pokemonRepository, viewModelScope,
@@ -333,6 +349,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     .onFailure { Log.w("MATCH_SUMMARY", "Unable to restore pending summaries", it) }
             }
             summaryInboxReady.complete(Unit)
+        }
+        // Recover a preparation interrupted by process death without scanning every old match.
+        archiveScope.launch {
+            archiveDirectoryManager.listArchives().firstOrNull()?.let { replayPreparation.warm(it.uri) }
         }
     }
 
@@ -1666,6 +1686,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     // Match executor instead of keeping it alive after auto-stop.
                     if (releaseDrainingMatch) drainingMatch?.release()
                     archiveDirectoryManager.deleteMatchCheckpoint(source.matchId)
+                    runCatching { replayPreparation.warm(uri) }
+                        .onFailure { Log.w("REPLAY_PREPARE", "Match saved; Replay will be prepared on open", it) }
                     runCatching {
                         val entry = archiveDirectoryManager.listArchives().firstOrNull { it.uri == uri }
                         if (entry != null) {

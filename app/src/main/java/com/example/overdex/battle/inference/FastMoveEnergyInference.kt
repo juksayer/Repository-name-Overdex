@@ -161,7 +161,7 @@ class FastMoveEnergyInference(
                 // energy identity. Preserve it on the Timeline and wait for a
                 // second source, unique reference pool, configured player move,
                 // or uniquely resolving effectiveness text.
-                if (!identityIsReadyForExactEnergy(payload.basis)) {
+                if (!fastMoveIdentitySupportsEnergy(payload.basis)) {
                     identities.remove(payload.side)
                     return emptyList()
                 }
@@ -290,17 +290,16 @@ class FastMoveEnergyInference(
 
     private fun normalize(value: String): String = value.uppercase().filter(Char::isLetterOrDigit)
 
-    private fun identityIsReadyForExactEnergy(basis: String): Boolean =
-        !basis.contains(HIGHER_ENERGY_TIE_BREAK_ASSUMPTION) &&
-            (basis.startsWith("CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES") ||
-                basis.startsWith("ACTIVE_SPECIES_UNIQUE_FAST_MOVE_REFERENCE_KNOWLEDGE") ||
-                basis.startsWith("AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE") ||
-                basis.contains("EFFECTIVENESS_TEXT") ||
-                basis.contains("_CORROBORATED_BY_"))
-
     private companion object {
         const val DEFAULT_USE_CONFIDENCE = 0.75f
         const val DEFAULT_IDENTITY_CONFIDENCE = 0.70f
-        const val HIGHER_ENERGY_TIE_BREAK_ASSUMPTION = "HIGHER_ENERGY_TIE_BREAK_ASSUMPTION"
     }
 }
+
+internal fun fastMoveIdentitySupportsEnergy(basis: String): Boolean =
+    !basis.contains("HIGHER_ENERGY_TIE_BREAK_ASSUMPTION") &&
+        (basis.startsWith("CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES") ||
+            basis.startsWith("ACTIVE_SPECIES_UNIQUE_FAST_MOVE_REFERENCE_KNOWLEDGE") ||
+            basis.startsWith("AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE") ||
+            basis.contains("EFFECTIVENESS_TEXT") ||
+            basis.contains("_CORROBORATED_BY_"))

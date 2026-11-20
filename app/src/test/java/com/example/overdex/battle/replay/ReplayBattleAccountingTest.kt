@@ -5,6 +5,25 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ReplayBattleAccountingTest {
+    @Test fun `Replay uses confirmed identity and reference gain but excludes the higher-energy guess`() {
+        fun afterHit(basis: String): ReplayEnergyState? {
+            val archive = MatchArchive(matchId = "match", articles = listOf(
+                timed("p", ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Camerupt", 323), 0.0),
+                timed("o", ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Sealeo", 364), 0.0),
+                timed("go", ArchivedMatchStarted, 0.0),
+                timed("identity", ArchivedFastMoveIdentified("PLAYER", "Camerupt", "Incinerate", ns(2.5),
+                    cadenceSampleCount = 3, basis = basis), 4.0),
+                completed("hit", "PLAYER", "Camerupt", 2.5).first(),
+            ))
+            val move = com.example.overdex.model.Move("Incinerate", com.example.overdex.model.PokemonType.FIRE,
+                20, 20, true, 5)
+            return MatchReplayModel(archive, fastMovesBySpeciesName = mapOf("Camerupt" to listOf(move)))
+                .sceneAt(ns(3.0)).playerEnergy
+        }
+        assertEquals(ReplayEnergyState(20, 20, 0), afterHit("AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE"))
+        assertNull(afterHit("OBSERVED_USES_HIGHER_ENERGY_TIE_BREAK_ASSUMPTION_CORROBORATED_BY_BAR_MOTION"))
+    }
+
     @Test fun `resources follow their own side and restore on a backward seek`() {
         val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
             event("player", ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Camerupt", 323), 1),
