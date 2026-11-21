@@ -80,7 +80,25 @@ add missing tie/concession recognition.
 | END-07 | A concession is independently established and attributed. | The conceding side loses even if it still has conscious Pokémon. Distinguish directly observed exit/confirmation, inference, and trainer testimony. |
 | END-08 | A timeout is independently established. | Use both teams' terminal survivor counts and, where required, sufficient HP evidence under the verified timeout rule. A single active bar or stale badge is insufficient. Await the game result if evidence is incomplete. |
 | END-09 | A black transition or capture gap interrupts play. | Open an appropriate bounded result check when supported by battle context. The transition alone establishes neither concession nor outcome. |
-| END-10 | Result or ending reason remains ambiguous. | Keep unknown fields explicit. A future trainer response should be separately attributed evidence or a record note, preserving original observations. This response/note workflow is not implemented by this document. |
+| END-10 | Result or ending reason remains ambiguous. | Keep unknown fields explicit. A trainer can mark a win or loss by concession in Replay. Keep that entry attributed to the trainer and preserve the original result and battle observations. |
+
+### Opponent concession review — November 20
+
+An independently confirmed concession and a confirmed final Incinerate KO both
+went through a black transition before **YOU WIN**. The frames just before the
+transition differ: Galvantula remained visibly alive in the concession, while
+Vaporeon contracted and disappeared in the KO. The last archived ball count can
+remain one in either case. An obscured or stale HP bar, an interruption, or a
+missing final attack does not settle the ending reason.
+
+Proposed witness scope under END-07 and END-09: preserve a bounded, source-timed
+view of the last battlefield and the transition, including the opponent's
+position, whole HP bar and team badge when visible. Let the ending resolver
+use this with the existing result witness and independent KO evidence. A
+visible live opponent through the exit supports a live withdrawal; an attributed
+concession requires stronger cause evidence or separately attributed trainer
+confirmation. Keep timeout, connection loss and uncertain departures distinct.
+This is a capture and evaluation proposal, pending held-out validation.
 
 ### Result-label observations and supporting motion — November 11
 
@@ -954,7 +972,7 @@ cover delayed and in-flight delivery. See [verification and acceptance limits](.
 | QTE-01 | The dedicated accepted QTE stream reads NICE, GREAT or EXCELLENT. | Replay may show that observed grade at its source time within the relevant QTE. | Do not invent unobserved grades, physical vibration, a named charged move or its finish. A lingering grade after completion must not reopen the QTE. |
 | QTE-02 | The dedicated accepted QTE grade stream reads a complete NICE, GREAT or EXCELLENT, and normal opponent HP geometry was measured within five seconds before that image. | Prepare a bounded opponent charge-camera HP watch if Get Ready has not done so. Later grades support the existing phase without replacing its anchor/token or extending its deadline; an older delayed Get Ready cannot reset it. | The grade does not establish QTE onset, move name, impact, damage or faint. Stale/missing geometry or appearance, stop and resize boundaries cannot establish ownership. |
 | QTE-03 | The player’s source-timed Get Ready cue opens a QTE window. Two distinct frames in that window show the same complete, unobscured type glyph on a supported bubble. | Record one observed **type** with the original glyph crop and capture times. The four calibrated regions restrict the search. Close on charge completion, incoming attack, stop, or expiry. | Region, fill color, an estimated count or grade alone cannot establish type. The reading does not name a move or establish that it completed, spent energy, landed, damaged, or fainted a Pokémon. Overlapping Fire and Poison bubbles need not be individually countable. |
-| QTE-04 · recorded observation and proposed counter | Within one player QTE, captured pop audio shows distinct attacks progressing through the same calibrated five-step pitch cycle. | Count separately supported attacks. Treat a confirmed wrap as supporting a run even if only a few video frames show it. When the cycle and both attacks are independently established, equal-pitch endpoints can bound at least one cycle. | One compound sound can have repeated peaks. Same pitch or greater loudness alone cannot supply another pop or a full cycle. Simultaneous identical notes, missing audio and competing sounds may leave the exact count unknown. Dragon and Grass show the cycle, with uncollected Normal and Grass as controls. Exact live counts and collected Normal remain unverified. |
+| QTE-04 · recorded observation and proposed counter | Within one player QTE, captured pop audio shows distinct attacks progressing through the same calibrated five-step pitch cycle. | Count separately supported attacks. Treat a confirmed wrap as supporting a run even if only a few video frames show it. When the cycle and both attacks are independently established, equal-pitch endpoints can bound at least one cycle. | One compound sound can have repeated peaks. Same pitch or greater loudness alone cannot supply another pop or a full cycle. Simultaneous identical notes, missing audio and competing sounds may leave the exact count unknown. The offline waveform counter subtracts a fitted attack before checking for another. It supports 22 ordered attacks in both copies of the Excellent Grass QTE, with four wraps. The trainer inventory suggests 23, leaving one unaccounted for by the audio. Uncollected Normal and Grass yield zero candidates. Exact live counts and collected Normal remain unverified. |
 | SHIELD-01 | A valid side-specific shield baseline exists and a later source-ordered count decreases. | Record the expenditure; a 2-to-0 gap represents two usages with unknown individual instants. | An initial count of 1 does not timestamp a use. Repeated counts or a noisy increase followed by the old value do not spend again. |
 | STAT-01 | An accepted stat-change sound has exactly one compatible, attributed named charge in the six-second source-time window. | Attribute the observed change and target side with both sources. Retract that side/name assignment if later evidence introduces another compatible move. | A move's possible or guaranteed reference effect alone is not an observed change. Timing proximity must not choose between competing candidates. Preserve the original cue and any revision. |
 

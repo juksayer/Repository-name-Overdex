@@ -53,6 +53,32 @@ class ReplayTrainerProjectionTest {
         assertNull(projection.apply(scene(), start + 2_000_000_000).opponent!!.trainerFinishingMove)
     }
 
+    @Test fun trainerConcessionMarksTheResultWithoutCreatingAnAttackOrFaint() {
+        val offset = 2_000_000_000L
+        val at = start + offset
+        val source = scene().copy(outcome = "WIN", opponentHp = ReplayHpState(0.23f))
+        val win = entry(ReplayCorrectionKind.CONCESSION, ReplayCorrectionSide.OPPONENT, "", offset)
+        val invalidCredit = entry(ReplayCorrectionKind.FAINT, ReplayCorrectionSide.PLAYER, "Camerupt", offset, link = win.id)
+        val projection = ReplayTrainerProjection("match", start, listOf(win))
+        val marker = projection.markers().single()
+        assertEquals(ReplayEventMarkerKind.CONCESSION, marker.kind)
+        assertEquals("OPPONENT", marker.initiatingSide)
+        assertEquals("Win by concession · Trainer entry by Trainer", marker.label)
+        assertEquals(at, marker.atNanos)
+        assertEquals(source, projection.apply(source, at - 1))
+        assertEquals(source.copy(trainerConcession = ReplayCorrectionSide.OPPONENT), projection.apply(source, at))
+        assertTrue(projection.soundEvents(emptyList()) { source }.isEmpty())
+        assertNull(projection.creditedMove(invalidCredit))
+
+        val loss = entry(ReplayCorrectionKind.CONCESSION, ReplayCorrectionSide.PLAYER, "", offset)
+        val lossProjection = ReplayTrainerProjection("match", start, listOf(loss))
+        assertEquals("Loss by concession · Trainer entry by Trainer", lossProjection.markers().single().label)
+        assertEquals(ReplayCorrectionSide.PLAYER, lossProjection.apply(scene(), at).trainerConcession)
+        val disputed = ReplayTrainerProjection("match", start, listOf(win, loss))
+        assertEquals(2, disputed.markers().size)
+        assertEquals(source, disputed.apply(source, at))
+    }
+
     @Test fun trainerMoveDoesNotAddFaintOrDuplicateAnExistingAttack() {
         val hit = entry(ReplayCorrectionKind.FAST_MOVE, ReplayCorrectionSide.PLAYER, "Camerupt", 2_000_000_000, "Incinerate")
         val projection = ReplayTrainerProjection("match", start, listOf(hit))

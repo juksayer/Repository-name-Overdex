@@ -307,6 +307,39 @@ class ReplayLcdLayoutDeviceTest {
         if (saveScreenshots) focusAction(lcdText("Exit Replay"))
     }
 
+    @Test fun addEventSavesAConcessionFromTheReplayMenu() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val archive = testArchive()
+        val temporary = File(context.cacheDir, archive.matchId).apply { check(mkdir()) }
+        val privateContext = object : ContextWrapper(context) {
+            override fun getFilesDir(): File = temporary
+        }
+        try {
+            mountReplay(360, 1f, archive, privateContext)
+            pressDirection("Down")
+            openView("Menu")
+            click("Trainer corrections")
+            click("Add event")
+            compose.onNodeWithText("Loss by concession").performScrollTo().performClick()
+            compose.onNodeWithText("✓ Loss by concession").assertIsDisplayed()
+            compose.onNodeWithText("Win by concession").performScrollTo().performClick()
+            compose.onNodeWithText("Pokémon").assertDoesNotExist()
+            compose.onNodeWithText("Move").assertDoesNotExist()
+            compose.onNode(hasText("Your trainer name") and hasSetTextAction()).performScrollTo()
+                .performTextInput("LCD test trainer")
+            compose.onNodeWithText("Save").performClick()
+            val store = ReplayTrainerCorrectionStore(temporary)
+            compose.waitUntil(5_000) { store.list(archive.matchId).isNotEmpty() }
+            val entry = store.list(archive.matchId).single()
+            assertEquals(ReplayCorrectionKind.CONCESSION, entry.kind)
+            assertEquals(ReplayCorrectionSide.OPPONENT, entry.side)
+            assertEquals(SECOND, entry.matchOffsetNanos)
+            compose.waitUntil(5_000) { compose.onAllNodes(hasText("Win by concession")).fetchSemanticsNodes().isNotEmpty() }
+        } finally {
+            temporary.deleteRecursively()
+        }
+    }
+
     private fun mountReplay(
         width: Int,
         scale: Float,

@@ -2595,6 +2595,8 @@ data class ReplayScene(
     val playerChargedMoves: List<ReplayChargedMoveSlot> = emptyList(),
     /** Camera framing can ease out after impact without extending the attack. */
     val chargeFocus: ReplayChargeFocus? = null,
+    /** An attributed trainer entry, independent of the observed outcome. */
+    val trainerConcession: ReplayCorrectionSide? = null,
 )
 
 data class ReplayFastMoveAction(

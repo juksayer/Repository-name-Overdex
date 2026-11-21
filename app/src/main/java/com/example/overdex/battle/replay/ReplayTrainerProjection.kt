@@ -47,8 +47,28 @@ internal class ReplayTrainerProjection(
     fun creditedMove(faint: ReplayTrainerCorrection): ReplayTrainerCorrection? {
         if (faint.kind != ReplayCorrectionKind.FAINT) return null
         val move = entries.singleOrNull { it.id == faint.finishingMoveId } ?: return null
-        return move.takeIf { it.kind != ReplayCorrectionKind.FAINT && it.side != faint.side &&
+        return move.takeIf { it.kind.isMove && it.side != faint.side &&
             it.matchOffsetNanos <= faint.matchOffsetNanos }
+    }
+
+    fun markers(): List<ReplayEventMarker> = entries.mapNotNull { entry ->
+        val time = at(entry) ?: return@mapNotNull null
+        val kind = when (entry.kind) {
+            ReplayCorrectionKind.FAST_MOVE -> ReplayEventMarkerKind.FAST_MOVE
+            ReplayCorrectionKind.CHARGED_MOVE -> ReplayEventMarkerKind.CHARGED_MOVE
+            ReplayCorrectionKind.FAINT -> ReplayEventMarkerKind.FAINT
+            ReplayCorrectionKind.CONCESSION -> ReplayEventMarkerKind.CONCESSION
+        }
+        val credited = creditedMove(entry)
+        val label = if (entry.kind == ReplayCorrectionKind.CONCESSION) {
+            "${entry.side.concessionLabel} · Trainer entry by ${entry.authorName}"
+        } else {
+            "Trainer entry · ${entry.speciesName} · ${entry.moveName ?: "faint"} · ${entry.authorName}" +
+                (credited?.let { " · KO by ${it.moveName}" } ?: "")
+        }
+        ReplayEventMarker("trainer:${entry.id}", kind, time, entry.side.name, label,
+            faintTiming = if (entry.kind == ReplayCorrectionKind.FAINT) ReplayFaintTiming.TrainerMark(time) else null,
+            causeSide = credited?.side?.name)
     }
 
     fun soundEvents(recorded: List<ReplayAttackSoundEvent>, sceneAt: (Long) -> ReplayScene): List<ReplayAttackSoundEvent> {
@@ -59,7 +79,7 @@ internal class ReplayTrainerProjection(
                 } == true)
         }
         val additional = entries.mapNotNull { entry ->
-            if (entry.kind == ReplayCorrectionKind.FAINT) return@mapNotNull null
+            if (!entry.kind.isMove) return@mapNotNull null
             val impact = at(entry) ?: return@mapNotNull null
             val start = (impact - VISUAL_NANOS).coerceAtLeast(matchStartNanos)
             val scene = sceneAt(impact)
@@ -103,7 +123,7 @@ internal class ReplayTrainerProjection(
                 trainerFinishingMove = link?.moveName)
         }
         val additions = entries.mapNotNull { entry ->
-            if (entry.kind == ReplayCorrectionKind.FAINT) return@mapNotNull null
+            if (!entry.kind.isMove) return@mapNotNull null
             val impact = at(entry) ?: return@mapNotNull null
             val start = (impact - VISUAL_NANOS).coerceAtLeast(matchStartNanos)
             if (cursor < start || cursor > impact + HOLD_NANOS) return@mapNotNull null
@@ -140,10 +160,14 @@ internal class ReplayTrainerProjection(
         }
         val player = applyFaint(ReplayCorrectionSide.PLAYER, scene.player)
         val opponent = applyFaint(ReplayCorrectionSide.OPPONENT, scene.opponent)
+        val concession = entries.asSequence().filter { it.kind == ReplayCorrectionKind.CONCESSION }
+            .filter { at(it)?.let { time -> time <= cursor } == true }
+            .map { it.side }.distinct().singleOrNull()
         return scene.copy(player = player, opponent = opponent,
             playerHp = if (player?.knockoutBasis == "TRAINER_ENTRY") ReplayHpState(0f) else scene.playerHp,
             opponentHp = if (opponent?.knockoutBasis == "TRAINER_ENTRY") ReplayHpState(0f) else scene.opponentHp,
-            fastMoveActions = retainedFast + fast, chargedMoveActions = scene.chargedMoveActions + charged)
+            fastMoveActions = retainedFast + fast, chargedMoveActions = scene.chargedMoveActions + charged,
+            trainerConcession = concession)
     }
 
     private companion object { const val VISUAL_NANOS = 700_000_000L; const val HOLD_NANOS = 100_000_000L; const val DUPLICATE_WINDOW = 450_000_000L; const val REVIEWED_KO_WINDOW = 1_500_000_000L }

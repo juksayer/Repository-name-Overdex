@@ -19,6 +19,7 @@ data class ReplayTrainerCorrection(
     /** Offset from the match start, not the device's nonportable monotonic clock. */
     val matchOffsetNanos: Long,
     val kind: ReplayCorrectionKind,
+    /** The Pokémon's side, or the side that conceded for a concession entry. */
     val side: ReplayCorrectionSide,
     val speciesName: String,
     val moveName: String? = null,
@@ -34,12 +35,12 @@ data class ReplayTrainerCorrection(
         require(runCatching { UUID.fromString(id).toString() == id }.getOrDefault(false))
         require(matchId.isNotBlank() && matchId.length <= 200)
         require(matchOffsetNanos in 0..3_600_000_000_000L) { "Entry time must be within one hour of match start." }
-        require(speciesName.isNotBlank() && speciesName.length <= 100)
+        require(if (kind == ReplayCorrectionKind.CONCESSION) speciesName.isEmpty()
+            else speciesName.isNotBlank() && speciesName.length <= 100)
         require(authorName.isNotBlank() && authorName.length <= 100)
         require(note.length <= 2000)
         require(moveName == null || (moveName.isNotBlank() && moveName.length <= 100))
-        require(kind == ReplayCorrectionKind.FAINT || moveName != null)
-        require(kind != ReplayCorrectionKind.FAINT || moveName == null)
+        require(kind.isMove == (moveName != null))
         require(createdAtMillis >= 0)
         require(originMatchId == null || (originMatchId.isNotBlank() && originMatchId.length <= 200))
         require(finishingMoveId == null || (kind == ReplayCorrectionKind.FAINT &&
@@ -48,8 +49,17 @@ data class ReplayTrainerCorrection(
     }
 }
 
-@Serializable enum class ReplayCorrectionKind { FAST_MOVE, CHARGED_MOVE, FAINT }
-@Serializable enum class ReplayCorrectionSide { PLAYER, OPPONENT }
+@Serializable enum class ReplayCorrectionKind {
+    FAST_MOVE, CHARGED_MOVE, FAINT, CONCESSION;
+
+    val isMove: Boolean get() = this == FAST_MOVE || this == CHARGED_MOVE
+}
+
+@Serializable enum class ReplayCorrectionSide {
+    PLAYER, OPPONENT;
+
+    val concessionLabel: String get() = if (this == OPPONENT) "Win by concession" else "Loss by concession"
+}
 
 /** Each statement is independently retained; a bad file cannot hide other corrections. */
 class ReplayTrainerCorrectionStore(private val root: File) {

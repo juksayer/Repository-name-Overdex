@@ -37,4 +37,27 @@ class ReplayCorrectionTransferTest {
         assertThrows(IllegalArgumentException::class.java) { ReplayCorrectionTransfer.decode(ByteArray(2901)) }
         assertNull(ReplayCorrectionTransfer.fromMessage("ordinary chat"))
     }
+
+    @Test fun concessionSurvivesStorageAndReversesItsResultAcrossPerspectives() {
+        val win = entry(ReplayCorrectionKind.CONCESSION, ReplayCorrectionSide.OPPONENT, 15, null)
+            .copy(speciesName = "", note = "Opponent left during the charged move")
+        val root = folder.newFolder()
+        val store = ReplayTrainerCorrectionStore(root)
+        store.add(win)
+        assertEquals(listOf(win), ReplayTrainerCorrectionStore(root).list("source"))
+        val bytes = ReplayCorrectionTransfer.encode(ReplayCorrectionFile(sourceMatchId = "source", entries = listOf(win)))
+        val received = ReplayCorrectionTransfer.fromMessage(ReplayCorrectionTransfer.toMessage(bytes))!!
+        assertEquals(1, store.importFile(received, "other-phone", true))
+        val loss = store.list("other-phone").single()
+        assertEquals(ReplayCorrectionKind.CONCESSION, loss.kind)
+        assertEquals("Loss by concession", loss.side.concessionLabel)
+        assertEquals(win.note, loss.note)
+        assertEquals(win.matchOffsetNanos, loss.matchOffsetNanos)
+
+        assertThrows(IllegalArgumentException::class.java) { win.copy(moveName = "Incinerate").validate() }
+        val faint = entry(ReplayCorrectionKind.FAINT, ReplayCorrectionSide.PLAYER, 15, null, win.id)
+        assertThrows(IllegalArgumentException::class.java) {
+            ReplayCorrectionTransfer.encode(ReplayCorrectionFile(sourceMatchId = "source", entries = listOf(win, faint)))
+        }
+    }
 }

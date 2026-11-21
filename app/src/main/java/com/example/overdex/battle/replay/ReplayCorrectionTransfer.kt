@@ -52,7 +52,7 @@ object ReplayCorrectionTransfer {
         file.entries.forEach { it.validate(); require(it.matchId == file.sourceMatchId) }
         file.entries.filter { it.finishingMoveId != null }.forEach { faint ->
             val move = requireNotNull(file.entries.singleOrNull { it.id == faint.finishingMoveId }) { "A linked move is missing." }
-            require(move.kind != ReplayCorrectionKind.FAINT && move.side != faint.side && move.matchOffsetNanos <= faint.matchOffsetNanos)
+            require(move.kind.isMove && move.side != faint.side && move.matchOffsetNanos <= faint.matchOffsetNanos)
         }
     }
 }

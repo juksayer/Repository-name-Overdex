@@ -31,35 +31,40 @@ internal fun ReplayCorrectionDialog(
     var author by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     var finishingMoveId by remember { mutableStateOf<String?>(null) }
-    val valid = species.isNotBlank() && species.length <= 100 && author.isNotBlank() && author.length <= 100 &&
-        note.length <= 2000 && (kind == ReplayCorrectionKind.FAINT || (move.isNotBlank() && move.length <= 100))
+    var concedingSide by remember { mutableStateOf(ReplayCorrectionSide.OPPONENT) }
+    val isConcession = kind == ReplayCorrectionKind.CONCESSION
+    val valid = (isConcession || (species.isNotBlank() && species.length <= 100)) &&
+        author.isNotBlank() && author.length <= 100 && note.length <= 2000 &&
+        (!kind.isMove || (move.isNotBlank() && move.length <= 100))
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add a missing event") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text("Place the cursor at the impact or faint. Your entry is saved separately from the recording.")
+                Text("Your entry marks the current Replay time and is saved separately from the recording.")
                 Row {
-                    TextButton(onClick = { side = ReplayCorrectionSide.PLAYER }) { Text(if (side == ReplayCorrectionSide.PLAYER) "✓ Your team" else "Your team") }
-                    TextButton(onClick = { side = ReplayCorrectionSide.OPPONENT }) { Text(if (side == ReplayCorrectionSide.OPPONENT) "✓ Opponent" else "Opponent") }
-                }
-                Row {
-                    ReplayCorrectionKind.entries.forEach { option ->
-                        TextButton(onClick = { kind = option }) {
-                            Text((if (kind == option) "✓ " else "") + when (option) {
-                                ReplayCorrectionKind.FAST_MOVE -> "Fast"
-                                ReplayCorrectionKind.CHARGED_MOVE -> "Charged"
-                                ReplayCorrectionKind.FAINT -> "Faint"
-                            })
-                        }
+                    listOf(ReplayCorrectionKind.FAST_MOVE to "Fast", ReplayCorrectionKind.CHARGED_MOVE to "Charged",
+                        ReplayCorrectionKind.FAINT to "Faint").forEach { (option, label) ->
+                        TextButton(onClick = { kind = option }) { Text((if (kind == option) "✓ " else "") + label) }
                     }
                 }
-                OutlinedTextField(species, { species = it }, label = { Text("Pokémon") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                if (kind != ReplayCorrectionKind.FAINT) OutlinedTextField(move, { move = it }, label = { Text("Move") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                listOf(ReplayCorrectionSide.OPPONENT, ReplayCorrectionSide.PLAYER).forEach { option ->
+                    TextButton(onClick = { concedingSide = option; kind = ReplayCorrectionKind.CONCESSION }) {
+                        Text((if (isConcession && concedingSide == option) "✓ " else "") + option.concessionLabel)
+                    }
+                }
+                if (!isConcession) {
+                    Row {
+                        TextButton(onClick = { side = ReplayCorrectionSide.PLAYER }) { Text(if (side == ReplayCorrectionSide.PLAYER) "✓ Your team" else "Your team") }
+                        TextButton(onClick = { side = ReplayCorrectionSide.OPPONENT }) { Text(if (side == ReplayCorrectionSide.OPPONENT) "✓ Opponent" else "Opponent") }
+                    }
+                    OutlinedTextField(species, { species = it }, label = { Text("Pokémon") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                }
+                if (kind.isMove) OutlinedTextField(move, { move = it }, label = { Text("Move") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 if (kind == ReplayCorrectionKind.FAINT) {
                     Text("Credit a move only if you know it caused this faint:")
                     TextButton(onClick = { finishingMoveId = null }) { Text(if (finishingMoveId == null) "✓ Cause unknown" else "Cause unknown") }
-                    priorEntries.filter { it.kind != ReplayCorrectionKind.FAINT && it.side != side && it.matchOffsetNanos <= offsetNanos }
+                    priorEntries.filter { it.kind.isMove && it.side != side && it.matchOffsetNanos <= offsetNanos }
                         .sortedByDescending { it.matchOffsetNanos }.forEach { candidate ->
                             TextButton(onClick = { finishingMoveId = candidate.id }) {
                                 Text((if (finishingMoveId == candidate.id) "✓ " else "") + "${formatReplayTime(candidate.matchOffsetNanos)} · ${candidate.speciesName} · ${candidate.moveName}")
@@ -71,10 +76,11 @@ internal fun ReplayCorrectionDialog(
             }
         },
         confirmButton = { TextButton(enabled = valid, onClick = {
-            onSave(ReplayTrainerCorrection(UUID.randomUUID().toString(), matchId, offsetNanos, kind, side,
-                species.trim(), move.trim().takeIf { kind != ReplayCorrectionKind.FAINT }, note.trim(), author.trim(), System.currentTimeMillis(),
+            val entrySide = if (isConcession) concedingSide else side
+            onSave(ReplayTrainerCorrection(UUID.randomUUID().toString(), matchId, offsetNanos, kind, entrySide,
+                if (isConcession) "" else species.trim(), move.trim().takeIf { kind.isMove }, note.trim(), author.trim(), System.currentTimeMillis(),
                 finishingMoveId = finishingMoveId.takeIf { id -> kind == ReplayCorrectionKind.FAINT && priorEntries.any {
-                    it.id == id && it.kind != ReplayCorrectionKind.FAINT && it.side != side && it.matchOffsetNanos <= offsetNanos
+                    it.id == id && it.kind.isMove && it.side != side && it.matchOffsetNanos <= offsetNanos
                 } }))
         }) { Text("Save") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },

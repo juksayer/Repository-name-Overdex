@@ -40,6 +40,7 @@ data class ReplayEventMarker(
 enum class ReplayEventMarkerKind(val shortLabel: String) {
     MATCH_START("GO"), CHARGED_MOVE("CM"), FAINT("KO"),
     BUFF("↑"), DEBUFF("↓"), ACTIVE_CHANGE("↔"), SHIELD("SH"), FAST_MOVE("FM"), POSSIBLE_CRY("CR?"),
+    CONCESSION("END"),
 }
 
 /** Pure cursor navigation also keeps different events at the same instant reachable. */

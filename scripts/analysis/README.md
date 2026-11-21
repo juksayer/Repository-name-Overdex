@@ -67,3 +67,33 @@ Run focused standalone tests without building the Android app:
 ```sh
 python3 -m unittest discover -s scripts/analysis/tests -p 'test_profile_hp_locations.py' -v
 ```
+
+## QTE pop counting
+
+`qte_pop_counter.py` analyzes a bounded window of a recorded QTE with NumPy
+and SciPy. Give it the decoded PCM16 WAV and a reference WAV with a clear
+lowest-pitch pop and several isolated repeats. It accepts mono or stereo at
+24 or 48 kHz. All times refer to the WAV passed in each argument.
+
+```sh
+python3 scripts/analysis/qte_pop_counter.py /path/grass.wav --window 99 105.8 \
+  --reference /path/dragon.wav --seed 38.731 --isolated 95.329 99.9366 61.430 58.4014
+```
+
+The counter removes the waveform already explained by each detected attack
+before searching for overlapping sounds. The JSON keeps waveform-supported
+candidates and their measured timestamps. Wraps and discontinuities audit the
+pitch sequence independently of the count. A missing pitch contributes no
+event. Counts remain provisional if sounds are indistinguishable, missing,
+or masked by other audio. This is a recorded-audio analysis tool.
+
+Run the focused tests with the decoded fixtures from a recording review:
+
+```sh
+OVERDEX_QTE_POP_WAVS=/path/qte-pop-review \
+  python3 -m unittest discover -s scripts/analysis/tests -p 'test_qte_pop_counter.py' -v
+```
+
+The fixture directory contains `dragontypeiconqtetest-full.wav`,
+`dragon-dragon-pulse.wav`, `qtegrass-full.wav`, `grass-leaf-blade.wav` and
+`normalqte-full.wav`. The recordings remain separate from the repository.

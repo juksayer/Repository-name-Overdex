@@ -316,6 +316,7 @@ private fun ReplayLcdEvent(
             current.label.replaceFirst("Fast move · name unknown", "Unknown fast move")
         current.label.startsWith("Charged move · name unknown") ->
             current.label.replaceFirst("Charged move · name unknown", "Unknown charged move")
+        current.kind == ReplayEventMarkerKind.CONCESSION -> current.label.substringBefore(" · ")
         else -> current.label.removePrefix("Fast move · ").removePrefix("Charged move · ")
     }
     val shared = current.initiatingSide == null
@@ -338,6 +339,9 @@ private fun ReplayLcdEvent(
             ReplayLcdText(if (faint) "Cause unconfirmed" else "Initiating side unconfirmed")
         }
         byline?.let { ReplayLcdText(it) }
+        if (current.kind == ReplayEventMarkerKind.CONCESSION) {
+            ReplayLcdText(current.label.substringAfter(" · "))
+        }
         qualification?.let { ReplayLcdText(it) }
         if (faint) ReplayLcdText(formatReplayFaintTime(current.faintTiming, matchStartNanos, archiveStartNanos))
         else if (current.kind != ReplayEventMarkerKind.MATCH_START) ReplayLcdText(formatReplayTime(current.atNanos - startNanos))
@@ -467,4 +471,5 @@ private fun replayMarkerColor(kind: ReplayEventMarkerKind): Color = when (kind) 
     ReplayEventMarkerKind.ACTIVE_CHANGE -> Color(0xFF80DEEA)
     ReplayEventMarkerKind.SHIELD -> Color(0xFF90B6FF)
     ReplayEventMarkerKind.POSSIBLE_CRY -> Color(0xFFCE93D8)
+    ReplayEventMarkerKind.CONCESSION -> Color.White
 }

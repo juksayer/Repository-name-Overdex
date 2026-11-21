@@ -114,6 +114,7 @@ import com.example.overdex.data.LocalCryProvider
 import com.example.overdex.data.FieldNoteRepository
 import com.example.overdex.data.GameMasterLoader
 import com.example.overdex.data.LocalSpriteProvider
+import com.example.overdex.data.PokemonBiographyCatalog
 import com.example.overdex.data.PokemonJsonLoader
 import com.example.overdex.data.PokemonRepository
 import com.example.overdex.data.SpeciesJsonLoader
@@ -196,6 +197,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     fun openGuidedRegistration() { _pendingCommand.tryEmit(InstrumentCommand.OpenCapture) }
     fun stopGuidedRegistration() { if (registrationRequested) stopObservation() }
     private val fieldNoteRepository = FieldNoteRepository(application)
+    private val pokemonBiographies by lazy {
+        fun read(name: String) = application.assets.open(name).bufferedReader().use { it.readText() }
+        runCatching { PokemonBiographyCatalog(read("pokemon_biography_index.json"), read("pokemon_biographies.json")) }
+            .onFailure { Log.w("PokemonBiography", "Could not load the biography catalogue", it) }
+            .getOrNull()
+    }
     
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
@@ -389,6 +396,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     fun getFieldNotes(pokemonId: Int) = flow {
         emit(fieldNoteRepository.getFieldNotesForPokemon(pokemonId))
     }.flowOn(Dispatchers.IO)
+
+    suspend fun getBiography(pokemonId: Int) = withContext(Dispatchers.IO) {
+        pokemonBiographies?.forSpecies(pokemonId)
+    }
 
     // Instrument Workspace
     private val instrumentTree = InstrumentTree(

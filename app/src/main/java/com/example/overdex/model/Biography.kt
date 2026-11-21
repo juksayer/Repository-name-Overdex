@@ -39,6 +39,7 @@ enum class BiographySectionType {
     BIOLOGY,
     ORIGINS,
     ANIME,
+    MANGA,
     GAMES,
     POKEMON_GO,
     TRIVIA,

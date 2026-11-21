@@ -2,6 +2,7 @@ package com.example.overdex.data
 
 import android.content.res.AssetManager
 import android.util.Log
+import java.io.IOException
 
 /**
  * Abstraction for resolving the visual asset (sprite) for a specific Pokémon.
@@ -77,11 +78,29 @@ class LocalSpriteProvider(private val assetManager: AssetManager) : SpriteProvid
         return if (back) getBackSpriteUrl(id) else getSpriteUrl(id)
     }
 
-    private fun backSpriteExists(id: Int): Boolean = try {
+    internal fun backSpriteExists(id: Int): Boolean = try {
         assetManager.open("sprites/pokemon/back/$id.png").use { }
         true
     } catch (_: Exception) {
         false
+    }
+
+    internal fun getFormSpriteUrls(id: Int, back: Boolean): Map<String, String> {
+        val directory = if (back) "sprites/pokemon/forms/back" else "sprites/pokemon/forms"
+        val prefix = "$id-"
+        return assetManager.list(directory).orEmpty().filter { it.startsWith(prefix) && it.endsWith(".png") }
+            .associate { it.removePrefix(prefix).removeSuffix(".png") to "file:///android_asset/$directory/$it" }
+    }
+
+    internal fun getArtworkUrl(id: Int, form: String? = null): String? {
+        val suffix = form?.let { "-$it" }.orEmpty()
+        val path = "artwork/pokemon/$id$suffix.webp"
+        return try {
+            assetManager.open(path).use { }
+            "file:///android_asset/$path"
+        } catch (_: IOException) {
+            null
+        }
     }
 
     private fun getPlaceholderUrl(): String = ""

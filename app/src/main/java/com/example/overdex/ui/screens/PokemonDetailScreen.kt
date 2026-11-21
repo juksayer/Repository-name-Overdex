@@ -11,6 +11,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Alignment
@@ -22,6 +25,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.overdex.data.DroidballDexEntry
+import com.example.overdex.data.LocalSpriteProvider
+import com.example.overdex.model.BiographyReference
+import com.example.overdex.model.PokemonBiography
 import com.example.overdex.model.Move
 import com.example.overdex.model.Pokemon
 import com.example.overdex.model.PokemonType
@@ -42,6 +48,10 @@ sealed interface PokemonDetailNavItem {
     data object Back : PokemonDetailNavItem
     data object Audio : PokemonDetailNavItem
     data object Artwork : PokemonDetailNavItem
+    data object Biography : PokemonDetailNavItem
+    data class BiographyTopic(val index: Int) : PokemonDetailNavItem
+    data object BiographyGallery : PokemonDetailNavItem
+    data class BiographySource(val reference: BiographyReference) : PokemonDetailNavItem
     data object Region : PokemonDetailNavItem
     data class Type(val type: PokemonType) : PokemonDetailNavItem
     data class Evolution(val id: Int, val name: String) : PokemonDetailNavItem
@@ -71,10 +81,24 @@ fun PokemonDetailScreen(
     viewModel: PokedexViewModel,
 ) {
     val fieldNotes by remember(pokemon.id) { viewModel.getFieldNotes(pokemon.id) }.collectAsState(initial = emptyList())
+    var biography by remember(pokemon.id) { mutableStateOf<PokemonBiography?>(null) }
+    var biographyExpanded by rememberSaveable(pokemon.id) { mutableStateOf(false) }
+    var galleryOpen by rememberSaveable(pokemon.id) { mutableStateOf(false) }
+    val assets = LocalContext.current.assets
+    val uriHandler = LocalUriHandler.current
+    LaunchedEffect(viewModel, pokemon.id) { biography = viewModel.getBiography(pokemon.id) }
+    val sections = biography?.sections.orEmpty()
+    val hasBiography = sections.isNotEmpty()
+    val gallery = remember(pokemon.id, assets, hasBiography) {
+        if (hasBiography) LocalSpriteProvider(assets).biographyGalleryImages(pokemon.id) else emptyList()
+    }
+    val biographySources = remember(sections) {
+        sections.flatMap { it.references }.distinct().filter { it.identifier?.startsWith("https://") == true }
+    }
     val isDroidball = pokemon.id == DroidballDexEntry.ID
     val hasCry = pokemon.cryUrl.isNotBlank()
 
-    val navItems = remember(pokemon, fieldNotes) {
+    val navItems = remember(pokemon, fieldNotes, sections, biographyExpanded, gallery, biographySources) {
         val header = buildList {
             add(PokemonDetailNavItem.Back)
             if (hasCry) add(PokemonDetailNavItem.Audio)
@@ -101,6 +125,14 @@ fun PokemonDetailScreen(
             pokemon.fastMoves.forEach { add(PokemonDetailNavItem.Move(it)) }
             pokemon.chargedMoves.forEach { add(PokemonDetailNavItem.Move(it)) }
 
+            if (hasBiography) {
+                add(PokemonDetailNavItem.Biography)
+                if (biographyExpanded) {
+                    sections.indices.forEach { add(PokemonDetailNavItem.BiographyTopic(it)) }
+                    if (gallery.isNotEmpty()) add(PokemonDetailNavItem.BiographyGallery)
+                    biographySources.forEach { add(PokemonDetailNavItem.BiographySource(it)) }
+                }
+            }
             fieldNotes.forEach { add(PokemonDetailNavItem.FieldNoteItem(it)) }
         }
         
@@ -111,9 +143,13 @@ fun PokemonDetailScreen(
         key = pokemon.id,
         itemCount = { navItems.size },
         onActivate = { index ->
-            when (val item = navItems[index]) {
+            when (val item = navItems.getOrNull(index)) {
                 PokemonDetailNavItem.Back -> onBackClick()
                 PokemonDetailNavItem.Artwork -> if (hasCry) onPlayCry(pokemon.cryUrl)
+                PokemonDetailNavItem.Biography -> biographyExpanded = !biographyExpanded
+                is PokemonDetailNavItem.BiographyTopic -> Unit
+                PokemonDetailNavItem.BiographyGallery -> galleryOpen = true
+                is PokemonDetailNavItem.BiographySource -> item.reference.identifier?.let(uriHandler::openUri)
                 PokemonDetailNavItem.Audio -> onPlayCry(pokemon.cryUrl)
                 PokemonDetailNavItem.Region -> onRegionClick(pokemon.region)
                 is PokemonDetailNavItem.Type -> onTypeClick(item.type)
@@ -122,12 +158,31 @@ fun PokemonDetailScreen(
                 is PokemonDetailNavItem.Resistance -> onTypeClick(item.type)
                 is PokemonDetailNavItem.Move -> onMoveClick(item.move.name)
                 is PokemonDetailNavItem.FieldNoteItem -> { /* No action for now */ }
+                null -> Unit
             }
         }
     )
 
+    val biographyAction = when (navItems.getOrNull(nav.selectedIndex)) {
+        PokemonDetailNavItem.Biography -> if (biographyExpanded) "Close biography" else "Open biography"
+        PokemonDetailNavItem.BiographyGallery -> "View sprites"
+        is PokemonDetailNavItem.BiographySource -> "Open source"
+        else -> null
+    }
+    val biographyLcd: (@Composable () -> Unit)? = if (biographyAction == null) null else {
+        {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                TextButton(onClick = { nav.activate() }) { Text(biographyAction, color = TerminalGreen) }
+            }
+        }
+    }
+
     val requesters = remember(navItems) {
         navItems.associateWith { BringIntoViewRequester() }
+    }
+    val openedBiographyRequester = remember { BringIntoViewRequester() }
+    LaunchedEffect(hasBiography, biographyExpanded) {
+        if (hasBiography && biographyExpanded) openedBiographyRequester.bringIntoView()
     }
 
     HandheldFocusSync<PokemonDetailNavItem>(nav.selectedIndex, navItems, requesters)
@@ -149,6 +204,7 @@ fun PokemonDetailScreen(
         onLaunchProbe = onLaunchProbe,
         onLaunchObservatory = onLaunchObservatory,
         isBinderMode = isBinderMode,
+        lcdContent = biographyLcd,
         viewModel = viewModel
     ) { _ ->
         Column(
@@ -163,7 +219,7 @@ fun PokemonDetailScreen(
             ) {
                 // Visual Back Button Target
                 val backItem = PokemonDetailNavItem.Back
-                val isBackSelected = navItems[nav.selectedIndex] == backItem
+                val isBackSelected = navItems.getOrNull(nav.selectedIndex) == backItem
                 Box(
                     modifier = Modifier
                         .bringIntoViewRequester(requesters[backItem]!!)
@@ -189,7 +245,7 @@ fun PokemonDetailScreen(
                 // Audio Navigation Target
                 if (hasCry) {
                     val audioItem = PokemonDetailNavItem.Audio
-                    val isAudioSelected = navItems[nav.selectedIndex] == audioItem
+                    val isAudioSelected = navItems.getOrNull(nav.selectedIndex) == audioItem
                     Box(
                         modifier = Modifier
                             .bringIntoViewRequester(requesters[audioItem]!!)
@@ -215,7 +271,7 @@ fun PokemonDetailScreen(
             }
             
             // Sprite resolution through unified pipeline
-            val isArtworkSelected = navItems[nav.selectedIndex] == PokemonDetailNavItem.Artwork
+            val isArtworkSelected = navItems.getOrNull(nav.selectedIndex) == PokemonDetailNavItem.Artwork
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -256,7 +312,7 @@ fun PokemonDetailScreen(
                     
                     // Region Badge
                     val regionItem = PokemonDetailNavItem.Region
-                    val isRegionSelected = navItems[nav.selectedIndex] == regionItem
+                    val isRegionSelected = navItems.getOrNull(nav.selectedIndex) == regionItem
                     Surface(
                         color = if (isRegionSelected) TerminalGreen else TerminalGreen.copy(alpha = 0.1f),
                         shape = RoundedCornerShape(4.dp),
@@ -281,7 +337,7 @@ fun PokemonDetailScreen(
                     Row {
                         pokemon.types.forEach { type ->
                             val item = PokemonDetailNavItem.Type(type)
-                            val isSelected = navItems[nav.selectedIndex] == item
+                            val isSelected = navItems.getOrNull(nav.selectedIndex) == item
                             TypeBadge(
                                 type = type,
                                 onClick = null,
@@ -356,7 +412,7 @@ fun PokemonDetailScreen(
 
                     pokemon.prevEvolutions.forEach { evo ->
                         val item = PokemonDetailNavItem.Evolution(evo.num.toInt(), evo.name)
-                        val isSelected = navItems[nav.selectedIndex] == item
+                        val isSelected = navItems.getOrNull(nav.selectedIndex) == item
                         Text(
                             text = evo.name,
                             color = if (isSelected) TerminalBlack else TerminalGreen,
@@ -384,7 +440,7 @@ fun PokemonDetailScreen(
 
                     pokemon.nextEvolutions.forEach { evo ->
                         val item = PokemonDetailNavItem.Evolution(evo.num.toInt(), evo.name)
-                        val isSelected = navItems[nav.selectedIndex] == item
+                        val isSelected = navItems.getOrNull(nav.selectedIndex) == item
                         Text(
                             text = "↓",
                             color = TerminalDimGreen
@@ -435,7 +491,7 @@ fun PokemonDetailScreen(
                 SectionTitle("Fast Moves")
                 pokemon.fastMoves.forEach { move ->
                     val item = PokemonDetailNavItem.Move(move)
-                    val isSelected = navItems[nav.selectedIndex] == item
+                    val isSelected = navItems.getOrNull(nav.selectedIndex) == item
                     MoveRow(
                         move = move,
                         modifier = Modifier.bringIntoViewRequester(requesters[item]!!),
@@ -448,7 +504,7 @@ fun PokemonDetailScreen(
                 SectionTitle("Charged Moves")
                 pokemon.chargedMoves.forEach { move ->
                     val item = PokemonDetailNavItem.Move(move)
-                    val isSelected = navItems[nav.selectedIndex] == item
+                    val isSelected = navItems.getOrNull(nav.selectedIndex) == item
                     MoveRow(
                         move = move,
                         modifier = Modifier.bringIntoViewRequester(requesters[item]!!),
@@ -457,12 +513,49 @@ fun PokemonDetailScreen(
                 }
             }
 
+            if (hasBiography) {
+                val item = PokemonDetailNavItem.Biography
+                Column(
+                    modifier = Modifier.padding(top = 16.dp).bringIntoViewRequester(openedBiographyRequester),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    BiographyRow("Biography", navItems.getOrNull(nav.selectedIndex) == item,
+                        onClick = { biographyExpanded = !biographyExpanded }, expanded = biographyExpanded,
+                        modifier = Modifier.bringIntoViewRequester(requesters.getValue(item)))
+                    if (biographyExpanded) {
+                        sections.forEachIndexed { index, section ->
+                            val topic = PokemonDetailNavItem.BiographyTopic(index)
+                            val topicSelected = navItems.getOrNull(nav.selectedIndex) == topic
+                            Column(Modifier.fillMaxWidth().bringIntoViewRequester(requesters.getValue(topic)),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(section.title, color = if (topicSelected) TerminalGreen else TerminalPurple,
+                                    fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                section.subtitle?.let { Text(it, color = TerminalGreen, fontSize = 14.sp, fontWeight = FontWeight.Medium) }
+                                section.content.forEach { Text(it, color = TerminalGreen, fontSize = 14.sp) }
+                            }
+                        }
+                        if (gallery.isNotEmpty()) {
+                            val galleryItem = PokemonDetailNavItem.BiographyGallery
+                            BiographyRow("Sprite gallery", navItems.getOrNull(nav.selectedIndex) == galleryItem,
+                                onClick = { galleryOpen = true },
+                                modifier = Modifier.bringIntoViewRequester(requesters.getValue(galleryItem)))
+                        }
+                        biographySources.forEach { reference ->
+                            val source = PokemonDetailNavItem.BiographySource(reference)
+                            BiographyRow(reference.title, navItems.getOrNull(nav.selectedIndex) == source,
+                                onClick = { reference.identifier?.let(uriHandler::openUri) },
+                                modifier = Modifier.bringIntoViewRequester(requesters.getValue(source)))
+                        }
+                    }
+                }
+            }
+
             // Battle haikus close the detail page, replacing imported flavor text.
             if (fieldNotes.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(16.dp))
                 fieldNotes.forEach { note ->
                     val item = PokemonDetailNavItem.FieldNoteItem(note)
-                    val isSelected = navItems[nav.selectedIndex] == item
+                    val isSelected = navItems.getOrNull(nav.selectedIndex) == item
                     FieldNoteSection(
                         note = note,
                         modifier = Modifier
@@ -475,6 +568,7 @@ fun PokemonDetailScreen(
 
         }
     }
+    if (galleryOpen && gallery.isNotEmpty()) PokemonImageGallery(pokemon.name, gallery) { galleryOpen = false }
 }
 
 @Composable
@@ -595,7 +689,7 @@ fun EffectivenessRow(
                 else -> return@forEach
             }
             val mult = multipliers[type] ?: 1.0
-            val isSelected = navItems[nav.selectedIndex] == item
+            val isSelected = navItems.getOrNull(nav.selectedIndex) == item
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 TypeBadge(
                     type = type,

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Row
@@ -99,6 +100,8 @@ import com.example.overdex.battle.replay.ReplayAudioRecovery
 import com.example.overdex.battle.replay.ReplayPreparationCoordinator
 import com.example.overdex.battle.replay.ReplayPreparationState
 import com.example.overdex.battle.replay.ReplayReferenceLookup
+import com.example.overdex.battle.replay.ReplayCorrectionSide
+import com.example.overdex.battle.replay.ReplayTrainerProjection
 import com.example.overdex.battle.replay.prepareReplay
 import com.example.overdex.battle.replay.ReplayEventMarkerNavigation
 import com.example.overdex.data.LocalSpriteProvider
@@ -258,28 +261,14 @@ fun MatchReplayScreen(
     val playbackStart = com.example.overdex.battle.replay.replayDefaultPosition(
         playbackWindow?.startNanos ?: model.startNanos, playbackEnd, model.matchStartNanos, playbackWindow != null)
 
-    val eventMarkers = remember(model, playbackStart, playbackEnd, corrections) {
-        val trainerMarkers = model.matchStartNanos?.let { start ->
-            corrections.mapNotNull { entry ->
-                val at = runCatching { Math.addExact(start, entry.matchOffsetNanos) }.getOrNull()
-                    ?: return@mapNotNull null
-                val kind = when (entry.kind) {
-                    com.example.overdex.battle.replay.ReplayCorrectionKind.FAST_MOVE -> com.example.overdex.battle.replay.ReplayEventMarkerKind.FAST_MOVE
-                    com.example.overdex.battle.replay.ReplayCorrectionKind.CHARGED_MOVE -> com.example.overdex.battle.replay.ReplayEventMarkerKind.CHARGED_MOVE
-                    com.example.overdex.battle.replay.ReplayCorrectionKind.FAINT -> com.example.overdex.battle.replay.ReplayEventMarkerKind.FAINT
-                }
-                val credited = entry.finishingMoveId?.let { id -> corrections.singleOrNull { it.id == id &&
-                    it.kind != com.example.overdex.battle.replay.ReplayCorrectionKind.FAINT && it.side != entry.side &&
-                    it.matchOffsetNanos <= entry.matchOffsetNanos } }
-                ReplayEventMarker("trainer:${entry.id}", kind, at, entry.side.name,
-                    "Trainer entry · ${entry.speciesName} · ${entry.moveName ?: "faint"} · ${entry.authorName}" +
-                        (credited?.let { " · KO by ${it.moveName}" } ?: ""),
-                    faintTiming = if (entry.kind == com.example.overdex.battle.replay.ReplayCorrectionKind.FAINT)
-                        com.example.overdex.battle.replay.ReplayFaintTiming.TrainerMark(at) else null,
-                    causeSide = credited?.side?.name)
-            }
-        }.orEmpty()
-        ReplayEventMarkers.lcdMarkers((model.eventMarkers + trainerMarkers)
+    val trainerProjection = remember(replayArchive, corrections, model.matchStartNanos, fastMovesBySpecies, chargedMovesBySpecies) {
+        model.matchStartNanos?.let { ReplayTrainerProjection(replayArchive.matchId, it, corrections,
+            (fastMovesBySpecies.keys + chargedMovesBySpecies.keys).associateWith { name ->
+                fastMovesBySpecies[name].orEmpty() + chargedMovesBySpecies[name].orEmpty()
+            }) }
+    }
+    val eventMarkers = remember(model, playbackStart, playbackEnd, trainerProjection) {
+        ReplayEventMarkers.lcdMarkers((model.eventMarkers + trainerProjection?.markers().orEmpty())
             .filter { it.atNanos in playbackStart..playbackEnd }.sortedBy { it.atNanos })
     }
     var selectedMarkerId by remember(replayArchive.matchId, playbackWindow) { mutableStateOf<String?>(null) }
@@ -300,12 +289,6 @@ fun MatchReplayScreen(
         onPlaybackSpeedChange(speed)
     }
     val currentModel by rememberUpdatedState(model)
-    val trainerProjection = remember(replayArchive, corrections, model.matchStartNanos, fastMovesBySpecies, chargedMovesBySpecies) {
-        model.matchStartNanos?.let { com.example.overdex.battle.replay.ReplayTrainerProjection(replayArchive.matchId, it, corrections,
-            (fastMovesBySpecies.keys + chargedMovesBySpecies.keys).associateWith { name ->
-                fastMovesBySpecies[name].orEmpty() + chargedMovesBySpecies[name].orEmpty()
-            }) }
-    }
     val pairScope = rememberCoroutineScope()
     var pairedEvidence by remember(replayArchive) { mutableStateOf<com.example.overdex.battle.replay.PairedReplayEvidence?>(null) }
     var pendingPair by remember(replayArchive) { mutableStateOf<com.example.overdex.battle.replay.PairedReplayEvidence?>(null) }
@@ -1008,7 +991,7 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                     if (scene.opponent != null) ReplayResourceBadge(scene.opponentResources, "Opponent", scene.opponentEnergy, mirrored = true,
                         types = speciesTypes[scene.opponent.speciesName.uppercase().filter(Char::isLetterOrDigit)].orEmpty())
                 }
-                if (scene.player != null && !scene.player.isFainted && scene.outcome == null &&
+                if (scene.player != null && !scene.player.isFainted && scene.outcome == null && scene.trainerConcession == null &&
                     scene.decisionTimer == null && scene.chargedMoveActions.isEmpty()) {
                     ReplayChargeButtons(scene.playerChargedMoves, scene.playerEnergy,
                         Modifier.align(Alignment.BottomCenter).padding(horizontal = 12.dp, vertical = 18.dp))
@@ -1053,14 +1036,17 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                         modifier = Modifier.align(Alignment.Center).offset(y = (-76).dp),
                     )
                 }
-                scene.announcement?.takeIf { scene.outcome == null }?.let { announcement ->
+                scene.announcement?.takeIf { scene.outcome == null && scene.trainerConcession == null }?.let { announcement ->
                     Text(announcement, color = Color.White, fontSize = 12.sp,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp)
                             .background(Color(0xCC233545), RoundedCornerShape(8.dp))
                             .padding(horizontal = 12.dp, vertical = 6.dp))
                 }
-                scene.outcome?.let { outcome ->
+                val concession = scene.trainerConcession
+                val recordedResult = scene.outcome?.let(::replayOutcomeLabel)
+                val resultLabel = concession?.concessionLabel ?: recordedResult
+                resultLabel?.let { label ->
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
@@ -1069,12 +1055,17 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                             .padding(horizontal = 24.dp, vertical = 12.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(
-                            text = replayOutcomeLabel(outcome),
-                            color = Color.White,
-                            fontSize = 40.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(label, color = Color.White, fontSize = if (concession == null) 40.sp else 22.sp,
+                                fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                            if (concession != null) {
+                                Text("Trainer entry", color = Color.White, fontSize = 14.sp)
+                                val expected = if (concession == ReplayCorrectionSide.OPPONENT) "YOU WIN" else "GOOD EFFORT"
+                                if (recordedResult != null && recordedResult != expected) {
+                                    Text("Recorded result · $recordedResult", color = Color.White, fontSize = 14.sp)
+                                }
+                            }
+                        }
                     }
                 }
             }
