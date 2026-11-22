@@ -1,6 +1,7 @@
 package com.example.overdex.battle.observation
 
 import com.example.overdex.diagnostics.sourceJobLabel
+import com.example.overdex.battle.audio.LiveDepartureMoveSoundWitness
 import com.example.overdex.BattleMemory
 import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.ActivePokemonSide
@@ -11,6 +12,8 @@ import com.example.overdex.battle.custody.FastMoveIdentified
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
 import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
+import com.example.overdex.battle.custody.CustodyRecord
+import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.PokemonIdentified
@@ -22,6 +25,7 @@ import com.example.overdex.battle.inference.PlayerTeamConfigurationScope
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.custody.SourceAvailabilityRecord
 import com.example.overdex.battle.custody.TestimonyCustody
+import com.example.overdex.battle.custody.isOutcomePublicationInput
 import com.example.overdex.battle.custody.TestimonyRecord
 import com.example.overdex.battle.custody.WitnessOperating
 import com.example.overdex.battle.custody.VsScreenWitnessed
@@ -47,6 +51,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.asSharedFlow
 import java.util.UUID
@@ -151,6 +157,10 @@ class Match(
         extraBufferCapacity = 4_096,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
+    // Only a wake-up is conflated. The audio worker reads all new source rows from the ledger.
+    private val departureAudioWake = MutableSharedFlow<Unit>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    internal val departureAudioUpdates = departureAudioWake.asSharedFlow()
+
     private val rawArticlePublication = RawArticlePublication(realityTimeline::articleForSequence)
     private val announcementInbox = Channel<RealityArticle>(16, BufferOverflow.DROP_OLDEST)
     internal val capturedAnnouncements = announcementInbox.receiveAsFlow()
@@ -160,17 +170,34 @@ class Match(
     internal fun offerAnnouncementCrop(receipt: TestimonyRecord) {
         if (receipt.sourceId.id != BattleWitnessContracts.announcementCropCapture.witnessId &&
             receipt.sourceId.id != BattleWitnessContracts.chargedImpactAnnouncementCapture.witnessId) return
-        val crop = receipt.payload as? com.example.overdex.battle.custody.CropCaptured ?: return
+        val crop = receipt.payload as? CropCaptured ?: return
         if (crop.cropProvenance.cropName != BattleCropContracts.announcement.cropName) return
-        announcementInbox.trySend(RealityArticle(announcementEvidenceId(receipt), receipt.timestamp, 0L,
-            receipt.sourceId, crop, confidence = receipt.confidence, sequenceNumber = receipt.sequenceNumber,
-            evidenceReferences = receipt.evidenceReferences, matchId = MatchId(matchId),
-            monotonicTimeNanos = receipt.monotonicTimeNanos))
+        announcementInbox.trySend(receipt.asRawArticle(recordedAt = 0L))
     }
 
     internal fun announcementEvidenceId(receipt: TestimonyRecord): ArticleId =
         recordArticleId?.invoke(receipt.sequenceNumber) ?: ArticleId(UUID.nameUUIDFromBytes(
             "overdex/announcement/$matchId/${receipt.sequenceNumber}".encodeToByteArray()).toString())
+
+    // OCR needs the same evidence ID before the serial publisher reaches this crop.
+    // Only the publisher appends the article and assigns its real recordedAt clock.
+    internal val acceptedOutcomeCrops get() = custody.acceptedCrops(BattleCropContracts.matchOutcome.cropName)
+        .map { it.asRawArticle(recordedAt = 0L) }
+
+    private fun TestimonyRecord.asRawArticle(recordedAt: Long): RealityArticle {
+        val id = when {
+            sourceId.id == BattleWitnessContracts.announcementCropCapture.witnessId ||
+                sourceId.id == BattleWitnessContracts.chargedImpactAnnouncementCapture.witnessId ||
+                sourceId.id == "ANNOUNCEMENT_WITNESS_OCR" -> announcementEvidenceId(this)
+            (payload as? CropCaptured)?.cropProvenance?.cropName == BattleCropContracts.matchOutcome.cropName ->
+                recordArticleId?.invoke(sequenceNumber) ?: ArticleId(UUID.nameUUIDFromBytes(
+                    "overdex/outcome/$matchId/$sequenceNumber".encodeToByteArray()).toString())
+            else -> recordArticleId?.invoke(sequenceNumber) ?: ArticleId(UUID.randomUUID().toString())
+        }
+        return RealityArticle(id, timestamp, recordedAt, sourceId, payload, confidence = confidence,
+            sequenceNumber = sequenceNumber, evidenceReferences = evidenceReferences, matchId = MatchId(matchId),
+            monotonicTimeNanos = monotonicTimeNanos)
+    }
 
     /** Raw article is on the Timeline and broadcast; inline derivations may still be running. */
     suspend fun awaitRawArticlePublished(sequence: Long): RealityArticle = rawArticlePublication.await(sequence)
@@ -187,18 +214,39 @@ class Match(
     internal val faintSignals = MatchFaintSignals(custody,
         com.example.overdex.battle.inference.LiveTeamLossHistory(ActivePokemonSide.OPPONENT, rebuildCounter("hud_faints"), faintHistoryCache),
         realityTimeline::getArticles)
+    private val finishingHits = com.example.overdex.battle.inference.LiveFinishingHitResolver()
 
-    private fun broadcastArticle(article: RealityArticle) {
+    private fun broadcastArticle(article: RealityArticle, alreadyAnnounced: Boolean = false) {
         faintSignals.observe(article)
         if (article.payload is MatchEnded) faintSignals.takeOpponentHudUpdate()?.let { names ->
             DroidballOverlayPresentation.reconcileOpponentFaints(names, article.monotonicTimeNanos ?: 0L)
         }
-        publishToArticleStreams(article)
+        publishToArticleStreams(article, alreadyAnnounced)
     }
 
-    private fun publishToArticleStreams(article: RealityArticle) {
-        _articles.tryEmit(article)
+    private fun publishToArticleStreams(article: RealityArticle, alreadyAnnounced: Boolean = false) {
+        if (!alreadyAnnounced) _articles.tryEmit(article)
+        if (LiveDepartureMoveSoundWitness.isInput(article)) departureAudioWake.tryEmit(Unit)
         preBattleRoute.publish(article)
+        // Raw and inline-derived articles pass this point once, in ledger order.
+        // Publish the link beside its faint without feeding it back through the faint witness.
+        for ((credit, references, source) in finishingHits.accept(article)) {
+            val decision = RealityArticle(
+                id = ArticleId(UUID.randomUUID().toString()),
+                perceivedAt = source.perceivedAt,
+                recordedAt = publicationClockMillis(),
+                sourceId = SourceId("FINISHING_HIT_INTERPRETER"),
+                payload = credit,
+                predecessorIds = references.distinct().map(::ArticleId),
+                evidenceReferences = references,
+                matchId = MatchId(matchId),
+                monotonicTimeNanos = source.monotonicTimeNanos,
+            )
+            realityTimeline.append(decision)
+            battleMemory.timeline.record(decision)
+            _articles.tryEmit(decision)
+            DroidballOverlayPresentation.recordFinishingCredit(matchId, credit)
+        }
     }
 
 
@@ -384,6 +432,40 @@ class Match(
     var frameCount: Long = 0
         private set
 
+    // Only the outcome publisher writes these. Stateful battle interpretation still drains
+    // in custody order, including the terminal hooks at the winning receipt's position.
+    @Volatile private var recordedEnd: RealityArticle? = null
+    private val publishedOutcomeSequence = MutableStateFlow(-1L)
+
+    // Phrase validation sees every accepted attempt boundary and OCR result in order.
+    // Other observers continue to receive the raw articles in the ordinary processing order.
+    internal val outcomePhraseInputs get() = custody.outcomePublicationFlow.map { receipt ->
+        publishedOutcomeSequence.first { it >= receipt.sequenceNumber }
+        checkNotNull(realityTimeline.articleForSequence(receipt.sequenceNumber))
+    }.takeWhile { recordedEnd == null }
+
+    private suspend fun publishOutcomeReceipt(receipt: TestimonyRecord) {
+        val article = receipt.asRawArticle(publicationClockMillis())
+        realityTimeline.append(article)
+        if (recordedEnd == null && (article.sourceId.id == "YOU_WIN_WITNESS" ||
+                article.sourceId.id == "GOOD_EFFORT_WITNESS" || article.sourceId.id == ROCKET_SUMMARY_WITNESS)) {
+            val result = interpreter.interpret(article)?.result
+            if (result != null) {
+                val end = RealityArticle(
+                    id = ArticleId(UUID.randomUUID().toString()), perceivedAt = article.perceivedAt,
+                    recordedAt = publicationClockMillis(), sourceId = SourceId("BATTLE_INTERPRETER"),
+                    payload = MatchEnded(result), predecessorIds = listOf(article.id),
+                    matchId = MatchId(matchId), monotonicTimeNanos = article.monotonicTimeNanos,
+                )
+                realityTimeline.append(end)
+                recordedEnd = end
+                acceptedChargeCapturePreparation.close()
+                _articles.emit(end)
+            }
+        }
+        publishedOutcomeSequence.value = receipt.sequenceNumber
+    }
+
     init {
         DroidballOverlayPresentation.beginEnergyForecast(matchId)
         // Presentation consumes the same published evidence, including derived
@@ -441,9 +523,11 @@ class Match(
                 publishedAvailabilitySequence.value = availability.sequenceNumber
             }
         }
+        matchScope.launch(Dispatchers.Default) {
+            custody.outcomePublicationFlow.collect(::publishOutcomeReceipt)
+        }
         matchScope.launch {
             var matchStartRecorded = false
-            var matchEndRecorded = false
             custody.testimonyFlow.collect { testimony ->
                 val processingSpan = processingDiagnostics?.begin(testimony.sequenceNumber, testimony.payload.javaClass.simpleName)
                 if (testimony.payload is AttackIncoming) {
@@ -454,23 +538,11 @@ class Match(
                     Log.d("SPECIES_SLICE", "Match received TestimonyRecord: type=${p::class.simpleName}, species=${p.species}, job=${sourceJobLabel(testimony.sourceId.id)}, confidence=${testimony.confidence}, sequence=${testimony.sequenceNumber}, refs=${testimony.evidenceReferences}")
                 }
 
-                val article = RealityArticle(
-                    id = when (testimony.sourceId.id) {
-                        BattleWitnessContracts.announcementCropCapture.witnessId,
-                        BattleWitnessContracts.chargedImpactAnnouncementCapture.witnessId,
-                        "ANNOUNCEMENT_WITNESS_OCR" -> announcementEvidenceId(testimony)
-                        else -> recordArticleId?.invoke(testimony.sequenceNumber) ?: ArticleId(UUID.randomUUID().toString())
-                    },
-                    perceivedAt = testimony.timestamp,
-                    recordedAt = publicationClockMillis(),
-                    sourceId = testimony.sourceId,
-                    payload = testimony.payload,
-                    confidence = testimony.confidence,
-                    sequenceNumber = testimony.sequenceNumber,
-                    evidenceReferences = testimony.evidenceReferences,
-                    matchId = MatchId(matchId),
-                    monotonicTimeNanos = testimony.monotonicTimeNanos
-                )
+                val outcomePublished = testimony.isOutcomePublicationInput()
+                val article = if (outcomePublished) {
+                    publishedOutcomeSequence.first { it >= testimony.sequenceNumber }
+                    checkNotNull(realityTimeline.articleForSequence(testimony.sequenceNumber))
+                } else testimony.asRawArticle(publicationClockMillis())
                 processingSpan?.next("identity_preparation")
                 if (article.payload is ChargeMoveUsedAnnounced) {
                     article.monotonicTimeNanos?.let(acceptedChargeCapturePreparation::observeChargeCompletion)
@@ -552,7 +624,7 @@ class Match(
                 }
 
                 processingSpan?.next("raw_publication.timeline_append")
-                realityTimeline.append(article)
+                if (!outcomePublished) realityTimeline.append(article)
                 processingSpan?.next("raw_publication.hp_timing")
                 // Record the actual append boundary, independently of the HP
                 // reader's delivery/processing/submission clocks. The Timeline
@@ -588,7 +660,7 @@ class Match(
                 ) {
                     _activeHpCropArticles.tryEmit(article)
                 }
-                if (!matchEndRecorded && (article.payload is ActivePokemonSpeciesWitnessed ||
+                if (recordedEnd == null && (article.payload is ActivePokemonSpeciesWitnessed ||
                     article.payload is AttackIncoming ||
                     article.payload is GetReadyWitnessed ||
                     article.payload is ChargeMoveUsedAnnounced
@@ -719,7 +791,7 @@ class Match(
                 }
 
                 (article.payload as? CountdownGlyphWitnessed)?.let { glyph ->
-                    if (!matchEndRecorded) {
+                    if (recordedEnd == null) {
                         DroidballOverlayPresentation.showBattleHud()
                         DroidballService.emitSignal(DroidballSignal.CountdownWitnessed(glyph.glyph))
                     }
@@ -733,12 +805,12 @@ class Match(
                     }
                     Log.d("COUNTDOWN_SLICE", "Countdown glyph article received: articleId=${article.id.value}, value=${glyph.glyph}")
                 }
-                if (!matchEndRecorded && article.payload is VsScreenWitnessed) {
+                if (recordedEnd == null && article.payload is VsScreenWitnessed) {
                     DroidballOverlayPresentation.showBattleHud()
                     DroidballService.emitSignal(DroidballSignal.VsScreenWitnessed)
                 }
                 val announcement = (article.payload as? RawTestimony)?.data as? String
-                if (!matchEndRecorded && article.sourceId.id == "ANNOUNCEMENT_WITNESS" &&
+                if (recordedEnd == null && article.sourceId.id == "ANNOUNCEMENT_WITNESS" &&
                     announcement?.trim()?.uppercase()?.startsWith("GO,") == true
                 ) {
                     DroidballOverlayPresentation.showBattleHud()
@@ -748,32 +820,13 @@ class Match(
                 processingSpan?.next("legacy_interpretation")
                 interpreter.interpret(article)?.let { event ->
                     battleMemory.recordEvent(event)
-                    if (event.type == BattleEventType.BATTLE_ENDED && event.result != null && !matchEndRecorded) {
-                        // Preserve every raw result reading, including the later
-                        // result screen that returns after the summary card, but
-                        // establish exactly one semantic Match end at the first
-                        // accepted outcome phrase.
-                        matchEndRecorded = true
-                        acceptedChargeCapturePreparation.close()
-                        val derivedArticle = RealityArticle(
-                            id = ArticleId(UUID.randomUUID().toString()),
-                            perceivedAt = article.perceivedAt,
-                            recordedAt = publicationClockMillis(),
-                            sourceId = SourceId("BATTLE_INTERPRETER"),
-                            payload = MatchEnded(event.result),
-                            predecessorIds = listOf(article.id),
-                            matchId = MatchId(matchId),
-                            monotonicTimeNanos = article.monotonicTimeNanos
-                        )
-                        realityTimeline.append(derivedArticle)
-                        if (derivedArticle.payload is MatchEnded) {
-                            speciesChecks.stop()
-                            appendFastMoveUseDerivations(derivedArticle)
-                            // Accept the diagnostic flush before downstream
-                            // result handlers take their archive snapshot.
-                            publishHpObservationDiagnostics(HpDiagnosticSummaryReason.MATCH_END)
-                        }
-                        broadcastArticle(derivedArticle)
+                    val derivedArticle = recordedEnd
+                    if (event.type == BattleEventType.BATTLE_ENDED && derivedArticle != null &&
+                        derivedArticle.predecessorIds.singleOrNull() == article.id) {
+                        speciesChecks.stop()
+                        appendFastMoveUseDerivations(derivedArticle)
+                        publishHpObservationDiagnostics(HpDiagnosticSummaryReason.MATCH_END)
+                        broadcastArticle(derivedArticle, alreadyAnnounced = true)
                         battleMemory.timeline.record(derivedArticle)
                     }
                 }
@@ -1096,7 +1149,21 @@ class Match(
      * before archiving/releasing, and let the caller own cancellation or timeout.
      */
     suspend fun awaitAcceptedEvidencePublished() {
-        val accepted = custody.getRecords()
+        awaitPublicationOf(custody.getRecords())
+    }
+
+    /** An archive also includes receipts submitted while the previous batch was draining. */
+    suspend fun awaitEvidenceQueueDrained() {
+        var accepted = custody.getRecords()
+        while (true) {
+            awaitPublicationOf(accepted)
+            val next = custody.getRecords()
+            if (next.lastOrNull()?.sequenceNumber == accepted.lastOrNull()?.sequenceNumber) return
+            accepted = next
+        }
+    }
+
+    private suspend fun awaitPublicationOf(accepted: List<CustodyRecord>) {
         val testimonySequence = accepted.filterIsInstance<TestimonyRecord>()
             .maxOfOrNull { it.sequenceNumber }
         val availabilitySequence = accepted.filterIsInstance<SourceAvailabilityRecord>()

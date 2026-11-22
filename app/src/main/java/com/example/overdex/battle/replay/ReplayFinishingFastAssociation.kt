@@ -26,7 +26,7 @@ data class ReplayFinishingFastAssociation(
     override val landingAtNanos get() = impactAtNanos
     override val corroboratingArticleIds get() = audioArticleIds
     internal fun faintPoseAt(): Long =
-        if (basis == ReplaySliverExchange.BASIS) departedBy?.atNanos ?: impactAtNanos else impactAtNanos
+        if (basis in setOf(ReplaySliverExchange.BASIS, ReplayMissingTickFinish.BASIS)) departedBy?.atNanos ?: impactAtNanos else impactAtNanos
 }
 
 /** Links independently supported uses and faints; candidate sound does not create either. */

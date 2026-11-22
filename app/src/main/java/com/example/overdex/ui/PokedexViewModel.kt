@@ -56,6 +56,7 @@ import com.example.overdex.battle.observation.BattleCropContracts
 import com.example.overdex.battle.observation.FirstLiveCombatRouter
 import com.example.overdex.battle.observation.CustomCropCaptureWitness
 import com.example.overdex.battle.observation.PersistedOutcomeTextWitness
+import com.example.overdex.battle.observation.RocketVictorySummaryWitness
 import com.example.overdex.battle.observation.PersistedOutcomePhraseWitness
 import com.example.overdex.battle.observation.PersistedFastMoveEffectivenessWitness
 import com.example.overdex.battle.observation.PersistedAnnouncementWitness
@@ -868,6 +869,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             observationDispatcher.register(DecisiveBattleCrySpeciesWitness())
             observationDispatcher.register(com.example.overdex.battle.audio.LiveLocalizedCryWitness(
                 getApplication(), audioArtifactStore, teamResourceSnapshotGate::requestDepartureCheck))
+            observationDispatcher.register(com.example.overdex.battle.audio.LiveDepartureMoveSoundWitness(getApplication()))
             observationDispatcher.register(com.example.overdex.battle.audio.LiveFastMoveSoundWitness(
                 getApplication(), audioArtifactStore))
             observationDispatcher.register(com.example.overdex.battle.audio.StatChangeSoundWitness(
@@ -1018,6 +1020,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         )
         observationDispatcher.register(PersistedVsScreenWitness(cropArtifactStore,
             isEnabled = session::vsScreenWitnessingActive))
+        observationDispatcher.register(com.example.overdex.battle.observation.BattleModeWitness(
+            input, cropArtifactStore, isEnabled = session::vsScreenWitnessingActive,
+        ))
         observationDispatcher.register(
             CropCaptureWitness(
                 input = input,
@@ -1391,6 +1396,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             )
         )
         observationDispatcher.register(PersistedOutcomeTextWitness(cropArtifactStore))
+        observationDispatcher.register(RocketVictorySummaryWitness(input, calibration, cropArtifactStore) { at ->
+            battleEvidenceLive() && matchOutcomeCaptureGate.acceptsRocketSummaryFrame(at)
+        })
         observationDispatcher.register(PersistedFastMoveEffectivenessWitness())
         observationDispatcher.register(
             PersistedOutcomePhraseWitness(
@@ -1676,9 +1684,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 // Before taking the archive snapshot, let already-accepted
                 // testimony (including any final diagnostic or stop reason)
                 // finish publishing on Match's separate serial dispatcher.
-                if (drainingMatch != null) kotlinx.coroutines.withTimeout(30_000L) {
-                    drainingMatch.awaitAcceptedEvidencePublished()
-                }
+                drainingMatch?.awaitEvidenceQueueDrained()
                 // Preserve refreshed metadata even if publishing the media archive fails.
                 summaryInboxReady.await()
                 summaryInboxMutex.withLock {
@@ -1722,7 +1728,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             }.onFailure { error ->
                 Log.e("MATCH_ARCHIVE", "Unable to auto-save $reason match ${source.matchId.value}", error)
             }
-            // Also export after a drain timeout: a blocked stage is useful evidence.
+            // Export processing progress independently of archive export success.
             // This archive worker is independent of Match's congested processing queue.
             if (drainingMatch?.processingDiagnostics != null) runCatching {
                 com.example.overdex.battle.observation.MatchProcessingDiagnosticExport.write(

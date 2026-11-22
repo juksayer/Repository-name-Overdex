@@ -6,6 +6,7 @@ import com.example.overdex.battle.artifact.AudioArtifactStore
 import com.example.overdex.battle.custody.*
 import com.example.overdex.battle.observation.DroidballService
 import com.example.overdex.battle.observation.Match
+import com.example.overdex.battle.observation.MatchProcessingDiagnostics.CryPositiveTiming
 import com.example.overdex.battle.observation.Observer
 import com.example.overdex.battle.timeline.observer.ObservationSource
 import com.example.overdex.battle.timeline.observer.ObserverId
@@ -83,66 +84,98 @@ class LiveLocalizedCryWitness internal constructor(
             try {
                 var searched = emptySet<Int>()
                 var matcher: CryWaveformMatcher? = null
+                var referencesStartedNanos = 0L
+                var referencesReadyNanos = 0L
                 val retained = ArrayDeque<Pair<Int, Long>>()
                 var generation = gate.generation
-                for (window in windows) {
+                suspend fun analyze(window: CryAudioWindowSnapshot, recognizer: CryWaveformMatcher, catchUp: Boolean) {
+                    if (!gate.accepts(window.startNanos, window.endNanos, window.generation)) return
+                    val began = System.nanoTime()
+                    val fits = CryWaveformAcceptance.select(recognizer.measure(window.audio)).filter { fit ->
+                        retained.none { it.first == fit.speciesId && abs(it.second - (window.startNanos + fit.offsetNanos)) < fit.durationNanos }
+                    }
+                    val matched = System.nanoTime()
+                    if (fits.isNotEmpty() && gate.accepts(window.startNanos, window.endNanos, window.generation)) {
+                        val pcm = ByteArray(window.audio.samples.size * 2)
+                        window.audio.samples.forEachIndexed { i, sample ->
+                            pcm[i * 2] = sample.toByte(); pcm[i * 2 + 1] = (sample.toInt() shr 8).toByte()
+                        }
+                        val artifact = withContext(Dispatchers.IO) {
+                            store.preserveWav(Pcm16WavEncoder.encode(pcm, window.audio.sampleRateHz, window.audio.channelCount))
+                        }
+                        val preserved = System.nanoTime()
+                        ensureActive()
+                        if (artifact == null) availability(false, window.endWallMillis)
+                        else if (gate.accepts(window.startNanos, window.endNanos, window.generation)) {
+                            val record = match.custody.submitTestimony(SourceId("LOCALIZED_CRY_AUDIO_CAPTURE"),
+                                AudioCaptured(artifact, window.audio.sampleRateHz, window.audio.channelCount,
+                                    window.durationNanos, "LOCALIZED_CRY", window.captureSource, PcmSignalLevel.peak(pcm)),
+                                window.endWallMillis - window.durationNanos / 1_000_000, null,
+                                gate.triggerIds(), window.startNanos)
+                            val submitted = System.nanoTime()
+                            val captured = match.awaitRawArticlePublished(record.sequenceNumber)
+                            val receipt = System.nanoTime()
+                            if (gate.accepts(window.startNanos, window.endNanos, window.generation)) for (fit in fits) {
+                                val onset = window.startNanos + fit.offsetNanos
+                                val cry = match.custody.submitTestimony(source, BattleCryLocalized(fit.speciesId,
+                                    fit.referenceSha256, fit.correlation, fit.durationNanos),
+                                    window.endWallMillis - (window.endNanos - onset) / 1_000_000, null,
+                                    listOf(captured.id.value), onset)
+                                match.processingDiagnostics?.recordCryPositive(CryPositiveTiming(
+                                    speciesId = fit.speciesId, catchUp = catchUp, onsetNanos = onset,
+                                    windowEndNanos = window.endNanos, bufferedNanos = window.bufferedAtNanos,
+                                    referencesStartedNanos = referencesStartedNanos, referencesReadyNanos = referencesReadyNanos,
+                                    analysisStartNanos = began, matchDoneNanos = matched, preservedNanos = preserved,
+                                    captureSubmittedNanos = submitted, captureReceiptNanos = receipt,
+                                    crySubmittedNanos = System.nanoTime(), captureSequence = record.sequenceNumber,
+                                    crySequence = cry.sequenceNumber))
+                                retained.addLast(fit.speciesId to onset)
+                            }
+                            while (retained.size > CryDepartureEvidence.MAX_CRIES) retained.removeFirst()
+                        }
+                    }
+                    // Time spent preserving evidence and waiting for publication already gives the matcher a rest.
+                    delay(cryScanRestMillis(matched - began, System.nanoTime() - matched))
+                }
+
+                var deferredLive: CryAudioWindowSnapshot? = null
+                while (true) {
+                    val window = deferredLive ?: windows.receiveCatching().getOrNull() ?: break
+                    deferredLive = null
                     if (generation != gate.generation) { retained.clear(); generation = gate.generation }
                     if (!gate.accepts(window.startNanos, window.endNanos, window.generation) ||
-                        System.nanoTime() - window.endNanos > 2_000_000_000L) {
+                        System.nanoTime() - window.endNanos > MAX_LIVE_AGE_NANOS) {
                         availability(false, window.endWallMillis); continue
                     }
                     val ids = evidence.speciesIds()
                     val searchChanged = ids != searched
+                    // Freeze this bounded catch-up before loading references can age its PCM out.
+                    val history = if (searchChanged) recent.preceding(window) else emptyList()
                     if (searchChanged) {
                         searched = ids
+                        referencesStartedNanos = System.nanoTime()
                         val verified = withContext(Dispatchers.IO) { loadReferences(ids) }
                         matcher = verified?.takeIf { it.isNotEmpty() && it.size <= CryWaveformMatcher.MAX_REFERENCES }
                             ?.let(::CryWaveformMatcher)
+                        referencesReadyNanos = System.nanoTime()
                     }
                     val recognizer = matcher
                     availability(recognizer != null && !evidence.unavailable && gate.allows(window.endNanos), window.endWallMillis)
                     if (recognizer == null || evidence.unavailable) continue
-                    // Current audio first. A newly known reference gets one bounded catch-up
-                    // through recent original PCM, because delayed OCR can miss its entrance.
-                    val work = listOf(window) + if (searchChanged) recent.preceding(window) else emptyList()
-                    for (analysisWindow in work) {
-                        val window = analysisWindow
-                        if (!gate.accepts(window.startNanos, window.endNanos, window.generation)) continue
-                        val began = System.nanoTime()
-                        val fits = CryWaveformAcceptance.select(recognizer.measure(window.audio)).filter { fit ->
-                            retained.none { it.first == fit.speciesId && abs(it.second - (window.startNanos + fit.offsetNanos)) < fit.durationNanos }
-                        }
-                        if (fits.isNotEmpty() && gate.accepts(window.startNanos, window.endNanos, window.generation)) {
-                            val pcm = ByteArray(window.audio.samples.size * 2)
-                            window.audio.samples.forEachIndexed { i, sample ->
-                                pcm[i * 2] = sample.toByte(); pcm[i * 2 + 1] = (sample.toInt() shr 8).toByte()
-                            }
-                            val artifact = withContext(Dispatchers.IO) {
-                                store.preserveWav(Pcm16WavEncoder.encode(pcm, window.audio.sampleRateHz, window.audio.channelCount))
-                            }
-                            ensureActive()
-                            if (artifact == null) availability(false, window.endWallMillis)
-                            else if (gate.accepts(window.startNanos, window.endNanos, window.generation)) {
-                                val record = match.custody.submitTestimony(SourceId("LOCALIZED_CRY_AUDIO_CAPTURE"),
-                                    AudioCaptured(artifact, window.audio.sampleRateHz, window.audio.channelCount,
-                                        window.durationNanos, "LOCALIZED_CRY", window.captureSource, PcmSignalLevel.peak(pcm)),
-                                    window.endWallMillis - window.durationNanos / 1_000_000, null,
-                                    gate.triggerIds(), window.startNanos)
-                                val captured = match.awaitRawArticlePublished(record.sequenceNumber)
-                                if (gate.accepts(window.startNanos, window.endNanos, window.generation)) for (fit in fits) {
-                                    val onset = window.startNanos + fit.offsetNanos
-                                    match.custody.submitTestimony(source, BattleCryLocalized(fit.speciesId,
-                                        fit.referenceSha256, fit.correlation, fit.durationNanos),
-                                        window.endWallMillis - (window.endNanos - onset) / 1_000_000, null,
-                                        listOf(captured.id.value), onset)
-                                    retained.addLast(fit.speciesId to onset)
+                    analyze(window, recognizer, catchUp = false)
+                    for (past in history) {
+                        // Alternate one fresh window with one historical window. Finish every admitted
+                        // historical window even if fresh PCM arrives faster than we can match it.
+                        if (deferredLive == null) {
+                            val fresh = windows.tryReceive().getOrNull()
+                            if (fresh != null) {
+                                if (fresh.generation != generation || evidence.speciesIds() != ids) deferredLive = fresh
+                                else if (!evidence.unavailable && System.nanoTime() - fresh.endNanos <= MAX_LIVE_AGE_NANOS) {
+                                    analyze(fresh, recognizer, catchUp = false)
                                 }
-                                while (retained.size > CryDepartureEvidence.MAX_CRIES) retained.removeFirst()
                             }
                         }
-                        // Bound work to roughly one third of this worker's time. Acquisition keeps
-                        // original PCM; obsolete overlapping analysis windows may be superseded.
-                        delay(((System.nanoTime() - began) * 2 / 1_000_000).coerceAtLeast(1))
+                        analyze(past, recognizer, catchUp = true)
                     }
                 }
             } catch (cancelled: CancellationException) { throw cancelled
@@ -159,6 +192,7 @@ class LiveLocalizedCryWitness internal constructor(
         activeMatch = null
     }
     companion object {
+        private const val MAX_LIVE_AGE_NANOS = 2_000_000_000L
         private fun verifiedReferenceLoader(context: Context): suspend (Set<Int>) -> List<CryWaveformReference>? {
             var catalog: CryReferenceCatalog? = null
             return { ids ->
@@ -177,3 +211,7 @@ class LiveLocalizedCryWitness internal constructor(
         }
     }
 }
+
+/** Keep the one-third matcher duty budget without charging storage or custody waits as matching work. */
+internal fun cryScanRestMillis(matchingNanos: Long, elapsedSinceMatchNanos: Long): Long =
+    (2 * matchingNanos - elapsedSinceMatchNanos).coerceAtLeast(0) / 1_000_000

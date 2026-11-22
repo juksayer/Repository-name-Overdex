@@ -132,6 +132,45 @@ class ReplayHpCertaintyTest {
         }
     }
 
+    @Test fun centeredLowBarNeedsConsistentOrdinaryReadingsFromTheSameAppearanceToDisregardIt() {
+        val camera = row("center", 2*S, payload = hp.copy(barLeft = 390, barRight = 695))
+            .copy(sourceId = "CHARGED_IMPACT_OPPONENT_HP_BAR_FRAME_WITNESS")
+        val before = row("before", S, payload = hp.copy(filledFraction = .6f))
+        val after = row("after", 3*S, payload = hp.copy(filledFraction = .601f))
+        val again = row("again", 3*S + S/4, payload = hp.copy(filledFraction = .599f))
+        fun display(rows: List<ArchivedRealityArticle>, continuous: Boolean): Float {
+            val track = ReplayHpTrack(rows, "OPPONENT", ReplayHpEvidence(rows),
+                sameAppearance = { _, _ -> continuous })
+            return track.stateAt(2*S, listOf(ReplayHpAppearance("gallade", 0)), false, 0).filledFraction!!
+        }
+        val captured = listOf(before, camera, after, again)
+        assertEquals(.6f, display(captured.reversed(), true), 0f)
+        assertEquals(.002f, display(captured, false), 0f)
+        assertEquals(.002f, display(listOf(before, camera, after), true), 0f)
+        assertEquals(.002f, display(listOf(before, camera, row("still-low", 3*S), again), true), 0f)
+    }
+
+    @Test fun bracketedSettlingDipAlignsWithTheQualifiedLandingAndProtectsTinyOrCorroboratedLows() {
+        fun bar(name: String, ms: Long, fill: Float, confidence: Float = .99f) =
+            row(name, ms * 1_000_000, confidence, hp.copy(filledFraction = fill))
+        val impact = 2*S
+        val tick = row("tick", impact, payload = ArchivedActiveHpBarDamageTickMeasured("OPPONENT", .13f, .10f, .03f))
+        val landing = cycle(impact).let { it.copy(witness = it.witness.copy(
+            damageTicks = listOf(ReplayFastMoveDamage(impact, .13f, .10f)))) }
+        fun display(dip: Float, extras: List<ArchivedRealityArticle> = emptyList(), continuous: Boolean = true): List<Float?> {
+            val rows = listOf(bar("before", 1000, .13f), bar("early", 1400, .10f), bar("dip", 1650, dip, .85f),
+                bar("settled", 2000, .10f), tick, bar("next", 2200, .10f), bar("later", 2300, .10f)) + extras
+            val track = ReplayHpTrack(rows, "OPPONENT", ReplayHpEvidence(rows), listOf(landing),
+                sameAppearance = { _, _ -> true }, uninterrupted = { _, _ -> continuous })
+            val appearance = listOf(ReplayHpAppearance("cradily", 0))
+            return listOf(impact-1, impact).map { track.stateAt(it, appearance, false, 0).filledFraction }
+        }
+        assertEquals(listOf(.13f, .10f), display(.08f))
+        assertEquals(listOf(.002f, .002f), display(.002f))
+        assertEquals(listOf(.08f, .08f), display(.08f, listOf(bar("independent", 1710, .08f))))
+        assertEquals(listOf(.08f, .08f), display(.08f, continuous = false))
+    }
+
     private fun cycle(impact: Long, inferred: Boolean = false) = ReplayFastMoveCycle(
         ReplayFastMoveWitness("PLAYER", impact, "Dragon Tail", null, S, 0, 10*S,
             if (inferred) setOf(ReplayFastMoveRhythm.INFERRED) else setOf("AUDIO"),

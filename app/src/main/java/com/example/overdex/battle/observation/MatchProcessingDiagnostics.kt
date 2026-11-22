@@ -9,9 +9,28 @@ class MatchProcessingDiagnostics(
         val maximumNanos: Long, val histogram: List<Long>, val invalidCpuSamples: Long,
         val maximumCpuNanos: Long, val cpuHistogram: List<Long>)
     data class Rebuild(val calls: Long, val totalInputs: Long, val maximumInputs: Int)
+    /** Original audio clocks and worker milestones for one accepted localized cry. */
+    data class CryPositiveTiming(
+        val speciesId: Int,
+        val catchUp: Boolean,
+        val onsetNanos: Long,
+        val windowEndNanos: Long,
+        val bufferedNanos: Long,
+        val referencesStartedNanos: Long,
+        val referencesReadyNanos: Long,
+        val analysisStartNanos: Long,
+        val matchDoneNanos: Long,
+        val preservedNanos: Long,
+        val captureSubmittedNanos: Long,
+        val captureReceiptNanos: Long,
+        val crySubmittedNanos: Long,
+        val captureSequence: Long,
+        val crySequence: Long,
+    )
     data class Snapshot(val stages: Map<String, Timing>, val rebuilds: Map<String, Rebuild>,
         val completed: Long, val lastCompletedSequence: Long, val activeSequence: Long?,
-        val activeStage: String?, val activeAgeNanos: Long)
+        val activeStage: String?, val activeAgeNanos: Long, val cryPositiveCount: Long,
+        val recentCryPositives: List<CryPositiveTiming>)
     private class Counter {
         var calls = 0L; var elapsed = 0L; var cpu = 0L; var maximum = 0L; var invalidCpu = 0L
         var maximumCpu = 0L
@@ -20,6 +39,8 @@ class MatchProcessingDiagnostics(
     }
     private val counters = linkedMapOf<String, Counter>()
     private val rebuildCounters = linkedMapOf<String, Rebuild>()
+    private val recentCryPositives = ArrayDeque<CryPositiveTiming>()
+    private var cryPositiveCount = 0L
     private var completed = 0L
     private var lastCompleted = Long.MIN_VALUE
     private var sequence: Long? = null
@@ -65,14 +86,21 @@ class MatchProcessingDiagnostics(
         val old = rebuildCounters[key] ?: Rebuild(0, 0, 0)
         rebuildCounters[key] = Rebuild(old.calls + 1, old.totalInputs + inputs, maxOf(old.maximumInputs, inputs))
     }
+    @Synchronized fun recordCryPositive(timing: CryPositiveTiming) {
+        cryPositiveCount++
+        if (recentCryPositives.size == MAX_CRY_POSITIVES) recentCryPositives.removeFirst()
+        recentCryPositives.addLast(timing)
+    }
     @Synchronized fun snapshot(): Snapshot = Snapshot(counters.mapValues { (_, c) ->
         Timing(c.calls, c.elapsed, c.cpu, c.maximum, c.buckets.toList(), c.invalidCpu, c.maximumCpu, c.cpuBuckets.toList())
     }, rebuildCounters.toMap(), completed, lastCompleted, sequence, activeStage,
-        if (sequence == null) 0 else (elapsedClock() - activeFrom).coerceAtLeast(0))
+        if (sequence == null) 0 else (elapsedClock() - activeFrom).coerceAtLeast(0),
+        cryPositiveCount, recentCryPositives.toList())
 
     companion object {
         const val MAX_KEYS = 2048
         const val MAX_REBUILD_KEYS = 64
+        const val MAX_CRY_POSITIVES = 64
         val BOUNDS = listOf(100_000L, 1_000_000L, 4_000_000L, 16_000_000L, 50_000_000L,
             250_000_000L, 1_000_000_000L, 5_000_000_000L, Long.MAX_VALUE)
     }

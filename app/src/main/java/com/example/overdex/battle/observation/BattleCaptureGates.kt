@@ -14,7 +14,8 @@ import kotlinx.coroutines.flow.collect
 
 /** Source-ordered cues request fresh, bounded acquisition; only usable readings complete it. */
 private class BoundedCaptureAssignments(private val cropNames: Set<String>, private val now: () -> Long) {
-    private data class Assignment(val from: Long, val until: Long, val confirmationRequested: Boolean = false)
+    private data class Assignment(val from: Long, val until: Long, val confirmationRequested: Boolean = false,
+                                 val retriedOnBadge: Boolean = false)
     private val pending = mutableMapOf<String, Assignment>()
     private val requestedThrough = mutableMapOf<String, Long>()
     private val measuredThrough = mutableMapOf<String, Long>()
@@ -37,6 +38,15 @@ private class BoundedCaptureAssignments(private val cropNames: Set<String>, priv
         enabled(crop) && at >= it.from && at < it.until && at <= now()
     } == true
     fun hasMeasurement(crop: String): Boolean = crop in measuredThrough
+
+    /** An unanswered assignment may retry once when another native badge reader sees the row again. */
+    fun retryOnVisibleBadge(crop: String, at: Long) {
+        val previous = pending[crop] ?: return
+        val current = now()
+        if (previous.retriedOnBadge || at < previous.until || at > current) return
+        requestedThrough[crop] = at
+        pending[crop] = Assignment(current, current + WINDOW_NANOS, retriedOnBadge = true)
+    }
 
     /** A first usable frame earns one bounded chance to collect an independent confirmation. */
     fun candidate(crop: String, at: Long) {
@@ -171,7 +181,12 @@ class TeamResourceSnapshotGate(
                         }
                     }
                     GetReadyWitnessed, AttackIncoming, ChargeMoveUsedAnnounced -> requestResourceWatch(at)
-                    is ActivePokemonSpeciesWitnessed -> observeSpecies(payload.side, payload.speciesName, at)
+                    is ActivePokemonSpeciesWitnessed -> {
+                        observeSpecies(payload.side, payload.speciesName, at)
+                        if (payload.side == ActivePokemonSide.OPPONENT && at == speciesAtBySide[payload.side] &&
+                            article.sourceId.id == "OPPONENT_SPECIES_OVERLAY_PIPELINE")
+                            assignments.retryOnVisibleBadge(ballCrop(payload.side), at)
+                    }
                     is ActiveHpBarMeasured -> observeActiveHp(payload.side, payload.filledFraction, at)
                     is ActiveHpBarDamageTickMeasured -> observeDamageTick(payload.damagedSide, payload.afterFraction, at)
                     is ActivePokemonFaintedWitnessed -> requestSnapshot(sideCrops(payload.side), at)
@@ -180,8 +195,15 @@ class TeamResourceSnapshotGate(
                         requestSnapshot(sideCrops(payload.side), payload.triggerMonotonicNanos)
                     is PlayerPokeBallCountMeasured -> measured(BattleCropContracts.playerPokeBalls.cropName, at)
                     is PlayerShieldCountMeasured -> measured(BattleCropContracts.playerShields.cropName, at)
-                    is OpponentBattleResourceCountMeasured -> measured(if (payload.resource == OpponentBattleResource.POKE_BALLS)
-                        BattleCropContracts.opponentPokeBalls.cropName else BattleCropContracts.opponentShields.cropName, at)
+                    is OpponentBattleResourceCountMeasured -> {
+                        if (payload.resource == OpponentBattleResource.POKE_BALLS) {
+                            measured(BattleCropContracts.opponentPokeBalls.cropName, at)
+                        } else {
+                            measured(BattleCropContracts.opponentShields.cropName, at)
+                            if (article.sourceId.id == "OPPONENT_SHIELDS_WITNESS")
+                                assignments.retryOnVisibleBadge(BattleCropContracts.opponentPokeBalls.cropName, at)
+                        }
+                    }
                     else -> Unit
                 }
             }
@@ -325,6 +347,13 @@ class MatchOutcomeCaptureGate(
             (side in finalCriticalHpSides && age in BATTLEFIELD_ABSENCE_NANOS..FINAL_TEAM_PROBE_NANOS) ||
                 age in FINAL_MEMBER_HP_LOST_NANOS..FINAL_MEMBER_RECOVERY_NANOS
         }
+    }
+
+    /** Wake the inexpensive panel probe after combat has cleared. The visible summary identifies Rocket. */
+    @Synchronized internal fun acceptsRocketSummaryFrame(at: Long): Boolean {
+        val started = battleStartedAt ?: return false
+        val latestBattlefield = maxOf(started, lastBattlefieldHpSeenAt.values.maxOrNull() ?: started)
+        return !ended && at <= now() && at - latestBattlefield >= BATTLEFIELD_ABSENCE_NANOS
     }
 
     /**

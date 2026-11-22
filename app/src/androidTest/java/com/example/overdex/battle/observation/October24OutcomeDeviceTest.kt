@@ -25,6 +25,7 @@ import kotlinx.coroutines.withTimeout
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.File
+import java.util.concurrent.atomic.AtomicLong
 
 class October24OutcomeDeviceTest {
     @Test fun nativeAndWhiteLetterReadingsResolveResultsButRejectRewardScreens() = runBlocking {
@@ -73,7 +74,9 @@ class October24OutcomeDeviceTest {
         val timeline = InMemoryRealityTimeline()
         val match = Match("OCT24_RESULT", custody = custody, realityTimeline = timeline, pokemonKnowledge = knowledge)
         val session = DroidballSession(match)
-        val reader = PersistedOutcomeTextWitness(store)
+        val sourceNanos = System.nanoTime()
+        val readingClock = AtomicLong(sourceNanos)
+        val reader = PersistedOutcomeTextWitness(ArtifactOutcomeCropReader(store), now = readingClock::get)
         val phrase = PersistedOutcomePhraseWitness(
             { MatchOutcomeTextResolver.resolve(it) == MatchOutcomePhrase.WIN },
             ObserverId("YOU_WIN_WITNESS", ObservationSource.SCREEN_CAPTURE), "You Win",
@@ -92,7 +95,6 @@ class October24OutcomeDeviceTest {
                 release.await()
             }
         }
-        val sourceNanos = System.nanoTime() - 20_000_000_000L
         try {
             occupied.await()
             phrase.start(match); reader.start(match)
@@ -109,6 +111,8 @@ class October24OutcomeDeviceTest {
             }
             val winArtifact = store.preservePng(win)!!
             val winTime = sourceNanos + 10_000_000_000L
+            // At admission the victory is still recent. Every queued blank belongs to recovery.
+            readingClock.set(winTime + 2_900_000_000L)
             custody.submitTestimony(SourceId("MATCH_OUTCOME_CROP_CAPTURE"),
                 CropCaptured(winArtifact, provenance), 11_000L, null, emptyList(), winTime)
             withTimeout(5_000) {

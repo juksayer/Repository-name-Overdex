@@ -101,6 +101,8 @@ import com.example.overdex.battle.replay.ReplayPreparationCoordinator
 import com.example.overdex.battle.replay.ReplayPreparationState
 import com.example.overdex.battle.replay.ReplayReferenceLookup
 import com.example.overdex.battle.replay.ReplayCorrectionSide
+import com.example.overdex.battle.replay.ReplayTrainerCorrection
+import com.example.overdex.battle.replay.ReplayCorrectionKind
 import com.example.overdex.battle.replay.ReplayTrainerProjection
 import com.example.overdex.battle.replay.prepareReplay
 import com.example.overdex.battle.replay.ReplayEventMarkerNavigation
@@ -349,6 +351,7 @@ fun MatchReplayScreen(
     }
     val saveScope = rememberCoroutineScope()
     var addingCorrection by remember(replayArchive) { mutableStateOf(false) }
+    var editingSpecies by remember(replayArchive) { mutableStateOf<ReplayTrainerCorrection?>(null) }
     var correctionStatus by remember(replayArchive) { mutableStateOf<String?>(null) }
     var correctionExport by remember { mutableStateOf<ByteArray?>(null) }
     var correctionImport by remember { mutableStateOf<ByteArray?>(null) }
@@ -425,10 +428,21 @@ fun MatchReplayScreen(
         if (start == null || cursor < start) correctionStatus = "SEEK TO A RECORDED MATCH TIME FIRST"
         else addingCorrection = true
     }
+    val editableCorrections = remember(corrections) { corrections.filter { it.kind != ReplayCorrectionKind.CONCESSION } }
     if (addingCorrection) ReplayCorrectionDialog(
         matchId = replayArchive.matchId,
         offsetNanos = cursor - requireNotNull(model.matchStartNanos),
         priorEntries = corrections,
+        onEditSaved = if (editableCorrections.isEmpty()) null else ({
+            addingCorrection = false
+            if (editableCorrections.size == 1) editingSpecies = editableCorrections.single()
+            else {
+                lcdView = ReplayLcdView.Menu
+                lcdSection = ReplayLcdSection.Corrections
+                focusedAction = "edit-species-${editableCorrections.first().id}"
+                revealFocus = true
+            }
+        }),
         onDismiss = { addingCorrection = false },
         onSave = { correction ->
             addingCorrection = false
@@ -444,6 +458,32 @@ fun MatchReplayScreen(
             }
         },
     )
+    editingSpecies?.let { entry ->
+        var species by remember(entry) { mutableStateOf(entry.speciesName) }
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { editingSpecies = null },
+            title = { Text("Edit trainer entry") },
+            text = { androidx.compose.material3.OutlinedTextField(species, { species = it },
+                singleLine = true, label = { Text("Pokémon species") }) },
+            confirmButton = { androidx.compose.material3.TextButton(enabled = species.trim().length in 1..100,
+                onClick = {
+                    editingSpecies = null
+                    saveScope.launch {
+                        try {
+                            corrections = withContext(Dispatchers.IO) {
+                                correctionStore.changeSpecies(entry, species)
+                                correctionStore.list(entry.matchId)
+                            }
+                            correctionStatus = "SPECIES UPDATED"
+                        } catch (e: Exception) {
+                            if (e is kotlinx.coroutines.CancellationException) throw e
+                            correctionStatus = "EDIT FAILED: ${e.message}"
+                        }
+                    }
+                }) { Text("Save") } },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { editingSpecies = null }) { Text("Cancel") } },
+        )
+    }
     fun markClipStart() {
         playing = false
         clipStart = cursor
@@ -650,7 +690,13 @@ fun MatchReplayScreen(
             ReplayLcdAction("pair", "Pair match", run = {
                 pairFile.launch(arrayOf("application/zip", "application/octet-stream", "*/*"))
             }),
-        )
+        ) + editableCorrections.map { entry ->
+            ReplayLcdAction("edit-species-${entry.id}", "Edit ${entry.speciesName} · ${entry.side.name.lowercase()} · " +
+                "${entry.moveName ?: "faint"} · ${formatReplayTime(entry.matchOffsetNanos)}", run = {
+                playing = false
+                editingSpecies = entry
+            })
+        }
         ReplayLcdSection.Clips -> buildList {
             if (allowClipSave) {
                 add(ReplayLcdAction("mark-start", "Mark start", enabled = !savingClip, run = ::markClipStart))
@@ -686,10 +732,10 @@ fun MatchReplayScreen(
         revealFocus = true
     }
     fun activate() {
-        if (addingCorrection || correctionImport != null || clipEnd != null || savingClip) return
+        if (editingSpecies != null || addingCorrection || correctionImport != null || clipEnd != null || savingClip) return
         activeAction?.run?.invoke()
     }
-    BackHandler(enabled = !addingCorrection && correctionImport == null && clipEnd == null) { returnFromLcd() }
+    BackHandler(enabled = editingSpecies == null && !addingCorrection && correctionImport == null && clipEnd == null) { returnFromLcd() }
     SideEffect {
         onUp {
             when {

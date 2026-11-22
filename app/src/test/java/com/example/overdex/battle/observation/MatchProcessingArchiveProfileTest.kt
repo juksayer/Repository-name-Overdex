@@ -43,7 +43,7 @@ class MatchProcessingArchiveProfileTest {
             }.toString())
             assertTrue("Unmapped records: $failures",failures.isEmpty())
             if (System.getenv("OVERDEX_PROFILE_MAPPING_ONLY") == "1") continue
-            val knowledge = knowledge()
+            val knowledge = recordedBattleKnowledge(GameMasterLoader { File("src/main/assets/gamemaster.json").readText() })
             val uncachedWarm = runCase(archive.matchId,records,knowledge,false,true,useCache=false)
             val warm = runCase(archive.matchId,records,knowledge,false,true)
             assertEquals("Cache changed semantic output",uncachedWarm.semantic,warm.semantic)
@@ -141,20 +141,6 @@ class MatchProcessingArchiveProfileTest {
             }
             Result(report,semantic)
         } finally {sampler.cancelAndJoin();match.release();DroidballOverlayPresentation.reset()}
-    }
-    private fun knowledge():PokemonKnowledge {
-        val loader=GameMasterLoader { File("src/main/assets/gamemaster.json").readText() }
-        fun domain(p:GameMasterPokemon):Pokemon {
-            fun move(id:String,fast:Boolean):Move?=loader.getMove(id)?.let { m ->Move(m.name,PokemonType.valueOf(m.type.uppercase()),m.power,
-                if(fast)m.energyGain else kotlin.math.abs(m.energy),fast,if(fast)m.turns else null) }
-            return Pokemon(p.dex,p.speciesName,p.types.filter { it.uppercase() != "NONE" }.map { PokemonType.valueOf(it.uppercase()) },"",
-                fastMoves=p.fastMoves.mapNotNull {move(it,true)},chargedMoves=p.chargedMoves.mapNotNull {move(it,false)})
-        }
-        return object:PokemonKnowledge {
-            override suspend fun getPokemonByName(name:String)=PokemonFormReference.byName(name,loader.allPokemon())?.let(::domain)
-            override suspend fun getPokemonById(id:Int)=loader.getPokemonByDex(id)?.let(::domain)
-            override suspend fun getAllSpeciesNames()=loader.allPokemonNames()
-        }
     }
 }
 

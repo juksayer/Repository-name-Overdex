@@ -7,6 +7,28 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MatchOutcomeCaptureGateTest {
+    @Test fun `Rocket summary probe waits for a battle and a gap in ordinary HP`() {
+        var now = 100_000_000_000L
+        val gate = MatchOutcomeCaptureGate { now }
+        assertFalse(gate.acceptsRocketSummaryFrame(now))
+        gate.observeMatchStarted(now)
+        gate.observeActiveHp(ActivePokemonSide.PLAYER, now, .75f)
+        gate.observeActiveHp(ActivePokemonSide.OPPONENT, now, .10f)
+        assertFalse(gate.acceptsRocketSummaryFrame(now))
+        now += 350_000_000L
+        gate.observeActiveHp(ActivePokemonSide.OPPONENT, now, 0f, chargedCamera = true)
+        assertTrue(gate.acceptsRocketSummaryFrame(now))
+        assertFalse(gate.acceptsRocketSummaryFrame(now + 1))
+        gate.observeActiveHp(ActivePokemonSide.PLAYER, now, .75f)
+        assertFalse(gate.acceptsRocketSummaryFrame(now))
+        now += 20_000_000_000L
+        assertTrue(gate.acceptsRocketSummaryFrame(now))
+        gate.observeMatchEnded()
+        assertFalse(gate.acceptsRocketSummaryFrame(now))
+        gate.stop()
+        assertFalse(gate.acceptsRocketSummaryFrame(now))
+    }
+
     @Test fun `finishing charged camera HP preserves urgent attention and the bounded late result tail`() {
         for (side in ActivePokemonSide.entries) for (chargedHp in listOf(0f, .1f)) {
             var now = 100_000_000_000L

@@ -4,6 +4,7 @@ import com.example.overdex.battle.archive.*
 import com.example.overdex.battle.inference.FastMoveUseEvidence
 import com.example.overdex.battle.team.OwnedPokemonBattleSnapshot
 import com.example.overdex.model.PokemonSize
+import com.example.overdex.model.BattleMode
 import kotlinx.serialization.Serializable
 import java.util.Locale
 
@@ -33,6 +34,7 @@ data class BattleRecord(
     val events: List<BattleMetricEvent>,
     val uncreditedOpponentFaints: Int,
     val articleCount: Int,
+    val mode: BattleMode = BattleMode.UNCLASSIFIED,
 )
 
 data class BattleRecordQuery(
@@ -43,6 +45,7 @@ data class BattleRecordQuery(
     val kind: BattleMetricKind? = null,
     val moveName: String? = null,
     val opponentSpecies: String? = null,
+    val mode: BattleMode? = null,
 ) {
     fun accepts(event: BattleMetricEvent): Boolean =
         (ownedPokemonId == null || event.pokemon?.ownedPokemonId == ownedPokemonId) &&
@@ -52,6 +55,8 @@ data class BattleRecordQuery(
         (kind == null || event.kind == kind) &&
         (moveName.isNullOrBlank() || event.moveName?.let(::key) == key(moveName)) &&
         (opponentSpecies.isNullOrBlank() || event.opponentSpecies?.let(::key) == key(opponentSpecies))
+
+    fun accepts(record: BattleRecord): Boolean = mode == null || record.mode == mode
 }
 
 /**
@@ -173,7 +178,7 @@ object BattleRecordProjector {
         return BattleRecord(archive.matchId, articles.minOfOrNull { it.perceivedAt } ?: 0L, start,
             (end?.payload as? ArchivedMatchEnded)?.result,
             configured.mapNotNull { it.second.ownedPokemon }.distinctBy { it.ownedPokemonId },
-            events, uncredited, archive.articles.size)
+            events, uncredited, archive.articles.size, battleRecordMode(archive))
     }
 
 }

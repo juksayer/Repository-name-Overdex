@@ -7,6 +7,8 @@ import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.MatchOutcomeLabelWitnessed
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
+import com.example.overdex.battle.custody.TestimonyCustody
+import com.example.overdex.battle.custody.TestimonyRecord
 import com.example.overdex.battle.reality.InMemoryRealityTimeline
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.timeline.observer.ObservationSource
@@ -23,6 +25,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -36,6 +40,54 @@ import java.util.concurrent.atomic.AtomicLong
 
 /** Exercises the real crop -> custody -> text -> phrase -> Match end path without native OCR. */
 class PersistedOutcomeTextWitnessTest {
+    @Test fun `accepted probe is read exactly once while earlier testimony awaits publication`() = runBlocking {
+        val releasePublisher = CompletableDeferred<Unit>()
+        val ledger = InMemoryTestimonyCustody()
+        val custody = object : TestimonyCustody by ledger {
+            override val testimonyFlow = flow { releasePublisher.await(); emitAll(ledger.testimonyFlow) }
+        }
+        val timeline = InMemoryRealityTimeline()
+        val match = Match("accepted-result", custody = custody, realityTimeline = timeline,
+            pokemonKnowledge = FakePokemonKnowledge())
+        val at = System.nanoTime()
+        val reader = ControlledReader(inspector = { TransientTextProbe.Reading(.9f, true, 1, null) }) {
+            listOf(text("YOU WIN!"))
+        }
+        val witness = PersistedOutcomeTextWitness(reader, { at })
+        val phrase = PersistedOutcomePhraseWitness({ MatchOutcomeTextResolver.resolve(it) == MatchOutcomePhrase.WIN },
+            ObserverId("YOU_WIN_WITNESS", ObservationSource.SCREEN_CAPTURE), "Win")
+        val crop = CropCaptured(CropArtifactReference("artifacts/crops/win.png", "1".repeat(64), 42),
+            resultProvenance)
+        try {
+            // Late subscription and a previously accepted input must work even with no published articles.
+            val before = ledger.submitTestimony(SourceId("OLDER"), RawTestimony("earlier"), 123L, null, emptyList(), at - 1)
+            val receipt = ledger.submitTestimony(SourceId(BattleWitnessContracts.matchOutcomeProbeCapture.witnessId),
+                crop, 124L, null, emptyList(), at)
+            phrase.start(match)
+            witness.start(match)
+            reader.request(OcrPriority.URGENT).admit.complete(Unit)
+            await { ledger.getRecords().any { it.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS" } }
+            val raw = ledger.getRecords().filterIsInstance<TestimonyRecord>().single { it.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS" }
+            await { timeline.getArticles().any { it.payload == MatchEnded(BattleResult.WIN) } }
+            assertNull(timeline.articleForSequence(before.sequenceNumber))
+            assertEquals(receipt.timestamp, raw.timestamp)
+            assertEquals(receipt.monotonicTimeNanos, raw.monotonicTimeNanos)
+            releasePublisher.complete(Unit)
+            await { timeline.getArticles().any { it.payload == MatchEnded(BattleResult.WIN) } }
+            match.awaitAcceptedEvidencePublished()
+            val published = timeline.getArticles()
+            assertEquals(before.payload, published.single { it.sequenceNumber == before.sequenceNumber }.payload)
+            val source = published.single { it.sequenceNumber == receipt.sequenceNumber }
+            assertEquals(listOf(source.id.value), raw.evidenceReferences)
+            assertEquals(source.id, reader.reads.single().id)
+            assertEquals(crop, source.payload)
+            assertEquals(1, published.count { it.payload is MatchEnded })
+        } finally {
+            releasePublisher.complete(Unit)
+            witness.stop(); phrase.stop(); match.release()
+        }
+    }
+
     @Test fun `validated no-shields prompt prepares before publication and leaves later result recognition intact`() = runBlocking {
         val prompt = resultText("No Protect Shields remaining!", OcrBox(68f, 55f, 404f, 84f))
         val malformed = resultText("No Prote1 S'lds remainir:", OcrBox(68f, 55f, 404f, 84f))

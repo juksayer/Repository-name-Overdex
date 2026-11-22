@@ -21,6 +21,7 @@ internal fun ReplayCorrectionDialog(
     matchId: String,
     offsetNanos: Long,
     priorEntries: List<ReplayTrainerCorrection>,
+    onEditSaved: (() -> Unit)?,
     onDismiss: () -> Unit,
     onSave: (ReplayTrainerCorrection) -> Unit,
 ) {
@@ -42,6 +43,9 @@ internal fun ReplayCorrectionDialog(
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text("Your entry marks the current Replay time and is saved separately from the recording.")
+                onEditSaved?.let { edit ->
+                    TextButton(onClick = edit) { Text("Edit a saved species") }
+                }
                 Row {
                     listOf(ReplayCorrectionKind.FAST_MOVE to "Fast", ReplayCorrectionKind.CHARGED_MOVE to "Charged",
                         ReplayCorrectionKind.FAINT to "Faint").forEach { (option, label) ->

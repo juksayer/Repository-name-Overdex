@@ -24,7 +24,8 @@ object ArchivedEndingAudioRecognizer {
     internal suspend fun recognize(archive: MatchArchive, moves: List<Move>, speciesIds: Set<Int>,
                           openArchive: () -> InputStream?, captureWindow: LongRange?, bannerMove: String?,
                           readAsset: (String) -> ByteArray, cache: ReplayReviewCache? = null,
-                          fastSearches: Map<Long, Set<String>> = emptyMap()): ReplayAudioRecovery = withContext(Dispatchers.Default) {
+                          fastSearches: Map<Long, Set<String>> = emptyMap(),
+                          shieldBlockTimes: Set<Long> = emptySet()): ReplayAudioRecovery = withContext(Dispatchers.Default) {
         if (ReplayRetainedAudioRecovery.selectedArticles(archive).isEmpty()) return@withContext ReplayAudioRecovery()
         if (!archive.mediaIncluded) return@withContext ReplayAudioRecovery(unavailableArtifacts = listOf("Archive has no audio media"))
         val missing = mutableListOf<String>()
@@ -40,7 +41,7 @@ object ArchivedEndingAudioRecognizer {
         } }
         val fastSearchKeys = fastSearches.toSortedMap().map { (at, names) -> "$at=${names.sorted().joinToString(",")}" }
         val cacheKey = cache?.key(listOf("ending-audio", captureWindow?.first.toString(), captureWindow?.last.toString(),
-            bannerMove.orEmpty(), speciesIds.sorted().joinToString(",")) + wanted.sorted() + fastSearchKeys)
+            bannerMove.orEmpty(), speciesIds.sorted().joinToString(",")) + wanted.sorted() + fastSearchKeys + shieldBlockTimes.sorted().map { "shield-block-$it" })
         if (cache != null && cacheKey != null) cache.read<ReplayAudioRecovery>(cacheKey)?.let { return@withContext it }
         var assetReadFailed = false
         val references = mutableListOf<ReplayAudioReference>()
@@ -90,7 +91,7 @@ object ArchivedEndingAudioRecognizer {
         } }
         val context = coroutineContext
         val result = ReplayRetainedAudioRecovery.recover(archive, references, missing, { context.ensureActive() },
-            captureWindow, bannerMove, fastSearches) { bytes[it.artifactPath] }
+            captureWindow, bannerMove, fastSearches, shieldBlockTimes) { bytes[it.artifactPath] }
         if (cache != null && cacheKey != null && !assetReadFailed && result.unavailableArtifacts.isEmpty()) {
             cache.write(cacheKey, result)
         }

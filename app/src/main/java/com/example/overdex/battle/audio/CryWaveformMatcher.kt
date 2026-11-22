@@ -37,7 +37,10 @@ internal class CryWaveformMatcher(references: List<CryWaveformReference>) {
         val eligible = prepared.filter { it.samples.size <= query.size }
         if (eligible.isEmpty() || query.isEmpty()) return emptyList()
         var size = 1
-        while (size < query.size + eligible.maxOf { it.samples.size } - 1) size *= 2
+        // Only complete overlaps are measured, at output indices n - 1 through query.lastIndex.
+        // With size >= query.size, circular convolution can wrap only into indices 0 through
+        // n - 2. Those are partial overlaps and are never read.
+        while (size < query.size) size *= 2
         val real = DoubleArray(size) { if (it < query.size) query[it].toDouble() else 0.0 }
         val imaginary = DoubleArray(size)
         transform(real, imaginary, inverse = false)

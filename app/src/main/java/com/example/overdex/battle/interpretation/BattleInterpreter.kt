@@ -16,6 +16,9 @@ import com.example.overdex.model.BattleEventType
 import com.example.overdex.model.BattleResult
 import com.example.overdex.battle.observation.MatchOutcomePhrase
 import com.example.overdex.battle.observation.MatchOutcomeTextResolver
+import com.example.overdex.battle.observation.GRUNT_DEFEATED_SUMMARY
+import com.example.overdex.battle.observation.ROCKET_SUMMARY_WITNESS
+import com.example.overdex.battle.observation.RocketVictorySummary
 import com.example.overdex.model.Confidence
 import com.example.overdex.model.ConfidenceLevel
 import java.util.UUID
@@ -95,6 +98,9 @@ class BattleInterpreter(
         if (label != null) {
             val expected = when (sourceId) {
                 "YOU_WIN_WITNESS" -> BattleResult.WIN
+                ROCKET_SUMMARY_WITNESS -> BattleResult.WIN.takeIf {
+                    label.basis == GRUNT_DEFEATED_SUMMARY && RocketVictorySummary.matches(label.rawText)
+                } ?: return null
                 "GOOD_EFFORT_WITNESS" -> BattleResult.LOSS
                 else -> return null
             }

@@ -34,6 +34,20 @@ object FastMoveUseEvidence {
         impactAtNanos: Long,
         activeSpecies: Map<ActivePokemonSide, String>,
     ): RecipientAudioSupport? {
+        val match = sideMatchedSound(sound, clipAtNanos, damagedSide, activeSpecies) ?: return null
+        if (impactAtNanos < match.segmentAtNanos - AUDIO_IMPACT_ALIGNMENT_NANOS ||
+            impactAtNanos > match.segmentEndNanos + AUDIO_IMPACT_ALIGNMENT_NANOS) return null
+        val midpoint = match.segmentAtNanos + (match.segmentEndNanos - match.segmentAtNanos) / 2
+        return match.copy(distanceNanos = abs(impactAtNanos - midpoint))
+    }
+
+    /** This can challenge an earlier finisher even if reception of this sound was missed. */
+    internal fun sideMatchedSound(
+        sound: FastMoveSoundMeasured,
+        clipAtNanos: Long,
+        damagedSide: ActivePokemonSide,
+        activeSpecies: Map<ActivePokemonSide, String>,
+    ): RecipientAudioSupport? {
         if (!sound.audible || !sound.referenceMatchAccepted || activeSpecies.size != 2 ||
             sound.referenceSearchScopes.size != 2 ||
             sound.referenceSearchScopes.map { it.side }.distinct().size != 2) return null
@@ -56,10 +70,7 @@ object FastMoveUseEvidence {
         val segmentAt = runCatching { Math.addExact(clipAtNanos, candidate.matchingOffsetNanos) }.getOrNull() ?: return null
         val segmentEnd = runCatching { Math.addExact(segmentAt, candidate.matchedDurationNanos) }.getOrNull() ?: return null
         val occurrenceAt = runCatching { Math.subtractExact(segmentAt, candidate.referenceOffsetNanos) }.getOrNull() ?: return null
-        if (impactAtNanos < segmentAt - AUDIO_IMPACT_ALIGNMENT_NANOS ||
-            impactAtNanos > segmentEnd + AUDIO_IMPACT_ALIGNMENT_NANOS) return null
-        return RecipientAudioSupport(attackingSide, candidate.moveName, occurrenceAt, segmentAt, segmentEnd,
-            abs(impactAtNanos - (segmentAt + candidate.matchedDurationNanos / 2)),
+        return RecipientAudioSupport(attackingSide, candidate.moveName, occurrenceAt, segmentAt, segmentEnd, 0,
             sound.referenceSearchScopes.flatMap { it.contextArticleIds }.distinct())
     }
 

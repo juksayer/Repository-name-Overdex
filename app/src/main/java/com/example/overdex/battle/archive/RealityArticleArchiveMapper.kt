@@ -179,6 +179,13 @@ object RealityArticleArchiveMapper {
                 p.speciesId, p.referenceSha256, p.correlation, p.durationNanos, p.analysisVersion)
             is com.example.overdex.battle.custody.RepeatCryDepartureCandidateObserved -> ArchivedRepeatCryDepartureCandidate(
                 p.speciesId, p.side?.name, p.possibleAppearanceIds, p.cryOccurrenceIds)
+            is com.example.overdex.battle.custody.DepartureFastMoveSoundMeasured -> ArchivedDepartureFastMoveSoundMeasured(
+                p.moveName, p.referenceSha256, p.excerptAtNanos, p.fragments.map {
+                    ArchivedDepartureSoundFragment(it.queryOffsetNanos, it.referenceOffsetNanos, it.durationNanos, it.correlation)
+                })
+            is com.example.overdex.battle.custody.FinishingHitCredited -> ArchivedFinishingHitCredited(
+                p.faintArticleId, p.attackingSide.name, p.attackerSpeciesName, p.damagedSide.name, p.recipientSpeciesName,
+                p.moveName, p.moveKind, p.moveArticleId, p.basis, p.moveSourceAtNanos, p.landingAtNanos, p.cryArticleId, p.valid)
             is BattleCryCandidatesMeasured -> ArchivedBattleCryCandidatesMeasured(
                 p.cueKind, p.candidates.map { ArchivedBattleCryCandidateMeasurement(it.speciesId, it.referenceSha256, it.similarity) }
             )

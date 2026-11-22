@@ -266,6 +266,7 @@ fun MatchCalibrationScreen(
 
             CalibrationRegion.TRAINER_INACTIVE_POKEMON,
             CalibrationRegion.MATCH_OUTCOME,
+            CalibrationRegion.ROCKET_VICTORY_SUMMARY,
             CalibrationRegion.OPPONENT_TRAINER_HAND,
             CalibrationRegion.CHARGED_IMPACT_HP,
             CalibrationRegion.FORCED_REPLACEMENT_MESSAGE,
@@ -322,6 +323,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> "Trainer Charge-Move Controls"
             CalibrationRegion.TRAINER_INACTIVE_POKEMON -> "Inactive Cards: Upper / Lower"
             CalibrationRegion.MATCH_OUTCOME -> "Match Outcome"
+            CalibrationRegion.ROCKET_VICTORY_SUMMARY -> "Rocket Victory Summary"
             // Pokémon GO shows these two labels together only on the
             // post-match screen. This is not a generic game-menu crop.
             CalibrationRegion.BATTLE_PARTY_TABS -> "Post-Match Battle / Party Selector"
@@ -387,6 +389,7 @@ fun MatchCalibrationScreen(
         CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> calibration.trainerChargeMoveControlsRegion
         CalibrationRegion.TRAINER_INACTIVE_POKEMON -> calibration.trainerInactivePokemonRegion
         CalibrationRegion.MATCH_OUTCOME -> calibration.matchOutcomeRegion
+        CalibrationRegion.ROCKET_VICTORY_SUMMARY -> calibration.rocketVictorySummaryRegion
         CalibrationRegion.BATTLE_PARTY_TABS -> calibration.battlePartyTabsRegion
         CalibrationRegion.OUT_OF_BATTLE_MENU -> calibration.outOfBattleMenuRegion
         CalibrationRegion.OPPONENT_SPECIES_NAME -> calibration.opponentSpeciesNameRegion
@@ -478,6 +481,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> calibration.copy(trainerChargeMoveControlsRegion = updated)
             CalibrationRegion.TRAINER_INACTIVE_POKEMON -> calibration.copy(trainerInactivePokemonRegion = updated)
             CalibrationRegion.MATCH_OUTCOME -> calibration.copy(matchOutcomeRegion = updated)
+            CalibrationRegion.ROCKET_VICTORY_SUMMARY -> calibration.copy(rocketVictorySummaryRegion = updated)
             CalibrationRegion.BATTLE_PARTY_TABS -> calibration.copy(battlePartyTabsRegion = updated)
             CalibrationRegion.OUT_OF_BATTLE_MENU -> calibration.copy(outOfBattleMenuRegion = updated)
             CalibrationRegion.OPPONENT_SPECIES_NAME -> calibration.copy(opponentSpeciesNameRegion = updated)

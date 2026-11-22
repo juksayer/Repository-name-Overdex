@@ -169,6 +169,10 @@ data class BattleCalibration(
         width = 0.6f,
         height = 0.2f
     ),
+    // Summary title and Grunt Defeated row on the published 672 × 1493 Moondrop frame.
+    val rocketVictorySummaryRegion: AnchorRegion = AnchorRegion(
+        x = 0.055f, y = 0.265f, width = 0.89f, height = 0.18f
+    ),
     // Guessed starting box on the whole 1080 x 2400 Moondrop display. The user
     // will position it over the opponent's hand; this is no event detector.
     val opponentTrainerHandRegion: AnchorRegion = AnchorRegion(

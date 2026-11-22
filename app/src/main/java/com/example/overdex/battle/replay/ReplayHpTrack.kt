@@ -30,6 +30,8 @@ internal class ReplayHpEvidence(
         a.monotonicTimeNanos?.let { (p.side to it) to p }
     }.groupBy({ it.first }, { it.second })
 
+    fun hasCompleteProfile(side: String, at: Long): Boolean = (side to at) in completeFrames
+
     /** Legacy numeric readings can corroborate ownership at their own capture time.
      * They cannot establish current terminal survival without classified live fill.
      */
@@ -235,6 +237,7 @@ internal class ReplayHpTrack(
     evidence: ReplayHpEvidence,
     fastMoveCycles: List<ReplayFastMoveCycle> = emptyList(),
     private val allowLastSeen: (ArchivedRealityArticle) -> Boolean = { true },
+    private val sameAppearance: (Long, Long) -> Boolean = { _, _ -> false },
     uninterrupted: (Long, Long) -> Boolean = { _, _ -> true },
 ) {
     private val hpObservations = articles.filter { (it.payload as? ArchivedActiveHpBarMeasured)?.side == side }
@@ -257,13 +260,98 @@ internal class ReplayHpTrack(
             ReplayFastMoveRhythm.HP_RECEPTION in it.witness.evidenceKinds)
     }
 
-    private fun impactFor(at: Long): Long? = measuredIncoming.firstOrNull { cycle ->
-        cycle.witness.damageTicks.any { it.observedAtNanos == at }
-    }?.impactAtNanos ?: measuredIncoming.firstOrNull {
-        ReplayFastMoveRhythm.HP_RECEPTION in it.witness.evidenceKinds && it.impactAtNanos == at
-    }?.impactAtNanos ?: measuredIncoming.filter {
-        it.witness.sourceTimesNanos.isNotEmpty() && it.coversHpSample(at)
-    }.minByOrNull { cycle -> cycle.witness.sourceTimesNanos.minOf { kotlin.math.abs(it - at) } }?.impactAtNanos
+    // A centered charge-camera bar can briefly belong to the other Pokémon.
+    // Check its ownership against ordinary frames on either side before using
+    // a low value for the rest of this appearance.
+    private val contradictedCameraSamples = buildSet {
+        val ordinary = hpObservations.filter {
+            !ChargedImpactHpSource.matches(it.sourceId) && evidence.supportsSurvivalAtCapture(it)
+        }.groupBy { it.monotonicTimeNanos!! }.toSortedMap()
+        val frames = java.util.TreeMap(ordinary)
+        for (article in hpObservations) {
+            if (!ChargedImpactHpSource.matches(article.sourceId)) continue
+            val at = article.monotonicTimeNanos ?: continue
+            val camera = article.payload as ArchivedActiveHpBarMeasured
+            val before = frames.lowerEntry(at) ?: continue
+            val after = frames.higherEntry(at) ?: continue
+            val settled = frames.higherEntry(after.key) ?: continue
+            if (at - before.key > 1_500_000_000L || settled.key - at > 2_500_000_000L ||
+                !sameAppearance(before.key, settled.key)) continue
+            val bars = (before.value + after.value + settled.value).map { it.payload as ArchivedActiveHpBarMeasured }
+            val first = bars.first()
+            val tolerance = 3f / (first.barRight - first.barLeft).coerceAtLeast(1)
+            if (bars.all { it.sourceWidth == first.sourceWidth && it.sourceHeight == first.sourceHeight &&
+                    kotlin.math.abs(it.barLeft - first.barLeft) <= 3 &&
+                    kotlin.math.abs(it.barRight - first.barRight) <= 3 &&
+                    kotlin.math.abs(it.filledFraction - first.filledFraction) <= tolerance &&
+                    it.filledFraction - camera.filledFraction > .12f }) add(article.articleId)
+        }
+    }
+
+    // A settled damage tick can be published for the last frame of a small
+    // oscillation. Present that measured step once, on its attack's landing.
+    private fun earlyStepSamples(tickTimes: java.util.NavigableSet<Long>,
+                                 uninterrupted: (Long, Long) -> Boolean): Set<String> {
+        val frames = java.util.TreeMap(hpObservations.filter {
+            !ChargedImpactHpSource.matches(it.sourceId) && hpEvidence.supportsSurvivalAtCapture(it)
+        }.groupBy { it.monotonicTimeNanos!! })
+        return buildSet {
+            for (cycle in measuredIncoming) {
+                val tick = cycle.witness.damageTicks.singleOrNull() ?: continue
+                val at = tick.observedAtNanos
+                val start = maxOf(cycle.startedAtNanos, at - 750_000_000L)
+                if (start >= at || cycle.impactAtNanos < at) continue
+                val confirmation = frames[at]?.singleOrNull() ?: continue
+                val bar = confirmation.payload as ArchivedActiveHpBarMeasured
+                val pixel = 1f / (bar.barRight - bar.barLeft - 4).coerceAtLeast(1)
+                fun agrees(reading: ArchivedRealityArticle, fraction: Float): Boolean {
+                    val hp = reading.payload as ArchivedActiveHpBarMeasured
+                    return replayHpBaselineContinues(bar, hp) && kotlin.math.abs(hp.filledFraction - fraction) <= pixel
+                }
+                if (!agrees(confirmation, tick.after) || tick.before - tick.after <= 2 * pixel) continue
+                val first = frames.subMap(start, true, at, false).entries.firstOrNull { (_, reads) ->
+                    reads.all { agrees(it, tick.after) }
+                } ?: continue
+                val previous = frames.lowerEntry(first.key) ?: continue
+                if (first.key - previous.key > 750_000_000L || !previous.value.all { agrees(it, tick.before) }) continue
+                val next = frames.higherEntry(at) ?: continue
+                val settled = frames.higherEntry(next.key) ?: continue
+                if (settled.key - at > 750_000_000L || !uninterrupted(previous.key, settled.key) ||
+                    !sameAppearance(previous.key, settled.key) || tickTimes.higher(previous.key) != at ||
+                    incoming.between(previous.key, settled.key).any { it !== cycle } ||
+                    !(next.value + settled.value).all { agrees(it, tick.after) }) continue
+                val early = frames.subMap(first.key, true, at, false).values.flatten()
+                val divergent = early.filterNot { agrees(it, tick.after) }
+                // Protect terminal slivers, classified fill, and repeat observations.
+                // Only a single uncorroborated dip between agreeing frames can be jitter.
+                if (divergent.size > 1 || divergent.any { sample ->
+                        val hp = sample.payload as ArchivedActiveHpBarMeasured
+                        hp.filledFraction <= 3 * pixel || !replayHpBaselineContinues(bar, hp) ||
+                            hp.filledFraction >= tick.after || sample.confidence == null ||
+                            sample.confidence >= (confirmation.confidence ?: 0f) ||
+                            hpEvidence.hasCompleteProfile(side = hp.side, at = sample.monotonicTimeNanos!!)
+                    }) continue
+                early.forEach { add(it.articleId) }
+            }
+        }
+    }
+
+    private fun impactFor(at: Long, fraction: Float? = null): Long? {
+        val candidates = if (fraction == null) measuredIncoming else measuredIncoming.filter { cycle ->
+            // A separate lower measurement, especially a tiny live sliver, need
+            // not belong to the preceding attack just because it was nearby.
+            cycle.witness.damageTicks.isEmpty() || cycle.witness.damageTicks.any {
+                fraction >= it.after - .006f && fraction <= it.before + .006f
+            }
+        }
+        return candidates.firstOrNull { cycle ->
+            cycle.witness.damageTicks.any { it.observedAtNanos == at }
+        }?.impactAtNanos ?: candidates.firstOrNull {
+            ReplayFastMoveRhythm.HP_RECEPTION in it.witness.evidenceKinds && it.impactAtNanos == at
+        }?.impactAtNanos ?: candidates.filter {
+            it.witness.sourceTimesNanos.isNotEmpty() && it.coversHpSample(at)
+        }.minByOrNull { cycle -> cycle.witness.sourceTimesNanos.minOf { kotlin.math.abs(it - at) } }?.impactAtNanos
+    }
 
     private val samples = buildList {
         // Preserve an individually witnessed damage tick. When several supported
@@ -274,6 +362,7 @@ internal class ReplayHpTrack(
             tick?.damagedSide == side && tick.validDamage() && evidence.accepts(a)
         }.groupBy { it.monotonicTimeNanos }
         val tickTimes = java.util.TreeSet(ticks.keys.filterNotNull())
+        val earlySteps = earlyStepSamples(tickTimes, uninterrupted)
         val captured = hpObservations.filter { evidence.accepts(it) && it.monotonicTimeNanos != null }
             .groupBy { it.monotonicTimeNanos!! }.toSortedMap()
         val redistributed = mutableSetOf<Long>()
@@ -311,7 +400,7 @@ internal class ReplayHpTrack(
             }
         }
         articles.forEach { article ->
-            if (!evidence.accepts(article)) return@forEach
+            if (article.articleId in earlySteps || article.articleId in contradictedCameraSamples || !evidence.accepts(article)) return@forEach
             val at = article.monotonicTimeNanos ?: return@forEach
             if (at in redistributed) return@forEach
             val fraction = when (val payload = article.payload) {
@@ -322,7 +411,13 @@ internal class ReplayHpTrack(
                 else -> null
             }
             if (fraction != null && fraction.validFraction()) {
-                val impact = impactFor(at)
+                val owner = if (article.payload is ArchivedActiveHpBarMeasured && !ChargedImpactHpSource.matches(article.sourceId))
+                    measuredIncoming.singleOrNull { cycle ->
+                        at < cycle.impactAtNanos && cycle.witness.damageTicks.any { tick ->
+                            at >= tick.observedAtNanos && fraction == tick.after
+                        }
+                    } else null
+                val impact = owner?.impactAtNanos ?: impactFor(at, fraction)
                 add(Sample(impact ?: at, fraction,
                     (article.payload as? ArchivedActiveHpBarDamageTickMeasured)?.beforeFraction,
                     aligned = impact != null))

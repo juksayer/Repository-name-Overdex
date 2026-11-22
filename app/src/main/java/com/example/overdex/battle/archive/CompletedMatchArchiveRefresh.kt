@@ -17,6 +17,7 @@ internal fun shouldRefreshCompletedMatchArchive(article: RealityArticle, complet
         GetReadyWitnessed, AttackIncoming, ChargeMoveUsedAnnounced,
         is ChargeMoveQteVibrationPatternInferred, is ChargedMoveEnergySpent,
         is ActivePokemonSpeciesWitnessed, is PlayerActiveIdentityResolved, is ActivePokemonFaintedWitnessed,
+        is FinishingHitCredited, is DepartureFastMoveSoundMeasured,
         is FastMoveUseObserved, is FastMoveIdentified, is FastMoveEnergyDerived,
         is StatChangeObserved, is MatchResultMusicMeasured, is MatchResultMusicCompared -> true
         else -> false

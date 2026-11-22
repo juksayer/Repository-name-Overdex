@@ -4,6 +4,7 @@ import com.example.overdex.battle.archive.ArchivedObservationRestartedByUser
 import com.example.overdex.battle.archive.ArchivedScreenIgnoredByUser
 
 import com.example.overdex.battle.BattleSpeciesDisplay
+import com.example.overdex.battle.inference.LiveFinishingHitResolver
 import com.example.overdex.battle.archive.ArchivedStatChangeSoundMeasured
 import com.example.overdex.battle.archive.ArchivedStatChangeObserved
 
@@ -237,8 +238,19 @@ class MatchReplayModel(
         .flatten()
         .distinctBy { "${it.side}:${it.atNanos}:${it.label}" }
         .sortedBy { it.atNanos }
-    private val decisionTimers = ReplayDecisionTimers(replayArticles, knockoutTrack.knockouts)
     private val chargeTransitions = ReplayChargeTransitions(replayArticles) { combatantFor("PLAYER", it) }
+    private val shieldBlocks = ReplayShieldExchange.episodes(timedArticles.filter { it.matchId == archive.matchId }).flatMap { phase ->
+        recoveredEndingAnnouncements.mapNotNull { reading ->
+            val banner = phase.banners.firstOrNull { it.articleId == reading.cropArticleId } ?: return@mapNotNull null
+            val actor = NAMED_MOVE_PATTERN.matchEntire(reading.text)?.groupValues?.get(1) ?: return@mapNotNull null
+            val at = banner.monotonicTimeNanos!!
+            if (!combatantFor("OPPONENT", at)?.speciesName.equals(actor, true)) return@mapNotNull null
+            val block = phase.impactFor(banner, reading.blockedCropId)?.row ?: return@mapNotNull null
+            if (listOf("PLAYER", "OPPONENT").any { appearanceAt(it, at) != appearanceAt(it, block.monotonicTimeNanos!!) }) return@mapNotNull null
+            at to block
+        }
+    }.toMap()
+    private val decisionTimers = ReplayDecisionTimers(replayArticles, knockoutTrack.knockouts, shieldBlocks.values.map { it.articleId }.toSet())
     private val fastMoveChargeWindows = fastMoveExclusionWindows()
     private val recordedFastMoveUses = reconstructFastMoveUses()
     // Source charge boundaries determine ordinary-play exclusions. A later
@@ -252,7 +264,12 @@ class MatchReplayModel(
         if (frame == null || uses.any { it.isCompleted && kotlin.math.abs(it.sourceAtNanos-frame.at) <= 600_000_000L }) uses
         else (uses + ReplayChargedMoveUse("PLAYER", frame.at, frame.at, frame.move, 1, setOf("SOURCE_MATCHED_ANNOUNCEMENT"),
             articleIds = setOf(frame.announcementCropId,frame.frameSha256))).sortedBy { it.sourceAtNanos }
-    }.map { use ->
+    }.map { recorded ->
+        val block = shieldBlocks[recorded.sourceAtNanos]?.takeIf { recorded.side == "OPPONENT" && recorded.isCompleted }
+        val use = if (block == null) recorded else recorded.copy(
+            visualDurationNanos = (block.monotonicTimeNanos!! - recorded.animationAtNanos).coerceAtLeast(1L),
+            visualFinishByNanos = block.monotonicTimeNanos,
+            articleIds = recorded.articleIds + block.articleId, evidenceKinds = recorded.evidenceKinds + "BLOCKED_ON_RECIPIENT_BAR")
         // The recorded battlefield can change before our decorative wind-up
         // finishes. Fit the slam/flight before that change rather than dropping
         // the throw or attaching the old move to the incoming Pokémon.
@@ -319,7 +336,7 @@ class MatchReplayModel(
             audioRecovery, knockoutTrack.knockouts, ::combatantFor, ::appearanceAt, ::nextAppearance,
             finishingEvidence::hasLivingHpAfter)
     }
-    private val terminalChargeDeparture by lazy { finishingEvidence.terminalCharge() }
+    private val terminalChargeDeparture by lazy { finishingEvidence.terminalCharge() ?: finishingEvidence.repeatCryCharge(recoveredEndingAnnouncements) }
     private val presentedKnockouts by lazy {
         val slivers = sliverDepartures.map { it.faint }
         val charge = terminalChargeDeparture?.faint?.takeUnless { candidate -> (knockoutTrack.knockouts + slivers).any {
@@ -361,8 +378,18 @@ class MatchReplayModel(
                 combatantFor("OPPONENT", frame.at), appearanceAt("PLAYER", frame.at), appearanceAt("OPPONENT", frame.at),
                 nextAppearance("OPPONENT", frame.at), nextAppearance("PLAYER", frame.at))
         }
-        val links = ReplayFinishingAttributions.resolve(observed + count + fastAudio + sliverLinks + terminalAudio +
-            listOfNotNull(cryCharge, frameLink, lastOpponentFastLink, terminalChargeDeparture?.candidate)) {
+        val counters = ReplayShieldCounter.associate(audioRecovery.cryOverlapEffects, exchangeArticles, shieldBlocks.values,
+            knockoutTrack.knockouts, ::combatantFor, ::appearanceAt, ::identifiedMoveFor, ::availableFastMoves,
+            hpEvidence::acceptsSingleHit, ::sameFastMoveExchange)
+        val missingTick = ReplayMissingTickFinish.resolve(exchangeArticles, identifiedFastMoveArticles, sliverChanges, fastMoveCycles,
+            ::combatantFor, ::appearanceAt, ::sameFastMoveExchange)
+        val recovered = observed + count + fastAudio + sliverLinks + terminalAudio + counters +
+            listOfNotNull(cryCharge, frameLink, lastOpponentFastLink, terminalChargeDeparture?.candidate, missingTick)
+        val live = ReplayRecordedFinishingCredits.read(archive, presentedKnockouts, charges, recovered, ::combatantFor, ::appearanceAt)
+        val eligible = (live + recovered).filter { link ->
+            link !is ReplayFinishingFastAssociation || withinFinishingMoveWindow(link)
+        }
+        val links = ReplayFinishingAttributions.resolve(eligible) {
             evidence.allows(it, knockoutTrack.knockouts)
         }
         // Recovered cries and sliver departures use the same team budget as
@@ -375,6 +402,32 @@ class MatchReplayModel(
                 .forEach { admitted += side to it.recipientAppearanceAtNanos }
         }
         links.filter { (it.recipientSide to it.recipientAppearanceAtNanos) in admitted }
+    }
+
+    private fun recordedMoveDuration(side: String, species: String?, name: String?, at: Long): Long? {
+        if (name == null || species == null) return null
+        val saved = identifiedFastMoveArticles.lastOrNull { row ->
+            val id = row.payload as ArchivedFastMoveIdentified
+            row.monotonicTimeNanos!! <= at && id.side == side && normalizeSpeciesName(id.speciesName) == normalizeSpeciesName(species) &&
+                normalizeSpeciesName(id.moveName) == normalizeSpeciesName(name)
+        }?.payload as? ArchivedFastMoveIdentified
+        return listOf(saved?.moveDurationNanos, possibleMoveFor(side, at, name)?.turns?.toLong()?.times(REPLAY_TURN_NANOS))
+            .firstOrNull { it != null && it in REPLAY_TURN_NANOS..10 * REPLAY_TURN_NANOS }
+    }
+
+    /** A late ball count supplies an upper bound. Only an actual faint clock or a living lower
+     * bound can prove that an otherwise supported attack was too early. */
+    private fun withinFinishingMoveWindow(link: ReplayFinishingFastAssociation): Boolean {
+        val duration = recordedMoveDuration(link.attackingSide, link.attackerSpeciesName, link.moveName, link.moveSourceAtNanos)
+            ?: return true
+        val ko = presentedKnockouts.singleOrNull { it.side == link.recipientSide && it.appearanceAtNanos == link.recipientAppearanceAtNanos }
+        val earliest = when (val timing = finishingEvidence.faintTiming(ko, link)) {
+            is ReplayFaintTiming.Cry -> timing.onset.atNanos
+            is ReplayFaintTiming.ZeroHp -> timing.frame.atNanos
+            is ReplayFaintTiming.Window -> timing.after?.atNanos
+            else -> null
+        } ?: return true
+        return earliest <= link.moveSourceAtNanos || ReplayMissingTickFinish.eligible(link.moveSourceAtNanos, earliest, duration)
     }
 
     val finishingChargeAssociations: List<ReplayFinishingChargeAssociation> by lazy {
@@ -396,18 +449,29 @@ class MatchReplayModel(
     }
 
     private val supportedPresentationCycles by lazy {
-        val inferred = finishingFastMoveAssociations.singleOrNull { it.basis == ReplayLastOpponentFastFinish.BASIS }?.let { link ->
-            val move = lastOpponentFastEvidence?.playerMoves?.get(link.moveName)
+        val inferred = finishingFastMoveAssociations.filter {
+            it.basis in setOf(ReplayLastOpponentFastFinish.BASIS, ReplayMissingTickFinish.BASIS, ReplayShieldCounter.BASIS) ||
+                it.basis == LiveFinishingHitResolver.CRY_EFFECT || (it.basis == LiveFinishingHitResolver.AUDIBLE_FAST &&
+                    fastMoveCycles.none { cycle -> cycle.witness.articleIds.any(it.moveArticleIds::contains) })
+        }.map { link ->
+            val type = if (link.basis == ReplayLastOpponentFastFinish.BASIS) lastOpponentFastEvidence?.playerMoves?.get(link.moveName)?.type
+                else link.moveName?.let { possibleMoveFor(link.attackingSide, link.moveSourceAtNanos, it)?.type }
+            val start = if (link.basis == ReplayMissingTickFinish.BASIS) {
+                val duration = requireNotNull(recordedMoveDuration(link.attackingSide, link.attackerSpeciesName, link.moveName, link.moveSourceAtNanos))
+                link.impactAtNanos - duration
+            } else if (link.basis == LiveFinishingHitResolver.AUDIBLE_FAST)
+                maxOf(link.attackerAppearanceAtNanos, link.recipientAppearanceAtNanos, link.impactAtNanos - 300_000_000L)
+                else link.moveSourceAtNanos
             ReplayFastMoveCycle(ReplayFastMoveWitness(link.attackingSide, link.moveSourceAtNanos, link.moveName,
-                move?.type, link.impactAtNanos - link.moveSourceAtNanos, link.moveSourceAtNanos, link.impactAtNanos + 120_000_000L,
+                type, link.impactAtNanos - start, start, link.impactAtNanos + 120_000_000L,
                 setOf(link.basis), link.moveArticleIds.toSet(), setOf(link.moveSourceAtNanos,link.impactAtNanos)),
-                link.moveSourceAtNanos, link.impactAtNanos)
+                start, link.impactAtNanos)
         }
-        (fastMoveCycles + listOfNotNull(inferred) + finishingEvidence.pendingFastCycles.filter { cycle -> finishingFastMove(cycle) != null })
+        (fastMoveCycles + inferred + finishingEvidence.pendingFastCycles.filter { cycle -> finishingFastMove(cycle) != null })
             .map { cycle ->
-                val reception = finishingFastMove(cycle)?.reception ?: return@map cycle
-                cycle.copy(startedAtNanos = minOf(cycle.startedAtNanos, reception.atNanos),
-                    impactAtNanos = reception.atNanos)
+                val link = finishingFastMove(cycle) ?: return@map cycle
+                val landing = link.reception?.atNanos ?: link.impactAtNanos
+                cycle.copy(startedAtNanos = minOf(cycle.startedAtNanos, landing), impactAtNanos = landing)
             }.distinctBy { finishingFastMove(it) ?: it }
             .sortedBy { it.impactAtNanos }
     }
@@ -463,7 +527,7 @@ class MatchReplayModel(
     private fun finishingFastMove(cycle: ReplayFastMoveCycle): ReplayFinishingFastAssociation? =
         finishingFastMoveAssociations.singleOrNull { link ->
             link.attackingSide == cycle.witness.side &&
-                (link.impactAtNanos == cycle.impactAtNanos ||
+                (link.impactAtNanos == cycle.impactAtNanos || link.basis == LiveFinishingHitResolver.AUDIBLE_FAST ||
                     (link.reception != null && link.moveSourceAtNanos in cycle.witness.sourceTimesNanos)) &&
                 cycle.witness.articleIds.any(link.moveArticleIds::contains)
         }
@@ -525,7 +589,10 @@ class MatchReplayModel(
         }
     }
     private fun hpTrack(side: String) =
-        ReplayHpTrack(replayArticles, side, hpEvidence, presentedFastCycles, allowHistoricalHp) { from, until ->
+        ReplayHpTrack(replayArticles, side, hpEvidence, presentedFastCycles, allowHistoricalHp,
+            sameAppearance = { from, until ->
+                combatantFor(side, from) != null && appearanceAt(side, from) == appearanceAt(side, until)
+            }) { from, until ->
             hpDisplayCuts.higher(from)?.let { it > until } != false
         }
 
@@ -615,7 +682,11 @@ class MatchReplayModel(
                     it.attackingSide == marker.side && it.impactAtNanos == marker.atNanos &&
                         marker.sourceArticleIds.any(it.moveArticleIds::contains)
                 }
-                if (link == null) marker else marker.copy(label = marker.label + " · KO",
+                if (link == null) marker else marker.copy(
+                    label = marker.label + if (link.basis == ReplayMissingTickFinish.BASIS) " · inferred KO" else " · KO",
+                    inferenceExplanation = if (link.basis == ReplayMissingTickFinish.BASIS)
+                        "Landing inferred from the preceding hits, the remaining HP changing color, and the recipient’s faint cry."
+                        else marker.inferenceExplanation,
                     sourceAtNanos = if (link.basis == ReplaySliverExchange.BASIS) link.moveSourceAtNanos else marker.sourceAtNanos,
                     sourceArticleIds = link.evidenceArticleIds, finishingAttribution = link)
             })
@@ -625,12 +696,12 @@ class MatchReplayModel(
                 add(faintMarker(knockout, association, ReplayEventMarker("faint:${knockout.side}:${knockout.appearanceAtNanos}",
                     ReplayEventMarkerKind.FAINT, knockout.recordedAtNanos, knockout.side, "Faint · ${BattleSpeciesDisplay.name(knockout.speciesName)}" +
                         (association?.let { " · ${it.creditLabel()}" } ?: "") +
-                        (if (knockout.basis in setOf(ReplaySliverExchange.DEPARTURE, ReplayChargeDeparture.BASIS)) " · inferred" else ""),
+                        (if (knockout.basis in setOf(ReplaySliverExchange.DEPARTURE, ReplayChargeDeparture.BASIS, ReplayFinishingEvidence.REPEAT_CHARGE)) " · inferred" else ""),
                     sourceAtNanos = association?.faintSourceAtNanos ?: knockout.recordedAtNanos,
                     sourceArticleIds = association?.evidenceArticleIds ?: knockout.sourceArticleIds,
                     finishingAttribution = association)))
             }
-            finishingFastMoveAssociations.filter { it.basis == ReplayLastOpponentFastFinish.BASIS &&
+            finishingFastMoveAssociations.filter { it.basis in setOf(ReplayLastOpponentFastFinish.BASIS, ReplayMissingTickFinish.BASIS) &&
                 presentedKnockouts.none { ko -> ko.side == it.recipientSide && ko.appearanceAtNanos == it.recipientAppearanceAtNanos }
             }.forEach { link ->
                 add(faintMarker(null, link, ReplayEventMarker("recovered-faint:${link.recipientSide}:${link.recipientAppearanceAtNanos}",
@@ -874,7 +945,7 @@ class MatchReplayModel(
     private fun ReplayFinishingChargeAssociation.faintPoseAt() =
         when (basis) {
             ReplayImpactFinish.BASIS, ReplaySoundMatchedBanner.BASIS, ReplayTerminalAudioAssociation.ANNOUNCED_PARTIAL,
-            ReplayChargeDeparture.BASIS -> faintSourceAtNanos
+            ReplayChargeDeparture.BASIS, ReplayFinishingEvidence.REPEAT_CHARGE -> faintSourceAtNanos
             else -> presentationImpactAtNanos
         }
 
@@ -1134,7 +1205,7 @@ class MatchReplayModel(
                 TeamRosterSpeciesAttributor.speciesKey(it.recipientSpeciesName) ==
                     TeamRosterSpeciesAttributor.speciesKey(combatant.speciesName)
         } ?: return combatant
-        if (link.basis == ReplayLastOpponentFastFinish.BASIS && presentedKnockouts.none {
+        if (link.basis in setOf(ReplayLastOpponentFastFinish.BASIS, ReplayMissingTickFinish.BASIS) && presentedKnockouts.none {
                 it.side == side && it.appearanceAtNanos == link.recipientAppearanceAtNanos }) {
             return combatant.copy(isFainted = true, faintedAtNanos = link.faintSourceAtNanos,
                 knockoutPresentationAtNanos = link.faintPoseAt(), knockoutBasis = link.basis,
@@ -1597,7 +1668,8 @@ class MatchReplayModel(
                 !canPerformReplayAction(use.side, start, start)) return@mapNotNull null
             val settleAt = if (use.isCompleted) use.impactAtNanos else use.animationAtNanos
             val boundary = boundaries.firstOrNull { it > start } ?: Long.MAX_VALUE
-            ReplayChargeFocus(start, settleAt, minOf(settleAt + 750_000_000L, boundary))
+            val finish = shieldBlocks[use.sourceAtNanos]?.monotonicTimeNanos ?: (settleAt + 750_000_000L)
+            ReplayChargeFocus(start, settleAt, minOf(finish, boundary))
         }
     }
 
@@ -1662,8 +1734,8 @@ class MatchReplayModel(
                 else -> return@mapNotNull null
             }
             val from = chargeTransitions.forCue(article)?.presentationAtNanos ?: at
-            from..(namedCharges.firstOrNull { it in at..maximumEnd }?.plus(750_000_000L) ?: maximumEnd)
-        } + namedCharges.map { it..(it + 750_000_000L) } + decisionTimers.windows + chargedHpCamera.windows()
+            from..(namedCharges.firstOrNull { it in at..maximumEnd }?.let { shieldBlocks[it]?.monotonicTimeNanos ?: (it + 750_000_000L) } ?: maximumEnd)
+        } + namedCharges.map { it..(shieldBlocks[it]?.monotonicTimeNanos ?: (it + 750_000_000L)) } + decisionTimers.windows + chargedHpCamera.windows()
     }
 
     /** Terminal ticks explicitly cited by a canonical use are consumed only by that occurrence. */
@@ -2723,7 +2795,7 @@ private const val CHARGE_MOVE_PREPARATION_MAX_NANOS = 10_000_000_000L
 private const val OPPONENT_QTE_ESTIMATE_NANOS = 9_500_000_000L
 private const val CHARGE_ANNOUNCEMENT_REPEAT_NANOS = 4_000_000_000L
 private const val FAST_MOVE_WITNESS_MERGE_NANOS = 450_000_000L
-private const val REPLAY_TURN_NANOS = 500_000_000L
+internal const val REPLAY_TURN_NANOS = 500_000_000L
 private const val REPLAY_REQUIRED_CADENCE_INTERVALS = 3
 private const val REPLAY_MIN_CADENCE_TOLERANCE_NANOS = 160_000_000L
 private const val REPLAY_RELATIVE_CADENCE_TOLERANCE = 0.15

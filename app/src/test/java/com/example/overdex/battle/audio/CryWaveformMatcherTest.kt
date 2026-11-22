@@ -43,4 +43,23 @@ class CryWaveformMatcherTest {
     @Test(expected=IllegalArgumentException::class) fun `rejects an unbounded analysis window`() {
         CryWaveformMatcher(emptyList()).measureMono8k(ShortArray(32001))
     }
+
+    @Test fun `full overlaps at either edge count but a cry split across the window boundary does not`() {
+        val reference = signal(1, 1600)
+        val matcher = CryWaveformMatcher(listOf(CryWaveformReference(42, "ref", audio(reference))))
+        for (length in listOf(2048, 3099)) {
+            for (offset in listOf(0, length - reference.size)) {
+                val query = signal(2, length)
+                reference.copyInto(query, offset)
+                val fit = matcher.measureMono8k(query).single()
+                assertEquals(offset * 125_000L, fit.offsetNanos)
+                assertEquals(1f, fit.correlation, .00001f)
+            }
+            val split = signal(3, length)
+            val half = reference.size / 2
+            reference.copyInto(split, length - half, 0, half)
+            reference.copyInto(split, 0, half)
+            assertTrue(CryWaveformAcceptance.select(matcher.measureMono8k(split)).isEmpty())
+        }
+    }
 }

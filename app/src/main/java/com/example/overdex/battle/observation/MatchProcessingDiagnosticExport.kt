@@ -42,6 +42,29 @@ internal object MatchProcessingDiagnosticExport {
             put("activeSequence", snapshot.activeSequence)
             put("activeStage", snapshot.activeStage)
             put("activeAgeNanos", snapshot.activeAgeNanos)
+            put("localizedCryTiming", buildJsonObject {
+                put("totalAccepted", snapshot.cryPositiveCount)
+                put("retentionLimit", MatchProcessingDiagnostics.MAX_CRY_POSITIVES)
+                put("recent", buildJsonArray {
+                    for (cry in snapshot.recentCryPositives) add(buildJsonObject {
+                        put("speciesId", cry.speciesId)
+                        put("catchUp", cry.catchUp)
+                        put("onsetNanos", cry.onsetNanos)
+                        put("windowEndNanos", cry.windowEndNanos)
+                        put("bufferedNanos", cry.bufferedNanos)
+                        put("referencesStartedNanos", cry.referencesStartedNanos)
+                        put("referencesReadyNanos", cry.referencesReadyNanos)
+                        put("analysisStartNanos", cry.analysisStartNanos)
+                        put("matchDoneNanos", cry.matchDoneNanos)
+                        put("preservedNanos", cry.preservedNanos)
+                        put("captureSubmittedNanos", cry.captureSubmittedNanos)
+                        put("captureReceiptNanos", cry.captureReceiptNanos)
+                        put("crySubmittedNanos", cry.crySubmittedNanos)
+                        put("captureSequence", cry.captureSequence)
+                        put("crySequence", cry.crySequence)
+                    })
+                })
+            })
             put("histogramUpperBoundsNanos", JsonArray(MatchProcessingDiagnostics.BOUNDS.map(::JsonPrimitive)))
             put("stages", buildJsonObject {
                 snapshot.stages.forEach { (key, v) -> put(key, buildJsonObject {

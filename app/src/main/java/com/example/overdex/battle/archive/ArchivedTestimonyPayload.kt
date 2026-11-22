@@ -622,3 +622,28 @@ data class ArchivedRepeatCryDepartureCandidate(
     val possibleAppearanceIds: List<String>,
     val cryOccurrenceIds: List<String>,
 ) : ArchivedTestimonyPayload
+
+@Serializable @SerialName("departure_fast_move_sound_measured")
+data class ArchivedDepartureFastMoveSoundMeasured(
+    val moveName: String,
+    val referenceSha256: String,
+    val excerptAtNanos: Long,
+    val fragments: List<ArchivedDepartureSoundFragment>,
+) : ArchivedTestimonyPayload
+
+@Serializable
+data class ArchivedDepartureSoundFragment(
+    val queryOffsetNanos: Long, val referenceOffsetNanos: Long,
+    val durationNanos: Long, val correlation: Float,
+)
+
+/** Append-only credit revisions all refer to the same original faint. */
+@Serializable @SerialName("finishing_hit_credited")
+data class ArchivedFinishingHitCredited(
+    val faintArticleId: String,
+    val attackingSide: String, val attackerSpeciesName: String,
+    val damagedSide: String, val recipientSpeciesName: String,
+    val moveName: String, val moveKind: String, val moveArticleId: String, val basis: String,
+    val moveSourceAtNanos: Long, val landingAtNanos: Long,
+    val cryArticleId: String? = null, val valid: Boolean = true,
+) : ArchivedTestimonyPayload

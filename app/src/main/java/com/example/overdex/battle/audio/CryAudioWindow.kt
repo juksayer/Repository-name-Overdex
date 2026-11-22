@@ -10,6 +10,8 @@ internal data class CryAudioWindowSnapshot(
     val sequence: Long,
     val generation: Long,
 ) {
+    // Capture and worker clocks stay distinct when shared PCM arrives late.
+    val bufferedAtNanos = System.nanoTime()
     val durationNanos: Long get() = audio.samples.size.toLong() * 1_000_000_000L / audio.sampleRateHz / audio.channelCount
     val startNanos: Long get() = endNanos - durationNanos
 }

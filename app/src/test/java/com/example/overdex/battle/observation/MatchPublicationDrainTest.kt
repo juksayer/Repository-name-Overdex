@@ -6,6 +6,7 @@ import com.example.overdex.model.BattleEventType
 import com.example.overdex.model.Pokemon
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -13,6 +14,44 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class MatchPublicationDrainTest {
+    @Test fun `archive waits for a second observation accepted while the first drains after the win`() = runBlocking {
+        val entered = List(2) { CompletableDeferred<Unit>() }
+        val resume = List(2) { CompletableDeferred<Unit>() }
+        val knowledge = object : FakePokemonKnowledge() {
+            override suspend fun getPokemonByName(name: String): Pokemon? {
+                val i = if (name == "Machamp") 0 else 1
+                entered[i].complete(Unit)
+                resume[i].await()
+                return super.getPokemonByName(name)
+            }
+        }
+        val custody = InMemoryTestimonyCustody()
+        val timeline = InMemoryRealityTimeline()
+        val match = Match("archive-drain", custody = custody, realityTimeline = timeline, pokemonKnowledge = knowledge)
+        try {
+            withTimeout(5_000) {
+                custody.submitTestimony(SourceId("SPECIES_WITNESS"), RawTestimony("Machamp"), 100L)
+                entered[0].await()
+                custody.submitTestimony(SourceId("YOU_WIN_WITNESS"), RawTestimony("YOU WIN!"), 300L)
+                val end = match.articles.first { it.payload is MatchEnded }
+                val drain = async(start = CoroutineStart.UNDISPATCHED) { match.awaitEvidenceQueueDrained() }
+                custody.submitTestimony(SourceId("SPECIES_WITNESS"), RawTestimony("Gallade"), 200L)
+                resume[0].complete(Unit)
+                entered[1].await()
+                assertFalse(drain.isCompleted)
+                resume[1].complete(Unit)
+                drain.await()
+                assertEquals(300L, end.perceivedAt)
+                assertEquals(listOf(100L, 200L), timeline.getArticles()
+                    .filter { it.sourceId.id == "SPECIES_WITNESS" }.map { it.perceivedAt })
+                assertEquals(1, timeline.getArticles().count { it.payload is MatchEnded })
+            }
+        } finally {
+            resume.forEach { it.complete(Unit) }
+            match.release()
+        }
+    }
+
     @Test fun `historical charge cues remain preserved after result without reopening the live HUD`() = runBlocking {
         val custody = InMemoryTestimonyCustody()
         val timeline = InMemoryRealityTimeline()

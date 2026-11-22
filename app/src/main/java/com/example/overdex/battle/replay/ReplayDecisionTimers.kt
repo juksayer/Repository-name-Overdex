@@ -12,7 +12,8 @@ data class ReplayDecisionTimerState(
 )
 
 /** Display-only interpolation of witnessed seconds; no fabricated timer Articles. */
-internal class ReplayDecisionTimers(articles: List<ArchivedRealityArticle>, knockouts: List<ReplayKnockout>) {
+internal class ReplayDecisionTimers(articles: List<ArchivedRealityArticle>, knockouts: List<ReplayKnockout>,
+                                   blockCropIds: Set<String> = emptySet()) {
     private data class Period(
         val start: Long, var end: Long, val reason: String?,
         val readings: MutableList<ArchivedRealityArticle> = mutableListOf(),
@@ -26,6 +27,13 @@ internal class ReplayDecisionTimers(articles: List<ArchivedRealityArticle>, knoc
         for (article in articles.sortedBy { it.monotonicTimeNanos }) {
             val at = article.monotonicTimeNanos ?: continue
             if (current?.let { at >= it.end } == true) current = null
+            if (article.articleId in blockCropIds) {
+                if (current?.reason == "SHIELD?") {
+                    current!!.end = minOf(current!!.end, at)
+                    current = null
+                }
+                incomingAt = null
+            }
             if (isReplayAttackIncomingCue(article)) incomingAt = at
             when (val payload = article.payload) {
                 is ArchivedActivePokemonFaintedWitnessed -> if (payload.side == "PLAYER") playerFaintAt = at

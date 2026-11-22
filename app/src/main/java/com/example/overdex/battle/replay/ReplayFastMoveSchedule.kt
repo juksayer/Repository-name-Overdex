@@ -124,7 +124,15 @@ internal object ReplayFastMoveSchedule {
                     // moves into the future. Bound reconstruction to half a cycle.
                     expected - witness.observedAtNanos <= duration / 2 &&
                     continuesDamageSequence(previous.witness, witness, duration)
-                if (expected != null && witness.observedAtNanos < expected - tolerance && !separateDamage) {
+                // A previous late landing can exhaust the half-cycle jitter allowance.
+                // Two independently settled losses plus a measured intervening plateau
+                // still mark distinct hits. Re-anchor this landing to its source tick.
+                val reanchor = sameReference && expected != null && !separateDamage &&
+                    witness.observedAtNanos < expected - tolerance && witness.observedAtNanos > previousImpact!! &&
+                    "HP_PLATEAU_CONTINUITY" in witness.evidenceKinds && witness.archivedUseWithDamage &&
+                    witness.damageTicks.any { it.observedAtNanos == witness.observedAtNanos } &&
+                    continuesDamageSequence(previous.witness, witness, duration)
+                if (expected != null && witness.observedAtNanos < expected - tolerance && !separateDamage && !reanchor) {
                     // Keep incompatible raw testimony in the archive, without
                     // merging its identity into a different accepted move.
                     if (!sameReference) continue
@@ -139,7 +147,12 @@ internal object ReplayFastMoveSchedule {
                 val observed = witness.observedAtNanos
                 // Fit the windup to the visible part of this appearance. A witnessed
                 // impact cannot be delayed just because the camera cut off its start.
-                val openingHit = previousImpact == null && witness.archivedUseWithDamage && observed in witness.windowStartNanos..witness.windowEndNanos &&
+                // A recovered damage step exactly at a reopening is the evidence
+                // that ended the pause. Replaying its full windup afterwards can
+                // merge the next independently settled loss into this hit.
+                val measuredOpening = witness.archivedUseWithDamage ||
+                    (observed == witness.windowStartNanos && "REPLAY_CORROBORATED_HP_STEP" in witness.evidenceKinds)
+                val openingHit = previousImpact == null && measuredOpening && observed in witness.windowStartNanos..witness.windowEndNanos &&
                     witness.damageTicks.any { it.observedAtNanos == observed && it.after < it.before }
                 // A short gap can still be in rhythm. Only align the witnessed
                 // endpoint, leaving every unwitnessed beat empty.
@@ -149,11 +162,11 @@ internal object ReplayFastMoveSchedule {
                 var impact = when {
                     expected != null && (abs(observed - expected) <= tolerance ||
                         (separateDamage && observed < expected)) -> expected
-                    openingHit -> observed
+                    reanchor || openingHit -> observed
                     laterBeat != null -> laterBeat
                     else -> maxOf(observed, witness.windowStartNanos + duration)
                 }
-                var start = maxOf(witness.windowStartNanos, impact - duration)
+                var start = maxOf(witness.windowStartNanos, impact - duration, if (reanchor) previousImpact!! else Long.MIN_VALUE)
                 // Both combatants must remain on the field for this cycle. Charge
                 // sequences, switches, faints and match boundaries split windows.
                 if (impact > witness.windowEndNanos) {

@@ -28,13 +28,17 @@ class BattleRecordStore(private val context: Context) {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     fun save(archive: MatchArchive, entry: ArchiveDirectoryManager.ArchiveEntry): IndexedBattleRecord = synchronized(writeLock) {
-        val indexed = IndexedBattleRecord(BattleRecordProjector.project(archive), entry.uri.toString(), entry.byteCount, entry.lastModified)
+        write(IndexedBattleRecord(BattleRecordProjector.project(archive), entry.uri.toString(),
+            entry.byteCount, entry.lastModified, INDEX_VERSION))
+    }
+
+    private fun write(indexed: IndexedBattleRecord): IndexedBattleRecord {
         directory.mkdirs()
-        val target = AtomicFile(indexFile(archive.matchId))
+        val target = AtomicFile(indexFile(indexed.record.matchId))
         val out = target.startWrite()
         try { out.write(json.encodeToString(indexed).toByteArray()); target.finishWrite(out) }
         catch (error: Exception) { target.failWrite(out); throw error }
-        indexed
+        return indexed
     }
 
     /** Retiring a smaller export must not replace a richer lifetime record. */
@@ -42,8 +46,18 @@ class BattleRecordStore(private val context: Context) {
         val previous = runCatching {
             json.decodeFromString<IndexedBattleRecord>(AtomicFile(indexFile(archive.matchId)).readFully().toString(Charsets.UTF_8))
         }.getOrNull()
-        if (previous == null || previous.indexVersion != 1 || previous.record.articleCount < archive.articles.size) {
-            save(archive, entry)
+        update(archive, entry, previous)
+        Unit
+    }
+
+    private fun update(archive: MatchArchive, entry: ArchiveDirectoryManager.ArchiveEntry,
+        previous: IndexedBattleRecord?): IndexedBattleRecord = synchronized(writeLock) {
+        when {
+            previous == null || archive.articles.size >= previous.record.articleCount -> save(archive, entry)
+            previous.indexVersion < INDEX_VERSION -> write(previous.copy(
+                record = previous.record.copy(mode = battleRecordMode(archive)), indexVersion = INDEX_VERSION,
+            ))
+            else -> previous
         }
     }
 
@@ -59,13 +73,14 @@ class BattleRecordStore(private val context: Context) {
             coroutineContext.ensureActive()
             onProgress(index, entries.size)
             val previous = byUri[entry.uri.toString()]
-            if (previous == null || previous.archiveBytes != entry.byteCount || previous.archiveModifiedAt != entry.lastModified || previous.indexVersion != 1) {
+            if (previous == null || previous.archiveBytes != entry.byteCount ||
+                previous.archiveModifiedAt != entry.lastModified || previous.indexVersion != INDEX_VERSION
+            ) {
                 try {
                     val archive = readArchive(entry.uri)
                     // Full/compact copies are the same match. Prefer the more complete record,
                     // not another set of lifetime increments.
-                    val old = records[archive.matchId]
-                    if (old == null || archive.articles.size >= old.record.articleCount) records[archive.matchId] = save(archive, entry)
+                    records[archive.matchId] = update(archive, entry, records[archive.matchId])
                 } catch (error: Exception) {
                     if (error is kotlinx.coroutines.CancellationException) throw error
                     failures += "${entry.name}: ${error.message}"
@@ -84,5 +99,8 @@ class BattleRecordStore(private val context: Context) {
         val name = MessageDigest.getInstance("SHA-256").digest(id.toByteArray()).joinToString("") { "%02x".format(it) }
         return File(directory, "$name.json")
     }
-    private companion object { val writeLock = Any() }
+    private companion object {
+        const val INDEX_VERSION = 2
+        val writeLock = Any()
+    }
 }

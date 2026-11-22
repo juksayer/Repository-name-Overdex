@@ -277,6 +277,10 @@ class CalibrationManager(context: Context) {
             .putFloat("match_outcome_y", calibration.matchOutcomeRegion.y)
             .putFloat("match_outcome_w", calibration.matchOutcomeRegion.width)
             .putFloat("match_outcome_h", calibration.matchOutcomeRegion.height)
+            .putFloat("rocket_victory_summary_x", calibration.rocketVictorySummaryRegion.x)
+            .putFloat("rocket_victory_summary_y", calibration.rocketVictorySummaryRegion.y)
+            .putFloat("rocket_victory_summary_w", calibration.rocketVictorySummaryRegion.width)
+            .putFloat("rocket_victory_summary_h", calibration.rocketVictorySummaryRegion.height)
 
             .putFloat("battle_party_tabs_x", calibration.battlePartyTabsRegion.x)
             .putFloat("battle_party_tabs_y", calibration.battlePartyTabsRegion.y)
@@ -737,6 +741,7 @@ class CalibrationManager(context: Context) {
             battlePartyTabsRegion = battlePartyTabsRegion,
             outOfBattleMenuRegion = outOfBattleMenuRegion,
             matchOutcomeRegion = matchOutcomeRegion,
+            rocketVictorySummaryRegion = loadExtraRegion("rocket_victory_summary", BattleCalibration().rocketVictorySummaryRegion),
             opponentTrainerHandRegion = loadExtraRegion("opponent_trainer_hand", BattleCalibration().opponentTrainerHandRegion),
             chargedImpactHpRegion = loadExtraRegion("charged_impact_hp", BattleCalibration().chargedImpactHpRegion),
             forcedReplacementMessageRegion = loadExtraRegion("forced_replacement_message", BattleCalibration().forcedReplacementMessageRegion),

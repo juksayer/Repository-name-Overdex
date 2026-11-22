@@ -233,6 +233,44 @@ class TeamResourceSnapshotGateTest {
         assertFalse(gate.isEnabled(playerShields))
     }
 
+    @Test fun `unanswered opponent count retries on a later native badge exactly once`() {
+        val gate = gate()
+        gate.observeSpecies(ActivePokemonSide.OPPONENT, "Machamp", now)
+        resolveAll(gate)
+        now += SECOND
+        gate.observeSpecies(ActivePokemonSide.OPPONENT, "Politoed", now)
+        val switchAt = now
+        now += 7 * SECOND
+        fun badge(source: String, at: Long) = article(
+            ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Politoed", 186), at
+        ).copy(sourceId = SourceId(source))
+        gate.observe(badge("OPPONENT_SPECIES_OVERLAY_PIPELINE", switchAt + SECOND))
+        gate.observe(badge("ENTRY_ANNOUNCEMENT_SPECIES_WITNESS", now))
+        assertFalse(gate.isEnabled(opponentBalls))
+        now += SECOND
+        gate.observe(badge("OPPONENT_SPECIES_OVERLAY_PIPELINE", now))
+        assertTrue(gate.acceptsFrame(opponentBalls, now))
+        assertFalse(gate.acceptsFrame(opponentBalls, now - 1))
+        assertTrue((crops - opponentBalls).none(gate::isEnabled))
+        now += 4 * SECOND
+        gate.observe(badge("OPPONENT_SPECIES_OVERLAY_PIPELINE", now))
+        assertFalse(gate.isEnabled(opponentBalls))
+    }
+
+    @Test fun `a native shield reading can retry an unanswered count but never a completed count`() {
+        val gate = gate()
+        gate.requestDepartureCheck(ActivePokemonSide.OPPONENT, now)
+        now += 4 * SECOND
+        fun shields() = article(OpponentBattleResourceCountMeasured(OpponentBattleResource.SHIELDS, 0, 2), now)
+            .copy(sourceId = SourceId("OPPONENT_SHIELDS_WITNESS"))
+        gate.observe(shields())
+        assertTrue(gate.acceptsFrame(opponentBalls, now))
+        gate.measured(opponentBalls, now)
+        now += 4 * SECOND
+        gate.observe(shields())
+        assertFalse(gate.isEnabled(opponentBalls))
+    }
+
     @Test fun `faint refreshes affected shields but its already accepted ball count stays complete`() {
         val gate = gate()
         gate.observe(article(MatchStarted, now))

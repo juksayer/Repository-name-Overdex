@@ -52,6 +52,7 @@ enum class BattleRegionId {
     COUNTDOWN,
     VS_SCREEN,
     MATCH_OUTCOME,
+    ROCKET_VICTORY_SUMMARY,
     OUT_OF_BATTLE_MENU,
     BATTLE_PARTY_TABS,
     OPPONENT_SPECIES_NAME,
@@ -96,6 +97,7 @@ enum class BattleRegionId {
         COUNTDOWN -> calibration.countdownRegion
         VS_SCREEN -> calibration.vsScreenRegion
         MATCH_OUTCOME -> calibration.matchOutcomeRegion
+        ROCKET_VICTORY_SUMMARY -> calibration.rocketVictorySummaryRegion
         OUT_OF_BATTLE_MENU -> calibration.outOfBattleMenuRegion
         BATTLE_PARTY_TABS -> calibration.battlePartyTabsRegion
         OPPONENT_SPECIES_NAME -> calibration.opponentSpeciesNameRegion
@@ -225,6 +227,7 @@ object BattleCropContracts {
     val playerChargeMoveEffectivenessCenter = BattleCropContract("PlayerChargeMoveEffectivenessCenterCrop", BattleRegionId.PLAYER_CHARGE_MOVE_EFFECTIVENESS_CENTER)
     val announcement = BattleCropContract("AnnouncementCrop", BattleRegionId.ANNOUNCEMENT, minimumSize = 32)
     val matchOutcome = BattleCropContract("MatchOutcomeCrop", BattleRegionId.MATCH_OUTCOME, minimumSize = 32)
+    val rocketVictorySummary = BattleCropContract("RocketVictorySummaryCrop", BattleRegionId.ROCKET_VICTORY_SUMMARY, minimumSize = 32)
     val outOfBattleMenu = BattleCropContract("OutOfBattleMenuCrop", BattleRegionId.OUT_OF_BATTLE_MENU, minimumSize = 32)
     val battlePartyTabs = BattleCropContract("BattlePartyTabsCrop", BattleRegionId.BATTLE_PARTY_TABS, minimumSize = 32)
     // Experimental raw pixels only: hand movement is not a witnessed recall or send-out.

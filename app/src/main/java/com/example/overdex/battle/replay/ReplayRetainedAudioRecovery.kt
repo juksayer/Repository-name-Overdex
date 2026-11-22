@@ -39,7 +39,8 @@ data class ReplayAudioRecovery(val charges: List<ReplayRecoveredCharge> = emptyL
     val mixedCandidates: List<ReplayMixedAudioCandidate> = emptyList(),
     /** Partial cry fits retain their limits; they do not identify side, departure or a faint. */
     val partialCryCandidates: List<ReplayPartialCryCandidate> = emptyList(),
-    val terminalWholeCries: List<ReplayRecoveredCry> = emptyList())
+    val terminalWholeCries: List<ReplayRecoveredCry> = emptyList(),
+    val cryOverlapEffects: List<ReplayCryOverlapEffect> = emptyList())
 
 /** Bounded completed-archive study path. No writes, original Article mutations or live submissions. */
 object ReplayRetainedAudioRecovery {
@@ -84,6 +85,7 @@ object ReplayRetainedAudioRecovery {
                 unavailableReferences: List<String> = emptyList(), checkCancelled: () -> Unit = {},
                 captureWindow: LongRange? = null, bannerMove: String? = null,
                 fastSearches: Map<Long, Set<String>> = emptyMap(),
+                shieldBlockTimes: Set<Long> = emptySet(),
                 read: (ArchivedAudioCaptured) -> ByteArray?): ReplayAudioRecovery {
         if (references.size > 128) return ReplayAudioRecovery(unavailableReferences = listOf("Reference pool exceeds recovery bound"))
         data class Prepared(val ref: ReplayAudioReference, val offsets: List<Int>, val duration: Long, val matcher: CryWaveformMatcher)
@@ -112,6 +114,8 @@ object ReplayRetainedAudioRecovery {
             val sound = a.payload as? ArchivedFastMoveSoundMeasured ?: return@mapNotNull null
             a.monotonicTimeNanos?.let { it to sound }
         }.groupBy({ it.first }, { it.second })
+        val shieldSearches = ReplayShieldCounter.searches(archive.articles.filter { it.matchId == archive.matchId }, shieldBlockTimes)
+        val overlaps = mutableListOf<ReplayCryOverlapEffect>()
         val selected = selectedArticles(archive).filter { captureWindow == null || it.monotonicTimeNanos in captureWindow }
         val changes = ReplaySliverExchange.changesOnBothSides(archive.articles.filter { it.matchId == archive.matchId })
         val end = archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedMatchEnded }
@@ -130,6 +134,9 @@ object ReplayRetainedAudioRecovery {
                 unavailable += article.articleId; continue
             }
             val mono = StatChangeSoundMatcher.mono8k(audio)
+            shieldSearches[article.articleId]?.let { search ->
+                ReplayShieldCounter.measure(search, article, mono, references)?.let(overlaps::add)
+            }
             if (article.sourceId == "FAST_MOVE_STREAM_AUDIO_CAPTURE" && mono.size <= 4 * 8000) {
                 val nearSliver = changes.any { article.monotonicTimeNanos!! in (it.at - 4 * SECOND)..(it.at + 2 * SECOND) }
                 if (nearSliver || end != null && article.monotonicTimeNanos!! >= end - 20 * SECOND) {
@@ -280,7 +287,7 @@ object ReplayRetainedAudioRecovery {
             }
         }
         return ReplayAudioRecovery(charges, cries, missing.distinct(), unavailable,
-            prepared.map { it.ref.name }.distinct().sorted(), fastEffects, groupedMixed, groupedPartial, wholeCryOccurrences(terminalCries))
+            prepared.map { it.ref.name }.distinct().sorted(), fastEffects, groupedMixed, groupedPartial, wholeCryOccurrences(terminalCries), overlaps)
     }
     /** Two whole-waveform fits can each be 5 ms from the candidate onset.
      * Group on the source clock against the earliest fit, so a chain cannot join separate calls. */

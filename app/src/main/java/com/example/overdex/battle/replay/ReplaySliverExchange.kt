@@ -125,7 +125,7 @@ internal object ReplaySliverExchange {
     fun changesOnBothSides(rows: List<ArchivedRealityArticle>, retained: ReplayRetainedSliverEvidence = ReplayRetainedSliverEvidence()) =
         listOf("PLAYER", "OPPONENT").flatMap { changes(rows, it, retained) }.sortedBy { it.at }
 
-    private fun ownership(
+    internal fun ownership(
         change: ReplaySliverChange, rows: List<ArchivedRealityArticle>,
         actorAt: (String, Long) -> ReplayCombatant?, appearanceAt: (String, Long) -> Long,
     ): List<String>? {

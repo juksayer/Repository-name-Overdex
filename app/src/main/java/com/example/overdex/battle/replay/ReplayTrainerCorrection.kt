@@ -30,8 +30,26 @@ data class ReplayTrainerCorrection(
     val finishingMoveId: String? = null,
     /** Source identity is retained when another trainer's file is imported. */
     val originMatchId: String? = null,
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+    val previousSpeciesNames: List<String> = emptyList(),
 ) {
+    fun withSpecies(name: String): ReplayTrainerCorrection {
+        require(kind != ReplayCorrectionKind.CONCESSION)
+        val species = name.trim()
+        require(species.isNotEmpty() && species.length <= 100)
+        return if (species == speciesName) this else copy(speciesName = species,
+            previousSpeciesNames = previousSpeciesNames + speciesName)
+    }
+
+    internal fun follows(older: ReplayTrainerCorrection): Boolean =
+        previousSpeciesNames.size > older.previousSpeciesNames.size &&
+            previousSpeciesNames.take(older.previousSpeciesNames.size + 1) == older.previousSpeciesNames + older.speciesName &&
+            copy(speciesName = older.speciesName, previousSpeciesNames = older.previousSpeciesNames) == older
+
     fun validate() {
+        require(previousSpeciesNames.all { it.isNotBlank() && it.length <= 100 })
+        require(previousSpeciesNames.isEmpty() || kind != ReplayCorrectionKind.CONCESSION)
         require(runCatching { UUID.fromString(id).toString() == id }.getOrDefault(false))
         require(matchId.isNotBlank() && matchId.length <= 200)
         require(matchOffsetNanos in 0..3_600_000_000_000L) { "Entry time must be within one hour of match start." }
@@ -66,18 +84,34 @@ class ReplayTrainerCorrectionStore(private val root: File) {
     private val json = Json { encodeDefaults = true; ignoreUnknownKeys = false }
     private val directory get() = File(root, "replay_trainer_corrections")
 
-    @Synchronized fun add(correction: ReplayTrainerCorrection) {
+    private companion object { val writeLock = Any() }
+
+    fun changeSpecies(previous: ReplayTrainerCorrection, name: String) = synchronized(writeLock) {
+        val current = list(previous.matchId).singleOrNull { it.id == previous.id }
+        check(current == previous) { "Entry changed. Reopen it before editing." }
+        val edited = previous.withSpecies(name)
+        if (edited != previous) write(edited)
+    }
+
+    fun add(correction: ReplayTrainerCorrection) = synchronized(writeLock) {
+        correction.validate()
+        check(!file(correction.matchId, correction.id).exists()) { "Correction already exists." }
+        write(correction)
+    }
+
+    private fun write(correction: ReplayTrainerCorrection) {
         correction.validate()
         check(directory.isDirectory || directory.mkdirs()) { "Could not create correction storage." }
         val target = file(correction.matchId, correction.id)
-        check(!target.exists()) { "Correction already exists." }
+        val bytes = json.encodeToString(correction).toByteArray(Charsets.UTF_8)
+        require(bytes.size <= 16_384) { "Correction exceeds the saved entry size limit." }
         val temporary = File.createTempFile("correction-", ".tmp", directory)
         try {
             FileOutputStream(temporary).use { output ->
-                output.write(json.encodeToString(correction).toByteArray(Charsets.UTF_8))
+                output.write(bytes)
                 output.fd.sync()
             }
-            Files.move(temporary.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE)
+            Files.move(temporary.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
         } finally { temporary.delete() }
     }
 
@@ -96,7 +130,7 @@ class ReplayTrainerCorrectionStore(private val root: File) {
     }
 
     /** The caller explicitly confirms the target match and whether perspectives are reversed. */
-    @Synchronized fun importFile(bytes: ByteArray, targetMatchId: String, reverseSides: Boolean): Int {
+    fun importFile(bytes: ByteArray, targetMatchId: String, reverseSides: Boolean): Int = synchronized(writeLock) {
         require(targetMatchId.isNotBlank() && targetMatchId.length <= 200)
         val source = ReplayCorrectionTransfer.decode(bytes)
         val mapped = source.entries.map { entry -> if (source.sourceMatchId == targetMatchId && !reverseSides) entry else entry.copy(matchId = targetMatchId,
@@ -104,7 +138,7 @@ class ReplayTrainerCorrectionStore(private val root: File) {
                 ReplayCorrectionSide.OPPONENT else ReplayCorrectionSide.PLAYER,
             originMatchId = entry.originMatchId ?: source.sourceMatchId) }
         val existing = list(targetMatchId).associateBy { it.id }
-        mapped.forEach { entry -> require(existing[entry.id] == null || existing[entry.id] == entry) {
+        mapped.forEach { entry -> require(existing[entry.id]?.let { it == entry || it.follows(entry) || entry.follows(it) } != false) {
             "An entry with the same ID already has different content."
         } }
         val importDirectory = File(root, "replay_correction_imports")
@@ -118,8 +152,9 @@ class ReplayTrainerCorrectionStore(private val root: File) {
                 Files.move(temp.toPath(), original.toPath(), StandardCopyOption.ATOMIC_MOVE)
             } finally { temp.delete() }
         }
-        mapped.filter { it.id !in existing }.forEach(::add)
-        return mapped.count { it.id !in existing }
+        val updates = mapped.filter { entry -> existing[entry.id]?.let(entry::follows) != false }
+        updates.forEach(::write)
+        updates.size
     }
 
     private fun file(matchId: String, id: String) = File(directory, "${hash(matchId)}-$id.json")

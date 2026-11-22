@@ -46,6 +46,7 @@ class CalibrationPersistenceTest {
         val context = TestContext(temporary.newFolder())
         val original = CalibrationManager(context).load()
         val positioned = original.copy(
+            rocketVictorySummaryRegion = AnchorRegion(.04f, .27f, .88f, .17f),
             playerAppearanceRegion = AnchorRegion(.01f, .45f, .50f, .48f),
             appearanceColorReferenceRegion = AnchorRegion(.69f, .41f, .29f, .30f),
             appearanceBackgroundRegion = AnchorRegion(.01f, .28f, .42f, .13f),
@@ -75,7 +76,7 @@ class CalibrationPersistenceTest {
         val checkpoint = json["workingCheckpoint"] as kotlinx.serialization.json.JsonObject
         val checkpointRegions = checkpoint["battleRegions"] as kotlinx.serialization.json.JsonObject
         val newKeys = setOf("forced_replacement_message", "player_terminal_visual", "opponent_terminal_visual",
-            "player_appearance", "appearance_color_reference", "appearance_background")
+            "player_appearance", "appearance_color_reference", "appearance_background", "rocket_victory_summary")
         file.writeText(kotlinx.serialization.json.JsonObject(json + mapOf(
             "battleRegions" to kotlinx.serialization.json.JsonObject(regions - newKeys),
             "workingCheckpoint" to kotlinx.serialization.json.JsonObject(checkpoint + ("battleRegions" to

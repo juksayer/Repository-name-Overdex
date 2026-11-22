@@ -3,6 +3,7 @@ package com.example.overdex.battle.observation
 import com.example.overdex.model.PokemonType
 import com.example.overdex.battle.custody.OpponentBattleResource
 import com.example.overdex.battle.custody.OpponentBattleResourceCountMeasured
+import com.example.overdex.battle.custody.FinishingHitCredited
 import com.example.overdex.battle.forecast.OpponentEnergyEstimate
 import com.example.overdex.battle.inference.TeamLossResolver
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,6 +46,8 @@ data class OpponentMovePossibilities(
 /** Last witnessed counts, retained while the game's own badge is absent. */
 data class HudOpponentResources(val pokeBalls: Int? = null, val shields: Int? = null)
 
+internal data class HudFinishingCredit(val decision: FinishingHitCredited, val showUntilNanos: Long)
+
 data class OverlayMovePossibility(
     val name: String,
     val type: PokemonType,
@@ -75,11 +78,23 @@ object DroidballOverlayPresentation {
     private val _opponentEnergyEstimate = MutableStateFlow<OpponentEnergyEstimate?>(null)
     val opponentEnergyEstimate = _opponentEnergyEstimate.asStateFlow()
     private var energyForecastMatchId: String? = null
+    private val _finishingCredit = MutableStateFlow<HudFinishingCredit?>(null)
+    internal val finishingCredit = _finishingCredit.asStateFlow()
+
+    @Synchronized internal fun recordFinishingCredit(matchId: String, credit: FinishingHitCredited) {
+        if (energyForecastMatchId != matchId) return
+        if (credit.valid) {
+            _finishingCredit.value = HudFinishingCredit(credit, System.nanoTime() + 5_000_000_000L)
+        } else if (_finishingCredit.value?.decision?.faintArticleId == credit.faintArticleId) {
+            _finishingCredit.value = null
+        }
+    }
     private val _battleBadgeSeen = MutableStateFlow(false)
     val battleBadgeSeen = _battleBadgeSeen.asStateFlow()
 
     @Synchronized fun beginEnergyForecast(matchId: String) {
         energyForecastMatchId = matchId
+        _finishingCredit.value = null
         _opponentEnergyEstimate.value = null
         _trainerReportedFaints.value = emptySet()
     }
@@ -275,6 +290,7 @@ object DroidballOverlayPresentation {
     }
 
     @Synchronized fun clearOpponentSpecies() {
+        _finishingCredit.value = null
         _opponentBadgeContent.value = RetainedBadgeContent(_opponentBadgeContent.value.revision + 1)
         _opponentResources.value = HudOpponentResources()
         resourceTimes.clear()

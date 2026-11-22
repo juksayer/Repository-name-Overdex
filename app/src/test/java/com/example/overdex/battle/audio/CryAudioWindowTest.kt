@@ -4,6 +4,13 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class CryAudioWindowTest {
+    @Test fun `cry scan rest counts time already spent waiting for storage or custody`() {
+        val ms = 1_000_000L
+        assertEquals(40L, cryScanRestMillis(20 * ms, 0))
+        assertEquals(25L, cryScanRestMillis(20 * ms, 15 * ms))
+        assertEquals(0L, cryScanRestMillis(20 * ms, 2_000 * ms))
+    }
+
     private fun chunk(seq:Long,end:Long,rate:Int=8000,channels:Int=1,frames:Int=8000,source:String="game") =
         LivePcmChunk(Pcm16Audio(rate,channels,ShortArray(frames*channels) { (it%30000).toShort() }),seq,end,end/1_000_000,source)
 

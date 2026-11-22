@@ -74,10 +74,7 @@ class PersistedOutcomeTextWitness internal constructor(
                 }
             }
             witnessScope.launch(start = CoroutineStart.UNDISPATCHED) {
-                match.articles.filter { article ->
-                    article.sourceId.id != probeSource &&
-                        (article.payload as? CropCaptured)?.cropProvenance?.cropName == BattleCropContracts.matchOutcome.cropName
-                }.collect { article ->
+                match.acceptedOutcomeCrops.filter { it.sourceId.id != probeSource }.collect { article ->
                     val capturedAt = article.monotonicTimeNanos ?: return@collect
                     if (pending.offer(article, capturedAt, now())) {
                         recentWake.trySend(Unit)
@@ -91,10 +88,7 @@ class PersistedOutcomeTextWitness internal constructor(
             // Both lanes are urgent. The normal check is 0.5 Hz; a bounded late
             // charged-result tail is 2 Hz, with at most 16 references / eight seconds.
             witnessScope.launch(start = CoroutineStart.UNDISPATCHED) {
-                match.articles.filter { article ->
-                    article.sourceId.id == probeSource &&
-                        (article.payload as? CropCaptured)?.cropProvenance?.cropName == BattleCropContracts.matchOutcome.cropName
-                }.collect { article ->
+                match.acceptedOutcomeCrops.filter { it.sourceId.id == probeSource }.collect { article ->
                     val visual = try { reader.inspect(article) }
                     catch (cancelled: CancellationException) { throw cancelled }
                     catch (error: Exception) {
@@ -235,7 +229,7 @@ internal interface OutcomeCropReadingTurn {
     suspend fun recognize(article: RealityArticle): List<OcrTextEvidence>
 }
 
-private class ArtifactOutcomeCropReader(private val artifactStore: FileCropArtifactStore) : OutcomeCropReader {
+internal class ArtifactOutcomeCropReader(private val artifactStore: FileCropArtifactStore) : OutcomeCropReader {
     override suspend fun warmUp() { OutcomeTextRecognizer.warmUp() }
     override suspend fun inspect(article: RealityArticle): TransientTextProbe.Reading? = withContext(Dispatchers.IO) {
         val crop = article.payload as CropCaptured
@@ -334,7 +328,7 @@ class PersistedOutcomePhraseWitness(
                 var lifecycleAt = Long.MIN_VALUE
                 val crops = LinkedHashMap<String, RealityArticle>()
                 var confirmation = PartialOutcomeConfirmation()
-                match.articles.collect { article ->
+                match.outcomePhraseInputs.collect { article ->
                     if (accepted) return@collect
                     val at = article.monotonicTimeNanos ?: return@collect
                     when (article.payload) {

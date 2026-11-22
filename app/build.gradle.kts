@@ -41,6 +41,9 @@ android {
         buildConfig = true
     }
 
+    sourceSets.getByName("test").kotlin.srcDir("src/sharedTest/kotlin")
+    sourceSets.getByName("androidTest").kotlin.srcDir("src/sharedTest/kotlin")
+
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
@@ -107,6 +110,7 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(kotlin("reflect"))
+    androidTestImplementation(kotlin("reflect"))
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
