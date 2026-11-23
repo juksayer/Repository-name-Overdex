@@ -1089,7 +1089,7 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                             .background(Color(0xCC233545), RoundedCornerShape(8.dp))
                             .padding(horizontal = 12.dp, vertical = 6.dp))
                 }
-                val concession = scene.trainerConcession
+                val concession = scene.trainerConcession ?: ReplayCorrectionSide.PLAYER.takeIf { scene.inferredPlayerConcession }
                 val recordedResult = scene.outcome?.let(::replayOutcomeLabel)
                 val resultLabel = concession?.concessionLabel ?: recordedResult
                 resultLabel?.let { label ->
@@ -1105,7 +1105,8 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                             Text(label, color = Color.White, fontSize = if (concession == null) 40.sp else 22.sp,
                                 fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                             if (concession != null) {
-                                Text("Trainer entry", color = Color.White, fontSize = 14.sp)
+                                Text(if (scene.trainerConcession != null) "Trainer entry" else "Inferred from saved evidence",
+                                    color = Color.White, fontSize = 14.sp)
                                 val expected = if (concession == ReplayCorrectionSide.OPPONENT) "YOU WIN" else "GOOD EFFORT"
                                 if (recordedResult != null && recordedResult != expected) {
                                     Text("Recorded result · $recordedResult", color = Color.White, fontSize = 14.sp)

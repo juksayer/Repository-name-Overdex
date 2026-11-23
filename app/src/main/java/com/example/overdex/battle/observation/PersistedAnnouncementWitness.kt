@@ -240,7 +240,7 @@ private class ArtifactAnnouncementCropReader(
     override suspend fun inspect(article: RealityArticle): TransientTextProbe.Reading? = withContext(Dispatchers.IO) {
         val crop = article.payload as CropCaptured
         preview?.readingFor(article.monotonicTimeNanos, crop.cropProvenance)?.let { return@withContext it }
-        val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@withContext null
+        val bitmap = artifactStore.loadVerifiedOcrPng(crop.artifact, crop.cropProvenance) ?: return@withContext null
         try {
             readTransientTextPixels(bitmap, crop.overlayBounds)
         } finally { bitmap.recycle() }
@@ -256,7 +256,7 @@ private class ArtifactAnnouncementCropReader(
             override suspend fun recognize(article: RealityArticle, profile: OcrHeightProfile): List<OcrTextEvidence> =
                 withContext(Dispatchers.IO) {
                     val crop = article.payload as CropCaptured
-                    val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance)
+                    val bitmap = artifactStore.loadVerifiedOcrPng(crop.artifact, crop.cropProvenance)
                         ?: return@withContext emptyList()
                     try {
                         nativeTurn.recognizeEvidence(bitmap,

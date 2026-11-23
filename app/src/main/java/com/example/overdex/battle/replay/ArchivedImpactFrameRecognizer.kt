@@ -1,5 +1,7 @@
 package com.example.overdex.battle.replay
 
+import com.example.overdex.battle.observation.withOcrPixels
+
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.example.overdex.battle.archive.*
@@ -104,7 +106,7 @@ internal object ArchivedImpactFrameRecognizer {
                     val anchorCrop = anchor.payload as ArchivedCropCaptured
                     if (ordered.any { it.monotonicTimeNanos != anchor.monotonicTimeNanos && it.payload == anchorCrop }) continue
                     val strip = subImage(full, region) ?: continue
-                    val text = try { SharedLatinTextRecognizer.readText(strip) } finally { if (strip !== full) strip.recycle() }
+                    val text = try { strip.withOcrPixels(region.statusBarRows) { SharedLatinTextRecognizer.readText(it) } } finally { if (strip !== full) strip.recycle() }
                     val banner = text.lines().mapNotNull { used.matchEntire(it.trim()) }.singleOrNull() ?: continue
                     val actor = roster.singleOrNull { it.speciesName.equals(banner.groupValues[1], true) } ?: continue
                     val move = LegalChargedMoveTextResolver.bestMatches(banner.groupValues[2],

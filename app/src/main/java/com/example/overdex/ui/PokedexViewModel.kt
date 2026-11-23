@@ -862,7 +862,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             observationDispatcher.register(
                 AudioCaptureWitness(
                     artifactStore = audioArtifactStore,
-                    observerId = ObserverId("BATTLE_CRY_AUDIO_CAPTURE", ObserverSource.AUDIO_CAPTURE)
+                    observerId = ObserverId(com.example.overdex.battle.audio.BattleCryListeningCue.audioCaptureSourceId, ObserverSource.AUDIO_CAPTURE)
                 )
             )
             observationDispatcher.register(PersistedBattleCryCandidateWitness(getApplication(), getApplication<Application>().filesDir))

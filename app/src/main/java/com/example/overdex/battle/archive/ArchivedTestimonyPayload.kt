@@ -208,6 +208,12 @@ data class ArchivedCropCaptured(
     val cropRight: Int,
     val cropBottom: Int,
     val overlayBounds: com.example.overdex.model.observation.OcrBox? = null,
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+    val statusBarRows: Int = 0,
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+    val nativeTeamBadgePresent: Boolean? = null,
 ) : ArchivedTestimonyPayload
 
 @Serializable

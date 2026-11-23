@@ -1,8 +1,14 @@
 package com.example.overdex.battle.replay
 
+import com.example.overdex.battle.observation.ownedOcrPixels
+
 import android.graphics.BitmapFactory
 import android.util.Log
 import com.example.overdex.battle.archive.ArchivedCropCaptured
+import com.example.overdex.battle.archive.ArchivedPlayerTeamConfiguration
+import com.example.overdex.battle.archive.badgeBattleBoundary
+import com.example.overdex.battle.archive.hasPreBattleScreen
+import com.example.overdex.battle.archive.withQualifiedBattleIdentities
 import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.battle.observation.BattleCropContracts
 import com.example.overdex.battle.observation.SpeciesTextResolver
@@ -11,6 +17,7 @@ import com.example.overdex.data.observation.OcrPriority
 import com.example.overdex.data.observation.OcrField
 import com.example.overdex.data.observation.OcrHeightProfile
 import com.example.overdex.data.observation.OcrSourceContext
+import kotlinx.serialization.Serializable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -28,6 +35,8 @@ data class ReplayCropProgress(val stage: String, val completed: Int = 0, val tot
  * species crop. The archive remains immutable; these are replay projections.
  */
 object ArchivedSpeciesCropRecognizer {
+    @Serializable private data class Reading(val name: String, val basis: String)
+
     suspend fun recognize(
         archive: MatchArchive,
         openArchive: () -> InputStream?,
@@ -52,14 +61,17 @@ object ArchivedSpeciesCropRecognizer {
         ).flatten()
         if (targets.isEmpty()) return@withContext emptyList()
 
-        val key = cache?.key(listOf("species-crops") + knownSpeciesNames.sorted())
-        val cached = if (cache != null && key != null) cache.read<List<String?>>(key) else null
+        val rows = archive.articles.filter { it.matchId == archive.matchId }
+        val hasStart = rows.badgeBattleBoundary() != null
+        val configuration by lazy { ArchivedPlayerTeamConfiguration(archive.withQualifiedBattleIdentities().articles) }
+        val key = cache?.key(listOf("battle-species-crops-v2") + knownSpeciesNames.sorted())
+        val cached = if (cache != null && key != null) cache.read<List<Reading?>>(key) else null
         val names = cached?.takeIf { it.size == targets.size } ?: run readTargets@{
             val artifactTargets = targets.associateBy { it.payload.artifactPath }
             onProgress(ReplayCropProgress("READING CROPS", 0, artifactTargets.size))
             val input = openArchive() ?: run {
                 onIncomplete()
-                return@readTargets emptyList<String?>()
+                return@readTargets emptyList<Reading?>()
             }
             val encodedArtifacts = readSelectedArtifacts(input, artifactTargets) { completed ->
                 onProgress(ReplayCropProgress("READING CROPS", completed, artifactTargets.size))
@@ -77,7 +89,7 @@ object ArchivedSpeciesCropRecognizer {
                     complete = false
                     null
                 } else {
-                    val bitmap = decodeTargetCrop(bytes, target.payload)
+                    val bitmap = decodeTargetCrop(bytes, target.payload)?.ownedOcrPixels(target.payload.statusBarRows)
                     if (bitmap == null) {
                         complete = false
                         null
@@ -94,7 +106,13 @@ object ArchivedSpeciesCropRecognizer {
                             }
                             candidates
                         }
-                            .firstNotNullOfOrNull { SpeciesTextResolver.resolve(it.text, knownSpeciesNames) }
+                            .firstNotNullOfOrNull { candidate ->
+                                val reading = SpeciesTextResolver.match(candidate.text, knownSpeciesNames).resolution
+                                reading?.takeIf { it.basis.startsWith("EXACT_CATALOGUE_TEXT") ||
+                                    (hasStart && target.payload.nativeTeamBadgePresent == true && (target.side != "PLAYER" ||
+                                        !configuration.conflictsWithFullRoster(it.speciesName, target.atNanos))) }
+                                    ?.let { Reading(it.speciesName, it.basis) }
+                            }
                     } finally {
                         bitmap.recycle()
                     }
@@ -111,7 +129,8 @@ object ArchivedSpeciesCropRecognizer {
         val lastBySide = mutableMapOf<String, String>()
         buildList {
             targets.sortedBy(Target::atNanos).forEach { target ->
-                val speciesName = recognizedByTarget[target] ?: return@forEach
+                val reading = recognizedByTarget[target] ?: return@forEach
+                val speciesName = reading.name
                 if (lastBySide[target.side] == speciesName) return@forEach
                 lastBySide[target.side] = speciesName
                 Log.d("REPLAY_SPECIES", "side=${target.side} species=$speciesName at=${target.atNanos}")
@@ -121,7 +140,9 @@ object ArchivedSpeciesCropRecognizer {
                         speciesName = speciesName,
                         speciesId = resolveSpeciesId(speciesName),
                         atNanos = target.atNanos,
-                        basis = "RECONSTRUCTED FROM ARCHIVED SPECIES CROP"
+                        basis = "RECONSTRUCTED FROM ARCHIVED SPECIES CROP",
+                        ocrMatchBasis = reading.basis,
+                        articleId = target.articleId,
                     )
                 )
             }
@@ -129,10 +150,14 @@ object ArchivedSpeciesCropRecognizer {
     }
 
     private fun sampleTargets(archive: MatchArchive, side: String, cropName: String): List<Target> {
+        val rows = archive.articles.filter { it.matchId == archive.matchId }
+        val start = rows.badgeBattleBoundary()?.monotonicTimeNanos
+        if (start == null && rows.hasPreBattleScreen()) return emptyList()
         val available = archive.articles.mapNotNull { article ->
             val payload = article.payload as? ArchivedCropCaptured ?: return@mapNotNull null
-            if (payload.cropName != cropName) return@mapNotNull null
-            Target(side, article.monotonicTimeNanos ?: return@mapNotNull null, payload)
+            if (article.matchId != archive.matchId || payload.cropName != cropName) return@mapNotNull null
+            if (start != null && (article.monotonicTimeNanos ?: return@mapNotNull null) < start) return@mapNotNull null
+            Target(article.articleId, side, article.monotonicTimeNanos ?: return@mapNotNull null, payload)
         }.sortedBy(Target::atNanos)
         if (available.isEmpty()) return emptyList()
 
@@ -206,6 +231,7 @@ object ArchivedSpeciesCropRecognizer {
     }
 
     private data class Target(
+        val articleId: String,
         val side: String,
         val atNanos: Long,
         val payload: ArchivedCropCaptured

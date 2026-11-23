@@ -53,24 +53,25 @@ class SpeciesAdmissionDeviceTest {
         val held = CompletableDeferred<Unit>()
         val release = CompletableDeferred<Unit>()
         var blocker: Job? = null
-        suspend fun await(check: () -> Boolean) = withTimeout(10_000) { while (!check()) delay(20) }
         try {
             DroidballOverlayPresentation.clearOpponentSpecies()
+            knowledge.getAllSpeciesNames()
             SpeciesNameRecognizer.warmUp()
             blocker = launch(Dispatchers.Default) {
                 SharedLatinTextRecognizer.withReadingTurn(OcrPriority.NORMAL) { held.complete(Unit); release.await() }
             }
             held.await()
+            match.witnessGoForSpeciesTest()
             pipeline.start(match)
-            await { timeline.getArticles().any { it.payload is CropCaptured } }
-            await { SharedLatinTextRecognizer.waitingCount(OcrPriority.URGENT) == 1 }
+            timeline.awaitSpeciesStage("Sneasel crop to be preserved") { timeline.getArticles().any { it.payload is CropCaptured } }
+            timeline.awaitSpeciesStage("urgent badge reader to queue") { SharedLatinTextRecognizer.waitingCount(OcrPriority.URGENT) == 1 }
             // OCR is waiting with Sneasel. Publish the next combatant before admission.
             val changedAt = System.nanoTime()
             current.set(fresh)
-            await { timeline.getArticles().count { it.payload is CropCaptured &&
+            timeline.awaitSpeciesStage("two fresh Vaporeon crops") { timeline.getArticles().count { it.payload is CropCaptured &&
                 (it.monotonicTimeNanos ?: 0) > changedAt } >= 2 }
             release.complete(Unit)
-            await { DroidballOverlayPresentation.activeOpponentMovePossibilities.value?.speciesName == "Vaporeon" }
+            timeline.awaitSpeciesStage("Vaporeon on the HUD") { DroidballOverlayPresentation.activeOpponentMovePossibilities.value?.speciesName == "Vaporeon" }
             val articles = timeline.getArticles()
             val identities = articles.filter { it.payload is ActivePokemonSpeciesWitnessed }
             assertEquals(listOf("Vaporeon"), identities.map { (it.payload as ActivePokemonSpeciesWitnessed).speciesName })
@@ -88,7 +89,7 @@ class SpeciesAdmissionDeviceTest {
             // not immediately reopen another check from its own accepted result.
             current.set(old)
             match.speciesChecks.request(ActivePokemonSide.OPPONENT, "ENTRY", null)
-            await { DroidballOverlayPresentation.activeOpponentMovePossibilities.value?.speciesName == "Sneasel" }
+            timeline.awaitSpeciesStage("Sneasel on the HUD after the switch") { DroidballOverlayPresentation.activeOpponentMovePossibilities.value?.speciesName == "Sneasel" }
             assertFalse(match.speciesChecks.isChecking(ActivePokemonSide.OPPONENT))
             assertTrue(timeline.getArticles().none { (it.payload as? SpeciesCheckMeasured)?.let { p ->
                 p.status == "OPENED" && p.reason == "SWITCH" } == true })

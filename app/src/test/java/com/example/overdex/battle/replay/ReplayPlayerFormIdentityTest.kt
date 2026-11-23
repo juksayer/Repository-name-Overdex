@@ -13,10 +13,10 @@ class ReplayPlayerFormIdentityTest {
             "Spark", listOf("Psychic")), 0)
         val source = listOf(old,
             article("confirmed", ArchivedPlayerTeamRosterConfirmation(true, listOf("Raichu", null, null)), 1),
-            badge("player", "Raichu", 2),
+            article("go", ArchivedMatchStarted, 2),
+            badge("player", "Raichu", 3),
             article("stale-resolution", ArchivedPlayerActiveIdentityResolved("Raichu", "Raichu (Alolan)", 26, 1,
-                2_000_000_000L, "PLAYER_SPECIES_AND_UNIQUE_ROSTER_SLOT"), 2).copy(predecessorIds = listOf("old", "player")),
-            article("go", ArchivedMatchStarted, 3))
+                3_000_000_000L, "PLAYER_SPECIES_AND_UNIQUE_ROSTER_SLOT"), 3).copy(predecessorIds = listOf("old", "player")))
         val scene = MatchReplayModel(MatchArchive(matchId = "forms", articles = source)).sceneAt(4_000_000_000L)
         assertEquals("Raichu", scene.player?.speciesName)
         assertEquals(1, scene.player?.playerTeamSlot)
@@ -30,7 +30,7 @@ class ReplayPlayerFormIdentityTest {
                 article("old", ArchivedPlayerTeamSlotConfigured(1, "Raichu (Alolan)", 26,
                     "Spark", listOf("Psychic")), 0),
                 article("confirmed", ArchivedPlayerTeamRosterConfirmation(true, names), 1),
-                badge("player", "Raichu", 2), article("go", ArchivedMatchStarted, 3))
+                article("go", ArchivedMatchStarted, 2), badge("player", "Raichu", 3))
             val archive = MatchArchive(matchId = "forms", articles = source)
             val original = MatchArchiveSerializer.serialize(archive)
             val scene = MatchReplayModel(archive).sceneAt(4_000_000_000L)
@@ -49,8 +49,8 @@ class ReplayPlayerFormIdentityTest {
         article("k-config", ArchivedPlayerTeamSlotConfigured(2, "Raichu", 26, "Volt Switch", listOf("Brick Break", "Thunder")), 0),
         article("a-scan", ArchivedPlayerTeamRosterSlotWitnessed(1, "Raichu (Alolan)", 26, "fALOLA", .2f), 1),
         article("k-scan", ArchivedPlayerTeamRosterSlotWitnessed(2, "Raichu", 26, "base", .2f), 1),
-        badge("lead", "Raichu", 3),
-        article("go", ArchivedMatchStarted, 4),
+        article("go", ArchivedMatchStarted, 3),
+        badge("lead", "Raichu", 4),
     )
 
     @Test fun `recorded late faint belongs to outgoing Alolan not incoming ordinary Raichu`() {
@@ -117,7 +117,7 @@ class ReplayPlayerFormIdentityTest {
 
     @Test fun `Alolan faint never marks ordinary replacement or mirror opponent fainted`() {
         val model = MatchReplayModel(MatchArchive(matchId = "forms", articles = team() + listOf(
-            article("mirror", ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Raichu", 26), 3, "OPPONENT_SPECIES_OVERLAY_PIPELINE"),
+            article("mirror", ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Raichu", 26), 4, "OPPONENT_SPECIES_OVERLAY_PIPELINE"),
             article("ko", ArchivedActivePokemonFaintedWitnessed("PLAYER", "Raichu", 26, "POKE_BALL_DECREASE"), 10),
             badge("lingering", "Raichu", 11),
             badge("replacement", "Raichu", 14, "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"),

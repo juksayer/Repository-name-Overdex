@@ -1,5 +1,6 @@
 package com.example.overdex.battle.replay
 
+import com.example.overdex.battle.observation.BattleCropContracts
 import com.example.overdex.battle.archive.ArchivedObservationRestartedByUser
 import com.example.overdex.battle.archive.ArchivedScreenIgnoredByUser
 
@@ -60,6 +61,10 @@ import com.example.overdex.battle.archive.ArchivedPlayerTeamRosterSlotWitnessed
 import com.example.overdex.battle.archive.ArchivedPlayerTeamSlotConfigured
 import com.example.overdex.battle.archive.ArchivedPlayerTeamConfiguration
 import com.example.overdex.battle.archive.MatchArchive
+import com.example.overdex.battle.archive.withQualifiedBattleIdentities
+import com.example.overdex.battle.archive.badgeBattleBoundary
+import com.example.overdex.battle.archive.hasPreBattleScreen
+import com.example.overdex.battle.archive.ArchivedCropCaptured
 import com.example.overdex.model.Move
 import com.example.overdex.model.PokemonType
 import kotlin.math.abs
@@ -85,9 +90,10 @@ class MatchReplayModel(
     val timedArticles: List<ArchivedRealityArticle> = archive.articles
         .filter { it.monotonicTimeNanos != null }
         .sortedBy { it.monotonicTimeNanos }
-    private val teamLossProjection = ReplayTeamLossProjection(archive)
-    private val hpFaintProjection = ReplayVerifiedHpFaintProjection(archive, teamLossProjection.articles)
-    private val terminalFaintProjection = ReplayTerminalChargedFaintProjection(archive, hpFaintProjection.articles)
+    private val battleArchive = archive.withQualifiedBattleIdentities()
+    private val teamLossProjection = ReplayTeamLossProjection(battleArchive)
+    private val hpFaintProjection = ReplayVerifiedHpFaintProjection(battleArchive, teamLossProjection.articles)
+    private val terminalFaintProjection = ReplayTerminalChargedFaintProjection(battleArchive, hpFaintProjection.articles)
     private val replayArticles = ReplayEndingAnnouncements.apply(terminalFaintProjection.articles, recoveredEndingAnnouncements)
         .filter { it.monotonicTimeNanos != null }
         .sortedBy { it.monotonicTimeNanos }
@@ -144,10 +150,10 @@ class MatchReplayModel(
                 (row.payload as? ArchivedAudioCaptured)?.sha256 == part.audioSha256 } } }
             ?: timedArticles.any { it.matchId == archive.matchId && it.articleId == frame.announcementCropId && it.monotonicTimeNanos == frame.at }) &&
             timedArticles.any { it.matchId == archive.matchId && it.articleId == frame.profileId && it.monotonicTimeNanos == frame.landing } &&
-            timedArticles.filter { it.monotonicTimeNanos!! <= frame.at }.mapNotNull { it.payload as? ArchivedActivePokemonSpeciesWitnessed }
+            replayArticles.filter { it.monotonicTimeNanos!! <= frame.at }.mapNotNull { it.payload as? ArchivedActivePokemonSpeciesWitnessed }
                 .lastOrNull { it.side == "OPPONENT" }?.speciesName?.let { !it.equals(frame.actor.speciesName, true) } == true
     }
-    private val cropTracks = (archivedCropIdentities + listOfNotNull(retainedCharge?.takeIf { it.chargeSound == null }?.let { f ->
+    private val cropTracks = (qualifiedCropIdentities(archivedCropIdentities, battleArchive.articles, playerTeamConfiguration) + listOfNotNull(retainedCharge?.takeIf { it.chargeSound == null }?.let { f ->
         ReplayIdentityObservation("PLAYER", f.actor.speciesName, f.actor.speciesId, f.at, "SOURCE-MATCHED MOVE ANNOUNCEMENT",
             articleId = f.announcementCropId, evidenceArticleIds = listOf(f.announcementCropId, f.frameSha256))
     }))
@@ -174,8 +180,11 @@ class MatchReplayModel(
         cropTracks.second.minOfOrNull { it.atNanos },
     ).filterNotNull().minOrNull() ?: startNanos
     private val configuredOpeningPlayer = configuredPlayerMembers.firstOrNull { it.slot == 1 }
-        ?.takeUnless { configuredLeadContradicted(replayArticles) }?.let {
-        listOf(ReplayIdentityObservation("PLAYER", it.speciesName, it.speciesId, battlePresentationStartNanos, "CURRENT TEAM CONFIGURATION"))
+        ?.takeUnless { configuredLeadContradicted(replayArticles) }?.let { lead ->
+        val witnessedLead = playerTeamConfiguration.rosterSlotsAt(matchStartNanos ?: battlePresentationStartNanos,
+            includeConfigured = false)[1]
+        listOf(ReplayIdentityObservation("PLAYER", lead.speciesName, lead.speciesId, battlePresentationStartNanos,
+            "CURRENT TEAM CONFIGURATION", playerTeamSlot = lead.slot.takeIf { lead.speciesName.equals(witnessedLead, true) }))
     }.orEmpty()
     private val playerIdentityTrack = ReplayIdentityTrack.from(
         replayArticles,
@@ -328,7 +337,7 @@ class MatchReplayModel(
     private fun appearanceAt(side: String, at: Long) = identityTrackFor(side).appearanceStartAt(at)
     private fun nextAppearance(side: String, at: Long) = identityTrackFor(side).nextAppearanceAfter(at)
     private val finishingEvidence by lazy {
-        ReplayFinishingEvidence(archive.articles.filter { it.matchId == archive.matchId }, hpEvidence,
+        ReplayFinishingEvidence(battleArchive.articles.filter { it.matchId == archive.matchId }, hpEvidence,
             finishingChargeCandidates, fastMoveCycles, ::combatantFor, ::appearanceAt, ::nextAppearance, audioRecovery.cries + audioRecovery.terminalWholeCries)
     }
     private val sliverDepartures by lazy {
@@ -385,7 +394,7 @@ class MatchReplayModel(
             ::combatantFor, ::appearanceAt, ::sameFastMoveExchange)
         val recovered = observed + count + fastAudio + sliverLinks + terminalAudio + counters +
             listOfNotNull(cryCharge, frameLink, lastOpponentFastLink, terminalChargeDeparture?.candidate, missingTick)
-        val live = ReplayRecordedFinishingCredits.read(archive, presentedKnockouts, charges, recovered, ::combatantFor, ::appearanceAt)
+        val live = ReplayRecordedFinishingCredits.read(battleArchive, presentedKnockouts, charges, recovered, ::combatantFor, ::appearanceAt)
         val eligible = (live + recovered).filter { link ->
             link !is ReplayFinishingFastAssociation || withinFinishingMoveWindow(link)
         }
@@ -645,9 +654,14 @@ class MatchReplayModel(
         }).sortedBy { it.atNanos }
     }
 
+    private val playerConcession by lazy {
+        matchResult?.let { ReplayPlayerConcession.resolve(actionArticles, timedArticles, it, endingDarkCropIds, hpEvidence) }
+    }
+
     /** Seek destinations reuse the same completed-archive projections as the battlefield. */
     val eventMarkers: List<ReplayEventMarker> by lazy {
         buildList<ReplayEventMarker> {
+            playerConcession?.let(::add)
             val goAt = matchStartNanos ?: countdown?.takeUnless {
                 it.timingBasis == ReplayCountdownTiming.PRESENTATION_ONLY
             }?.goAtNanos
@@ -889,6 +903,7 @@ class MatchReplayModel(
             observedSpeciesNames = speciesNames,
             candidateSpeciesId = candidate?.candidates?.maxByOrNull { it.similarity }?.speciesId,
             candidateSimilarity = candidate?.candidates?.maxByOrNull { it.similarity }?.similarity,
+            inferredPlayerConcession = playerConcession?.let { monotonicTimeNanos >= it.atNanos } == true,
             outcome = (articles.lastOrNull { it.payload is ArchivedMatchEnded }?.payload as? ArchivedMatchEnded)?.result,
             playerResources = playerResourceTrack.stateAt(monotonicTimeNanos),
             opponentResources = opponentResourceTrack.stateAt(monotonicTimeNanos),
@@ -2355,13 +2370,37 @@ class MatchReplayModel(
         private val MOVE_PATTERN = Regex("^(.+?)\\s+used\\s+.+!*$", RegexOption.IGNORE_CASE)
         private val NAMED_MOVE_PATTERN = Regex("^(.+?)\\s+used\\s+(.+?)[!.]*$", RegexOption.IGNORE_CASE)
 
+        private fun qualifiedCropIdentities(crops: List<ReplayIdentityObservation>, rows: List<ArchivedRealityArticle>,
+            configuration: ArchivedPlayerTeamConfiguration): List<ReplayIdentityObservation> {
+            if (crops.isEmpty()) return crops
+            val boundary = rows.badgeBattleBoundary()?.monotonicTimeNanos
+            val preBattleOnly = boundary == null && rows.hasPreBattleScreen()
+            val byId by lazy { rows.associateBy { it.articleId } }
+            return crops.filter { identity ->
+                if (identity.basis != "RECONSTRUCTED FROM ARCHIVED SPECIES CROP") return@filter true
+                if (preBattleOnly || (boundary != null && identity.atNanos < boundary)) return@filter false
+                val exact = identity.ocrMatchBasis?.startsWith("EXACT_CATALOGUE_TEXT")
+                val source = identity.articleId?.let(byId::get)
+                val crop = source?.payload as? ArchivedCropCaptured
+                if (identity.articleId != null) {
+                    val expected = if (identity.side == "PLAYER") BattleCropContracts.playerActiveSpeciesText.cropName
+                        else BattleCropContracts.opponentActiveSpeciesText.cropName
+                    if (crop?.cropName != expected || source?.monotonicTimeNanos != identity.atNanos) return@filter false
+                }
+                if (exact == false && (boundary == null || crop?.nativeTeamBadgePresent != true)) return@filter false
+                exact == true || identity.side != "PLAYER" ||
+                    !configuration.conflictsWithFullRoster(identity.speciesName, identity.atNanos)
+            }
+        }
+
         /** A saved slot establishes possible team membership. Only a battle appearance or use enters the audio pool. */
         fun audioParticipantNames(archive: MatchArchive, crops: List<ReplayIdentityObservation>): Set<String> {
-            val rows = archive.articles.filter { it.matchId == archive.matchId && it.monotonicTimeNanos != null }
+            val rows = archive.withQualifiedBattleIdentities().articles.filter { it.matchId == archive.matchId && it.monotonicTimeNanos != null }
             val start = rows.filter { it.payload is ArchivedMatchStarted }.minOfOrNull { it.monotonicTimeNanos!! } ?: return emptySet()
             val end = rows.filter { it.payload is ArchivedMatchEnded }.minOfOrNull { it.monotonicTimeNanos!! } ?: return emptySet()
             return buildSet {
-                crops.filter { it.atNanos in start..end }.forEach { add(it.speciesName) }
+                qualifiedCropIdentities(crops.filter { it.atNanos in start..end }, rows, ArchivedPlayerTeamConfiguration(rows))
+                    .forEach { add(it.speciesName) }
                 for (row in rows) {
                     if (row.monotonicTimeNanos!! !in start..end) continue
                     when (val p = row.payload) {
@@ -2381,7 +2420,7 @@ class MatchReplayModel(
         }
 
         fun referencedSpeciesNames(archive: MatchArchive): Set<String> = buildSet {
-            archive.articles.forEach { article ->
+            archive.withQualifiedBattleIdentities().articles.forEach { article ->
                 when (val payload = article.payload) {
                     is ArchivedActivePokemonSpeciesWitnessed -> add(payload.speciesName)
                     is ArchivedPlayerActiveIdentityResolved -> add(payload.speciesName)
@@ -2627,6 +2666,7 @@ data class ReplayIdentityObservation(
     val articleId: String? = null,
     val evidenceArticleIds: List<String> = emptyList(),
     val playerTeamSlot: Int? = null,
+    val ocrMatchBasis: String? = null,
 )
 
 data class ReplayScene(
@@ -2669,6 +2709,7 @@ data class ReplayScene(
     val chargeFocus: ReplayChargeFocus? = null,
     /** An attributed trainer entry, independent of the observed outcome. */
     val trainerConcession: ReplayCorrectionSide? = null,
+    val inferredPlayerConcession: Boolean = false,
 )
 
 data class ReplayFastMoveAction(

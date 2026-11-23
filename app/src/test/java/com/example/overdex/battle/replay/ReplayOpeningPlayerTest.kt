@@ -34,7 +34,7 @@ class ReplayOpeningPlayerTest {
 
     @Test fun `a positively witnessed opening lead preserves a genuine quick switch`() {
         for (support in listOf(
-            badge("lead-badge", "Golbat", 42, GO - SECOND),
+            badge("lead-badge", "Golbat", 42, GO),
             event("lead-inference", ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Golbat", 42), GO,
                 "TEAM_SELECT_LEAD_INFERENCE"),
             event("lead-slot", ArchivedPlayerTeamRosterSlotWitnessed(1, "Golbat", 42), GO - SECOND),
@@ -43,6 +43,13 @@ class ReplayOpeningPlayerTest {
             assertEquals(support.articleId, "Golbat", model.sceneAt(GO).player?.speciesName)
             assertEquals(support.articleId, "Turtonator", model.sceneAt(BADGE_AT).player?.speciesName)
         }
+    }
+
+    @Test fun `an active name crop from before GO cannot establish the opener`() {
+        val source = archive(badge("too-early", "Golbat", 42, GO - SECOND))
+        val model = MatchReplayModel(source)
+        assertEquals("Turtonator", model.sceneAt(GO).player?.speciesName)
+        assertEquals(BADGE_AT, model.sceneAt(GO).player?.identityEstablishedAtNanos)
     }
 
     @Test fun `a post GO player entry preserves its own switch boundary instead of backfilling the opener`() {

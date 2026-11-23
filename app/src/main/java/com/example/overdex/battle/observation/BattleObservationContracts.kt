@@ -138,7 +138,7 @@ data class BattleCropContract(
             located.copy(height = minOf(1f - located.y, located.height + minOf(located.height, 65f / 2400f)))
         } else located
         if (!frame.canObserve(measuredRegion)) return null
-        return BattleCropResolver.resolve(cropName, measuredRegion, frame.bitmap, minimumSize, areaInRegion)
+        return BattleCropResolver.resolve(cropName, measuredRegion, frame, minimumSize, areaInRegion)
     }
 
     fun resolve(calibration: BattleCalibration, source: Bitmap): ResolvedBattleCrop? =

@@ -24,7 +24,6 @@ import java.io.File
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -149,18 +148,19 @@ class RecordedOctober19BadgeDeviceTest {
         val opponent = LiveOverlaySpeciesPipeline.opponent(input, calibration, store) { true }
         try {
             DroidballOverlayPresentation.clearOpponentSpecies()
+            knowledge.getAllSpeciesNames()
             SpeciesNameRecognizer.warmUp()
+            match.witnessGoForSpeciesTest()
             player.start(match); opponent.start(match)
             for ((index, expected) in listOf("Sneasel", "Sealeo", "Vaporeon").withIndex()) {
                 current.set(frames[index])
                 val start = System.nanoTime()
                 for (side in ActivePokemonSide.entries) match.speciesChecks.request(side, "SWITCH", null)
-                withTimeout(12_000) {
-                    while (timeline.getArticles().none {
+                timeline.awaitSpeciesStage("the $expected badge and move list") {
+                    timeline.getArticles().any {
                         val payload = it.payload as? ActivePokemonSpeciesWitnessed
                         payload?.side == ActivePokemonSide.OPPONENT && payload.speciesName == expected
-                    }) delay(25)
-                    while (DroidballOverlayPresentation.activeOpponentMovePossibilities.value?.speciesName != expected) delay(25)
+                    } && DroidballOverlayPresentation.activeOpponentMovePossibilities.value?.speciesName == expected
                 }
                 val moves = requireNotNull(DroidballOverlayPresentation.activeOpponentMovePossibilities.value)
                 assertTrue(moves.fastMoves.isNotEmpty()); assertTrue(moves.chargedMoves.isNotEmpty())

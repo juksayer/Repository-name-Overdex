@@ -77,7 +77,7 @@ class PreBattleSpeciesAttentionDeviceTest {
     )
     private val hud = AnchorRegion(401.95557f / 672, 144.32333f / 1493, 258.22223f / 672, 240f / 1493)
 
-    @Test fun teamSelectLeavesSpeciesLaneFreeAndNativeBadgeWakesBeforeGo() = runBlocking {
+    @Test fun nativeBadgePixelsCanBePreservedBeforeGoButOnlyBattleCropsIdentifyTheCombatant() = runBlocking {
         val party = load("team_select/oct21/team-select.png")
         val battle = load("species/oct19/sneasel.png")
         try {
@@ -103,13 +103,16 @@ class PreBattleSpeciesAttentionDeviceTest {
                     val capturedMillis = (System.nanoTime() - appearedAt) / 1_000_000
                     assertTrue(f.timeline.getArticles().none { it.payload is CountdownGlyphWitnessed || it.payload is MatchStarted })
                     release.complete(Unit)
+                    await { f.timeline.getArticles().any { it.sourceId.id.startsWith("OPPONENT_SPECIES_OVERLAY_PIPELINE_OCR_") } }
+                    assertTrue(f.timeline.getArticles().none { it.payload is ActivePokemonSpeciesWitnessed })
+                    val go = f.match.witnessGoForSpeciesTest()
                     await { f.timeline.getArticles().any { (it.payload as? ActivePokemonSpeciesWitnessed)?.let { p ->
                         p.side == ActivePokemonSide.OPPONENT && p.speciesName == "Sneasel" } == true } }
                     instrumentation.sendStatus(0, Bundle().apply {
                         putString("native_badge_wake", "cropAdmissionMs=$capturedMillis identityMs=${(System.nanoTime() - appearedAt) / 1_000_000}")
                     })
-                    assertTrue("The badge probe must not invent a countdown/start", f.timeline.getArticles().none {
-                        it.payload is CountdownGlyphWitnessed || it.payload is MatchStarted })
+                    assertTrue(f.timeline.getArticles().filter { it.payload is ActivePokemonSpeciesWitnessed }.all {
+                        requireNotNull(it.monotonicTimeNanos) >= go })
                 } finally { release.complete(Unit); blocker.cancelAndJoin() }
             }
         } finally { delay(200); party.recycle(); battle.recycle() }
@@ -128,16 +131,21 @@ class PreBattleSpeciesAttentionDeviceTest {
                 f.start()
                 delay(500)
                 assertTrue(f.crops().isEmpty())
+                f.match.witnessGoForSpeciesTest()
+                await { f.timeline.getArticles().any {
+                    (it.payload as? ActivePokemonSpeciesWitnessed)?.speciesName == "Sneasel" } }
                 val cueAt = System.nanoTime()
                 f.match.custody.submitTestimony(SourceId("ANNOUNCEMENT_WITNESS"), RawTestimony("Go, Sneasel!"),
                     System.currentTimeMillis(), null, emptyList(), cueAt)
                 await { f.timeline.getArticles().any {
                     it.sourceId.id == "OPPONENT_SPECIES_OVERLAY_PIPELINE" &&
                         (it.payload as? ActivePokemonSpeciesWitnessed)?.speciesName == "Sneasel" } }
+                await { f.timeline.getArticles().any { (it.payload as? SpeciesCheckMeasured)?.let { p ->
+                    p.side == ActivePokemonSide.OPPONENT && p.reason == "ENTRY" } == true } }
                 val check = f.timeline.getArticles().first { (it.payload as? SpeciesCheckMeasured)?.let { p ->
                     p.side == ActivePokemonSide.OPPONENT && p.reason == "ENTRY" } == true }
                 assertEquals(cueAt, (check.payload as SpeciesCheckMeasured).triggerMonotonicNanos)
-                assertTrue(f.timeline.getArticles().none { it.payload is CountdownGlyphWitnessed })
+                assertEquals(1, f.timeline.getArticles().count { it.payload is CountdownGlyphWitnessed })
             }
         } finally { delay(200); nameOnly.recycle() }
     }
@@ -171,4 +179,25 @@ class PreBattleSpeciesAttentionDeviceTest {
             }
         } finally { delay(200); battle.recycle() }
     }
+}
+
+
+internal suspend fun Match.witnessGoForSpeciesTest(): Long {
+    val at = System.nanoTime()
+    custody.submitTestimony(SourceId(BattleWitnessContracts.countdownGlyph.witnessId),
+        CountdownGlyphWitnessed("GO", .99f, 1), System.currentTimeMillis(), .99f, emptyList(), at)
+    withTimeout(5_000) { awaitAcceptedEvidencePublished() }
+    check(battleHasStartedAt(at))
+    return at
+}
+
+/** State-based device checks allow the real OCR lane to run on a cold emulator. */
+internal suspend fun InMemoryRealityTimeline.awaitSpeciesStage(stage: String, ready: () -> Boolean) {
+    if (withTimeoutOrNull(45_000) { while (!ready()) delay(25); true } == true) return
+    val articles = getArticles()
+    val crops = articles.mapNotNull { it.payload as? CropCaptured }
+        .groupingBy { it.cropProvenance.cropName to it.nativeTeamBadgePresent }.eachCount()
+    val words = articles.filter { it.sourceId.id.contains("_SPECIES_OVERLAY_PIPELINE_OCR_") }
+        .takeLast(6).map { it.sourceId.id to (it.payload as? RawTestimony)?.data }
+    throw AssertionError("Timed out waiting for $stage. Crops by channel and native badge=$crops. Recent OCR=$words")
 }

@@ -122,7 +122,7 @@ class CropCaptureWitness(
             crop.minimumSize, crop.areaInRegion)
         val readable = rect != null && frame.canObserve(BattleCropBounds(rect.left, rect.top, rect.right, rect.bottom))
         reportAvailability(readable)
-        return if (readable) BattleCropResolver.resolve(crop.cropName, region, frame.bitmap,
+        return if (readable) BattleCropResolver.resolve(crop.cropName, region, frame,
             crop.minimumSize, crop.areaInRegion) else null
     }
 

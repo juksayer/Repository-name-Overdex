@@ -43,6 +43,13 @@ data class TeamLossResolution(
     val resolvedCandidates: List<TeamLossCandidate> = listOfNotNull(resolved),
 )
 
+/** Independent proof of who occupied the opening slot across the countdown-to-GO boundary. */
+internal data class ConfirmedOpeningLead(
+    val initialCountId: String,
+    val firstBadgeId: String,
+    val evidenceIds: List<String>,
+)
+
 /** Rebuildable source-time projection. A resource loss is certain before its combatant is known. */
 object TeamLossResolver {
     fun speciesKey(name: String): String = name.replace(Regex("\\s*\\([^)]*\\)\\s*$"), "")
@@ -75,7 +82,10 @@ object TeamLossResolver {
         var resolvedCandidates: List<TeamLossCandidate> = emptyList(),
     )
 
-    fun resolve(observations: List<TeamLossObservation>): List<TeamLossResolution> {
+    fun resolve(observations: List<TeamLossObservation>): List<TeamLossResolution> =
+        resolve(observations, null)
+
+    internal fun resolve(observations: List<TeamLossObservation>, opening: ConfirmedOpeningLead?): List<TeamLossResolution> {
         // Duplicate deliveries have one vote. An ID with contradictory contents has none.
         val sourceGroups = observations.groupBy { it.articleId }
         val invalidGroups = sourceGroups.filter { (id, copies) -> id.isBlank() || copies.distinct().size > 1 }
@@ -158,7 +168,11 @@ object TeamLossResolver {
             }
             // A first identity after the count leaves an earlier actor unknown. Seeing all three
             // distinct team members by this loss exhausts that uncertainty without backdating an identity.
-            val initialGap = before.atNanos < (appearances.firstOrNull()?.at ?: Long.MAX_VALUE)
+            val first = appearances.firstOrNull()
+            val openingCovered = opening != null && before.articleId == opening.initialCountId &&
+                first?.key != null && first.identities.any { it.articleId == opening.firstBadgeId && it.atNanos <= count.atNanos }
+            if (openingCovered) evidence += requireNotNull(opening).evidenceIds
+            val initialGap = before.atNanos < (first?.at ?: Long.MAX_VALUE) && !openingCovered
             val knownTeamSize = appearances.filter { it.at <= count.atNanos }.mapNotNull { it.key }.distinct().size
             // The first species may have been read after the opening badge. Later proof of
             // both other members being alive accounts for all slots in a three-member team.

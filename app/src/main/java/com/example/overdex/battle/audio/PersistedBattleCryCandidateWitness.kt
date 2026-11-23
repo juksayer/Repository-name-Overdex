@@ -15,7 +15,7 @@ import java.io.File
 import java.security.MessageDigest
 
 class PersistedBattleCryCandidateWitness(private val context: Context, private val root: File) : Observer {
-    override val observerId = ObserverId("BATTLE_CRY_CANDIDATE_WITNESS", ObservationSource.AUDIO_CAPTURE)
+    override val observerId = ObserverId(BattleCryListeningCue.candidateWitnessId, ObservationSource.AUDIO_CAPTURE)
     override val name = "Battle Cry Candidate"
     private var scope: CoroutineScope? = null
     override fun start(match: Match) {
@@ -26,6 +26,7 @@ class PersistedBattleCryCandidateWitness(private val context: Context, private v
             val references = PreparedCryReferenceIndex.get(context)
             match.articles.collect { article ->
                 val audio = article.payload as? AudioCaptured ?: return@collect
+                if (article.sourceId.id != BattleCryListeningCue.audioCaptureSourceId) return@collect
                 if (!BattleCryListeningCue.accepts(audio.cueKind)) return@collect
                 val bytes = File(root, audio.artifact.relativePath).takeIf { it.isFile }?.readBytes() ?: return@collect
                 if (sha(bytes) != audio.artifact.sha256) return@collect

@@ -118,6 +118,7 @@ internal class LiveHpEffectivenessTextWitness(
                     }
                     val resolved = HpEffectivenessTextCropper.crop(
                         sourceFrame = frame.bitmap,
+                        statusBarBottomPx = frame.statusBarBottomPx,
                         hpRegionBounds = hpRegionBounds,
                         measurement = barSample.measurement,
                         cropName = if (damagedSide == ActivePokemonSide.PLAYER) {
@@ -145,19 +146,21 @@ internal class LiveHpEffectivenessTextWitness(
             witnessScope.launch(Dispatchers.IO) {
                 for (sample in samples) {
                     try {
-                        val directText = SharedLatinTextRecognizer.readText(sample.resolved.bitmap)
-                        val directReading = FastMoveEffectivenessTextResolver.resolve(directText)
-                        val candidates = if (directReading != null || sample.cueArticleId == null) {
-                            listOf(directText).map(String::trim).filter(String::isNotBlank)
-                        } else {
-                            // The second OCR pass is valuable around a witnessed
-                            // hit, but running it continuously on two HP bars
-                            // starves the shared OCR lane and makes live evidence
-                            // arrive seconds after a switch.
-                            AnnouncementRecognizer.recognizeCandidates(
-                                sample.resolved.bitmap,
-                                directText = directText,
-                            )
+                        val candidates = sample.resolved.withOcrPixels { pixels ->
+                            val directText = SharedLatinTextRecognizer.readText(pixels)
+                            val directReading = FastMoveEffectivenessTextResolver.resolve(directText)
+                            if (directReading != null || sample.cueArticleId == null) {
+                                listOf(directText).map(String::trim).filter(String::isNotBlank)
+                            } else {
+                                // The second OCR pass is valuable around a witnessed
+                                // hit, but running it continuously on two HP bars
+                                // starves the shared OCR lane and makes live evidence
+                                // arrive seconds after a switch.
+                                AnnouncementRecognizer.recognizeCandidates(
+                                    pixels,
+                                    directText = directText,
+                                )
+                            }
                         }
                         for (text in candidates) {
                             val reading = FastMoveEffectivenessTextResolver.resolve(text)
@@ -331,6 +334,7 @@ internal object HpEffectivenessTextCropper {
         hpRegionBounds: BattleCropBounds,
         measurement: ActiveHpBarMeasurement,
         cropName: String,
+        statusBarBottomPx: Int = 0,
     ): ResolvedBattleCrop? {
         val bounds = resolveBounds(
             sourceWidth = sourceFrame.width,
@@ -345,6 +349,7 @@ internal object HpEffectivenessTextCropper {
                     sourceWidth = sourceFrame.width,
                     sourceHeight = sourceFrame.height,
                     bounds = bounds,
+                    statusBarRows = (statusBarBottomPx - bounds.top).coerceIn(0, bounds.bottom - bounds.top),
                 ),
                 bitmap = Bitmap.createBitmap(
                     sourceFrame,

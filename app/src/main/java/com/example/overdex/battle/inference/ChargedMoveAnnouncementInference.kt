@@ -1,6 +1,9 @@
 package com.example.overdex.battle.inference
 
 import com.example.overdex.battle.custody.ActivePokemonSide
+import com.example.overdex.battle.custody.MatchStarted
+import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
+import com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.ChargedMoveEnergySpent
 import com.example.overdex.battle.custody.RawTestimony
@@ -33,6 +36,7 @@ class ChargedMoveAnnouncementInference(
     private val pokemonKnowledge: PokemonKnowledge,
     private val onRebuild: ((String, Int) -> Unit)? = null,
     private val faintHistoryCache: FaintHistoryCache? = null,
+    private val battleUnderwayAt: ((Long?) -> Boolean)? = null,
 ) {
     private val activeSpeciesHistory = ArrayDeque<RealityArticle>()
     private var knownSpeciesNames: Set<String>? = null
@@ -52,7 +56,11 @@ class ChargedMoveAnnouncementInference(
         val updatesControls = article.payload is PlayerChargeButtonTouchWitnessed || article.payload is PlayerChargeMoveLabelRead ||
             article.payload is GetReadyWitnessed || article.payload is AttackIncoming || article.payload is ActivePokemonFaintedWitnessed
         val isAnnouncement = article.sourceId.id == ANNOUNCEMENT_SOURCE && article.payload is RawTestimony
-        if (!updatesControls && !isAnnouncement && article.payload !is ActivePokemonSpeciesWitnessed) return null
+        val retryAfterPhaseProof = pendingAnnouncements.isNotEmpty() &&
+            (article.payload is ChargeMoveUsedAnnounced ||
+                article.payload is MatchStarted ||
+                article.payload is ActiveHpBarDamageTickMeasured)
+        if (!updatesControls && !isAnnouncement && article.payload !is ActivePokemonSpeciesWitnessed && !retryAfterPhaseProof) return null
         (article.payload as? ActivePokemonSpeciesWitnessed)?.let {
             if (it.appearanceStartedAtNanos != null) activeSpeciesHistory.removeAll { previous ->
                 (previous.payload as? ActivePokemonSpeciesWitnessed)?.side == it.side &&
@@ -74,6 +82,7 @@ class ChargedMoveAnnouncementInference(
         // Label and pointer OCR have independent latency. A later publication
         // may complete an earlier announcement, using original capture times.
         for (pending in pendingAnnouncements.toList()) {
+            if (battleUnderwayAt?.invoke(pending.monotonicTimeNanos) == false) continue
             val result = resolveAnnouncement(pending, rosterSideForSpecies) ?: continue
             pendingAnnouncements.remove(pending)
             return result

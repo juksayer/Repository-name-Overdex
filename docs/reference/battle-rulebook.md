@@ -57,6 +57,12 @@ facts disagree, preserve both and request a fresh check.
 | TEAM-09 | A count is unavailable or an old retained badge is still displayed. | Preserve the last reading with its age/availability; do not treat it as a current count, a zero, or independent corroboration. |
 | TEAM-10 | An independent faint is recognized. | Reconcile the expected remaining count and request a native badge check. Never feed the expected count or faded HUD back into the raw count witness. |
 | TEAM-15 | A valid independent last-Pokémon count belongs to the same ordinary Match and no contradictory later count or observation reset intervenes. | Its original source time may continue supporting a later independently qualified terminal sequence while the event-driven ball reader sleeps. Elapsed time alone does not restore knocked-out Pokémon or require a replacement count. This historical constraint is neither a new current reading nor proof that the last Pokémon remains alive; the charge, owned visual sequence and result still need their own evidence. |
+| TEAM-16 | A side’s active-name crop was captured before Match Start, or a possible cry wakes a name check. | Preserve the crop, sound, and capture times. Before Match Start, take the player’s ordered team from trainer configuration or the designated Choose Your Party readers. A pre-start badge guess or possible cry cannot fill or replace a team slot or own an attack. After Match Start, a repaired badge name needs a visible native badge or independent support for that Pokémon on that side. If the countdown was missed, the first independently observed combat event can establish that the battle is underway. Black out the visible Android status bar on the copy sent to OCR. |
+
+The November 22 paired Turtonator match provides a regression case. The Moondrop
+read `VoLTE 92)` as Polteageist 20.21 seconds before Match Start. The Pixel had
+Turtonator in its first configured slot. The opponent HP pulse and damage tick
+at 0:02.46 remain evidence of a hit even when its original owner is rejected.
 
 If an opponent Poké Ball check expires unanswered, a fresh reading of the native opponent species badge or its shield count can reopen the ball crop once for three seconds. The ball reader still needs two independently captured, readable strips. Repeated sightings after confirmation leave the reader asleep.
 
@@ -85,6 +91,8 @@ add missing tie/concession recognition.
 | END-10 | Result or ending reason remains ambiguous. | Keep unknown fields explicit. A trainer can mark a win or loss by concession in Replay. Keep that entry attributed to the trainer and preserve the original result and battle observations. |
 | END-ROCKET-01 | After battle entry and a gap in ordinary battlefield HP, the Rocket reward card shows both **SUMMARY** and **Grunt Defeated** in one capture. | Record an observed win at the capture time. Preserve the summary crop and raw OCR. Grunt dialogue, a generic reward card, and a black transition remain insufficient. This rule establishes the result only. |
 | RECORD-01 | The same Match contains positive mode evidence at entry or a verified Rocket result label. | Count its observed result under that battle mode. Ranked matchmaking status and a rank badge must agree on one versus frame. A Great League party screen can be shared with training and direct challenges. Missing or conflicting mode evidence leaves the record unclassified and outside ranked totals. |
+
+**Completed Replay, player concession.** A recent player surrender prompt, a verified live player HP reading at the prompt, two consecutive dark exit frames, and GOOD EFFORT confirming a recorded loss within ten seconds support an inferred loss by concession. A canceled prompt, resumed combat, or an observed connection interruption breaks the sequence. Place the reason at the recorded loss. Preserve earlier attacks and their original damage ticks. The concession supplies no faint or finishing-hit credit.
 
 ### Opponent concession review — November 20
 

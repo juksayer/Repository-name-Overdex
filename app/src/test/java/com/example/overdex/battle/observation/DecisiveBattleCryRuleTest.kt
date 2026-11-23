@@ -29,6 +29,13 @@ class DecisiveBattleCryRuleTest {
         }
     }
 
+    @Test fun `departures and VS audio cannot establish an active appearance even with a clear winner`() {
+        for (cue in listOf("POKEMON_FAINTED", "OPPONENT_DEPARTED_NON_FAINT", "VS_SCREEN")) {
+            assertNull(cue, DecisiveBattleCryRule.match(candidates(.99f, .70f, cue), 6, 5))
+        }
+        assertNull(DecisiveBattleCryRule.match(candidates(.99f, .70f, "COUNTDOWN_1"), 4, 5))
+    }
+
     @Test fun `countdown shaped cue late in combat cannot become species identity`() {
         assertNull(DecisiveBattleCryRule.match(
             candidates(0.94f, 0.88f, "COUNTDOWN_GO"),

@@ -24,19 +24,21 @@ data class MatchSideSummary(
 )
 
 fun MatchArchive.summarize(): MatchSummary {
-    val records = articles.filter { it.matchId == matchId }.distinctBy { it.articleId }
+    val battleArchive = withQualifiedBattleIdentities()
+    val rawRecords = articles.filter { it.matchId == matchId }.distinctBy { it.articleId }
+    val records = battleArchive.articles.filter { it.matchId == matchId }.distinctBy { it.articleId }
     val start = records.firstOrNull { it.payload is ArchivedMatchStarted }
     val end = records.firstOrNull { it.payload is ArchivedMatchEnded }
     fun elapsed(from: ArchivedRealityArticle, to: ArchivedRealityArticle): Long =
         if (from.monotonicTimeNanos != null && to.monotonicTimeNanos != null) {
             (to.monotonicTimeNanos - from.monotonicTimeNanos) / 1_000_000L
         } else to.perceivedAt - from.perceivedAt
-    val first = records.minByOrNull { it.perceivedAt }
+    val first = rawRecords.minByOrNull { it.perceivedAt }
     // Publication order can differ from capture order; late OCR must not extend the battle.
-    val last = first?.let { origin -> records.maxByOrNull { elapsed(origin, it) } }
+    val last = first?.let { origin -> rawRecords.maxByOrNull { elapsed(origin, it) } }
     val battle = records.filter { (start == null || elapsed(start, it) >= 0) && (end == null || elapsed(it, end) >= 0) }
-    val countProjection = com.example.overdex.battle.replay.ReplayTeamLossProjection(this)
-    val currentFaints = com.example.overdex.battle.replay.ReplayVerifiedHpFaintProjection(this,
+    val countProjection = com.example.overdex.battle.replay.ReplayTeamLossProjection(battleArchive)
+    val currentFaints = com.example.overdex.battle.replay.ReplayVerifiedHpFaintProjection(battleArchive,
         countProjection.articles).articles.filter {
             (start == null || elapsed(start, it) >= 0) && (end == null || elapsed(it, end) >= 0)
         }.mapNotNull { it.payload as? ArchivedActivePokemonFaintedWitnessed }
@@ -72,7 +74,7 @@ fun MatchArchive.summarize(): MatchSummary {
     return MatchSummary(matchId, first?.perceivedAt,
         if (first != null && last != null) elapsed(first, last).coerceAtLeast(0) else 0,
         start?.let { last?.let { tail -> elapsed(it, end ?: tail).coerceAtLeast(0) } },
-        (end?.payload as? ArchivedMatchEnded)?.result, records.size, side("PLAYER"), side("OPPONENT"),
+        (end?.payload as? ArchivedMatchEnded)?.result, rawRecords.size, side("PLAYER"), side("OPPONENT"),
         when {
             musicComparison != null && !musicComparison.agrees -> "Music and recorded result disagree"
             musicComparison != null -> "${musicComparison.musicTheme.lowercase().replaceFirstChar(Char::uppercase)} music agrees with result"

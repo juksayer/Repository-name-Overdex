@@ -54,7 +54,7 @@ class TeamSelectSnapshotCaptureWitness(
                     ) return@supplyFrames
 
                     val resolved = contracts.mapNotNull { contract ->
-                        contract.resolve(calibration, frame.bitmap)?.let {
+                        BattleCropResolver.resolve(contract.cropName, contract.region(calibration), frame, contract.minimumSize)?.let {
                             if (frame.canObserve(it.provenance.bounds)) contract to it
                             else { it.bitmap.recycle(); null }
                         }

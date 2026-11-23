@@ -31,7 +31,8 @@ class PersistedAnnouncementSpeciesWitness(
                 var knownSpeciesNames: Set<String>? = null
                 var lastWitnessed: Pair<com.example.overdex.battle.custody.ActivePokemonSide, String>? = null
                 match.articles.collect { article ->
-                    if (article.sourceId.id != "ANNOUNCEMENT_WITNESS") return@collect
+                    if (article.sourceId.id != "ANNOUNCEMENT_WITNESS" ||
+                        !match.battleHasStartedAt(article.monotonicTimeNanos)) return@collect
                     val text = (article.payload as? RawTestimony)?.data as? String ?: return@collect
                     // Direct “Go,” testimony has an independent player-entry witness.
                     if (text.trim().uppercase().startsWith("GO,")) return@collect
@@ -47,6 +48,7 @@ class PersistedAnnouncementSpeciesWitness(
                     ) ?: return@collect
                     val speciesName = resolution.speciesName
                     val side = match.sideForNamedMovePerformer(speciesName) ?: return@collect
+                    if (!match.rosterAllowsBadgeReading(side, speciesName, resolution.basis)) return@collect
                     val witnessed = side to speciesName
                     if (witnessed == lastWitnessed) return@collect
                     lastWitnessed = witnessed

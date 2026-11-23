@@ -61,7 +61,7 @@ internal class PersistedTeamSelectPartyWitness(
                     val observedAt = a.monotonicTimeNanos ?: return@collect
                     if (observedAt < match.observationAttemptStartedAtNanos) return@collect
                     val crop = a.payload as CropCaptured
-                    val bitmap = store.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
+                    val bitmap = store.loadVerifiedOcrPng(crop.artifact, crop.cropProvenance) ?: return@collect
                     var signal: TeamSelectSignal? = null
                     var cardSlot: Int? = null
                     try {
@@ -165,7 +165,7 @@ class PersistedTeamSelectLeagueWitness(
                     val crop = badgeArticle.payload as CropCaptured
                     if ((article.monotonicTimeNanos ?: return@collect) -
                         (badgeArticle.monotonicTimeNanos ?: return@collect) > 2_000_000_000L) return@collect
-                    val bitmap = store.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
+                    val bitmap = store.loadVerifiedOcrPng(crop.artifact, crop.cropProvenance) ?: return@collect
                     val league = try {
                         TeamSelectLeagueShieldClassifier.classify(bitmap)
                     } finally {
@@ -226,16 +226,18 @@ class PersistedPlayerTeamRosterSlotWitness(
                 val source = pendingCrop ?: return@collect
                 if (!rosterWindow.allows(source.monotonicTimeNanos ?: return@collect)) return@collect
                 val crop = source.payload as CropCaptured
-                val bitmap = store.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
+                val bitmap = store.loadVerifiedOcrPng(crop.artifact, crop.cropProvenance) ?: return@collect
+                fun resolvePartyName(text: String) = FastOverlaySpeciesResolver.resolveDetailed(text, knownNames)
+                    ?.takeIf { match.partySlotSupportsReading(slot, it.speciesName, it.basis) }
                 val readings = try {
                     SpeciesNameRecognizer.withReadingTurn {
                         if (!isEnabled()) emptyList() else recognizeCandidates(bitmap) { rawText ->
-                            FastOverlaySpeciesResolver.resolveDetailed(rawText, knownNames) != null
+                            resolvePartyName(rawText) != null
                         }
                     }
                 } finally { bitmap.recycle() }
                 val resolution = readings.firstNotNullOfOrNull { reading ->
-                    FastOverlaySpeciesResolver.resolveDetailed(reading.text, knownNames)
+                    resolvePartyName(reading.text)
                 } ?: return@collect
                 val species = match.pokemonKnowledge.getPokemonByName(resolution.speciesName) ?: return@collect
                 val candidate = PendingRosterSlot(
@@ -295,7 +297,7 @@ class PersistedPlayerTeamRosterSpriteWitness(
                     if (accepted) return@collect
                     val crop = article.payload as? CropCaptured ?: return@collect
                     if (crop.cropProvenance.cropName != cropName) return@collect
-                    val bitmap = store.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
+                    val bitmap = store.loadVerifiedOcrPng(crop.artifact, crop.cropProvenance) ?: return@collect
                     val visualMatch = try {
                         matcher.match(bitmap)
                     } finally {

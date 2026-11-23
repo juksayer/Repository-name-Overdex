@@ -74,6 +74,31 @@ class RecordedAggregateTeamLossReplayTest {
         assertEquals(original, MatchArchiveSerializer.serialize(archive))
     }
 
+    @Test fun `countdown baseline requires independent post GO confirmation of the configured lead`() {
+        val original = recorded().withQualifiedBattleIdentities()
+        val config = original.articles.single { (it.payload as? ArchivedPlayerTeamSlotConfigured)?.slot == 1 }
+        val go = original.articles.single { it.payload is ArchivedMatchStarted }
+        val badge = original.articles.filter { (it.payload as? ArchivedActivePokemonSpeciesWitnessed)?.side == "PLAYER" }
+            .minBy { it.monotonicTimeNanos!! }
+        val nameCrop = original.articles.single { it.articleId in badge.evidenceReferences.orEmpty() &&
+            (it.payload as? ArchivedCropCaptured)?.cropName == "PlayerActiveSpeciesTextCrop" }
+        val accepted = ReplayTeamLossProjection(original).resolutionsByArticleId
+        assertEquals(2, accepted.size)
+        for (loss in accepted.values) {
+            assertTrue(loss.evidenceReferences.containsAll(listOf(BEFORE, AFTER, config.articleId, go.articleId,
+                badge.articleId, nameCrop.articleId)))
+        }
+        val wrongLead = config.copy(payload = (config.payload as ArchivedPlayerTeamSlotConfigured).copy(speciesName = "Camerupt", speciesId = 323))
+        val unqualified = badge.copy(payload = (badge.payload as ArchivedActivePokemonSpeciesWitnessed)
+            .copy(ocrMatchBasis = "UNAMBIGUOUS_CATALOGUE_FUZZY_MATCH"))
+        val priorFaint = badge.copy(articleId = "test-earlier-player-faint", monotonicTimeNanos = go.monotonicTimeNanos!! + 1,
+            payload = ArchivedActivePokemonFaintedWitnessed("PLAYER", null, null, "FRESH_BALL_DECREASE"))
+        for (rows in listOf(original.articles - config + wrongLead, original.articles - badge + unqualified,
+            original.articles - nameCrop, original.articles + priorFaint)) {
+            assertTrue(ReplayTeamLossProjection(original.copy(articles = rows)).resolutionsByArticleId.isEmpty())
+        }
+    }
+
     @Test fun `aggregate owners never backdate count one or invent an intermediate count two`() {
         val archive = recorded()
         val after = archive.articles.single { it.articleId == AFTER }.monotonicTimeNanos!!

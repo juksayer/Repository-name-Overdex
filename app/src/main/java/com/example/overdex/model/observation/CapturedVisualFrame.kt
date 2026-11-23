@@ -20,4 +20,6 @@ data class CapturedVisualFrame(
     val retainedBadgeRegion: com.example.overdex.model.AnchorRegion? = null,
     /** Accepted live-feed publication; absent for screenshot or older/custom inputs. */
     val publication: VisualFramePublication? = null,
+    /** Visible Android status-bar bottom in this captured bitmap, before cropping. */
+    val statusBarBottomPx: Int = 0,
 )

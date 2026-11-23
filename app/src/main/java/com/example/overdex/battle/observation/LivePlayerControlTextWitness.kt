@@ -119,7 +119,7 @@ internal class LivePlayerControlTextWitness(
                         var reused: StableLabelReading.Reading? = null
                         val text = if (slot == 0) {
                             // Pointer diagnostics are optional; never queue them.
-                            PlayerControlTextRecognizer.readScheduled(sample.crop.bitmap, onlyIfIdle = true)
+                            sample.crop.withOcrPixels { PlayerControlTextRecognizer.readScheduled(it, onlyIfIdle = true) }
                         } else SharedLatinTextRecognizer.withReadingTurn(OcrPriority.NORMAL) { read ->
                             // Wait for a fair routine turn, then take the newest
                             // crop. Selecting before admission discarded almost
@@ -140,12 +140,13 @@ internal class LivePlayerControlTextWitness(
                                 previousText = null
                                 previousCropName = cropName
                             }
-                            val bitmap = sample.crop.bitmap
-                            val pixels = IntArray(bitmap.width * bitmap.height)
-                            bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-                            ink = LabelInk.fromPixels(bitmap.width, bitmap.height, pixels)
-                            reused = stableReading.reuse(requireNotNull(ink), sample.at)
-                            reused?.text ?: PlayerControlTextRecognizer.readPrepared(bitmap) { read(it).text }
+                            sample.crop.withOcrPixels { bitmap ->
+                                val pixels = IntArray(bitmap.width * bitmap.height)
+                                bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+                                ink = LabelInk.fromPixels(bitmap.width, bitmap.height, pixels)
+                                reused = stableReading.reuse(requireNotNull(ink), sample.at)
+                                reused?.text ?: PlayerControlTextRecognizer.readPrepared(bitmap) { read(it).text }
+                            }
                         }
                         if (text == null) continue
                         val payload: TestimonyPayload

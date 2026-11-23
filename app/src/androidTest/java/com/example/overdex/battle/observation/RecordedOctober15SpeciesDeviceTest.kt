@@ -69,6 +69,8 @@ class RecordedOctober15SpeciesDeviceTest {
         try {
             DroidballOverlayPresentation.clearOpponentSpecies()
             witness.start(match)
+            send(BattleWitnessContracts.countdownGlyph.witnessId, CountdownGlyphWitnessed("GO", 1f, 1), 0)
+            await { timeline.getArticles().any { it.payload is MatchStarted } }
             send("OPPONENT_SPECIES_OVERLAY_PIPELINE",
                 ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364), 0)
             await { DroidballOverlayPresentation.activeOpponentMovePossibilities.value?.speciesName == "Sealeo" }

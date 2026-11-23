@@ -43,7 +43,7 @@ internal object PairedReplayEvidenceBuilder {
     /** Unique mirrored entry/move announcements are proposed anchors, never match identification. */
     fun proposedAnchors(primary: MatchArchive, secondary: MatchArchive): List<PairedReplayAnchor> {
         fun keys(archive: MatchArchive, reverse: Boolean): Map<Pair<String, String>, List<ArchivedRealityArticle>> =
-            archive.articles.filter { it.monotonicTimeNanos != null }.mapNotNull { a ->
+            archive.withQualifiedBattleIdentities().articles.filter { it.monotonicTimeNanos != null }.mapNotNull { a ->
                 val p = a.payload as? ArchivedActivePokemonSpeciesWitnessed ?: return@mapNotNull null
                 val text = p.ocrText?.trim()?.uppercase()?.replace(Regex("[^A-Z0-9]"), "") ?: return@mapNotNull null
                 if (!(text.startsWith("GO") || text.contains("USED")) || p.side !in setOf("PLAYER", "OPPONENT")) return@mapNotNull null
@@ -118,8 +118,9 @@ internal object PairedReplayEvidenceBuilder {
         it.payload is ArchivedMatchStarted && it.monotonicTimeNanos != null
     }?.monotonicTimeNanos) { "Exactly one timed Match Start is required" }
 
-    private fun observations(archive: MatchArchive, start: Long, shift: Long, reverse: Boolean) =
-        archive.articles.mapNotNull { a ->
+    private fun observations(archive: MatchArchive, start: Long, shift: Long, reverse: Boolean): List<PairedReplayObservation> {
+        val originals = archive.articles.associateBy { it.articleId }
+        return archive.withQualifiedBattleIdentities().articles.mapNotNull { a ->
             val at = a.monotonicTimeNanos ?: return@mapNotNull null
             val (side, species, kind, moveName) = when (val p = a.payload) {
                 is ArchivedFastMoveUseObserved -> listOf(p.attackingSide, p.attackerSpeciesName, PairedReplayObservation.Kind.FAST_MOVE, null)
@@ -137,8 +138,9 @@ internal object PairedReplayEvidenceBuilder {
             val rawSide = side as? String ?: return@mapNotNull null
             if (rawSide !in setOf("PLAYER", "OPPONENT")) return@mapNotNull null
             val mapped = if (!reverse) rawSide else if (rawSide == "PLAYER") "OPPONENT" else "PLAYER"
-            PairedReplayObservation(archive.matchId, a, at - start + shift, mapped, species as String?, kind as PairedReplayObservation.Kind, moveName as String?)
+            PairedReplayObservation(archive.matchId, originals.getValue(a.articleId), at - start + shift, mapped, species as String?, kind as PairedReplayObservation.Kind, moveName as String?)
         }
+    }
 
     private fun compatible(a: PairedReplayObservation, b: PairedReplayObservation, residual: Long): Boolean =
         a.kind == b.kind && a.side == b.side && a.species != null && b.species != null &&

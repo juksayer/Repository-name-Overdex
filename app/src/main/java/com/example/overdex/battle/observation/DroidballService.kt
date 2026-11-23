@@ -342,6 +342,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private val teamSelectMenuCalibration by lazy { TeamSelectCalibrationStore(this).load() }
     private val teamSelectMenuDeparture = TeamSelectMenuDepartureMonitor()
     private val retainedOpponentBadge by lazy { RetainedOpponentBadge(this, windowManager) }
+    @Volatile private var visibleStatusBarHeightPx = 0
     @Volatile private var capturedOverlayRegion: com.example.overdex.model.AnchorRegion? = null
     private var overlayParams: WindowManager.LayoutParams? = null
     // The renderer and native window share one physical canvas for this overlay.
@@ -594,6 +595,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             }
         }
 
+        visibleStatusBarHeightPx = windowManager.maximumWindowMetrics.windowInsets
+            .getInsets(android.view.WindowInsets.Type.statusBars()).top
         val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         mediaProjection = mpManager.getMediaProjection(resultCode, data)
         mediaProjection?.registerCallback(projectionCallback, null)
@@ -715,7 +718,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         }
                     }
                     val badgeExclusionBefore = retainedOpponentBadge.exclusion(receivedAtNanos)
+                    val statusBarBottom = capturedStatusBarBottom(visibleStatusBarHeightPx, height, imgHeight)
                     val nativeFrame = CapturedVisualFrame(bitmap, capturedAtWallTimeMillis, receivedAtNanos,
+                        statusBarBottomPx = statusBarBottom,
                         overlayRegion = capturedOverlayRegion, retainedBadgeRegion = badgeExclusionBefore)
                     val playerBadgeRegion = if (!battleSurfaceEstablished) badgeCalibration.playerTeamInfoRegion else
                         TeamBadgeCropLocator.locate(BattleRegionId.PLAYER_TEAM_INFO, badgeCalibration, nativeFrame)
@@ -781,6 +786,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                             overlayRegion = capturedOverlayRegion,
                             retainedBadgeRegion = retainedBadgeRegion,
                             publication = publication,
+                            statusBarBottomPx = statusBarBottom,
                         ))
                     }
                     if (emitSucceeded) {
@@ -1026,6 +1032,15 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                 android.view.ViewGroup.LayoutParams.WRAP_CONTENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT))
         }
         
+        // Read the display-wide inset only when Android dispatches insets. The
+        // floating window's local top inset may be zero because it sits below it.
+        val statusBars = android.view.WindowInsets.Type.statusBars()
+        overlayView!!.setOnApplyWindowInsetsListener { view, insets ->
+            visibleStatusBarHeightPx = if (insets.isVisible(statusBars))
+                windowManager.maximumWindowMetrics.windowInsets.getInsetsIgnoringVisibility(statusBars).top else 0
+            view.onApplyWindowInsets(insets)
+        }
+
         // Essential for Compose in WindowManager
         overlayView!!.setViewTreeLifecycleOwner(this)
         overlayView!!.setViewTreeViewModelStoreOwner(this)

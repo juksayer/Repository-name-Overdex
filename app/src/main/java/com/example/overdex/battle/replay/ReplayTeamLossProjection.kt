@@ -1,6 +1,9 @@
 package com.example.overdex.battle.replay
 
 import com.example.overdex.battle.archive.*
+import com.example.overdex.battle.observation.BattleCropContracts
+import com.example.overdex.battle.observation.isSideLocatedSpeciesSource
+import com.example.overdex.battle.inference.ConfirmedOpeningLead
 import com.example.overdex.battle.inference.TeamLossObservation
 import com.example.overdex.battle.inference.TeamLossResolution
 import com.example.overdex.battle.inference.TeamLossResolver
@@ -43,7 +46,8 @@ internal class ReplayTeamLossProjection(archive: MatchArchive) {
     }.keys
     val resolutionsByArticleId: Map<String, TeamLossResolution> = buildMap {
         observationsBySide.forEach { (side, observations) ->
-            TeamLossResolver.resolve(observations).forEach { resolution ->
+            val opening = if (side == "PLAYER") confirmedOpeningLead(observations) else null
+            TeamLossResolver.resolve(observations, opening).forEach { resolution ->
                 resolution.resolvedCandidates.forEach { candidate ->
                     // One captured 3 -> 1 count can resolve two owners without
                     // supplying either owner's individual faint clock. Keep
@@ -74,6 +78,45 @@ internal class ReplayTeamLossProjection(archive: MatchArchive) {
         )
     }
 
+    /** A full badge during countdown describes the starting team. The trainer's selected
+     * lead and the first independent badge after GO must agree before naming its occupant. */
+    private fun confirmedOpeningLead(observations: List<TeamLossObservation>): ConfirmedOpeningLead? {
+        val go = uniqueSources.values.singleOrNull { it.payload is ArchivedMatchStarted } ?: return null
+        val start = go.monotonicTimeNanos ?: return null
+        val baseline = observations.filterIsInstance<TeamLossObservation.Count>()
+            .filter { it.atNanos in start - OPENING_WINDOW_NANOS..start }.maxByOrNull { it.atNanos }
+            ?.takeIf { it.count == 3 } ?: return null
+        val firstAt = observations.filterIsInstance<TeamLossObservation.Identity>().minOfOrNull { it.atNanos }
+            ?.takeIf { it in start..start + OPENING_WINDOW_NANOS } ?: return null
+        // A forced replacement can bring the configured lead back even in the opening seconds.
+        if (uniqueSources.values.any { row ->
+                row.monotonicTimeNanos?.let { it in start..firstAt } == true && when (val p = row.payload) {
+                    is ArchivedForcedReplacementPromptWitnessed -> true
+                    is ArchivedActivePokemonFaintedWitnessed -> p.side == "PLAYER"
+                    is ArchivedPlayerPokeBallCountMeasured -> p.maximumCount == 3 && p.visibleCount < 3
+                    else -> false
+                }
+            }) return null
+        val badge = uniqueSources.values.singleOrNull {
+            val species = it.payload as? ArchivedActivePokemonSpeciesWitnessed
+            species?.side == "PLAYER" && isSideLocatedSpeciesSource(it.sourceId) && it.monotonicTimeNanos == firstAt &&
+                species.ocrMatchBasis?.startsWith("EXACT_CATALOGUE_TEXT") == true
+        } ?: return null
+        val species = badge.payload as ArchivedActivePokemonSpeciesWitnessed
+        val crop = (badge.predecessorIds + badge.evidenceReferences.orEmpty()).distinct().mapNotNull(uniqueSources::get)
+            .firstOrNull { (it.payload as? ArchivedCropCaptured)?.cropName == BattleCropContracts.playerActiveSpeciesText.cropName &&
+                it.monotonicTimeNanos == firstAt } ?: return null
+        val setup = ArchivedPlayerTeamConfiguration(sourceArticles)
+        val lead = setup.recordsAt(start).singleOrNull { (it.payload as ArchivedPlayerTeamSlotConfigured).slot == 1 } ?: return null
+        val selected = lead.payload as ArchivedPlayerTeamSlotConfigured
+        val key = TeamLossResolver.speciesKey(selected.speciesName)
+        if (TeamLossResolver.speciesKey(species.speciesName) != key ||
+            species.speciesId != selected.speciesId ||
+            setup.rosterSlotsAt(start)[1]?.let(TeamLossResolver::speciesKey) != key) return null
+        return ConfirmedOpeningLead(baseline.articleId, badge.articleId,
+            listOf(lead.articleId, go.articleId, badge.articleId, crop.articleId))
+    }
+
     private fun positivelyContradicted(article: ArchivedRealityArticle, faint: ArchivedActivePokemonFaintedWitnessed): Boolean {
         val at = article.monotonicTimeNanos ?: return false
         val name = faint.speciesName ?: return false
@@ -101,6 +144,8 @@ internal class ReplayTeamLossProjection(archive: MatchArchive) {
     }
 
     companion object {
+        private const val OPENING_WINDOW_NANOS = 8_000_000_000L
+
         const val BASIS = "RECONCILED_TEAM_COUNT_LOSS"
     }
 }

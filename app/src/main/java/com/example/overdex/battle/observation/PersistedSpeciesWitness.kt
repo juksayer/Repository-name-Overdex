@@ -121,6 +121,7 @@ class PersistedSpeciesWitness(
                             )
                         }
                     }
+                    if (!match.battleHasStartedAt(article.monotonicTimeNanos)) continue
                     val speciesName = recognition.speciesName
                     val refs = match.speciesChecks.read(side, window.id, speciesName, article.id.value)
                     if (speciesName != null && refs != null) {
@@ -155,7 +156,7 @@ class PersistedSpeciesWitness(
         heightProfile: OcrHeightProfile,
     ): SpeciesRecognition? {
         val captured = article.payload as? CropCaptured ?: return null
-        val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance) ?: run {
+        val bitmap = artifactStore.loadVerifiedOcrPng(captured.artifact, captured.cropProvenance) ?: run {
             Log.w("ACTIVE_SPECIES", "missing verified artifact side=$side crop=${captured.cropProvenance.cropName}")
             return null
         }
@@ -163,11 +164,17 @@ class PersistedSpeciesWitness(
             val names = cachedNames ?: match.pokemonKnowledge.getAllSpeciesNames()
             val context = OcrSourceContext(captured.cropProvenance.sourceWidth, captured.overlayBounds)
             val rawReadings = SpeciesNameRecognizer.recognizeCandidates(bitmap, context, heightProfile) {
-                SpeciesTextResolver.resolve(it, names) != null
+                SpeciesTextResolver.match(it, names).resolution?.let { resolution ->
+                    (resolution.basis.startsWith("EXACT_CATALOGUE_TEXT") || captured.nativeTeamBadgePresent == true) &&
+                        match.rosterAllowsBadgeReading(side, resolution.speciesName, resolution.basis)
+                } == true
             }
             if (rawReadings.isEmpty()) return null
             val resolved = rawReadings.firstNotNullOfOrNull { reading ->
-                SpeciesTextResolver.match(reading.text, names).resolution?.let { resolution -> reading to resolution }
+                SpeciesTextResolver.match(reading.text, names).resolution
+                    ?.takeIf { (it.basis.startsWith("EXACT_CATALOGUE_TEXT") || captured.nativeTeamBadgePresent == true) &&
+                        match.rosterAllowsBadgeReading(side, it.speciesName, it.basis) }
+                    ?.let { resolution -> reading to resolution }
             }
             val rawText = resolved?.first?.text ?: rawReadings.first().text
             val speciesName = resolved?.second?.speciesName

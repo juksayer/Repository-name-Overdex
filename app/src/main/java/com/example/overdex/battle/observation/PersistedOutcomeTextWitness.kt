@@ -233,7 +233,7 @@ internal class ArtifactOutcomeCropReader(private val artifactStore: FileCropArti
     override suspend fun warmUp() { OutcomeTextRecognizer.warmUp() }
     override suspend fun inspect(article: RealityArticle): TransientTextProbe.Reading? = withContext(Dispatchers.IO) {
         val crop = article.payload as CropCaptured
-        val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@withContext null
+        val bitmap = artifactStore.loadVerifiedOcrPng(crop.artifact, crop.cropProvenance) ?: return@withContext null
         try {
             val pixels = IntArray(bitmap.width * bitmap.height)
             bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
@@ -254,7 +254,7 @@ internal class ArtifactOutcomeCropReader(private val artifactStore: FileCropArti
             override val readCount: Int get() = nativeTurn.readCount
             override suspend fun recognize(article: RealityArticle): List<OcrTextEvidence> {
                 val crop = article.payload as CropCaptured
-                val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return emptyList()
+                val bitmap = artifactStore.loadVerifiedOcrPng(crop.artifact, crop.cropProvenance) ?: return emptyList()
                 return try {
                     nativeTurn.recognizeCandidates(bitmap) { MatchOutcomeTextResolver.resolve(it) != null }
                 } finally { bitmap.recycle() }

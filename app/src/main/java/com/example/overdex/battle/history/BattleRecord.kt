@@ -65,8 +65,9 @@ data class BattleRecordQuery(
  */
 object BattleRecordProjector {
     fun project(archive: MatchArchive): BattleRecord {
-        val countProjection = com.example.overdex.battle.replay.ReplayTeamLossProjection(archive)
-        val articles = com.example.overdex.battle.replay.ReplayVerifiedHpFaintProjection(archive,
+        val battle = archive.withQualifiedBattleIdentities()
+        val countProjection = com.example.overdex.battle.replay.ReplayTeamLossProjection(battle)
+        val articles = com.example.overdex.battle.replay.ReplayVerifiedHpFaintProjection(battle,
             countProjection.articles).articles.distinctBy { it.articleId }
             .filter { it.monotonicTimeNanos != null }
             .sortedWith(compareBy({ it.monotonicTimeNanos }, { it.sequenceNumber ?: 0L }))
@@ -175,7 +176,7 @@ object BattleRecordProjector {
                 else -> Unit
             }
         }
-        return BattleRecord(archive.matchId, articles.minOfOrNull { it.perceivedAt } ?: 0L, start,
+        return BattleRecord(archive.matchId, archive.articles.minOfOrNull { it.perceivedAt } ?: 0L, start,
             (end?.payload as? ArchivedMatchEnded)?.result,
             configured.mapNotNull { it.second.ownedPokemon }.distinctBy { it.ownedPokemonId },
             events, uncredited, archive.articles.size, battleRecordMode(archive))

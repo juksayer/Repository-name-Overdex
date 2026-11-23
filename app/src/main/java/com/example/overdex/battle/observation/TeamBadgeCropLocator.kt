@@ -1,5 +1,6 @@
 package com.example.overdex.battle.observation
 
+import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.data.BattleCalibration
 import com.example.overdex.model.AnchorRegion
 import com.example.overdex.model.observation.CapturedVisualFrame
@@ -23,7 +24,7 @@ internal object TeamBadgeCropLocator {
         }
         if (frame.canObserve(assigned) && containsExpectedShape(region, assigned, frame)) return assigned
         val located = SpeciesBadgeTextLocator.locate(frame.bitmap, name,
-            listOfNotNull(frame.overlayRegion, frame.retainedBadgeRegion))
+            listOfNotNull(frame.overlayRegion, frame.retainedBadgeRegion), frame.statusBarBottomPx)
         val offset = located.y - name.y
         if (abs(offset) * frame.bitmap.height < 1f ||
             !SpeciesCaptureVisibility.canRead(located, frame.overlayRegion) || !frame.canObserve(located)) return assigned
@@ -32,13 +33,24 @@ internal object TeamBadgeCropLocator {
         return if (containsExpectedShape(region, translated, frame)) translated else assigned
     }
 
+    /** Check the actual name row and the resource row beneath it, including after a vertical relocation. */
+    fun nativeBadgeAtName(
+        frame: CapturedVisualFrame, side: ActivePokemonSide, calibration: BattleCalibration, name: AnchorRegion,
+    ): Boolean {
+        val badge = if (side == ActivePokemonSide.PLAYER) calibration.playerTeamInfoRegion else calibration.opponentTeamInfoRegion
+        val nameCenterX = name.x + name.width / 2f
+        if (nameCenterX !in badge.x..(badge.x + badge.width)) return false
+        val area = badge.copy(y = name.y - name.height * .25f, height = name.height * 2.25f)
+        return nativeBadgePresent(frame, area)
+    }
+
     /** The HUD's teal text and our retained image cannot establish a native badge. */
     fun nativeBadgePresent(frame: CapturedVisualFrame, area: AnchorRegion): Boolean {
         if (!frame.canObserve(area)) return false
         val bitmap = frame.bitmap
         val hud = frame.overlayRegion?.let { BattleCropResolver.resolveRect(it, bitmap.width, bitmap.height) }
         return TeamBadgePresenceDetector.present(bitmap.width, bitmap.height, area) { x, y ->
-            if (hud?.contains(x, y) == true) 0 else bitmap.getPixel(x, y)
+            if (y < frame.statusBarBottomPx || hud?.contains(x, y) == true) 0 else bitmap.getPixel(x, y)
         }
     }
 
@@ -50,7 +62,9 @@ internal object TeamBadgeCropLocator {
         val rect = BattleCropResolver.resolveRect(area, bitmap.width, bitmap.height) ?: return false
         val provenance = BattleCropProvenance(region.name, bitmap.width, bitmap.height,
             BattleCropBounds(rect.left, rect.top, rect.right, rect.bottom))
-        val pixel: (Int, Int) -> Int = { x, y -> bitmap.getPixel(rect.left + x, rect.top + y) }
+        val pixel: (Int, Int) -> Int = { x, y ->
+            if (rect.top + y < frame.statusBarBottomPx) 0 else bitmap.getPixel(rect.left + x, rect.top + y)
+        }
         return containsResourceShape(region, provenance, frame.overlayRegion, pixel)
     }
 

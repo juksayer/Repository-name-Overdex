@@ -160,6 +160,8 @@ object RealityArticleArchiveMapper {
                 cropRight = p.cropProvenance.bounds.right,
                 cropBottom = p.cropProvenance.bounds.bottom,
                 overlayBounds = p.overlayBounds,
+                nativeTeamBadgePresent = p.nativeTeamBadgePresent,
+                statusBarRows = p.cropProvenance.statusBarRows,
             )
             is com.example.overdex.battle.custody.AudioInputStatus -> ArchivedAudioInputStatus(
                 p.captureSource, p.state, p.sampleRateHz, p.channelCount)

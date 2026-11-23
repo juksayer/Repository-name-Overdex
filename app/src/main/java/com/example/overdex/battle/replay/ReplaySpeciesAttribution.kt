@@ -8,6 +8,10 @@ import com.example.overdex.battle.observation.isSideLocatedSpeciesSource
 
 /** Only repairs presentation; the original side conclusions stay in the archive. */
 internal fun archivedEntrySide(name: String, at: Long, articles: List<ArchivedRealityArticle>): String? {
+    val boundary = articles.badgeBattleBoundary()?.monotonicTimeNanos
+    if (boundary?.let { at < it } ?: articles.hasPreBattleScreen()) {
+        return openingAnnouncementSide(name, at, boundary, articles, ArchivedPlayerTeamConfiguration(articles))
+    }
     archivedEntryTransition(name, at, articles)?.let { return it.side }
     val tracker = EntryAnnouncementSideTracker()
     articles.filter { isSideLocatedSpeciesSource(it.sourceId) &&
@@ -61,6 +65,8 @@ internal fun archivedEntryTransition(
 
 /** Current side-located badges outrank a roster inference; mirrors stay unsided. */
 internal fun archivedNamedMoveSide(name: String, at: Long, articles: List<ArchivedRealityArticle>): String? {
+    val boundary = articles.badgeBattleBoundary()?.monotonicTimeNanos
+    if (boundary?.let { at < it } ?: articles.hasPreBattleScreen()) return null
     val active = articles.filter { isSideLocatedSpeciesSource(it.sourceId) &&
         (it.monotonicTimeNanos ?: Long.MAX_VALUE) <= at }
         .mapNotNull { it.payload as? ArchivedActivePokemonSpeciesWitnessed }.associateBy { it.side }
@@ -72,27 +78,7 @@ internal fun archivedNamedMoveSide(name: String, at: Long, articles: List<Archiv
 
 /** A contradicted saved team must not make every unlisted player an opponent. */
 internal fun latestArchivedPlayerRoster(articles: List<ArchivedRealityArticle>, at: Long): List<String> {
-    val bySlot = mutableMapOf<Int, String>()
-    val configuration = ArchivedPlayerTeamConfiguration(articles)
-    val configuredIds = configuration.recordsAt(at).map { it.articleId }.toSet()
-    articles.filter { (it.monotonicTimeNanos ?: Long.MAX_VALUE) <= at }
-        .sortedBy { it.monotonicTimeNanos }.forEach {
-        when (val payload = it.payload) {
-            ArchivedObservationRestartedByUser, ArchivedScreenIgnoredByUser -> bySlot.clear()
-            is ArchivedPlayerTeamRosterConfirmation -> if (payload.confirmed) {
-                bySlot.clear()
-                payload.speciesBySlot.take(3).forEachIndexed { index, species ->
-                    if (!species.isNullOrBlank()) bySlot[index + 1] = species
-                }
-            }
-            is ArchivedPlayerTeamSlotConfigured -> if (it.articleId in configuredIds) bySlot[payload.slot] = payload.speciesName
-            is ArchivedPlayerTeamRosterSlotWitnessed -> bySlot[payload.slot] =
-                com.example.overdex.data.PokemonFormReference.mergeRosterName(
-                    bySlot[payload.slot], payload.speciesName, payload.spriteVariant != null)
-            else -> Unit
-        }
-    }
-    val roster = bySlot.values.toList()
+    val roster = ArchivedPlayerTeamConfiguration(articles).rosterSlotsAt(at).values.toList()
     val keys = roster.map(::key).toSet()
     // Completed replay can use later badge evidence to reject a stale roster.
     val contradicted = articles.any { article ->

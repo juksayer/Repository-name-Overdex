@@ -245,6 +245,91 @@ class MatchTeamSelectLeadTest {
         }
     }
 
+    @Test fun `active name admission uses capture time and a repaired name cannot displace a saved team`() = runBlocking {
+        Fixture().use { f ->
+            f.configure()
+            f.publish(VsScreenWitnessed, 1)
+            f.publish(CountdownGlyphWitnessed("3", .98f, 2), 2, BattleWitnessContracts.countdownGlyph.witnessId)
+            val prefix = "UNIQUE_OVERMON_PREFIX_MATCH"
+            assertFalse(f.match.battleHasStartedAt(f.at(2)))
+            assertFalse(f.match.rosterAllowsBadgeReading(ActivePokemonSide.PLAYER, "Polteageist", prefix))
+            assertTrue(f.match.rosterAllowsBadgeReading(ActivePokemonSide.PLAYER, "Golbat", prefix))
+            assertFalse(f.match.partySlotSupportsReading(1, "Polteageist", prefix))
+            assertFalse(f.match.partySlotSupportsReading(1, "Greninja", prefix))
+            assertTrue(f.match.partySlotSupportsReading(1, "Golbat", prefix))
+            f.go(5)
+            assertFalse(f.match.battleHasStartedAt(f.at(4)))
+            assertTrue(f.match.battleHasStartedAt(f.at(5)))
+        }
+    }
+
+    @Test fun `when countdown is missing independent combat only admits subsequent frames`() = runBlocking {
+        Fixture().use { f ->
+            f.publish(ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, 1f, .9f, .5f), 2)
+            assertFalse(f.match.battleHasStartedAt(f.at(2)))
+            f.damage(4)
+            assertTrue(f.articles().none { it.payload is MatchStarted })
+            assertFalse(f.match.battleHasStartedAt(f.at(3)))
+            assertTrue(f.match.battleHasStartedAt(f.at(4)))
+        }
+    }
+
+    @Test fun `even a strong pre-GO or wrong-channel cry stays raw while an in-battle cry can identify a combatant`() = runBlocking {
+        Fixture().use { f ->
+            f.acceptParty()
+            fun cry(runner: Float) = BattleCryCandidatesMeasured("SPECIES_ENTRY", listOf(
+                BattleCryCandidateMeasurement(42, "golbat", .97f), BattleCryCandidateMeasurement(658, "other", runner)))
+            val source = com.example.overdex.battle.audio.BattleCryListeningCue.candidateWitnessId
+            val before = f.publish(cry(.60f), 4, source)
+            f.go(5)
+            val wrong = f.publish(cry(.60f), 6, "SOME_OTHER_SOUND")
+            val weak = f.publish(cry(.96f), 7, source)
+            val valid = f.publish(cry(.60f), 8, source)
+            // Start recognition late so every candidate arrives at the reader after GO.
+            val witness = DecisiveBattleCrySpeciesWitness()
+            try {
+                witness.start(f.match)
+                withTimeout(5_000) {
+                    while (f.articles().none { it.sourceId.id == witness.observerId.id }) kotlinx.coroutines.delay(10)
+                }
+                val identity = f.articles().single { it.sourceId.id == witness.observerId.id }
+                assertEquals(valid.monotonicTimeNanos, identity.monotonicTimeNanos)
+                assertTrue(identity.evidenceReferences.orEmpty().contains(valid.id.value))
+                assertEquals("Golbat", (identity.payload as ActivePokemonSpeciesWitnessed).speciesName)
+                assertTrue(f.articles().containsAll(listOf(before, wrong, weak)))
+            } finally { witness.stop() }
+        }
+    }
+
+    @Test fun `prebattle entry and used announcements retain their text but confer no team slot or move credit`() = runBlocking {
+        Fixture().use { f ->
+            f.acceptParty()
+            val entry = PersistedPlayerEntrySpeciesWitness()
+            val performer = PersistedAnnouncementSpeciesWitness()
+            val banner = "ANNOUNCEMENT_WITNESS"
+            val earlyEntry = f.publish(RawTestimony("Go, Fomantis!"), 3, banner)
+            val earlyUse = f.publish(RawTestimony("Golbat used Poison Fang!"), 4, banner)
+            f.go(5)
+            entry.start(f.match)
+            performer.start(f.match)
+            try {
+                val entryInBattle = f.publish(RawTestimony("Go, Fomantis!"), 6, banner)
+                val moveInBattle = f.publish(RawTestimony("Golbat used Poison Fang!"), 7, banner)
+                withTimeout(5_000) {
+                    while (listOf(entry, performer).any { witness -> f.articles().none { it.sourceId.id == witness.observerId.id } })
+                        kotlinx.coroutines.delay(10)
+                }
+                val credited = f.articles().single { it.payload is ChargedMoveEnergySpent }
+                assertEquals(moveInBattle.monotonicTimeNanos, credited.monotonicTimeNanos)
+                val entryName = f.articles().single { it.sourceId.id == entry.observerId.id }
+                assertEquals(entryInBattle.monotonicTimeNanos, entryName.monotonicTimeNanos)
+                val performerName = f.articles().single { it.sourceId.id == performer.observerId.id }
+                assertEquals(moveInBattle.monotonicTimeNanos, performerName.monotonicTimeNanos)
+                assertTrue(f.articles().containsAll(listOf(earlyEntry, earlyUse)))
+            } finally { entry.stop(); performer.stop() }
+        }
+    }
+
     private class Fixture : AutoCloseable {
         private val custody = InMemoryTestimonyCustody()
         private val timeline = InMemoryRealityTimeline()

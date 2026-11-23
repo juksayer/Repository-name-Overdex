@@ -1,6 +1,7 @@
 package com.example.overdex.battle.artifact
 
 import android.graphics.Bitmap
+import com.example.overdex.battle.observation.ownedOcrPixels
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import com.example.overdex.battle.observation.BattleCropBounds
@@ -224,6 +225,9 @@ class FileCropArtifactStore(private val repositoryRoot: File) : CropArtifactStor
             return null
         }
     }
+
+    internal fun loadVerifiedOcrPng(reference: CropArtifactReference, provenance: BattleCropProvenance): Bitmap? =
+        loadVerifiedPng(reference, provenance)?.ownedOcrPixels(provenance.statusBarRows)
 
     fun loadVerifiedPng(reference: CropArtifactReference): Bitmap? {
         if (!isSupportedVisualReference(reference)) return null

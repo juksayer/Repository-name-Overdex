@@ -14,7 +14,7 @@ internal class LiveAnnouncementPreview(
 
     fun inspect(crop: ResolvedBattleCrop, at: Long, overlay: OcrBox?) {
         if (!enabled()) return
-        val reading = readingFor(at, crop.provenance) ?: readTransientTextPixels(crop.bitmap, overlay).also { result ->
+        val reading = readingFor(at, crop.provenance) ?: crop.withOcrPixels { readTransientTextPixels(it, overlay) }.also { result ->
             synchronized(readings) {
                 readings[at to crop.provenance] = result
                 if (readings.size > 32) readings.remove(readings.keys.first())

@@ -14,13 +14,15 @@ internal object SpeciesBadgeTextLocator {
         source: Bitmap,
         calibrated: AnchorRegion,
         excludedRegions: List<AnchorRegion> = emptyList(),
+        statusBarBottomPx: Int = 0,
     ): AnchorRegion {
         val rect = BattleCropResolver.resolveRect(calibrated, source.width, source.height) ?: return calibrated
         val height = rect.height()
         val width = rect.width()
         if (height < 8 || width < 16) return calibrated
-        val top = (rect.top - height * 2).coerceAtLeast(0)
+        val top = (rect.top - height * 2).coerceAtLeast(statusBarBottomPx.coerceAtLeast(0))
         val bottom = (rect.bottom + height * 2).coerceAtMost(source.height)
+        if (top >= bottom) return calibrated
         val pixels = IntArray(width * (bottom - top))
         source.getPixels(pixels, 0, width, rect.left, top, width, bottom - top)
         val excluded = excludedRegions.mapNotNull {

@@ -43,6 +43,7 @@ class PersistedPlayerEntrySpeciesWitness(
                     val speciesName = resolution.speciesName
                     val atNanos = article.monotonicTimeNanos ?: return false
                     val attribution = match.entrySpeciesAttribution(speciesName, atNanos) ?: return false
+                    if (!match.rosterAllowsBadgeReading(attribution.side, speciesName, resolution.basis)) return false
                     val witnessed = attribution.side to speciesName
                     if (witnessed == lastWitnessed && kotlin.math.abs(atNanos - lastWitnessedAt) < DUPLICATE_WINDOW_NANOS) {
                         return true
@@ -90,6 +91,9 @@ class PersistedPlayerEntrySpeciesWitness(
                     // announcement, not several entries merely because it was captured
                     // repeatedly. The same Pokémon may legitimately return later.
                     val atNanos = article.monotonicTimeNanos ?: return@collect
+                    // Before combat this remains an independently witnessed entrance cue.
+                    // It does not establish an active side or displace the selected party.
+                    if (!match.battleHasStartedAt(atNanos)) return@collect
                     if (normalizedText == lastAnnouncementText &&
                         atNanos - lastAnnouncementAt < DUPLICATE_WINDOW_NANOS
                     ) return@collect

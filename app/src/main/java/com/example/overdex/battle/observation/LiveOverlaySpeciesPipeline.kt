@@ -40,6 +40,7 @@ private data class LiveSpeciesCrop(
     val resolved: ResolvedBattleCrop,
     val overlayBounds: com.example.overdex.model.observation.OcrBox?,
     val speciesCheckWindowId: Long,
+    val nativeBadgePresent: Boolean?,
     val capturedAtWallTimeMillis: Long,
     val capturedAtMonotonicTimeNanos: Long
 )
@@ -142,6 +143,7 @@ internal class LiveOverlaySpeciesPipeline(
                     val searchRegion = if (scheduled) SpeciesBadgeTextLocator.locate(
                         frame.bitmap, calibratedRegion,
                         listOfNotNull(frame.overlayRegion, frame.retainedBadgeRegion),
+                        statusBarBottomPx = frame.statusBarBottomPx,
                     ) else calibratedRegion
                     val enabled = scheduled && SpeciesCaptureVisibility.canRead(searchRegion, frame.overlayRegion) &&
                         frame.canObserve(searchRegion)
@@ -166,7 +168,7 @@ internal class LiveOverlaySpeciesPipeline(
                     val resolved = BattleCropResolver.resolve(
                         cropName = cropContract.crop.cropName,
                         region = searchRegion,
-                        source = frame.bitmap,
+                        frame = frame,
                         minimumSize = cropContract.crop.minimumSize,
                         area = cropContract.crop.areaInRegion,
                     )
@@ -176,6 +178,8 @@ internal class LiveOverlaySpeciesPipeline(
                             resolved,
                             resolved.provenance.overlayBounds(frame.overlayRegion),
                             window.id,
+                            if (match.battleHasStartedAt(frame.capturedAtMonotonicTimeNanos))
+                                TeamBadgeCropLocator.nativeBadgeAtName(frame, side, calibration, searchRegion) else null,
                             frame.capturedAtWallTimeMillis,
                             frame.capturedAtMonotonicTimeNanos
                         )
@@ -188,7 +192,7 @@ internal class LiveOverlaySpeciesPipeline(
                     try {
                         val artifact = artifactStore.preservePng(sample.resolved.bitmap)
                             ?: continue
-                        val crop = CropCaptured(artifact, sample.resolved.provenance, sample.overlayBounds)
+                        val crop = CropCaptured(artifact, sample.resolved.provenance, sample.overlayBounds, sample.nativeBadgePresent)
                         val accepted = match.custody.submitTestimony(
                             sourceId = cropSourceId,
                             payload = crop,
@@ -237,7 +241,10 @@ internal class LiveOverlaySpeciesPipeline(
                     // that work within this crop rather than scanning the full
                     // catalogue again after publishing its raw OCR testimony.
                     val readingResolver = FastOverlaySpeciesReadingResolver { text ->
-                        FastOverlaySpeciesResolver.resolveDetailed(text, knownNames)
+                        FastOverlaySpeciesResolver.resolveDetailed(text, knownNames)?.takeIf {
+                            (it.basis.startsWith("EXACT_CATALOGUE_TEXT") || sample.crop.nativeTeamBadgePresent == true) &&
+                                match.rosterAllowsBadgeReading(side, it.speciesName, it.basis)
+                        }
                     }
                     val queuedAt = System.nanoTime()
                     var admittedAt = queuedAt
@@ -261,8 +268,10 @@ internal class LiveOverlaySpeciesPipeline(
                                 !match.speciesChecks.needsReading(side, sample.speciesCheckWindowId,
                                     sample.capturedAtMonotonicTimeNanos)) return@withReadingTurn null
                             val context = OcrSourceContext(sample.crop.cropProvenance.sourceWidth, sample.crop.overlayBounds)
-                            recognizeCandidates(sample.bitmap, context, heightProfile) { rawText ->
-                                readingResolver.resolve(rawText) != null
+                            sample.bitmap.withOcrPixels(sample.crop.cropProvenance.statusBarRows) { pixels ->
+                                recognizeCandidates(pixels, context, heightProfile) { rawText ->
+                                    readingResolver.resolve(rawText) != null
+                                }
                             }.also {
                                 nativeReadNanos = this.nativeReadNanos
                                 passes = readCount
@@ -297,7 +306,7 @@ internal class LiveOverlaySpeciesPipeline(
                     // Keep one empty-read diagnostic per measured position. Compact
                     // archives otherwise discard every failed strip, making a bad
                     // calibration indistinguishable from a capture lane that never ran.
-                    val readingSignature = listOf("crop=${sample.crop.cropProvenance}") +
+                    val readingSignature = listOf("crop=${sample.crop.cropProvenance}", "nativeBadge=${sample.crop.nativeTeamBadgePresent}") +
                         readings.map { "${it.treatment}:${it.evidence?.rawText}:${it.text}" }
                     if (readingSignature != lastRawReadings) {
                         lastRawReadings = readingSignature
@@ -320,6 +329,9 @@ internal class LiveOverlaySpeciesPipeline(
                         )
                     }
 
+                    // A pre-GO crop can finish OCR during battle. Its pixels and raw
+                    // reading remain archived at capture time, but cannot identify a combatant.
+                    if (!match.battleHasStartedAt(sample.capturedAtMonotonicTimeNanos)) continue
                     val resolvedReading = readings.firstNotNullOfOrNull { reading ->
                         readingResolver.resolve(reading.text)
                             ?.let { resolution -> reading to resolution }

@@ -21,7 +21,6 @@ import com.example.overdex.model.observation.SessionSource
 import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -93,14 +92,18 @@ class LiveSpeciesRecoveryDeviceTest {
         val opponent = LiveOverlaySpeciesPipeline.opponent(input, calibration, store) { true }
         try {
             DroidballOverlayPresentation.clearOpponentSpecies()
+            knowledge.getAllSpeciesNames()
             SpeciesNameRecognizer.warmUp()
             val start = System.nanoTime()
+            match.witnessGoForSpeciesTest()
             player.start(match)
             opponent.start(match)
-            withTimeout(10_000) {
-                while (timeline.getArticles().mapNotNull { it.payload as? ActivePokemonSpeciesWitnessed }
-                        .map { it.speciesName }.toSet() != setOf("Raichu", "Sneasel")) delay(25)
-                while (DroidballOverlayPresentation.activeOpponentMovePossibilities.value?.speciesName != "Sneasel") delay(25)
+            timeline.awaitSpeciesStage("the recorded Raichu and Sneasel names") {
+                timeline.getArticles().mapNotNull { it.payload as? ActivePokemonSpeciesWitnessed }
+                    .map { it.speciesName }.toSet() == setOf("Raichu", "Sneasel")
+            }
+            timeline.awaitSpeciesStage("Sneasel's HUD move list") {
+                DroidballOverlayPresentation.activeOpponentMovePossibilities.value?.speciesName == "Sneasel"
             }
             val articles = timeline.getArticles()
             val identities = articles.filter { it.payload is ActivePokemonSpeciesWitnessed }
@@ -113,10 +116,6 @@ class LiveSpeciesRecoveryDeviceTest {
             assertTrue(moves.fastMoves.isNotEmpty())
             assertTrue(moves.chargedMoves.isNotEmpty())
             Log.i("LiveSpeciesRecovery", "Both identities and HUD delivered in ${(System.nanoTime() - start) / 1_000_000} ms")
-        } catch (timeout: kotlinx.coroutines.TimeoutCancellationException) {
-            val articles = timeline.getArticles()
-            val readings = articles.filter { it.sourceId.id.contains("_OCR") }.map { it.payload }
-            throw AssertionError("Species recovery timed out; counts=${articles.groupingBy { it.payload::class.simpleName }.eachCount()}; OCR=$readings", timeout)
         } finally {
             player.stop(); opponent.stop(); match.release()
             frame.recycle(); root.deleteRecursively()

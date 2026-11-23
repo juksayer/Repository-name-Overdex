@@ -39,7 +39,7 @@ class CustomCropCaptureWitness(
                     val resolved = BattleCropResolver.resolve(
                         cropName = "Custom:${definition.id}:${definition.name}",
                         region = definition.region,
-                        source = frame.bitmap,
+                        frame = frame,
                         minimumSize = 8
                     ) ?: return@supplyFrames
                     try {

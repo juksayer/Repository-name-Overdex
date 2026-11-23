@@ -138,7 +138,8 @@ class Match(
     }
     // Fast Move sound analysis now follows the shared PCM stream independently.
     private val fastMoveUseInference = FastMoveUseInference(onRebuild = rebuildCounter("fast_move"), faintHistoryCache = faintHistoryCache)
-    private val chargedMoveAnnouncementInference = ChargedMoveAnnouncementInference(pokemonKnowledge, rebuildCounter("charge"), faintHistoryCache)
+    private val chargedMoveAnnouncementInference = ChargedMoveAnnouncementInference(
+        pokemonKnowledge, rebuildCounter("charge"), faintHistoryCache, ::battleHasStartedAt)
     private val chargeMoveQteVibrationInference = ChargeMoveQteVibrationInference()
 
     /** Owned by this match and baselined by the session at the accepted start boundary. */
@@ -286,6 +287,7 @@ class Match(
     private val configuredRosterArticleBySlot = ConcurrentHashMap<Int, ArticleId>()
     private val entrySideTracker = EntryAnnouncementSideTracker()
     @Volatile private var playerRosterContradicted = false
+    @Volatile private var firstIndependentCombatNanos: Long? = null
     private val openingCrySideGate = OpeningCrySideGate()
     val speciesChecks = SpeciesCheckCoordinator { measurement, refs ->
         custody.submitTestimony(SourceId("SPECIES_CHECK_COORDINATOR"), measurement,
@@ -305,6 +307,14 @@ class Match(
         val payload = article.payload
         val text = ((payload as? RawTestimony)?.data as? String)?.trim()
         val at = article.monotonicTimeNanos ?: System.nanoTime()
+        if (at >= observationAttemptStartedAtNanos && at < (firstIndependentCombatNanos ?: Long.MAX_VALUE)) {
+            val inCombat = when (payload) {
+                GetReadyWitnessed, AttackIncoming, ChargeMoveUsedAnnounced -> true
+                is com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured -> payload.isConsistentLoss()
+                else -> false
+            }
+            if (inCombat && article.monotonicTimeNanos != null) firstIndependentCombatNanos = at
+        }
         if (payload is CountdownGlyphWitnessed && !countdownCuesSeen.add(payload.glyph)) return
         if (payload is VsScreenWitnessed) {
             if (vsCueSeen) return
@@ -344,6 +354,8 @@ class Match(
             // another full crop pair during the next opponent's entrance.
             switchedSide != null && !isSideLocatedSpeciesSource(article.sourceId.id) -> "SWITCH"
             payload is com.example.overdex.battle.custody.BattleCryCandidatesMeasured &&
+                article.sourceId.id == com.example.overdex.battle.audio.BattleCryListeningCue.candidateWitnessId &&
+                battleHasStartedAt(article.monotonicTimeNanos) &&
                 com.example.overdex.battle.audio.BattleCryListeningCue.accepts(payload.cueKind) -> "CRY"
             else -> return
         }
@@ -402,6 +414,26 @@ class Match(
         }
     }
 
+    internal fun battleHasStartedAt(capturedAtNanos: Long?): Boolean {
+        val start = matchStarted.replayCache.firstOrNull()?.monotonicTimeNanos ?: firstIndependentCombatNanos ?: return false
+        return capturedAtNanos != null && capturedAtNanos >= observationAttemptStartedAtNanos && capturedAtNanos >= start
+    }
+
+    internal fun partySlotSupportsReading(slot: Int, species: String, basis: String): Boolean {
+        if (basis.startsWith("EXACT_CATALOGUE_TEXT")) return true
+        val independent = playerRosterBySlot[slot] ?: return false
+        return !playerRosterContradicted &&
+            TeamRosterSpeciesAttributor.speciesKey(independent) == TeamRosterSpeciesAttributor.speciesKey(species)
+    }
+
+    /** A repaired name can agree with a complete configured/selected team, but cannot displace a member. */
+    internal fun rosterAllowsBadgeReading(side: ActivePokemonSide, species: String, basis: String?): Boolean {
+        if (side != ActivePokemonSide.PLAYER || basis == null || basis.startsWith("EXACT_CATALOGUE_TEXT")) return true
+        val roster = playerRosterSpecies()
+        val key = TeamRosterSpeciesAttributor.speciesKey(species)
+        return roster.size < 3 || roster.any { TeamRosterSpeciesAttributor.speciesKey(it) == key }
+    }
+
     fun playerRosterSpecies(): Collection<String> =
         if (playerRosterContradicted) emptyList() else playerRosterBySlot.values.toList()
 
@@ -412,6 +444,7 @@ class Match(
     fun restartPreBattleObservationAttempt() {
         observationAttemptStartedAtNanos = System.nanoTime()
         countdownMatchStartInference.reset()
+        firstIndependentCombatNanos = null
         speciesChecks.restartObservationAttempt()
         playerRosterBySlot.clear()
         playerRosterIdBySlot.clear()
@@ -606,7 +639,8 @@ class Match(
                         article.monotonicTimeNanos?.let { at ->
                             entrySideTracker.observeBadge(badge.side, badge.speciesName, article.id.value, at)
                         }
-                        if (badge.side == ActivePokemonSide.PLAYER && playerRosterBySlot.isNotEmpty() &&
+                        if (badge.side == ActivePokemonSide.PLAYER && playerRosterBySlot.size == 3 &&
+                            rosterAllowsBadgeReading(badge.side, badge.speciesName, badge.ocrMatchBasis) &&
                             playerRosterBySlot.values.none {
                                 TeamRosterSpeciesAttributor.speciesKey(it) == TeamRosterSpeciesAttributor.speciesKey(badge.speciesName)
                             }) {
@@ -756,6 +790,7 @@ class Match(
                         appendFastMoveCadenceDerivations(derivedArticle)
                         appendTeamSelectLeadAtBattleEvidence(derivedArticle)
                         _matchStarted.tryEmit(derivedArticle)
+                        appendChargedMoveAnnouncement(derivedArticle)
                         Log.d("MATCH_START", "Derived MatchStarted article appended: articleId=${derivedArticle.id.value}, predecessor=${article.id.value}")
                     }
                 }
@@ -983,10 +1018,7 @@ class Match(
     private suspend fun appendTeamSelectLeadAtBattleEvidence(boundary: RealityArticle) {
         val isMatchStart = boundary.payload is MatchStarted
         val damage = boundary.payload as? com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
-        if (!isMatchStart && (damage == null || damage.beforeFraction !in 0f..1f ||
-                damage.afterFraction !in 0f..1f || damage.lostFraction <= 0f ||
-                damage.beforeFraction <= damage.afterFraction ||
-                kotlin.math.abs(damage.beforeFraction - damage.afterFraction - damage.lostFraction) >= .001f)) return
+        if (!isMatchStart && damage?.isConsistentLoss() != true) return
         // A saved team is not proof of the selected party, and a known later
         // combatant must never be replaced by a late opening cue.
         if (playerRosterContradicted || activeSpeciesBySide[ActivePokemonSide.PLAYER] != null) return
@@ -1189,3 +1221,7 @@ class Match(
         faintHistoryCache?.clear()
     }
 }
+
+private fun com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured.isConsistentLoss() =
+    beforeFraction in 0f..1f && afterFraction in 0f..1f && afterFraction < beforeFraction &&
+        lostFraction > 0f && kotlin.math.abs(beforeFraction - afterFraction - lostFraction) < .001f

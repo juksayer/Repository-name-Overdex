@@ -54,8 +54,8 @@ class BattleRecordStore(private val context: Context) {
         previous: IndexedBattleRecord?): IndexedBattleRecord = synchronized(writeLock) {
         when {
             previous == null || archive.articles.size >= previous.record.articleCount -> save(archive, entry)
-            previous.indexVersion < INDEX_VERSION -> write(previous.copy(
-                record = previous.record.copy(mode = battleRecordMode(archive)), indexVersion = INDEX_VERSION,
+            previous.indexVersion < MODE_INDEX_VERSION -> write(previous.copy(
+                record = previous.record.copy(mode = battleRecordMode(archive)), indexVersion = MODE_INDEX_VERSION,
             ))
             else -> previous
         }
@@ -100,7 +100,8 @@ class BattleRecordStore(private val context: Context) {
         return File(directory, "$name.json")
     }
     private companion object {
-        const val INDEX_VERSION = 2
+        private const val MODE_INDEX_VERSION = 2
+        const val INDEX_VERSION = 3
         val writeLock = Any()
     }
 }

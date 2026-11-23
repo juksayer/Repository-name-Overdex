@@ -31,7 +31,7 @@ class PersistedDecisionTimerWitness(
                     val crop = article.payload as CropCaptured
                     val at = article.monotonicTimeNanos ?: return@collect
                     if (!needsReading(at)) return@collect
-                    val bitmap = artifacts.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
+                    val bitmap = artifacts.loadVerifiedOcrPng(crop.artifact, crop.cropProvenance) ?: return@collect
                     try {
                         val dial = DecisionTimerAppearance.hasDial(bitmap)
                         // Admit one normal-priority read only after seeing the dial.

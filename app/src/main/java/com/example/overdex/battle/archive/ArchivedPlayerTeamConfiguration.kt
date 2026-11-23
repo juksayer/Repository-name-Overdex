@@ -29,6 +29,34 @@ internal class ArchivedPlayerTeamConfiguration(articles: List<ArchivedRealityArt
             .sortedBy { (it.payload as ArchivedPlayerTeamSlotConfigured).slot }
     }
 
+    fun rosterSlotsAt(at: Long, includeConfigured: Boolean = true): Map<Int, String> {
+        val bySlot = mutableMapOf<Int, String>()
+        val configuredIds = if (includeConfigured) recordsAt(at).map { it.articleId }.toSet() else emptySet()
+        ordered.takeWhile { it.monotonicTimeNanos!! <= at }.forEach {
+            when (val payload = it.payload) {
+                ArchivedObservationRestartedByUser, ArchivedScreenIgnoredByUser -> bySlot.clear()
+                is ArchivedPlayerTeamRosterConfirmation -> if (payload.confirmed) {
+                    bySlot.clear()
+                    payload.speciesBySlot.take(3).forEachIndexed { index, species ->
+                        if (!species.isNullOrBlank()) bySlot[index + 1] = species
+                    }
+                }
+                is ArchivedPlayerTeamSlotConfigured -> if (it.articleId in configuredIds) bySlot[payload.slot] = payload.speciesName
+                is ArchivedPlayerTeamRosterSlotWitnessed -> bySlot[payload.slot] =
+                    com.example.overdex.data.PokemonFormReference.mergeRosterName(
+                        bySlot[payload.slot], payload.speciesName, payload.spriteVariant != null)
+                else -> Unit
+            }
+        }
+        return bySlot
+    }
+
+    fun conflictsWithFullRoster(name: String, at: Long): Boolean {
+        val roster = rosterSlotsAt(at).values
+        val speciesKey = com.example.overdex.battle.observation.TeamRosterSpeciesAttributor::speciesKey
+        return roster.size == 3 && roster.none { speciesKey(it) == speciesKey(name) }
+    }
+
     /** Old archives can already contain conclusions made from the stale setup. */
     fun acceptsConfiguredMove(article: ArchivedRealityArticle, at: Long = battleSetupAt): Boolean {
         val move = article.payload as? ArchivedFastMoveIdentified ?: return true

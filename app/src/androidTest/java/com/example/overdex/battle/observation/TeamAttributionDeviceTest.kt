@@ -46,21 +46,23 @@ class TeamAttributionDeviceTest {
                 send("CURRENT_TEAM_CONFIGURATION", PlayerTeamSlotConfigured(i + 1, name, id, move, listOf(chargedMove)), 0)
             }
             send("ANNOUNCEMENT_WITNESS", RawTestimony("Go, Gourgeist!"), 100)
-            await { timeline.getArticles().any { it.payload is PokemonIdentified } }
+            await { timeline.getArticles().any { (it.payload as? RawTestimony)?.data == "Go, Gourgeist!" } }
             assertTrue(timeline.getArticles().none { it.payload is ActivePokemonSpeciesWitnessed })
             send(BattleWitnessContracts.countdownGlyph.witnessId, CountdownGlyphWitnessed("GO", 1f, 1), 300)
             await { timeline.getArticles().any { it.payload is MatchStarted } }
             assertTrue("Configured Samurott must not become an observed lead", timeline.getArticles().none {
                 (it.payload as? ActivePokemonSpeciesWitnessed)?.speciesName == "Samurott" })
-            // Captured before GO, published afterward: the entry is resolved at its source time.
-            send("PLAYER_SPECIES_OVERLAY_PIPELINE", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Gourgeist", 711), 200)
-            send("OPPONENT_SPECIES_OVERLAY_PIPELINE", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364), 200)
+            // The earlier identical pre-GO line remains raw. The battle entry
+            // can be resolved from badges that are delivered after its own frame.
+            send("ANNOUNCEMENT_WITNESS", RawTestimony("Go, Gourgeist!"), 350)
+            send("PLAYER_SPECIES_OVERLAY_PIPELINE", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Gourgeist", 711), 400)
+            send("OPPONENT_SPECIES_OVERLAY_PIPELINE", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364), 400)
             await { timeline.getArticles().any { it.sourceId.id == "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS" &&
                 (it.payload as? ActivePokemonSpeciesWitnessed)?.side == ActivePokemonSide.PLAYER } }
             await { DroidballOverlayPresentation.activeOpponentMovePossibilities.value?.speciesName == "Sealeo" }
             val entry = timeline.getArticles().single { it.sourceId.id == "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS" &&
                 it.payload is ActivePokemonSpeciesWitnessed }
-            assertEquals(base + 100_000_000L, entry.monotonicTimeNanos)
+            assertEquals(base + 350_000_000L, entry.monotonicTimeNanos)
             assertEquals(2, entry.evidenceReferences.orEmpty().size)
             assertEquals(listOf("Sealeo"), DroidballOverlayPresentation.opponentSpecies.value.map { it.speciesName })
             send("ANNOUNCEMENT_WITNESS", RawTestimony("Gourgeist used Seed Bomb!"), 700)

@@ -20,7 +20,9 @@ data class BattleCropProvenance(
     val cropName: String,
     val sourceWidth: Int,
     val sourceHeight: Int,
-    val bounds: BattleCropBounds
+    val bounds: BattleCropBounds,
+    /** Number of top rows occupied by Android chrome when captured. The saved PNG is always raw. */
+    val statusBarRows: Int = 0,
 )
 data class ResolvedBattleCrop(val provenance: BattleCropProvenance, val bitmap: Bitmap)
 
@@ -48,6 +50,14 @@ data class CropAreaInRegion(
 
 /** The sole normalized battle-region to pixel-crop resolver. */
 object BattleCropResolver {
+    fun resolve(
+        cropName: String,
+        region: AnchorRegion,
+        frame: com.example.overdex.model.observation.CapturedVisualFrame,
+        minimumSize: Int = 1,
+        area: CropAreaInRegion = CropAreaInRegion()
+    ): ResolvedBattleCrop? = resolve(cropName, region, frame.bitmap, minimumSize, area, frame.statusBarBottomPx)
+
     fun resolveRect(
         region: AnchorRegion,
         sourceWidth: Int,
@@ -73,7 +83,8 @@ object BattleCropResolver {
         region: AnchorRegion,
         source: Bitmap,
         minimumSize: Int = 1,
-        area: CropAreaInRegion = CropAreaInRegion()
+        area: CropAreaInRegion = CropAreaInRegion(),
+        statusBarBottomPx: Int = 0,
     ): ResolvedBattleCrop? {
         val rect = resolveRect(region, source.width, source.height, minimumSize, area) ?: return null
         return try {
@@ -82,7 +93,8 @@ object BattleCropResolver {
                     cropName,
                     source.width,
                     source.height,
-                    BattleCropBounds(rect.left, rect.top, rect.right, rect.bottom)
+                    BattleCropBounds(rect.left, rect.top, rect.right, rect.bottom),
+                    (statusBarBottomPx - rect.top).coerceIn(0, rect.height()),
                 ),
                 Bitmap.createBitmap(source, rect.left, rect.top, rect.width(), rect.height())
             )

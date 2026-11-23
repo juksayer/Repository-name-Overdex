@@ -4,7 +4,6 @@ import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.BattleCryCandidateMeasurement
 import com.example.overdex.battle.custody.BattleCryCandidatesMeasured
-import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.audio.BattleCryListeningCue
 import com.example.overdex.battle.timeline.observer.ObservationSource
@@ -36,13 +35,15 @@ internal object DecisiveBattleCryRule {
         matchStartedAtNanos: Long? = null,
     ): DecisiveBattleCryMatch? {
         if (!BattleCryListeningCue.accepts(payload.cueKind) || payload.candidates.isEmpty()) return null
+        // A departure or VS recording can remain useful audio evidence, but it
+        // cannot introduce a new active combatant on this side.
+        val countdown = payload.cueKind.startsWith("COUNTDOWN_")
+        if (payload.cueKind != "SPECIES_ENTRY" && !countdown) return null
         // Countdown-shaped false positives can occur throughout combat as a
         // moving Pokemon crosses that crop. A real opening cry may finish its
         // short post-roll just after GO; it cannot begin tens of seconds later.
-        if (payload.cueKind.startsWith("COUNTDOWN_") &&
-            cueAtNanos != null && matchStartedAtNanos != null &&
-            cueAtNanos > matchStartedAtNanos + OPENING_AUDIO_TAIL_NANOS
-        ) return null
+        if (countdown && (cueAtNanos == null || matchStartedAtNanos == null ||
+                cueAtNanos - matchStartedAtNanos !in 0L..OPENING_AUDIO_TAIL_NANOS)) return null
         val ranked = payload.candidates.sortedByDescending(BattleCryCandidateMeasurement::similarity)
         val best = ranked.first()
         val runnerUp = ranked.firstOrNull { it.speciesId != best.speciesId } ?: return null
@@ -70,16 +71,15 @@ class DecisiveBattleCrySpeciesWitness(
         val sourceId = SourceId(observerId.id)
         scope = CoroutineScope(Dispatchers.IO + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
-                var matchStartedAtNanos: Long? = null
                 match.articles.collect { article ->
-                    if (article.payload is MatchStarted) {
-                        matchStartedAtNanos = article.monotonicTimeNanos
-                        return@collect
-                    }
                     val candidates = article.payload as? BattleCryCandidatesMeasured ?: return@collect
+                    if (article.sourceId.id != BattleCryListeningCue.candidateWitnessId) return@collect
+                    val cueAt = article.monotonicTimeNanos ?: return@collect
+                    if (!match.battleHasStartedAt(cueAt)) return@collect
+                    val matchStartedAtNanos = match.matchStarted.replayCache.firstOrNull()?.monotonicTimeNanos
                     val decisive = DecisiveBattleCryRule.match(
                         candidates,
-                        cueAtNanos = article.monotonicTimeNanos,
+                        cueAtNanos = cueAt,
                         matchStartedAtNanos = matchStartedAtNanos,
                     ) ?: return@collect
                     val species = match.pokemonKnowledge.getPokemonById(decisive.speciesId) ?: return@collect
@@ -87,8 +87,7 @@ class DecisiveBattleCrySpeciesWitness(
                     val leadId = match.playerLeadSpeciesId()
                     val side = when {
                         candidates.cueKind == "SPECIES_ENTRY" && decisive.speciesId == leadId &&
-                            (matchStartedAtNanos == null || (article.monotonicTimeNanos ?: Long.MAX_VALUE) <=
-                                matchStartedAtNanos!! + 3_000_000_000L) ->
+                            matchStartedAtNanos != null && cueAt <= matchStartedAtNanos + 3_000_000_000L ->
                             openingSideGate.sidesFor(
                                 candidates.candidates.map { it.speciesId to it.similarity },
                                 leadId,
