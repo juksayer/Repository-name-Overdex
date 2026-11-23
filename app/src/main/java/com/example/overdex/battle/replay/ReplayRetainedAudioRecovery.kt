@@ -40,7 +40,8 @@ data class ReplayAudioRecovery(val charges: List<ReplayRecoveredCharge> = emptyL
     /** Partial cry fits retain their limits; they do not identify side, departure or a faint. */
     val partialCryCandidates: List<ReplayPartialCryCandidate> = emptyList(),
     val terminalWholeCries: List<ReplayRecoveredCry> = emptyList(),
-    val cryOverlapEffects: List<ReplayCryOverlapEffect> = emptyList())
+    val cryOverlapEffects: List<ReplayCryOverlapEffect> = emptyList(),
+    val entranceSounds: List<ReplayEntranceSound> = emptyList())
 
 /** Bounded completed-archive study path. No writes, original Article mutations or live submissions. */
 object ReplayRetainedAudioRecovery {
@@ -50,10 +51,9 @@ object ReplayRetainedAudioRecovery {
     fun selectedArticles(archive: MatchArchive): List<ArchivedRealityArticle> {
         val end = archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedMatchEnded }
             .mapNotNull { it.monotonicTimeNanos }.minOrNull() ?: return emptyList()
-        val start = archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedMatchStarted }.mapNotNull { it.monotonicTimeNanos }.minOrNull()
-            ?: return emptyList()
         val unique = archive.articles.filter { it.matchId == archive.matchId }
             .groupBy { it.articleId }.values.mapNotNull { it.distinct().singleOrNull() }
+        val start = unique.badgeBattleBoundary()?.monotonicTimeNanos ?: return emptyList()
         val previous = mutableMapOf<String, String>()
         val entries = unique.sortedBy { it.monotonicTimeNanos ?: Long.MAX_VALUE }.mapNotNull { a ->
             if (a.matchId != archive.matchId) return@mapNotNull null

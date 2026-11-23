@@ -35,7 +35,7 @@ internal class ReplayFinishingEvidence(
         val confirmed = knockout?.timing as? ReplayFaintTiming.Cry
         if (confirmed != null) return confirmed
         if (link != null && (link.basis == ReplayShieldCounter.BASIS || link.basis == LiveFinishingHitResolver.CRY_EFFECT ||
-                link.basis == LiveFinishingHitResolver.AUDIBLE_FAST)) {
+                link.basis == LiveFinishingHitResolver.AUDIBLE_FAST || link.basis == INCOMING_WHOLE_CRY)) {
             link.departedBy?.let { return ReplayFaintTiming.Cry(it) }
         }
         val side = knockout?.side ?: link?.recipientSide ?: return ReplayFaintTiming.Unknown
@@ -267,14 +267,29 @@ internal class ReplayFinishingEvidence(
             val target = actorAt(side, cryAt)?.takeIf { it.speciesId == repeat.speciesId } ?: return@mapNotNull null
             val appearance = appearanceAt(side, cryAt)
             val cast = charges.singleOrNull { it.completed && it.uniquelyOwned && opposes(it.side, side) &&
-                it.moveName != null && cryAt - it.sourceAtNanos in 0..1_500_000_000L } ?: return@mapNotNull null
+                it.moveName != null && cryAt - it.sourceAtNanos in 0..2_500_000_000L } ?: return@mapNotNull null
             val owner = actorAt(cast.side, cast.sourceAtNanos) ?: return@mapNotNull null
             if (owner.speciesId == null || owner.speciesId == target.speciesId || owner.isFainted) return@mapNotNull null
             val text = "${owner.speciesName} used ${cast.moveName}!"
             val banner = cast.articleIds.mapNotNull(byId::get).singleOrNull {
-                it.sourceId == "CHARGED_IMPACT_ANNOUNCEMENT_CAPTURE" && it.monotonicTimeNanos == cast.sourceAtNanos &&
+                it.sourceId in setOf("CHARGED_IMPACT_ANNOUNCEMENT_CAPTURE", "ANNOUNCEMENT_CROP_CAPTURE") &&
+                    it.monotonicTimeNanos == cast.sourceAtNanos &&
                     names[it.articleId]?.distinct()?.singleOrNull()?.text.equals(text, true)
             } ?: return@mapNotNull null
+            val ordinaryBanner = banner.sourceId == "ANNOUNCEMENT_CROP_CAPTURE"
+            val corroboratingBanner = if (ordinaryBanner) {
+                if (side != "OPPONENT" || sounds.any { it.correlation !in .90f..1f } || articles.none { (it.payload as? ArchivedMatchEnded)?.result == "WIN" &&
+                        it.monotonicTimeNanos!! - cryAt in 0..10_000_000_000L }) return@mapNotNull null
+                val image = banner.payload as? ArchivedCropCaptured ?: return@mapNotNull null
+                articles.firstOrNull { other ->
+                    val second = other.payload as? ArchivedCropCaptured ?: return@firstOrNull false
+                    other.sourceId == banner.sourceId && other.matchId == banner.matchId &&
+                        second.cropName == image.cropName && second.sha256 != image.sha256 &&
+                        other.monotonicTimeNanos != banner.monotonicTimeNanos &&
+                        other.monotonicTimeNanos!! in (cryAt - 2_500_000_000L)..cryAt &&
+                        names[other.articleId]?.distinct()?.singleOrNull()?.text.equals(text, true)
+                } ?: return@mapNotNull null
+            } else null
             val impact = articles.firstOrNull {
                 val bar = it.payload as? ArchivedCompleteHpBarObserved ?: return@firstOrNull false
                 it.sourceId == "COMPLETE_${side}_HP_BAR_FRAME_WITNESS" && bar.side == side &&
@@ -283,8 +298,13 @@ internal class ReplayFinishingEvidence(
                     bar.status in CHARGE_DAMAGE_PROFILES && bar.liveColumns == 0 && bar.damageColumns >= 3 &&
                     bar.unmaskedUncertainColumns == 0 &&
                     kotlin.math.abs(bar.barLeft + bar.barRight - bar.sourceWidth) <= bar.sourceWidth / 12
-            } ?: return@mapNotNull null
-            val hit = impact.monotonicTimeNanos!!
+            }
+            if (impact == null && corroboratingBanner == null) return@mapNotNull null
+            // Without a measured impact the cry anchors the pose only. Any
+            // surviving HP after the last named banner keeps this route closed.
+            if (impact == null && hasLivingHpAfter(side, appearance,
+                    maxOf(cast.sourceAtNanos, corroboratingBanner!!.monotonicTimeNanos!!) + 1, cryAt)) return@mapNotNull null
+            val hit = impact?.monotonicTimeNanos ?: cryAt
             val badge = lastTerminalBall(side, appearance, hit, cryAt) ?: return@mapNotNull null
             val live = articles.lastOrNull { it.monotonicTimeNanos!! in badge.monotonicTimeNanos!! until hit &&
                 witnessedDamagedBar(it, side, appearance) } ?: return@mapNotNull null
@@ -293,7 +313,7 @@ internal class ReplayFinishingEvidence(
                 appearanceAt(cast.side, cryAt) != ownerSince || nextAppearance(side, hit) != null ||
                 blocked(cast, side, cryAt) || hasLivingHpAfter(side, appearance, hit, Long.MAX_VALUE)) return@mapNotNull null
             val from = minOf(hit, cast.sourceAtNanos)
-            if (profiles[side to hit].orEmpty().any { it.payload != impact.payload }) return@mapNotNull null
+            if (impact != null && profiles[side to hit].orEmpty().any { it.payload != impact.payload }) return@mapNotNull null
             if (articles.any { a ->
                     val time = a.monotonicTimeNanos!!
                     when (val p = a.payload) {
@@ -307,15 +327,133 @@ internal class ReplayFinishingEvidence(
                         else -> false
                     }
                 }) return@mapNotNull null
-            val references = listOf(row.articleId, cries.first().articleId, cries.last().articleId, badge.articleId)
+            val references = listOf(row.articleId, cries.first().articleId, cries.last().articleId, badge.articleId, live.articleId)
             val onset = ReplayTimeBound(cryAt, cries.last().articleId)
             val faint = ReplayKnockout(side, target.speciesName, appearance, cryAt, cryAt, null, references,
                 basis = REPEAT_CHARGE, timing = ReplayFaintTiming.Cry(onset))
             TerminalCharge(faint, ReplayFinishingChargeAssociation(cast.side, owner.speciesName, ownerSince, side,
                 target.speciesName, appearance, cast.moveName, cast.sourceAtNanos, cryAt, hit, null,
-                (cast.articleIds + banner.articleId).sorted(), references, emptyList(), REPEAT_CHARGE,
-                impactSupportArticleIds = listOf(live.articleId, impact.articleId), departedBy = onset))
+                (cast.articleIds + banner.articleId + listOfNotNull(corroboratingBanner?.articleId)).sorted(), references, emptyList(), REPEAT_CHARGE,
+                impactSupportArticleIds = listOfNotNull(live.articleId, impact?.articleId), departedBy = onset))
         }.singleOrNull()
+    }
+
+    /** A loss may follow a concession. Require the recipient's own two cries,
+     * exact native identity, unshielded attack, and timed recipient evidence. */
+    fun incomingCryFinish(audio: ReplayAudioRecovery, lights: List<ReplayImpactLight>): ReplayFinishingChargeAssociation? {
+        val result = articles.filter { it.payload is ArchivedMatchEnded }.firstOrNull() ?: return null
+        if (articles.any { it.payload is ArchivedMatchEnded && it.payload.result != "LOSS" }) return null
+        val end = result.monotonicTimeNanos!!
+        val finalCharges = charges.filter { it.completed && end - it.sourceAtNanos in 0..20*S }
+        val cast = finalCharges.maxByOrNull { it.sourceAtNanos } ?: return null
+        if (finalCharges.count { it.sourceAtNanos == cast.sourceAtNanos } != 1) return null
+        val start = cast.sourceAtNanos
+        if (cast.side != "OPPONENT" || !cast.uniquelyOwned || cast.moveName == null || blocked(cast, "PLAYER", end)) return null
+        val actor = actorAt("OPPONENT", start) ?: return null
+        val target = actorAt("PLAYER", start) ?: return null
+        val appearance = appearanceAt("PLAYER", start)
+        if (target.isFainted || actor.isFainted || target.speciesId == null || actor.speciesId == null ||
+            actor.speciesId == target.speciesId || SIDES.any { nextAppearance(it, start)?.let { next -> next <= end } == true }) return null
+        val expected = "${actor.speciesName} used ${cast.moveName}!"
+        val banner = articles.firstOrNull { it.monotonicTimeNanos == start && it.sourceId == "ANNOUNCEMENT_WITNESS" &&
+            (it.payload as? ArchivedRawText)?.value?.lineSequence()?.any { line ->
+                line.trim().substringBefore('!').plus("!").equals(expected, true) && '!' in line
+            } == true } ?: return null
+        val shield = articles.lastOrNull { it.monotonicTimeNanos!! <= start && it.payload is ArchivedPlayerShieldCountMeasured }
+            ?.takeIf { (it.payload as ArchivedPlayerShieldCountMeasured).let { count -> count.visibleCount == 0 && count.maximumCount == 2 } } ?: return null
+        val badge = articles.firstOrNull { row ->
+            val name = row.payload as? ArchivedActivePokemonSpeciesWitnessed
+            name?.side == "PLAYER" && name.speciesId == target.speciesId && row.monotonicTimeNanos!! <= start &&
+                appearanceAt("PLAYER", row.monotonicTimeNanos) == appearance &&
+                name.ocrText?.trim()?.equals(name.speciesName, true) == true &&
+                row.evidenceReferences.orEmpty().mapNotNull(byId::get).any { crop ->
+                    crop.sourceId == "PLAYER_ACTIVE_SPECIES_TEXT_CAPTURE" && crop.monotonicTimeNanos == row.monotonicTimeNanos &&
+                        (crop.payload as? ArchivedCropCaptured)?.cropName == "PlayerActiveSpeciesTextCrop"
+                }
+        } ?: return null
+        val cry = audio.cries.singleOrNull { it.estimatedOnsetNanos in start..end } ?: return null
+        if (cry.speciesId != target.speciesId) return null
+        val entry = audio.cries.singleOrNull { it.speciesId == target.speciesId &&
+            badge.monotonicTimeNanos!! - it.estimatedOnsetNanos in 0..3*S } ?: return null
+        val incoming = supportedFragment(entry) ?: return null
+        val outgoing = supportedFragment(cry) ?: return null
+        if (incoming.referenceSha256 != outgoing.referenceSha256 || incoming.audioSha256 == outgoing.audioSha256 ||
+            entry.estimatedOnsetNanos + entry.referenceDurationNanos >= cast.preparationAtNanos) return null
+        val audible = outgoing.captureAtNanos + outgoing.queryOffsetNanos
+        if (audio.fastEffects.any { it.estimatedOnsetNanos in start..end } || hasLivingHpAfter("PLAYER", appearance, audible, end) ||
+            articles.any { row -> row.monotonicTimeNanos!! in start..end && when (val p = row.payload) {
+                is ArchivedFastMoveUseObserved, is ArchivedObservationRestartedByUser, is ArchivedScreenIgnoredByUser,
+                is ArchivedObservationSessionStoppedByUser, is ArchivedAttackIncoming, is ArchivedGetReadyWitnessed -> true
+                is ArchivedSpeciesCheckMeasured -> p.reason == "SWITCH" && p.status == "OPENED"
+                is ArchivedRawText -> isReplayConnectionInterruption(row) || p.value.contains(ENDING_CONFLICT)
+                else -> false
+            } }) return null
+        // A complete, independently matched cry supplies its own onset. A sampled
+        // impact phase corroborates the recipient even when the flash fell between frames.
+        val whole = audio.terminalWholeCries.singleOrNull { it.estimatedOnsetNanos in start..end }
+            ?.takeIf { it.speciesId == target.speciesId && it.estimatedOnsetNanos - start in 0..5*S &&
+                kotlin.math.abs(it.estimatedOnsetNanos - cry.estimatedOnsetNanos) <= 10_000_000L }
+        val full = whole?.let(::supportedFragment)?.takeIf { f ->
+            f.referenceOffsetNanos == 0L && f.durationNanos == whole.referenceDurationNanos &&
+                f.referenceSha256 == outgoing.referenceSha256 && f.articleId != incoming.articleId &&
+                !hasLivingHpAfter("PLAYER", appearance, whole.estimatedOnsetNanos, end)
+        }
+        if (whole != null && full != null) {
+            val at = whole.estimatedOnsetNanos
+            val sampled = articles.firstOrNull { row ->
+                val batch = row.payload as? ArchivedTerminalParticleObservations
+                batch?.requestedRecipient == "PLAYER" && start in batch.phaseAtNanos..batch.sourceDeadlineNanos &&
+                    batch.samples.any { it.sourceAtNanos in at..minOf(at + 2*S, end) }
+            }
+            val priorHp = articles.lastOrNull { row ->
+                start - row.monotonicTimeNanos!! in 0..20*S && witnessedDamagedBar(row, "PLAYER", appearance)
+            }
+            if (sampled != null && priorHp != null) {
+                return ReplayFinishingChargeAssociation("OPPONENT", actor.speciesName, appearanceAt("OPPONENT", start),
+                    "PLAYER", target.speciesName, appearance, cast.moveName, start, at, at, null,
+                    (cast.articleIds + banner.articleId).sorted(), listOf(badge.articleId, incoming.articleId,
+                        outgoing.articleId, full.articleId, sampled.articleId, priorHp.articleId, result.articleId).distinct(),
+                    listOf(shield.articleId), INCOMING_WHOLE_CRY, departedBy = ReplayTimeBound(at, full.articleId))
+            }
+        }
+        if (end - start > 8*S || finalCharges.count { end - it.sourceAtNanos in 0..8*S } != 1) return null
+        val live = articles.lastOrNull { row ->
+            val bar = row.payload as? ArchivedActiveHpBarMeasured
+            start - row.monotonicTimeNanos!! in 0..3*S && bar?.side == "PLAYER" && bar.fillColor == "RED" &&
+                appearanceAt("PLAYER", row.monotonicTimeNanos) == appearance && hp.confirmsLiveHp(row)
+        } ?: return null
+        val flash = lights.filter { it.hasCore }.mapNotNull { byId[it.cropId] }.singleOrNull {
+            it.monotonicTimeNanos!! - audible in 0..2*S } ?: return null
+        val frame = flash.payload as? ArchivedCropCaptured ?: return null
+        val clear = lights.filterNot { it.hasCore }.mapNotNull { byId[it.cropId] }.firstOrNull {
+            val p = it.payload as? ArchivedCropCaptured
+            it.monotonicTimeNanos!! in (flash.monotonicTimeNanos!! + 1)..minOf(end, flash.monotonicTimeNanos + 2*S) &&
+                p != null && p.copy(artifactPath = frame.artifactPath, sha256 = frame.sha256, byteCount = frame.byteCount) == frame
+        } ?: return null
+        val phase = articles.firstOrNull { row ->
+            val batch = row.payload as? ArchivedTerminalParticleObservations
+            batch?.requestedRecipient == "PLAYER" && start in batch.phaseAtNanos..batch.sourceDeadlineNanos &&
+                batch.samples.any { it.sourceAtNanos == flash.monotonicTimeNanos && it.sourceWidth == frame.sourceWidth &&
+                    it.sourceHeight == frame.sourceHeight }
+        } ?: return null
+        val refs = listOf(badge.articleId, incoming.articleId, outgoing.articleId, live.articleId, phase.articleId,
+            flash.articleId, clear.articleId, result.articleId) + badge.evidenceReferences.orEmpty().filter {
+                byId[it]?.sourceId == "PLAYER_ACTIVE_SPECIES_TEXT_CAPTURE"
+            }
+        return ReplayFinishingChargeAssociation("OPPONENT", actor.speciesName, appearanceAt("OPPONENT", start),
+            "PLAYER", target.speciesName, appearance, cast.moveName, start, audible, audible, null,
+            (cast.articleIds + banner.articleId).sorted(), refs.distinct(), listOf(shield.articleId), INCOMING_CRY,
+            departedBy = ReplayTimeBound(flash.monotonicTimeNanos!!, flash.articleId))
+    }
+
+    private fun supportedFragment(cry: ReplayRecoveredCry) = cry.fragments.firstOrNull { f ->
+        val row = byId[f.articleId]
+        val clip = row?.payload as? ArchivedAudioCaptured
+        clip != null && row.monotonicTimeNanos == f.captureAtNanos && clip.sha256 == f.audioSha256 &&
+            f.estimatedOnsetNanos == cry.estimatedOnsetNanos && f.referenceSha256.isNotBlank() &&
+            f.durationNanos >= 500_000_000L && f.queryOffsetNanos in 0..(clip.durationNanos - f.durationNanos) &&
+            f.referenceOffsetNanos in 0..(cry.referenceDurationNanos - f.durationNanos) &&
+            f.correlation in .93f..1f && f.correlation - (f.runnerUpCorrelation ?: 1f) >= .35f
     }
 
     private fun lastTerminalBall(side: String, appearance: Long, hit: Long, end: Long): ArchivedRealityArticle? {
@@ -610,12 +748,15 @@ internal class ReplayFinishingEvidence(
             else minOf(cycle?.startedAtNanos ?: receipt, link.moveSourceAtNanos)
         val ownIds = selectedCharge?.let { chargeEvidence.getValue(it) }.orEmpty() + link.moveArticleIds + link.reception?.articleIds.orEmpty()
         val fastOccurrences = ownIds.mapNotNull { byId[it]?.fastOccurrenceId() }.toSet()
-        // A cited living bar after preparation can settle an earlier Fast Move
-        // only if that specific use already cites its own nonlethal damage.
-        val preChargeLiveAt = selectedCharge?.let { cast -> link.faintArticleIds.mapNotNull(byId::get)
-            .filter { it.monotonicTimeNanos!! in cast.preparationAtNanos until cast.sourceAtNanos &&
-                witnessedDamagedBar(it, link.recipientSide, link.recipientAppearanceAtNanos) }
-            .maxOfOrNull { it.monotonicTimeNanos!! } }
+        // A last-opponent cry can cite a living whole bar just before Get Ready.
+        // In the pending-move window it can settle only an earlier, damage-linked use.
+        val preChargeLiveAt = selectedCharge?.let { cast ->
+            val earliest = if (link.basis == REPEAT_CHARGE) from else cast.preparationAtNanos
+            link.faintArticleIds.mapNotNull(byId::get)
+                .filter { it.monotonicTimeNanos!! in earliest until cast.sourceAtNanos &&
+                    witnessedDamagedBar(it, link.recipientSide, link.recipientAppearanceAtNanos) }
+                .maxOfOrNull { it.monotonicTimeNanos!! }
+        }
         val competingFrom = minOf(link.moveSourceAtNanos, receipt)
         val competingUntil = minOf(through, maxOf(receipt, link.faintSourceAtNanos))
         val otherCharges = charges.filter { it !== selectedCharge && it.completed }
@@ -630,8 +771,9 @@ internal class ReplayFinishingEvidence(
                 appearanceAt(link.recipientSide, claim.atNanos) == link.recipientAppearanceAtNanos &&
                 when (claim.kind) {
                     "FAST_USE" -> byId[claim.articleId]?.fastOccurrenceId() !in fastOccurrences &&
-                        !(preChargeLiveAt != null && claim.atNanos < selectedCharge.preparationAtNanos &&
-                            receivedNonlethalFast(claim.articleId, link.recipientSide, claim.atNanos)) &&
+                        !(preChargeLiveAt != null && claim.atNanos < preChargeLiveAt &&
+                            receivedNonlethalFast(claim.articleId, link.recipientSide, claim.atNanos,
+                                preChargeLiveAt.takeIf { link.basis == REPEAT_CHARGE })) &&
                         (claim.atNanos >= competingFrom || (selectedCharge != null && fast.none {
                             claim.articleId in it.witness.articleIds && it.impactAtNanos < selectedCharge.preparationAtNanos
                         }))
@@ -683,7 +825,7 @@ internal class ReplayFinishingEvidence(
         }
     }
 
-    private fun receivedNonlethalFast(id: String, side: String, sourceAt: Long): Boolean {
+    private fun receivedNonlethalFast(id: String, side: String, sourceAt: Long, laterLiveAt: Long? = null): Boolean {
         val row = byId[id] ?: return false
         val use = row.payload as? ArchivedFastMoveUseObserved ?: return false
         if (use.damagedSide != side || "HP_DAMAGE_TICK" !in use.evidenceKinds) return false
@@ -692,6 +834,12 @@ internal class ReplayFinishingEvidence(
         val tick = tickRow.payload as ArchivedActiveHpBarDamageTickMeasured
         if (tickRow.monotonicTimeNanos != sourceAt || tick.damagedSide != side ||
             !(tick.beforeFraction <= 1f && tick.afterFraction > 0f && tick.afterFraction < tick.beforeFraction)) return false
+        // A source-linked received tick followed by a living whole bar of the same
+        // appearance is already settled, even when the co-timed profile was missed.
+        if (laterLiveAt != null && laterLiveAt > sourceAt &&
+            hpByFrame[side to sourceAt].orEmpty().any {
+                (it.payload as ArchivedActiveHpBarMeasured).filledFraction == tick.afterFraction
+            } && appearanceAt(side, sourceAt) == appearanceAt(side, laterLiveAt)) return true
         // The exact damage amount may be uncertain. Verify what survived that
         // specific tick using the original whole bar and its co-timed measurement.
         val key = side to sourceAt
@@ -806,6 +954,10 @@ internal class ReplayFinishingEvidence(
     private fun opposes(side: String, recipient: String) = side in SIDES && recipient in SIDES && side != recipient
 
     companion object {
+        private const val S = 1_000_000_000L
+        private val ENDING_CONFLICT = Regex("""\b(blocked|surrender|concede|switch in|go,)""", RegexOption.IGNORE_CASE)
+        internal const val INCOMING_WHOLE_CRY = "UNSHIELDED_INCOMING_CHARGE_AND_WHOLE_RECIPIENT_CRY"
+        internal const val INCOMING_CRY = "UNSHIELDED_INCOMING_CHARGE_AND_RECIPIENT_DEPARTURE"
         internal const val REPEAT_CHARGE = "NAMED_CHARGED_IMPACT_AND_SIDED_REPEAT_CRY"
         internal const val LAST_RECIPIENT_BASIS = "UNCONTESTED_ATTACK_ON_LAST_RECIPIENT"
         private val CHARGE_DAMAGE_PROFILES = setOf("DAMAGE_COLOR", "SUSTAINED_DAMAGE_COLOR", "UNRESOLVED_COLOR")

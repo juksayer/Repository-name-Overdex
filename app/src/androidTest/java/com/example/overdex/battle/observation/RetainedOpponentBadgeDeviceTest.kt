@@ -54,12 +54,26 @@ class RetainedOpponentBadgeDeviceTest {
                     scope, battleSurfaceEstablished = true, hudRegion = null)
             update(source, t, true, true)
             assertNull(retained.exclusion(t))
+            val covered = source.copy(Bitmap.Config.ARGB_8888, true)
+            val wing = android.graphics.Paint().apply { color = Color.rgb(78, 46, 123) }
+            Canvas(covered).drawRect(source.width * .67f, source.height * .077f,
+                source.width * .85f, source.height * .087f, wing)
+            assertTrue("The partial badge still passes native presence",
+                TeamBadgePresenceDetector.present(covered.width, covered.height, opponent, covered::getPixel))
+            val copy = retainedBadgeImage(covered, opponent, null)!!
+            assertFalse(cleanRetainedBadgeFace(copy))
+            copy.recycle()
+            update(covered, t + 1, true, true)
+            covered.recycle()
             update(source, t + 1, false, false)
             update(source, t + 150_000_000, false, false)
             val shown = shot("retained")
             assertEquals(opponent, retained.exclusion(System.nanoTime()))
             val x = ((opponent.x + opponent.width * .5f) * width).toInt()
             val y = ((opponent.y + opponent.height * .25f) * height).toInt()
+            val wingX = (width * .75f).toInt()
+            val wingY = (height * .08f).toInt()
+            assertTrue("The earlier clean badge is still displayed", Color.green(shown.getPixel(wingX, wingY)) > 130)
             assertNotEquals("Retained image occupies original calibrated badge", before.getPixel(x, y), shown.getPixel(x, y))
             // Compare within a frame: Android's activity-entry fade changes the
             // whole background between the initial and retained screenshots.

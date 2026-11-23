@@ -142,6 +142,16 @@ class FastMoveCadenceInference(
         val referenceSounds: MutableList<ReferenceSoundEvidence> = mutableListOf(),
     )
 
+    private val SideState.hasConfiguredMove: Boolean
+        get() = side == ActivePokemonSide.PLAYER && identifiedMove != null &&
+            identityBasis.startsWith("CONFIGURED_PLAYER_TEAM")
+
+    // The card supplies the initial name. Before the first independent timing
+    // check it can still be the wrong saved card. Once corroborated, this
+    // appearance only needs occurrence witnesses.
+    private val SideState.confirmedConfiguredMove: Boolean
+        get() = hasConfiguredMove && selectedBasis != null && !assumedHigherEnergyTieBreak
+
     private data class ReferenceSoundEvidence(
         val article: RealityArticle, val moveName: String, val alignedStartNanos: Long,
         val segmentStartNanos: Long, val predecessors: List<ArticleId>,
@@ -156,7 +166,6 @@ class FastMoveCadenceInference(
     private val pending = EnumMap<ActivePokemonSide, MutableList<RealityArticle>>(ActivePokemonSide::class.java)
     private val appearanceStarts = EnumMap<ActivePokemonSide, Long>(ActivePokemonSide::class.java)
     private val configurationScope = PlayerTeamConfigurationScope()
-    private val configuredPlayerMoves = mutableMapOf<String, ConfiguredPlayerMove>()
     private val configuredPlayerSlots = mutableMapOf<Int, Pair<String, ConfiguredPlayerMove>>()
     private val playerReferenceSlots = mutableMapOf<Int, Pair<String, ArticleId>>()
     private val pendingEffectiveness = mutableListOf<RealityArticle>()
@@ -198,14 +207,12 @@ class FastMoveCadenceInference(
         if (configurationScope.accept(article)) {
             // The scan can be another owned copy of the same species. Neither its
             // configured move nor a cached pre-battle identity transfers to it.
-            configuredPlayerMoves.clear()
             configuredPlayerSlots.clear()
             configurationScope.current().values.forEach { current ->
                 val p = current.payload as PlayerTeamSlotConfigured
                 configuredPlayerSlots[p.slot] = normalize(p.speciesName) to ConfiguredPlayerMove(
                     p.speciesId, p.fastMoveName, current.id, current.confidence ?: 1f)
             }
-            configuredPlayerMoves.putAll(configuredPlayerSlots.values)
             playerReferenceSlots.clear()
             (article.payload as com.example.overdex.battle.custody.PlayerTeamRosterConfirmation)
                 .speciesBySlot.forEachIndexed { index, name ->
@@ -297,13 +304,11 @@ class FastMoveCadenceInference(
                 articleId = article.id,
                 confidence = article.confidence ?: 1f
             )
-            configuredPlayerMoves.clear()
-            configuredPlayerMoves.putAll(configuredPlayerSlots.values)
             val name = normalize(configured.speciesName)
             combatants.keys.removeAll { it.first == ActivePokemonSide.PLAYER && it.second in setOf(oldName, name) }
             val active = states[ActivePokemonSide.PLAYER] ?: return emptyList()
             if (normalize(active.speciesName) != name) {
-                if (normalize(active.speciesName) == oldName && oldName !in configuredPlayerMoves) {
+                if (normalize(active.speciesName) == oldName && configuredPlayerSlots.values.none { it.first == oldName }) {
                     states.remove(ActivePokemonSide.PLAYER)
                     pending.remove(ActivePokemonSide.PLAYER)
                 }
@@ -311,13 +316,17 @@ class FastMoveCadenceInference(
             }
             // Changing a move before GO must not wait for a second species read.
             // Another slot's edit leaves this active combatant untouched.
+            if (active.playerTeamSlot != null && active.playerTeamSlot != configured.slot) return emptyList()
+            val selected = configuredMoveFor(name, active.playerTeamSlot)
             val pokemon = pokemonKnowledge.getPokemonByName(configured.speciesName)
             val moves = pokemon?.fastMoves.orEmpty().filter {
                 it.isFast && it.turns != null
             }.distinctBy { normalize(it.name) }
             val updated = active.copy(
                 typeOptions = listOf(pokemon?.types.orEmpty()),
-                possibleMoves = moves, identifiedMove = moves.singleOrNull { normalize(it.name) == normalize(configured.fastMoveName) },
+                possibleMoves = moves, identifiedMove = selected?.let { card ->
+                    moves.singleOrNull { normalize(it.name) == normalize(card.moveName) }
+                },
                 cadenceEvidence = mutableListOf(), selectedBasis = null,
                 lastDirectUseArticles = mutableMapOf(),
                 identificationEvidence = listOf(active.speciesArticleId, article.id),
@@ -374,7 +383,7 @@ class FastMoveCadenceInference(
             val sameAppearance = species.appearanceStartedAtNanos == null ||
                 species.appearanceStartedAtNanos == priorState?.activeSinceNanos
             if (priorState?.speciesName?.let(::normalize) == normalize(species.speciesName) &&
-                sameAppearance && priorState.playerTeamSlot == species.playerTeamSlot) {
+                sameAppearance && (species.playerTeamSlot == null || priorState.playerTeamSlot == species.playerTeamSlot)) {
                 val cue = audioEntryCues[species.side]
                 if (cue != null && (article.monotonicTimeNanos ?: Long.MIN_VALUE) >= cue.first) {
                     audioEntryCues.remove(species.side)
@@ -420,7 +429,7 @@ class FastMoveCadenceInference(
             val typeOptions = referencePokemon.map { it?.types.orEmpty() }.distinct()
             val possibleMoves = (opponentReferences ?: PokemonFormCandidates(referenceNames, referencePokemon)).fastMoves
             val configuredMove = if (species.side == ActivePokemonSide.PLAYER && referenceName != null) {
-                configuredPlayerMoves[normalize(referenceName)]
+                configuredMoveFor(normalize(referenceName), species.playerTeamSlot)
             } else null
             val candidateMoves = possibleMoves
             val configuredIdentity = configuredMove?.let { configuredKnowledge ->
@@ -433,7 +442,9 @@ class FastMoveCadenceInference(
             val oneBattleReference = referencePokemon.isNotEmpty() && referencePokemon.none { it == null } &&
                 referencePokemon.filterNotNull().map { it.types.toSet() to it.fastMoves.toSet() }.distinct().size == 1
             val remembered = combatants[combatantKey].takeIf { oneBattleReference }
-            val retainedMove = remembered?.identifiedMove?.takeIf { it in candidateMoves }
+            val retainedMove = remembered?.identifiedMove?.takeIf {
+                it in candidateMoves && !remembered.hasConfiguredMove
+            }
             val state = SideState(
                 side = species.side,
                 speciesName = species.speciesName,
@@ -583,12 +594,11 @@ class FastMoveCadenceInference(
         return acceptCadence(article, cadence)
     }
 
-    /**
-     * Audio does not name a move here. It contributes only the measured spacing
-     * between audible onsets, on the side inherited from the visual cue that
-     * requested the clip. Reference-sound matching remains a later, separately
-     * cited conclusion.
-     */
+    private fun configuredMoveFor(speciesKey: String, slot: Int?): ConfiguredPlayerMove? {
+        if (slot != null) return configuredPlayerSlots[slot]?.takeIf { it.first == speciesKey }?.second
+        return configuredPlayerSlots.values.singleOrNull { it.first == speciesKey }?.second
+    }
+
     private fun referenceIdentity(state: SideState, side: ActivePokemonSide, article: RealityArticle): List<FastMoveCadenceDerivation> {
         val move = state.identifiedMove ?: return emptyList()
         return listOf(FastMoveCadenceDerivation(
@@ -648,6 +658,7 @@ class FastMoveCadenceInference(
             val alignedStart = segmentAt - candidate.referenceOffsetNanos
             val state = states.getValue(choice.side)
             val move = state.possibleMoves.single { normalize(it.name) == normalize(candidate.moveName) }
+            if (state.hasConfiguredMove) return@flatMap emptyList()
             val history = state.referenceSounds
             history.removeAll { segmentAt - it.segmentStartNanos > 12_000_000_000L }
             val minimumDistinctStart = maxOf(300_000_000L, move.turns!! * TURN_NANOS * 85 / 100)
@@ -667,7 +678,6 @@ class FastMoveCadenceInference(
             val agreeing = history.takeLast(2).takeIf { it.size == 2 && it.all { evidence ->
                 normalize(evidence.moveName) == normalize(move.name)
             } } ?: return@flatMap emptyList()
-            if (state.identityBasis.startsWith("CONFIGURED_PLAYER_TEAM")) return@flatMap emptyList()
             if (state.identifiedMove == move && state.identityBasis.startsWith("AUDIO_REFERENCE")) return@flatMap emptyList()
             state.identifiedMove = move
             state.selectedBasis = null
@@ -699,6 +709,12 @@ class FastMoveCadenceInference(
         }.minByOrNull { abs(requireNotNull(it.monotonicTimeNanos) - (segmentAt + duration / 2)) }
     }
 
+    /**
+     * Audio does not name a move here. It contributes only the measured spacing
+     * between audible onsets, on the side inherited from the visual cue that
+     * requested the clip. Reference-sound matching remains a later, separately
+     * cited conclusion.
+     */
     private fun acceptSoundCadence(
         article: RealityArticle,
         sound: FastMoveSoundMeasured,
@@ -712,6 +728,7 @@ class FastMoveCadenceInference(
             if (waiting.size > MAX_CADENCE_HISTORY) waiting.removeAt(0)
             return emptyList()
         }
+        if (state.confirmedConfiguredMove) return emptyList()
         if (onset < maxOf(appearanceStarts[side] ?: Long.MIN_VALUE,
                 state.appearanceBoundaryNanos ?: Long.MIN_VALUE, cadenceFloorNanos)) return emptyList()
         val previousAt = state.lastSoundOnsetNanos
@@ -747,6 +764,7 @@ class FastMoveCadenceInference(
         if (use.evidenceKinds.none(DIRECT_USE_EVIDENCE_KINDS::contains)) return emptyList()
         val state = states[use.attackingSide] ?: return emptyList()
         val at = article.monotonicTimeNanos ?: return emptyList()
+        if (state.confirmedConfiguredMove) return emptyList()
         if (at < cadenceFloorNanos || !useBelongsTo(state, article, use)) return emptyList()
         val streams = use.evidenceKinds.filter { it in IMPACT_USE_EVIDENCE_KINDS }
             .ifEmpty { use.evidenceKinds.filter { it in DIRECT_USE_EVIDENCE_KINDS } }.distinct()
@@ -818,6 +836,7 @@ class FastMoveCadenceInference(
             if (waiting.size > MAX_CADENCE_HISTORY) waiting.removeAt(0)
             return emptyList()
         }
+        if (state.confirmedConfiguredMove) return emptyList()
         if (state.cadenceEvidence.any { it.article.id == article.id && it.useEvidenceKind == cadence.useEvidenceKind })
             return emptyList()
         state.cadenceEvidence += CadenceEvidence(
@@ -837,6 +856,7 @@ class FastMoveCadenceInference(
         state: SideState,
     ): List<FastMoveCadenceDerivation> {
         val attackingSide = state.side
+        if (state.confirmedConfiguredMove) return emptyList()
         val resolved = resolveCombinedCadence(state)
         val corroboration = resolved?.let { corroborationFor(state, it) }
         val previousLabels = state.corroborationSignature.split('+').filter { it.isNotBlank() }.toSet()
@@ -945,6 +965,7 @@ class FastMoveCadenceInference(
         val candidates = attributableSides.flatMap { attackingSide ->
             val attacker = states[attackingSide] ?: return@flatMap emptyList()
             val defender = states[attackingSide.opposite()] ?: return@flatMap emptyList()
+            if (attacker.confirmedConfiguredMove) return@flatMap emptyList()
             val observedAt = article.monotonicTimeNanos
             if (observedAt != null &&
                 (observedAt < attacker.activeSinceNanos || observedAt < defender.activeSinceNanos)

@@ -1,5 +1,6 @@
 package com.example.overdex.battle.replay
 
+import com.example.overdex.battle.inference.LegalChargedMoveTextResolver
 import com.example.overdex.battle.archive.ArchivedSpeciesCheckMeasured
 import com.example.overdex.battle.archive.ArchivedCompleteHpBarObserved
 import com.example.overdex.battle.observation.BattleCropContracts
@@ -145,6 +146,7 @@ class MatchReplayModel(
     private val playerTeamConfiguration = ArchivedPlayerTeamConfiguration(replayArticles)
     private val configuredPlayerMembers = playerTeamConfiguration.recordsAt()
         .map { it.payload as ArchivedPlayerTeamSlotConfigured }
+    private val playerButtonSprite by lazy { ReplayPlayerButtonSprite(replayArticles, configuredPlayerMembers, matchStartNanos) }
     private val configuredPlayerMovesBySpecies = configuredPlayerMembers.groupBy {
         normalizeSpeciesName(it.speciesName)
     }.mapValues { (_, members) -> members.map { it.fastMoveName }.distinct().singleOrNull() }
@@ -204,13 +206,29 @@ class MatchReplayModel(
         battlePresentationStartNanos,
         matchStartNanos,
     )
-    private val opponentIdentityTrack = ReplayIdentityTrack.from(
+    private val baselineOpponentTrack = ReplayIdentityTrack.from(
         replayArticles,
         "OPPONENT",
         reconstructedTracks.second + cropTracks.second,
         battlePresentationStartNanos,
         matchStartNanos,
     )
+    internal val entranceWindows = baselineOpponentTrack.entranceWindows().mapNotNull { (gap, old, next) ->
+        val id = next.speciesId ?: return@mapNotNull null
+        val roster = configuredPlayerMembers
+        if (roster.size != 3 || roster.map { it.slot }.toSet() != setOf(1, 2, 3) || roster.any { it.speciesId == id || it.speciesId == old.speciesId } ||
+            playerIdentityTrack.appearances().any { it.speciesId == id || it.speciesId == old.speciesId }) return@mapNotNull null
+        val moves = fastMovesBySpeciesName.entries.firstOrNull { it.key.equals(next.speciesName, true) }
+            ?.value.orEmpty().map { it.name }.filterNot { name -> roster.any { it.fastMoveName.equals(name, true) } }
+        ReplayEntranceWindow(gap, old, next, moves.toSet())
+    }.take(6)
+    private val entrances = if (audioRecovery.entranceSounds.isEmpty()) emptyList() else {
+        val source = replayArticles.associateBy { it.articleId }
+        entranceWindows.mapNotNull { ReplayEntranceAudio.resolve(it, audioRecovery.entranceSounds, source) }
+    }
+    private val opponentIdentityTrack = if (entrances.isEmpty()) baselineOpponentTrack else ReplayIdentityTrack.from(
+        replayArticles, "OPPONENT", reconstructedTracks.second + cropTracks.second + entrances.map { it.identity },
+        battlePresentationStartNanos, matchStartNanos)
     private val knockoutTrack = ReplayKnockoutTrack(replayArticles, mapOf(
         "PLAYER" to playerIdentityTrack.appearances(), "OPPONENT" to opponentIdentityTrack.appearances(),
     ), teamLossProjection.resolutionsByArticleId, hpFaintProjection.resolutionsByArticleId,
@@ -454,7 +472,7 @@ class MatchReplayModel(
         val missingTick = ReplayMissingTickFinish.resolve(exchangeArticles, identifiedFastMoveArticles, sliverChanges, fastMoveCycles,
             ::combatantFor, ::appearanceAt, ::sameFastMoveExchange)
         val recovered = observed + count + fastAudio + sliverLinks + terminalAudio + counters +
-            listOfNotNull(cryCharge, frameLink, lastOpponentFastLink, terminalChargeDeparture?.candidate, missingTick)
+            listOfNotNull(evidence.incomingCryFinish(audioRecovery, retainedSliverEvidence.impactLights), cryCharge, frameLink, lastOpponentFastLink, terminalChargeDeparture?.candidate, missingTick)
         val live = ReplayRecordedFinishingCredits.read(battleArchive, presentedKnockouts, charges, recovered, ::combatantFor, ::appearanceAt)
         val eligible = (live + recovered).filter { link ->
             link !is ReplayFinishingFastAssociation || withinFinishingMoveWindow(link)
@@ -789,7 +807,7 @@ class MatchReplayModel(
                     "Faint · ${link.recipientSpeciesName} · ${link.creditLabel()} · inferred",
                     sourceAtNanos = link.faintSourceAtNanos, sourceArticleIds = link.evidenceArticleIds, finishingAttribution = link)))
             }
-            finishingChargeAssociations.filter { it.basis in setOf(ReplayTerminalAudioAssociation.BASIS, ReplayTerminalAudioAssociation.ANNOUNCED, ReplayTerminalAudioAssociation.ANNOUNCED_PARTIAL, ReplayImpactFinish.BASIS, ReplaySoundMatchedBanner.BASIS) &&
+            finishingChargeAssociations.filter { it.basis in setOf(ReplayFinishingEvidence.INCOMING_WHOLE_CRY, ReplayFinishingEvidence.INCOMING_CRY, ReplayTerminalAudioAssociation.BASIS, ReplayTerminalAudioAssociation.ANNOUNCED, ReplayTerminalAudioAssociation.ANNOUNCED_PARTIAL, ReplayImpactFinish.BASIS, ReplaySoundMatchedBanner.BASIS) &&
                 presentedKnockouts.none { ko -> ko.side == it.recipientSide && ko.appearanceAtNanos == it.recipientAppearanceAtNanos }
             }.forEach { link ->
                 add(faintMarker(null, link, ReplayEventMarker("recovered-faint:${link.recipientSide}:${link.recipientAppearanceAtNanos}",
@@ -813,7 +831,7 @@ class MatchReplayModel(
                             when (link.basis) {
                                 ReplayTerminalAudioAssociation.ANNOUNCED_PARTIAL, ReplaySoundMatchedBanner.BASIS ->
                                     cry.fragments.any { it.articleId in link.faintArticleIds }
-                                ReplayTerminalAudioAssociation.ANNOUNCED ->
+                                ReplayFinishingEvidence.INCOMING_WHOLE_CRY, ReplayTerminalAudioAssociation.ANNOUNCED ->
                                     audioRecovery.terminalWholeCries.any { whole ->
                                         whole.estimatedOnsetNanos == link.faintSourceAtNanos &&
                                             whole.fragments.any { it.articleId in link.faintArticleIds } &&
@@ -939,7 +957,13 @@ class MatchReplayModel(
             if (matchEndNanos != null && (use.preparationAtNanos >= matchEndNanos ||
                     (use.isCompleted && use.animationAtNanos > matchEndNanos) ||
                     (!use.isCompleted && monotonicTimeNanos >= matchEndNanos))) return@mapNotNull null
-            if (!canPerformReplayAction(use.side, use.preparationAtNanos, monotonicTimeNanos)) return@mapNotNull null
+            // A defensive prompt establishes the side even when the opposing badge is hidden.
+            // Once the named release identifies its owner, judge that throw at its own source time.
+            val ownershipAt = if (!preparing && use.isCompleted && use.moveName != null &&
+                use.shieldPromptAtNanos != null && use.side == "OPPONENT" &&
+                monotonicTimeNanos >= use.sourceAtNanos && combatantFor(use.side, use.preparationAtNanos) == null &&
+                combatantFor(use.side, use.sourceAtNanos) != null) use.sourceAtNanos else use.preparationAtNanos
+            if (!canPerformReplayAction(use.side, ownershipAt, monotonicTimeNanos)) return@mapNotNull null
             if (association != null && (appearanceAt(association.attackingSide, monotonicTimeNanos) != association.attackerAppearanceAtNanos ||
                     appearanceAt(association.recipientSide, monotonicTimeNanos) != association.recipientAppearanceAtNanos)) return@mapNotNull null
             // The grade's brief text may expire, but its growth lasts through
@@ -984,6 +1008,11 @@ class MatchReplayModel(
             protectShield = protectShield,
             player = player,
             opponent = opponent,
+            heldPlayerSprite = if (player == null) playerIdentityTrack.gapAt(monotonicTimeNanos)?.let { gap ->
+                playerButtonSprite.at(monotonicTimeNanos, gap.times)
+                    ?: lastRemainingSprite("PLAYER", monotonicTimeNanos, playerResourceTrack)
+            } else null,
+            heldOpponentSprite = if (opponent == null) lastRemainingSprite("OPPONENT", monotonicTimeNanos, opponentResourceTrack) else null,
             observedSpeciesNames = speciesNames,
             candidateSpeciesId = candidate?.candidates?.maxByOrNull { it.similarity }?.speciesId,
             candidateSimilarity = candidate?.candidates?.maxByOrNull { it.similarity }?.similarity,
@@ -1023,7 +1052,9 @@ class MatchReplayModel(
             }?.let { "Go, ${BattleSpeciesDisplay.name((it.payload as ArchivedActivePokemonSpeciesWitnessed).speciesName)}!" }
                 ?: chargeMoveActions.lastOrNull { it.moveName != null }?.let {
                     val actor = if (it.side == "PLAYER") player else opponent
-                    "${actor?.displayName ?: it.side} used ${it.moveName}!"
+                    val name = actor?.displayName ?: it.side
+                    if (monotonicTimeNanos < it.announcementAtNanos) "$name charging…"
+                    else "$name used ${it.moveName}!"
                 },
             latestEvidenceLabel = latest?.payload?.let(::payloadLabel) ?: "Awaiting first timed evidence",
             playerHp = player?.let { replayHpAt("PLAYER", it, monotonicTimeNanos) },
@@ -1063,6 +1094,22 @@ class MatchReplayModel(
         val faint = applyFaintState(side, combatantFor(side, cursor), cursor, playbackKnockouts)
         val charged = applyFinishingChargeAssociation(side, faint, cursor)
         return applyFinishingFastAssociation(side, alignKnockoutPose(side, charged, cursor), cursor)
+    }
+
+    // Keep only the sprite through a health recheck. Combat, HP and KO resolution
+    // still use the original uncertain interval and its source timestamps.
+    private fun lastRemainingSprite(side: String, cursor: Long, resources: ReplayResourceTrack): ReplayCombatant? {
+        val track = identityTrackFor(side)
+        val gap = track.reconfirmedHpGap(cursor) ?: return null
+        val before = gap.first - 1
+        val after = gap.last + 1
+        if (resources.stateAt(before).pokeBalls != 1 || resources.stateAt(after).pokeBalls != 1 ||
+            track.appearanceStartAt(before) != track.appearanceStartAt(after)) return null
+        val previous = playbackCombatant(side, before) ?: return null
+        val confirmed = playbackCombatant(side, after) ?: return null
+        return previous.takeIf { it.identityEstablishedAtNanos <= before && !it.isFainted && !confirmed.isFainted &&
+            it.defeatedAtNanos == null && confirmed.defeatedAtNanos == null && it.speciesId != null &&
+            it.speciesId == confirmed.speciesId && it.speciesName == confirmed.speciesName }
     }
 
     private fun applyFinishingChargeAssociation(side: String, combatant: ReplayCombatant?, cursor: Long): ReplayCombatant? {
@@ -1590,7 +1637,10 @@ class MatchReplayModel(
                 val previousCharge = mergedUses.take(index).lastOrNull {
                     it.anchorPriority == 3
                 }?.animationAtNanos?.plus(CHARGE_MOVE_VISUAL_NANOS) ?: lower
-                val entry = combatantFor(use.side, use.animationAtNanos)?.identityEstablishedAtNanos ?: lower
+                // A badge or announcement can confirm the same actor again at release.
+                // Bound inferred preparation by the appearance or its last unresolved gap.
+                val entry = if (use.side.isBattleSide()) identityTrackFor(use.side)
+                    .hpAppearancesAt(use.animationAtNanos).lastOrNull()?.start ?: lower else lower
                 val start = maxOf(lower, lastAttack, previousCharge, entry).coerceAtMost(use.animationAtNanos)
                 use.copy(preparationAtNanos = start, evidenceKinds = use.evidenceKinds + "RECONSTRUCTED_PREPARATION")
             }
@@ -1620,6 +1670,24 @@ class MatchReplayModel(
         (article.payload is ArchivedFastMoveUseObserved && hpEvidence.accepts(article)) ||
             isReplayAttackIncomingCue(article) || isReplayGetReadyCue(article) ||
             (article.payload as? ArchivedChargedMoveEnergySpent)?.side == "OPPONENT"
+
+    /** An aligned peer banner can arrive just after our projectile has left the screen. */
+    internal fun alreadyPresentsPairedCharge(peer: PairedReplayObservation, at: Long): Boolean {
+        val species = peer.species ?: return false
+        val move = peer.moveName ?: return false
+        val side = peer.side
+        if (!side.isBattleSide() || peer.kind != PairedReplayObservation.Kind.CHARGED_MOVE) return false
+        return recordedChargedMoveUses.singleOrNull { use ->
+            use.isCompleted && use.side == side && move.equals(use.moveName, ignoreCase = true) &&
+                abs(use.sourceAtNanos - at) <= CHARGE_MOVE_VISUAL_NANOS &&
+                sameChargeAnnouncementEpisode(use.sourceAtNanos, at) &&
+                combatantFor(side, use.sourceAtNanos)?.speciesName?.let(::normalizeSpeciesName) == normalizeSpeciesName(species) &&
+                listOf(side, oppositeSide(side)).all { owner ->
+                    val track = identityTrackFor(owner)
+                    track.hpAppearancesAt(use.sourceAtNanos).lastOrNull() == track.hpAppearancesAt(at).lastOrNull()
+                }
+        } != null
+    }
 
     /** A lingering announcement is supporting text, not another completed attack.
      * A fresh preparation starts a new episode even when the same move is reused.
@@ -1653,14 +1721,10 @@ class MatchReplayModel(
                 // Older OCR sometimes ran a second HUD label into the sentence
                 // after its exclamation mark. Only a complete, legal, exactly
                 // named move by the visible actor can use that boundary.
-                val complete = reading.substringBefore("! ").trim()
-                val isolated = complete != reading && '!' !in complete &&
-                    !reading.substringAfter("! ").contains("used", ignoreCase = true) &&
-                    performer == normalizeSpeciesName(combatant.speciesName) &&
-                    pool.any { it.name.equals(complete, ignoreCase = true) }
-                com.example.overdex.battle.inference.LegalChargedMoveTextResolver.bestMatches(
-                    if (isolated) complete else reading, pool
-                ).map { Triple(side, combatant, it) }
+                val resolver = com.example.overdex.battle.inference.LegalChargedMoveTextResolver
+                val isolated = if (performer == normalizeSpeciesName(combatant.speciesName))
+                    resolver.namedAnnouncementReading(reading, pool) else reading
+                resolver.bestMatches(isolated, pool).map { Triple(side, combatant, it) }
             }
             val namedSides = combatants.filter {
                 TeamRosterSpeciesAttributor.speciesKey(it.second.speciesName) ==
@@ -1676,7 +1740,13 @@ class MatchReplayModel(
                     .orEmpty()
             }
             var corroboration: ArchivedRealityArticle? = null
-            val supported = if (eligible.isEmpty() && namedSides == setOf("PLAYER")) {
+            val namedActor = combatants.singleOrNull { it.first in namedSides }
+            val repeat = if (eligible.isEmpty() && namedActor != null) {
+                repeatFromClippedBanner(article, match, namedActor.first, namedActor.second)?.let {
+                    Triple(namedActor.first, namedActor.second, it)
+                }
+            } else null
+            val supported = if (repeat != null) listOf(repeat) else if (eligible.isEmpty() && namedSides == setOf("PLAYER")) {
                 val configured = configuredPlayerMembers.singleOrNull {
                     normalizeSpeciesName(it.speciesName) == performer
                 } ?: continue
@@ -1718,6 +1788,46 @@ class MatchReplayModel(
                 articleIds = setOf(article.articleId) + phaseProof?.second.orEmpty() + listOfNotNull(corroboration?.articleId))
         }
         return recovered
+    }
+
+    /** A repeated final l can merge with the banner's exclamation mark under HUD text.
+     * The earlier clean use corroborates spelling only. Its IDs and clock belong to that use.
+     */
+    private fun repeatFromClippedBanner(
+        row: ArchivedRealityArticle, banner: MatchResult, side: String, actor: ReplayCombatant,
+    ): LegalChargedMoveTextResolver.Match? {
+        val reading = banner.groupValues[2]
+        val boundary = reading.indexOf('!')
+        if (boundary < 6 || reading.indexOf('!', boundary + 1) >= 0 ||
+            reading.contains(" used ", ignoreCase = true)) return null
+        val stem = reading.substring(0, boundary)
+        if (!stem.endsWith('l', ignoreCase = true)) return null
+        val at = row.monotonicTimeNanos!!
+        if (row.evidenceReferences.orEmpty().mapNotNull(replayArticlesById::get).none {
+                it.sourceId == "ANNOUNCEMENT_CROP_CAPTURE" && it.monotonicTimeNanos == at &&
+                    (it.payload as? ArchivedCropCaptured)?.cropName == "AnnouncementCrop"
+            }) return null
+        val moves = possibleChargedMoves[normalizeSpeciesName(actor.speciesName)].orEmpty()
+        if (LegalChargedMoveTextResolver.bestMatches(stem, moves).isNotEmpty()) return null
+        val move = moves.distinctBy { normalizeSpeciesName(it.name) }.singleOrNull {
+            it.name.equals(stem + "l", ignoreCase = true)
+        } ?: return null
+        val appearance = identityTrackFor(side).appearanceStartAt(at)
+        val cleanText = "${banner.groupValues[1]} used ${move.name}!"
+        val established = actionArticles.any { prior ->
+            val spent = prior.payload as? ArchivedChargedMoveEnergySpent
+            val time = prior.monotonicTimeNanos!!
+            spent?.side == side && spent.moveName.equals(move.name, ignoreCase = true) &&
+                TeamRosterSpeciesAttributor.speciesKey(spent.speciesName) == TeamRosterSpeciesAttributor.speciesKey(actor.speciesName) &&
+                at - time > CHARGE_ANNOUNCEMENT_REPEAT_NANOS &&
+                identityTrackFor(side).appearanceStartAt(time) == appearance &&
+                prior.predecessorIds.orEmpty().mapNotNull(replayArticlesById::get).any { original ->
+                    original.monotonicTimeNanos == time && original.sourceId == "ANNOUNCEMENT_WITNESS" &&
+                        (original.payload as? ArchivedRawText)?.value?.trim()?.equals(cleanText, ignoreCase = true) == true
+                }
+        }
+        return if (established) LegalChargedMoveTextResolver.Match(move, 1, "PRIOR_NAMED_USE_AND_CLIPPED_REPEAT")
+            else null
     }
 
     /** A mirror's move name is not sided. An uninterrupted, bounded preparation
@@ -2321,6 +2431,20 @@ class MatchReplayModel(
                     }?.moveName
             }
         }
+        if (side == "OPPONENT") {
+            val start = opponentIdentityTrack.appearanceStartAt(atNanos)
+            val entrance = entrances.singleOrNull { it.identity.speciesName.equals(speciesName, true) &&
+                it.identity.atNanos == start && atNanos >= start }
+            if (entrance?.move != null) {
+                val end = opponentIdentityTrack.nextAppearanceAfter(start) ?: Long.MAX_VALUE
+                val conflict = identifiedFastMoveArticles.any { row ->
+                    val move = row.payload as ArchivedFastMoveIdentified
+                    row.monotonicTimeNanos in start until end && move.side == side &&
+                        move.speciesName.equals(speciesName, true) && !move.moveName.equals(entrance.move, true)
+                }
+                return if (conflict) null else entrance.move
+            }
+        }
         return identifiedFastMoves
             .asSequence()
             .filter { it.side == side }
@@ -2501,7 +2625,7 @@ class MatchReplayModel(
         /** A saved slot establishes possible team membership. Only a battle appearance or use enters the audio pool. */
         fun audioParticipantNames(archive: MatchArchive, crops: List<ReplayIdentityObservation>): Set<String> {
             val rows = archive.withQualifiedBattleIdentities().articles.filter { it.matchId == archive.matchId && it.monotonicTimeNanos != null }
-            val start = rows.filter { it.payload is ArchivedMatchStarted }.minOfOrNull { it.monotonicTimeNanos!! } ?: return emptySet()
+            val start = rows.badgeBattleBoundary()?.monotonicTimeNanos ?: return emptySet()
             val end = rows.filter { it.payload is ArchivedMatchEnded }.minOfOrNull { it.monotonicTimeNanos!! } ?: return emptySet()
             return buildSet {
                 qualifiedCropIdentities(crops.filter { it.atNanos in start..end }, rows, ArchivedPlayerTeamConfiguration(rows))
@@ -2549,12 +2673,31 @@ class MatchReplayModel(
     }
 }
 
+private data class ReplayIdentityGap(val times: LongRange, val hpCheckOnly: Boolean)
+
 private class ReplayIdentityTrack private constructor(
     private val observations: List<ReplayIdentityObservation>,
     private val visibleFromNanos: Long,
-    private val unresolved: List<LongRange>,
+    private val unresolved: List<ReplayIdentityGap>,
 ) {
-    fun uncertain(at: Long) = unresolved.any { at in it }
+    fun entranceWindows(): List<Triple<Long, ReplayIdentityObservation, ReplayIdentityObservation>> = unresolved.mapNotNull { gap ->
+        val last = gap.times.last
+        if (last == Long.MAX_VALUE || last - gap.times.first > 40_000_000_000L) return@mapNotNull null
+        val old = observations.lastOrNull { it.atNanos < gap.times.first } ?: return@mapNotNull null
+        if (old.speciesId == null) return@mapNotNull null
+        val next = observations.firstOrNull { it.atNanos == last + 1 && it.speciesId != null &&
+            (it.basis == "RECONSTRUCTED FROM ARCHIVED ANNOUNCEMENT" ||
+                it.sourceId == "OPPONENT_SPECIES_OVERLAY_PIPELINE" && it.evidenceArticleIds.isNotEmpty() ||
+                it.basis.contains("CROP") && it.articleId != null) } ?: return@mapNotNull null
+        if (old.speciesId == next.speciesId) null else Triple(gap.times.first, old, next)
+    }
+
+    fun gapAt(at: Long) = unresolved.firstOrNull { at in it.times }
+    fun uncertain(at: Long) = gapAt(at) != null
+
+    fun reconfirmedHpGap(at: Long): LongRange? = unresolved.firstOrNull {
+        it.hpCheckOnly && it.times.last != Long.MAX_VALUE && at in it.times
+    }?.times
     fun appearances(): List<ReplayIdentityObservation> = buildList {
         observations.groupBy { it.atNanos }.values.map { it.last() }.forEach { observation ->
             if (lastOrNull()?.speciesName?.let(::normalize) != normalize(observation.speciesName)) {
@@ -2571,7 +2714,7 @@ private class ReplayIdentityTrack private constructor(
         }
     }
 
-    private val boundedHpAppearances = (hpAppearances + unresolved.flatMap { gap ->
+    private val boundedHpAppearances = (hpAppearances + unresolved.flatMap { (gap) ->
         buildList {
             add(ReplayHpAppearance("", gap.first))
             if (gap.last < Long.MAX_VALUE) {
@@ -2690,33 +2833,36 @@ private class ReplayIdentityTrack private constructor(
         }
 
         private fun unresolvedIntervals(side: String, articles: List<ArchivedRealityArticle>,
-            observations: List<ReplayIdentityObservation>): List<LongRange> {
+            observations: List<ReplayIdentityObservation>): List<ReplayIdentityGap> {
             val checks = articles.mapNotNull { row ->
                 val check = row.payload as? ArchivedSpeciesCheckMeasured ?: return@mapNotNull null
-                check.triggerMonotonicNanos.takeIf { check.side == side && check.status == "OPENED" &&
+                check.takeIf { check.side == side && check.status == "OPENED" &&
                     check.reason in com.example.overdex.battle.observation.SpeciesCheckCoordinator.VERIFICATION_REASONS }
-            }.sorted()
+            }.sortedBy { it.triggerMonotonicNanos }
             val hp = com.example.overdex.battle.observation.AppearanceHpBudget()
-            val result = mutableListOf<LongRange>()
+            val result = mutableListOf<ReplayIdentityGap>()
+            var hpCheckOnly = true
             var i = 0
             var j = 0
             var since: Long? = null
             var species: String? = null
             for (row in articles) {
                 val now = row.monotonicTimeNanos ?: continue
-                while (j < checks.size && checks[j] <= now) {
-                    since = since ?: checks[j]
-                    j++
+                while (j < checks.size && checks[j].triggerMonotonicNanos <= now) {
+                    val check = checks[j++]
+                    since = since ?: check.triggerMonotonicNanos
+                    hpCheckOnly = hpCheckOnly && check.reason == "HP_CONTRADICTION"
                 }
                 while (i < observations.size && observations[i].atNanos <= now) {
                     val seen = observations[i++]
                     val pending = since
                     if (pending != null && seen.atNanos >= pending &&
-                        (seen.basis.startsWith("PAIRED") || seen.basis.contains("ANNOUNCEMENT") ||
+                        (seen.sourceId == "REPLAY_ENTRANCE_AUDIO" || seen.basis.startsWith("PAIRED") || seen.basis.contains("ANNOUNCEMENT") ||
                             (seen.sourceId == "${side}_SPECIES_OVERLAY_PIPELINE" && seen.evidenceArticleIds.isNotEmpty()) ||
                             seen.sourceId == "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS" || seen.basis.contains("CROP"))) {
-                        if (pending < seen.atNanos) result += pending until seen.atNanos
+                        if (pending < seen.atNanos) result += ReplayIdentityGap(pending until seen.atNanos, hpCheckOnly)
                         since = null
+                        hpCheckOnly = true
                         if (seen.speciesName.equals(species, true)) hp.reset(seen.atNanos)
                     }
                     if (!seen.speciesName.equals(species, true)) hp.beginAppearance(seen.speciesName, seen.atNanos)
@@ -2729,7 +2875,7 @@ private class ReplayIdentityTrack private constructor(
                     since = now
                 }
             }
-            since?.let { result += it..Long.MAX_VALUE }
+            since?.let { result += ReplayIdentityGap(it..Long.MAX_VALUE, hpCheckOnly) }
             return result
         }
 
@@ -2891,6 +3037,8 @@ data class ReplayScene(
     /** An attributed trainer entry, independent of the observed outcome. */
     val trainerConcession: ReplayCorrectionSide? = null,
     val inferredPlayerConcession: Boolean = false,
+    val heldPlayerSprite: ReplayCombatant? = null,
+    val heldOpponentSprite: ReplayCombatant? = null,
 )
 
 data class ReplayFastMoveAction(

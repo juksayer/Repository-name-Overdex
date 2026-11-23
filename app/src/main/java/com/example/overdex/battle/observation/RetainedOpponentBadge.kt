@@ -52,7 +52,8 @@ internal class RetainedOpponentBadge(context: Context, private val windows: Wind
         contentChanged(currentContent)
         // A moved/resized HUD has a different cutout. Do not lay the old copy
         // over its new position or reuse a queued frame containing our copy.
-        if (cached != null && cachedHudRegion != hudRegion) reset()
+        if (cached != null && (cachedHudRegion != hudRegion ||
+                displayWidth != width || displayHeight != height)) reset()
         // A queued pre-change frame cannot refill the cache after a faint/switch.
         if (at < content.changedAtNanos) return
         val cleanSource = retainedBadgeSource(badgeRegion, hudRegion)
@@ -63,13 +64,20 @@ internal class RetainedOpponentBadge(context: Context, private val windows: Wind
         if (decision.cacheOriginal) {
             val area = cleanSource ?: return
             // Keep only one small image, not a history of frames or PNG artifacts.
-            cached = retainedBadgeImage(bitmap, area, hudRegion) ?: return
-            region = area
-            cachedHudRegion = hudRegion
-            displayWidth = width; displayHeight = height
+            val candidate = retainedBadgeImage(bitmap, area, hudRegion)
+            if (candidate != null && cleanRetainedBadgeFace(candidate)) {
+                cached = candidate
+                region = area
+                cachedHudRegion = hudRegion
+                displayWidth = width
+                displayHeight = height
+            } else {
+                candidate?.recycle()
+            }
         }
-        if (wanted != decision.showRetained) {
-            wanted = decision.showRetained
+        val show = decision.showRetained && cached != null
+        if (wanted != show) {
+            wanted = show
             main.post(::render)
         }
     }

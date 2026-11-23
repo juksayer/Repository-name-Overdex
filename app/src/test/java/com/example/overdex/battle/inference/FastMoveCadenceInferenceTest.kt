@@ -1690,11 +1690,27 @@ class FastMoveCadenceInferenceTest {
         engine.accept(article("team", PlayerTeamSlotConfigured(1, "Sealeo", 364, "Water Gun", listOf("Surf"))))
         val initial = engine.accept(article("ours", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Sealeo", 364))).single()
         energy.accept(article("initial", initial.payload))
-        engine.accept(playerImpactCadence("c1", 500_000_000L))
-        val refined = engine.accept(playerImpactCadence("c2", 500_000_000L)).single()
-        energy.accept(article("refined", refined.payload))
+        assertTrue(engine.accept(playerImpactCadence("c1", 500_000_000L)).isEmpty())
+        val checked = engine.accept(playerImpactCadence("c2", 500_000_000L)).single()
+        assertEquals("Water Gun", (checked.payload as FastMoveIdentified).moveName)
+        energy.accept(article("checked", checked.payload))
+        repeat(4) { assertTrue(engine.accept(playerImpactCadence("later-$it", 1_000_000_000L)).isEmpty()) }
+        assertEquals("Water Gun", engine.candidateSnapshot(ActivePokemonSide.PLAYER)?.identifiedMoveName)
         val result = energy.accept(fastUse("use", ActivePokemonSide.PLAYER, "Sealeo"))
         assertEquals(3, result.single().payload.totalEnergyGenerated)
+    }
+
+    @Test fun `different cards of the same species require the active slot for a configured move`() = runBlocking {
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
+        engine.accept(article("first", PlayerTeamSlotConfigured(1, "Sealeo", 364, "Water Gun", listOf("Surf"))))
+        engine.accept(article("second", PlayerTeamSlotConfigured(2, "Sealeo", 364, "Powder Snow", listOf("Surf"))))
+        val species = ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Sealeo", 364)
+        assertTrue(engine.accept(article("unsided-card", species)).isEmpty())
+        val first = engine.accept(article("first-active", species.copy(playerTeamSlot = 1))).single()
+        assertEquals("Water Gun", (first.payload as FastMoveIdentified).moveName)
+        assertTrue(engine.accept(article("repeat-badge", species)).isEmpty())
+        val next = engine.accept(article("second-active", species.copy(playerTeamSlot = 2))).single()
+        assertEquals("Powder Snow", (next.payload as FastMoveIdentified).moveName)
     }
 
     @Test

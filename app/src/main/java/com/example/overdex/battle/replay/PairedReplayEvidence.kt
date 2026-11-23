@@ -159,7 +159,7 @@ internal object PairedReplayEvidenceBuilder {
                     val text = p.ocrText?.trim() ?: return@mapNotNull null
                     val prefix = "${p.speciesName} used "
                     if (!text.startsWith(prefix, ignoreCase = true) || !text.endsWith('!')) return@mapNotNull null
-                    val move = text.substring(prefix.length, text.length - 1).trim()
+                    val move = text.substring(prefix.length, text.length - 1).trim().replace(Regex("\\s+"), " ")
                     if (move.isEmpty()) return@mapNotNull null
                     listOf(p.side, p.speciesName, PairedReplayObservation.Kind.CHARGED_MOVE, move)
                 }

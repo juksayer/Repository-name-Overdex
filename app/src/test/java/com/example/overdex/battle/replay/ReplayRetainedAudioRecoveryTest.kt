@@ -192,6 +192,19 @@ class ReplayRetainedAudioRecoveryTest {
             event("end", 100*S, ArchivedMatchEnded("WIN"))))
         assertEquals(listOf("entry"), ReplayRetainedAudioRecovery.selectedArticles(a).map { it.articleId })
     }
+    @Test fun missingGoUsesWitnessedCombatOnlyForReviewEligibility() {
+        val badge = event("badge", 83*S, ArchivedChargedMoveEnergySpent("OPPONENT", "Jumpluff", "Aerial Ace", 45, "ANNOUNCEMENT"))
+        val a = archive().copy(articles = listOf(capture("before", 78*S, first),
+            event("phase", 80*S, ArchivedAttackIncoming), badge, capture("after", 84*S, first),
+            event("end", 90*S, ArchivedMatchEnded("LOSS"))).reversed())
+        assertEquals(listOf("after"), ReplayRetainedAudioRecovery.selectedArticles(a).map { it.articleId })
+        assertEquals(setOf("Jumpluff"), MatchReplayModel.audioParticipantNames(a, emptyList()))
+        assertNull(MatchReplayModel(a).matchStartNanos)
+        val resultOnly = a.copy(articles = a.articles.filterNot { it.articleId in setOf("phase", "badge") })
+        assertTrue(ReplayRetainedAudioRecovery.selectedArticles(resultOnly).isEmpty())
+        assertTrue(MatchReplayModel.audioParticipantNames(resultOnly, emptyList()).isEmpty())
+    }
+
     private fun capture(id: String, at: Long, bytes: ByteArray) = event(id, at, ArchivedAudioCaptured(id,
         ReplayRetainedAudioRecovery.sha(bytes), bytes.size.toLong(), "audio/wav", 8000, 1, 1_200_000_000,
         "FAST_MOVE", "PLAYBACK_POKEMON_GO"))

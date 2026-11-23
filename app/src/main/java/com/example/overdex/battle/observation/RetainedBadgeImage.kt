@@ -45,3 +45,28 @@ internal fun retainedBadgeImage(source: Bitmap, badge: AnchorRegion, hud: Anchor
     canvas.drawBitmap(source, -bounds.left.toFloat(), -bounds.top.toFloat(), Paint())
     return image
 }
+
+/** A partly covered panel can still pass native badge presence. Across the
+ * face, individual letters, balls, and shields leave breaks of pale backing.
+ * Reject broad foreground strokes. The transparent cutout belongs to our HUD. */
+internal fun cleanRetainedBadgeFace(image: Bitmap): Boolean {
+    val width = image.width
+    val height = image.height
+    if (width < 40 || height < 12) return false
+    val colors = IntArray(width)
+    for (row in 1..10) {
+        image.getPixels(colors, 0, width, 0, (2 * row + 1) * height / 24, width, 1)
+        var foregroundRun = 0
+        for (column in 2..37) {
+            val color = colors[(2 * column + 1) * width / 80]
+            val red = color ushr 16 and 255
+            val green = color ushr 8 and 255
+            val blue = color and 255
+            val backing = red >= 170 && green >= 180 && blue >= 180 &&
+                maxOf(red, green, blue) - minOf(red, green, blue) <= 65
+            if (backing || color ushr 24 < 128) foregroundRun = 0 else foregroundRun++
+            if (foregroundRun >= 6) return false
+        }
+    }
+    return true
+}

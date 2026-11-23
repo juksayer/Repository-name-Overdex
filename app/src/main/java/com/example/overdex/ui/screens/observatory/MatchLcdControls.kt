@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
@@ -127,8 +128,8 @@ private val replayLcdCompactPadding = 2.dp
 private val replayLcdCompactControl = replayLcdControl.copy(fontSize = 13.sp, lineHeight = 16.sp)
 
 @Composable
-internal fun ReplayLcdText(text: String, modifier: Modifier = Modifier, heading: Boolean = false) {
-    Text(text, modifier, color = replayLcdInk, style = if (heading) replayLcdHeading else replayLcdBody)
+internal fun ReplayLcdText(text: String, modifier: Modifier = Modifier, heading: Boolean = false, textAlign: TextAlign? = null) {
+    Text(text, modifier, color = replayLcdInk, textAlign = textAlign, style = if (heading) replayLcdHeading else replayLcdBody)
 }
 
 @Composable
@@ -241,6 +242,7 @@ internal fun ReplayLcdEventDetails(
     startNanos: Long,
     matchStartNanos: Long?,
     archiveStartNanos: Long,
+    playbackSummary: Boolean = false,
 ) {
     val index = ReplayEventMarkerNavigation.currentIndex(markers, cursorNanos, selectedId)
     val current = markers.getOrNull(index)
@@ -264,11 +266,11 @@ internal fun ReplayLcdEventDetails(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Column(Modifier.weight(1f).testTag("replay-events-player")) {
                         ReplayLcdText("You")
-                        player?.let { ReplayLcdEvent(it, startNanos, matchStartNanos, archiveStartNanos) }
+                        player?.let { ReplayLcdEvent(it, startNanos, matchStartNanos, archiveStartNanos, playbackSummary = playbackSummary) }
                     }
-                    Column(Modifier.weight(1f).testTag("replay-events-opponent")) {
+                    Column(Modifier.weight(1f).testTag("replay-events-opponent"), horizontalAlignment = Alignment.End) {
                         ReplayLcdText("Opponent")
-                        opponent?.let { ReplayLcdEvent(it, startNanos, matchStartNanos, archiveStartNanos) }
+                        opponent?.let { ReplayLcdEvent(it, startNanos, matchStartNanos, archiveStartNanos, playbackSummary = playbackSummary) }
                     }
                 }
             }
@@ -283,6 +285,7 @@ private fun ReplayLcdEvent(
     matchStartNanos: Long?,
     archiveStartNanos: Long,
     modifier: Modifier = Modifier,
+    playbackSummary: Boolean = false,
 ) {
     val faint = current.kind == ReplayEventMarkerKind.FAINT
     val side = when (current.side) {
@@ -320,32 +323,63 @@ private fun ReplayLcdEvent(
         else -> current.label.removePrefix("Fast move · ").removePrefix("Charged move · ")
     }
     val shared = current.initiatingSide == null
+    val opponent = current.initiatingSide == "OPPONENT"
+    val align = when {
+        shared -> TextAlign.Center
+        opponent -> TextAlign.End
+        else -> TextAlign.Start
+    }
+    val predictedUse = playbackSummary && current.kind == ReplayEventMarkerKind.FAST_MOVE &&
+        title.startsWith("Inferred · ")
+    val estimatedTime = playbackSummary && current.kind == ReplayEventMarkerKind.FAST_MOVE &&
+        title.endsWith(" · timing inferred")
     Column(
         modifier.fillMaxWidth().semantics {
             contentDescription = "Replay event details"
             stateDescription = current.description
         },
-        horizontalAlignment = if (shared) Alignment.CenterHorizontally else Alignment.Start,
+        horizontalAlignment = when {
+            shared -> Alignment.CenterHorizontally
+            opponent -> Alignment.End
+            else -> Alignment.Start
+        },
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(Modifier.size(7.dp).background(replayMarkerColor(current.kind)))
-            ReplayLcdText(title, Modifier.weight(1f, fill = !shared), heading = true)
+            val marker = Modifier.size(6.dp).background(replayMarkerColor(current.kind))
+            if (!opponent) Box(marker)
+            val displayTitle = when {
+                predictedUse -> title.removePrefix("Inferred · ")
+                estimatedTime -> title.removeSuffix(" · timing inferred")
+                else -> title
+            }
+            ReplayLcdText(displayTitle,
+                Modifier.weight(1f, fill = false), heading = true, textAlign = align)
+            if (opponent) Box(marker)
         }
-        affectedSide?.let { ReplayLcdText(it) }
+        affectedSide?.let { ReplayLcdText(it, textAlign = align) }
         if (shared && current.kind != ReplayEventMarkerKind.MATCH_START) {
             ReplayLcdText(if (faint) "Cause unconfirmed" else "Initiating side unconfirmed")
         }
-        byline?.let { ReplayLcdText(it) }
+        byline?.let { ReplayLcdText(it, textAlign = align) }
         if (current.kind == ReplayEventMarkerKind.CONCESSION) {
-            ReplayLcdText(current.label.substringAfter(" · "))
+            ReplayLcdText(current.label.substringAfter(" · "), textAlign = align)
         }
-        qualification?.let { ReplayLcdText(it) }
-        if (faint) ReplayLcdText(formatReplayFaintTime(current.faintTiming, matchStartNanos, archiveStartNanos))
-        else if (current.kind != ReplayEventMarkerKind.MATCH_START) ReplayLcdText(formatReplayTime(current.atNanos - startNanos))
-        current.inferenceExplanation?.let { ReplayLcdText(it) }
+        qualification?.let { ReplayLcdText(it, textAlign = align) }
+        if (faint) ReplayLcdText(formatReplayFaintTime(current.faintTiming, matchStartNanos, archiveStartNanos), textAlign = align)
+        else if (current.kind != ReplayEventMarkerKind.MATCH_START) {
+            val time = formatReplayTime(current.atNanos - startNanos)
+            val caption = when {
+                predictedUse -> if (opponent) "inferred use · $time" else "$time · inferred use"
+                !estimatedTime -> time
+                opponent -> "estimated · $time"
+                else -> "$time · estimated"
+            }
+            ReplayLcdText(caption, textAlign = align)
+        }
+        if (!playbackSummary) current.inferenceExplanation?.let { ReplayLcdText(it, textAlign = align) }
     }
 }
 

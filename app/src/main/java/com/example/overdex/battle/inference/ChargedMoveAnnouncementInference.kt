@@ -112,7 +112,7 @@ class ChargedMoveAnnouncementInference(
                 if (speciesByReading.size > 64) speciesByReading.remove(speciesByReading.keys.first())
             }
         }
-        val moveName = normalize(match.groupValues[2])
+        var moveName = normalize(match.groupValues[2])
         val pokemon: Pokemon
         val move: Move
         val side: ActivePokemonSide
@@ -126,6 +126,10 @@ class ChargedMoveAnnouncementInference(
                 com.example.overdex.battle.observation.TeamRosterSpeciesAttributor.speciesKey(it) ==
                     com.example.overdex.battle.observation.TeamRosterSpeciesAttributor.speciesKey(speciesName)
             }.keys
+            if (activeSides.size == 1 && performerKey == normalize(activeSpeciesBySide.getValue(activeSides.single()))) {
+                val active = pokemon(activeSpeciesBySide.getValue(activeSides.single())) ?: return null
+                moveName = normalize(LegalChargedMoveTextResolver.namedAnnouncementReading(match.groupValues[2], active.chargedMoves))
+            }
             val selection = if (ActivePokemonSide.PLAYER in activeSides) {
                 val player = pokemon(activeSpeciesBySide.getValue(ActivePokemonSide.PLAYER)) ?: return null
                 selectedPlayerMove(player, moveName, at, requireReady = activeSides.size > 1)

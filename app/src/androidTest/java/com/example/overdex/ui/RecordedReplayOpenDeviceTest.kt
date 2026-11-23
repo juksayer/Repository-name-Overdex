@@ -23,6 +23,48 @@ import java.util.concurrent.atomic.AtomicInteger
 class RecordedReplayOpenDeviceTest {
     @get:Rule val compose = createComposeRule()
 
+    @Test fun pixelGourgeistFinishIsVisibleOnTheReplayLcd() {
+        verifyGourgeistLcd("nov22-pixel-1425.zip", 138L)
+    }
+
+    @Test fun pixelGourgeistFinishWithoutRecordedGoIsVisibleOnTheReplayLcd() {
+        verifyGourgeistLcd("nov22-pixel-1421.zip", 208L)
+    }
+
+    private fun verifyGourgeistLcd(filename: String, seconds: Long) {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val file = File(context.cacheDir, filename)
+        org.junit.Assume.assumeTrue(file.isFile)
+        val archive = file.inputStream().use(MatchArchivePackageReader::read)
+        val go = archive.articles.singleOrNull { it.payload is ArchivedMatchStarted }?.monotonicTimeNanos
+            ?: archive.articles.mapNotNull { it.monotonicTimeNanos }.min()
+        val repo = PokemonRepository(PokedexDatabase.getDatabase(context).pokemonDao(),
+            LocalSpriteProvider(context.assets), GameMasterLoader(context))
+        val lcd = androidx.compose.runtime.mutableStateOf<(@androidx.compose.runtime.Composable () -> Unit)?>(null)
+        compose.setContent {
+            ODXFiShell(showBattleOverlay = false, lcdContent = lcd.value, lcdEdgeToEdgeContent = true) {
+                MatchReplayScreen(archive, onBack = {}, initialCursorNanos = go + seconds * 1_000_000_000L,
+                    impactArchiveUri = android.net.Uri.fromFile(file), resolveSpeciesNames = repo::getAllSpeciesNames,
+                    resolveSpeciesId = { repo.getPokemonByName(it)?.id },
+                    resolveFastMoves = { repo.getPokemonByName(it)?.fastMoves.orEmpty() },
+                    resolveChargedMoves = { repo.getPokemonByName(it)?.chargedMoves.orEmpty() },
+                    onLcdContentUpdate = { lcd.value = it })
+            }
+        }
+        compose.waitUntil(120_000) { compose.onAllNodesWithText("Events").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Events").performClick()
+        val opponentLane = hasAnyAncestor(hasTestTag("replay-events-opponent"))
+        val finish = hasText("Gourgeist fainted") and opponentLane
+        val owner = hasText("Aerial Ace by Jumpluff") and opponentLane
+        compose.waitUntil(180_000) { compose.onAllNodes(owner).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(finish).performScrollTo().assertIsDisplayed()
+        compose.onNode(owner).performScrollTo().assertIsDisplayed()
+        File(context.cacheDir, "gourgeist-faint-lcd.png").outputStream().use {
+            compose.onNodeWithTag("instrument-lcd-surface").captureToImage().asAndroidBitmap()
+                .compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+        }
+    }
+
     @Test fun moondropReplayCanSeekWhileEndingEvidenceIsPending() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         org.junit.Assume.assumeTrue(InstrumentationRegistry.getArguments().getString("recordedMoondropTwoPulses") == "true")

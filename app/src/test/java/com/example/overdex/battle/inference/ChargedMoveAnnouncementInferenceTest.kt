@@ -57,6 +57,20 @@ class ChargedMoveAnnouncementInferenceTest {
         assertEquals(listOf(ArticleId("pending"), ArticleId("delayed-badge")), result?.predecessorIds)
     }
 
+    @Test fun `a trailing HUD glyph can follow an exact complete announcement`() = runBlocking {
+        val jumpluff = pokemon.copy(name = "Jumpluff", id = 189,
+            chargedMoves = listOf(Move("Energy Ball", PokemonType.GRASS, 90, 45, false)))
+        val reader = ChargedMoveAnnouncementInference(SinglePokemonKnowledge(jumpluff))
+        reader.accept(article("badge", SourceId("SPECIES"), ActivePokemonSpeciesWitnessed(
+            ActivePokemonSide.PLAYER, jumpluff.name, jumpluff.id)), ::noRosterSide)
+        assertNull(reader.accept(announcement("incomplete", "Jumpluff used Energy Bal!D"), ::noRosterSide))
+        val raw = announcement("original", "Jumpluff used Energy Ball!D")
+        val result = reader.accept(raw, ::noRosterSide)
+        assertEquals("Energy Ball", result?.payload?.moveName)
+        assertEquals(raw, result?.observedArticle)
+        assertEquals(listOf(raw.id, ArticleId("badge")), result?.predecessorIds)
+    }
+
     @Test fun `named announced charged move cites its Pokedex energy cost`() = runBlocking {
         inference.accept(species("active", ActivePokemonSide.PLAYER), ::noRosterSide)
 

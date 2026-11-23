@@ -4,12 +4,15 @@ package com.example.overdex.battle.replay
 internal class PairedReplayProjection(
     private val primaryMatchId: String,
     private val matchStartNanos: Long,
-    private val paired: PairedReplayEvidence,
+    paired: PairedReplayEvidence,
     private val chargedTypes: Map<Pair<String, String>, com.example.overdex.model.PokemonType> = emptyMap(),
+    model: MatchReplayModel? = null,
 ) {
-    fun apply(scene: ReplayScene, cursor: Long): ReplayScene {
-        val extra = paired.events.filter { !it.ambiguous && it.observations.size == 1 }
+    private val extra = paired.events.filter { !it.ambiguous && it.observations.size == 1 }
             .map { it.observations.single() }.filter { it.archiveId != primaryMatchId }
+            .filterNot { model?.alreadyPresentsPairedCharge(it, matchStartNanos + it.offsetNanos) == true }
+
+    fun apply(scene: ReplayScene, cursor: Long): ReplayScene {
         fun actor(side: String) = if (side == "PLAYER") scene.player else scene.opponent
         fun faint(side: String, combatant: ReplayCombatant?): ReplayCombatant? {
             combatant ?: return null

@@ -38,6 +38,18 @@ internal object LegalChargedMoveTextResolver {
         return matches.filter { it.repairRank == best }
     }
 
+    /** The announcement is a sentence. Extra HUD ink beyond its terminator can
+     * be isolated only after the caller has matched the active actor by name. */
+    fun namedAnnouncementReading(reading: String, moves: List<Move>): String {
+        val boundary = reading.indexOf('!')
+        if (boundary < 0) return reading
+        val tail = reading.substring(boundary + 1)
+        if (tail.isEmpty() || tail.contains("used", ignoreCase = true)) return reading
+        if (!tail.first().isWhitespace() && !(tail.length == 1 && tail.first().isLetter())) return reading
+        val complete = reading.substring(0, boundary).trim()
+        return if (moves.any { it.name.equals(complete, ignoreCase = true) }) complete else reading
+    }
+
     private fun normalize(value: String) = SpeciesOcrTypography.normalizeLabel(value)
 
     /**

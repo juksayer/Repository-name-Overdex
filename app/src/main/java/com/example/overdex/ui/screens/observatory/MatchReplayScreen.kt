@@ -19,6 +19,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.height
@@ -55,6 +57,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
@@ -343,7 +346,7 @@ fun MatchReplayScreen(
     }
     val pairedProjection = remember(pairedEvidence, model, pairedChargedTypes) {
         pairedEvidence?.takeIf { model !== baseModel }?.let { evidence -> model.matchStartNanos?.let {
-            com.example.overdex.battle.replay.PairedReplayProjection(replayArchive.matchId, it, evidence, pairedChargedTypes)
+            com.example.overdex.battle.replay.PairedReplayProjection(replayArchive.matchId, it, evidence, pairedChargedTypes, model)
         } }
     }
     val primaryScene = trainerProjection?.apply(model.sceneAt(cursor), cursor) ?: model.sceneAt(cursor)
@@ -819,7 +822,7 @@ fun MatchReplayScreen(
                             Action(action, modifier, alignedStart = stackControls)
                         }
                         ReplayLcdEventDetails(eventMarkers, cursor, selectedMarkerId, playbackStart,
-                            model.matchStartNanos, model.startNanos)
+                            model.matchStartNanos, model.startNanos, playbackSummary = true)
                     }
                     ReplayLcdView.Events -> {
                         ReplayLcdEventDetails(eventMarkers, cursor, selectedMarkerId, playbackStart,
@@ -987,15 +990,15 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                 ) {
                     Box(Modifier.weight(1f))
                     ReplayCombatantSlot(
-                        combatant = scene.opponent,
+                        combatant = scene.opponent ?: scene.heldOpponentSprite,
                         cursorNanos = cursor,
                         hp = scene.opponentHp,
                         context = context,
                         useBackSprite = false,
-                        fastAction = scene.fastMoveActions.lastOrNull { it.side == "OPPONENT" },
-                        chargedAction = scene.chargedMoveActions.lastOrNull { it.side == "OPPONENT" },
-                        qteMilestone = scene.qteMilestone.takeIf { scene.qteMilestoneSide == "OPPONENT" },
-                        statChanges = scene.statChanges.filter { it.side == "OPPONENT" },
+                        fastAction = scene.fastMoveActions.lastOrNull { scene.opponent != null && it.side == "OPPONENT" },
+                        chargedAction = scene.chargedMoveActions.lastOrNull { scene.opponent != null && it.side == "OPPONENT" },
+                        qteMilestone = scene.qteMilestone.takeIf { scene.opponent != null && scene.qteMilestoneSide == "OPPONENT" },
+                        statChanges = scene.statChanges.filter { scene.opponent != null && it.side == "OPPONENT" },
                         spriteSize = spriteSize * 0.9f,
                         qteSpriteScale = opponentScale,
                         qteSpriteTranslationXPixels = opponentOffset,
@@ -1003,28 +1006,32 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                         modifier = Modifier.weight(1f),
                     )
                 }
-                scene.protectShield?.let { shield ->
-                    val playerDefends = shield.defendingSide == "PLAYER"
-                    val x = shieldCenterX(playerDefends, travelHalfWidth, spriteSize * 1.15f, opponentForwardX)
-                    ProtectShieldGraphic(shield, Modifier.align(Alignment.Center)
-                        .offset(x, if (playerDefends) 24.dp else opponentForwardY)
-                        .graphicsLayer {
-                            translationX = if (playerDefends) playerOffset else opponentOffset
-                            translationY = if (playerDefends) 25f else 0f
-                        }.size(spriteSize * .60f))
-                }
-                scene.fastMoveActions.forEach { action ->
-                    FastMoveReplayIndicator(action, travelHalfWidth, opponentForwardX, opponentForwardY,
-                        Modifier.align(Alignment.Center), playerOffset, opponentOffset)
-                }
-                scene.chargedMoveActions.forEach { action ->
-                    val visible = if (action.side == "OPPONENT" && cursor < action.announcementAtNanos &&
-                        !(action.hitsProtectShield && action.phase == ReplayChargePhase.STRIKING))
-                        action.copy(moveName = null, type = null) else action
-                    ChargedMoveReplayIndicator(visible, travelHalfWidth, spriteSize * 1.15f,
-                        opponentForwardX, opponentForwardY, Modifier.align(Alignment.Center),
-                        performerOffsetPixels = if (action.side == "PLAYER") playerOffset else opponentOffset,
-                        recipientOffsetPixels = if (action.side == "PLAYER") opponentOffset else playerOffset)
+                // Within the space between sprites, the near shield covers the projectile.
+                Box(Modifier.fillMaxSize()) {
+                    scene.protectShield?.let { shield ->
+                        val playerDefends = shield.defendingSide == "PLAYER"
+                        val x = shieldCenterX(playerDefends, travelHalfWidth, spriteSize * 1.15f, opponentForwardX)
+                        ProtectShieldGraphic(shield, Modifier.align(Alignment.Center)
+                            .zIndex(if (playerDefends) 1f else 0f)
+                            .offset(x, if (playerDefends) 24.dp else opponentForwardY)
+                            .graphicsLayer {
+                                translationX = if (playerDefends) playerOffset else opponentOffset
+                                translationY = if (playerDefends) 25f else 0f
+                            }.size(spriteSize * .69f))
+                    }
+                    scene.fastMoveActions.forEach { action ->
+                        FastMoveReplayIndicator(action, travelHalfWidth, opponentForwardX, opponentForwardY,
+                            Modifier.align(Alignment.Center), playerOffset, opponentOffset)
+                    }
+                    scene.chargedMoveActions.forEach { action ->
+                        val visible = if (action.side == "OPPONENT" && cursor < action.announcementAtNanos &&
+                            !(action.hitsProtectShield && action.phase == ReplayChargePhase.STRIKING))
+                            action.copy(moveName = null, type = null) else action
+                        ChargedMoveReplayIndicator(visible, travelHalfWidth, spriteSize * 1.15f,
+                            opponentForwardX, opponentForwardY, Modifier.align(Alignment.Center),
+                            performerOffsetPixels = if (action.side == "PLAYER") playerOffset else opponentOffset,
+                            recipientOffsetPixels = if (action.side == "PLAYER") opponentOffset else playerOffset)
+                    }
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp).align(Alignment.Center),
@@ -1032,15 +1039,15 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     ReplayCombatantSlot(
-                        combatant = scene.player,
+                        combatant = scene.player ?: scene.heldPlayerSprite,
                         cursorNanos = cursor,
                         hp = scene.playerHp,
                         context = context,
                         useBackSprite = true,
-                        fastAction = scene.fastMoveActions.lastOrNull { it.side == "PLAYER" },
-                        chargedAction = scene.chargedMoveActions.lastOrNull { it.side == "PLAYER" },
-                        qteMilestone = scene.qteMilestone.takeIf { scene.qteMilestoneSide == "PLAYER" },
-                        statChanges = scene.statChanges.filter { it.side == "PLAYER" },
+                        fastAction = scene.fastMoveActions.lastOrNull { scene.player != null && it.side == "PLAYER" },
+                        chargedAction = scene.chargedMoveActions.lastOrNull { scene.player != null && it.side == "PLAYER" },
+                        qteMilestone = scene.qteMilestone.takeIf { scene.player != null && scene.qteMilestoneSide == "PLAYER" },
+                        statChanges = scene.statChanges.filter { scene.player != null && it.side == "PLAYER" },
                         spriteSize = spriteSize * 1.15f,
                         qteSpriteScale = ReplayChargePose.qteSpriteScale(chargePreparation, cursor, player = true),
                         qteSpriteTranslationXPixels = ReplayChargePose.qteSpriteTranslationXPixels(chargePreparation, cursor, player = true),
@@ -1259,6 +1266,7 @@ private fun ReplayLcdActionRow(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ReplayLcdTimeline(
     cursor: Long,
@@ -1276,7 +1284,7 @@ private fun ReplayLcdTimeline(
     val elapsed = (cursor - start).coerceIn(0L, duration)
     val currentElapsed by rememberUpdatedState(elapsed)
     val fraction = (elapsed.toDouble() / duration).toFloat()
-    Column(Modifier.fillMaxWidth().heightIn(min = 48.dp).semantics {
+    Column(Modifier.fillMaxWidth().semantics {
         contentDescription = "Replay timeline"
         progressBarRangeInfo = ProgressBarRangeInfo(fraction, 0f..1f)
         setProgress { progress ->
@@ -1296,12 +1304,15 @@ private fun ReplayLcdTimeline(
             finish()
         }
     }, verticalArrangement = Arrangement.Center) {
-        ReplayLcdText("${formatReplayTime(elapsed)} / ${formatReplayTime(duration)}", heading = true)
-        ReplayLcdText(when {
-            playing && waitingForReview -> "Reviewing ending…"
-            playing -> "Playing"
-            else -> "Paused"
-        })
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp),
+            itemVerticalAlignment = Alignment.CenterVertically) {
+            ReplayLcdText("${formatReplayTime(elapsed)} / ${formatReplayTime(duration)}", heading = true)
+            ReplayLcdText(when {
+                playing && waitingForReview -> "Reviewing ending…"
+                playing -> "Playing"
+                else -> "Paused"
+            })
+        }
         BoxWithConstraints(Modifier.fillMaxWidth().height(9.dp)) {
             androidx.compose.material3.LinearProgressIndicator(progress = { fraction },
                 modifier = Modifier.fillMaxWidth().height(4.dp).align(Alignment.Center), color = TerminalGreen)
