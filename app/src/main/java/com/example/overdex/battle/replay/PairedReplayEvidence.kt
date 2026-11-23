@@ -29,6 +29,7 @@ internal data class PairedReplayEvidence(
     val secondaryClockOffsetNanos: Long,
     val anchorResidualNanos: Long,
     val events: List<PairedReplayEvent>,
+    val alignedIdentities: List<ReplayIdentityObservation> = emptyList(),
 )
 
 /**
@@ -111,7 +112,36 @@ internal object PairedReplayEvidenceBuilder {
         right.filterNot { it in consumed }.forEach { s ->
             events += PairedReplayEvent(listOf(s), sCandidates.getValue(s).isNotEmpty())
         }
-        return PairedReplayEvidence(offset, residual, events.sortedBy { it.observations.minOf { o -> o.offsetNanos } })
+        val secondaryRows = secondary.withQualifiedBattleIdentities().articles
+        val identities = secondaryRows.mapNotNull { row ->
+            val identity = row.payload as? ArchivedActivePokemonSpeciesWitnessed ?: return@mapNotNull null
+            val side = when (identity.side) {
+                "OPPONENT" -> "PLAYER"
+                "PLAYER" -> "OPPONENT"
+                else -> return@mapNotNull null
+            }
+            val refs = row.evidenceReferences.orEmpty().mapNotNull(sById::get)
+            val source = when (row.sourceId) {
+                "${identity.side}_SPECIES_OVERLAY_PIPELINE" -> refs.singleOrNull {
+                    val crop = it.payload as? ArchivedCropCaptured
+                    crop?.cropName == (if (side == "PLAYER") "OpponentActiveSpeciesTextCrop" else "PlayerActiveSpeciesTextCrop") &&
+                        crop.nativeTeamBadgePresent != false && (crop.nativeTeamBadgePresent == true ||
+                        identity.ocrText?.trim().equals(identity.speciesName, true))
+                }
+                "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS" -> refs.singleOrNull {
+                    it.sourceId == "ANNOUNCEMENT_WITNESS" &&
+                        (it.payload as? ArchivedRawText)?.value?.trim()?.equals("Go, ${identity.speciesName}!", true) == true
+                }
+                else -> null
+            } ?: return@mapNotNull null
+            val captured = source.monotonicTimeNanos?.takeIf { it >= sStart } ?: return@mapNotNull null
+            if (row.sourceId == "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS" &&
+                archivedEntrySide(identity.speciesName, captured, secondaryRows) != identity.side) return@mapNotNull null
+            ReplayIdentityObservation(side, identity.speciesName, identity.speciesId, pStart + captured - sStart + offset,
+                "PAIRED BADGE OR ENTRY", sourceId = row.sourceId, confidence = row.confidence, articleId = row.articleId,
+                evidenceArticleIds = listOf(secondary.matchId, source.articleId, row.articleId).distinct())
+        }
+        return PairedReplayEvidence(offset, residual, events.sortedBy { it.observations.minOf { o -> o.offsetNanos } }, identities)
     }
 
     private fun start(archive: MatchArchive): Long = requireNotNull(archive.articles.singleOrNull {

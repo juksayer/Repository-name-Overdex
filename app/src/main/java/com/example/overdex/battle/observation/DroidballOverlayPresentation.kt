@@ -1,5 +1,6 @@
 package com.example.overdex.battle.observation
 
+import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.model.PokemonType
 import com.example.overdex.battle.custody.OpponentBattleResource
 import com.example.overdex.battle.custody.OpponentBattleResourceCountMeasured
@@ -64,6 +65,12 @@ data class OverlayMovePossibility(
 }
 
 object DroidballOverlayPresentation {
+    private val _lastSeenNames = MutableStateFlow<Map<ActivePokemonSide, String>>(emptyMap())
+    internal val lastSeenNames = _lastSeenNames.asStateFlow()
+    @Synchronized internal fun checkingAppearance(side: ActivePokemonSide, name: String?) {
+        _lastSeenNames.value = if (name == null) _lastSeenNames.value - side else _lastSeenNames.value + (side to name)
+    }
+
     private val _opponentBadgeContent = MutableStateFlow(RetainedBadgeContent())
     internal val opponentBadgeContent = _opponentBadgeContent.asStateFlow()
 
@@ -94,6 +101,7 @@ object DroidballOverlayPresentation {
 
     @Synchronized fun beginEnergyForecast(matchId: String) {
         energyForecastMatchId = matchId
+        _lastSeenNames.value = emptyMap()
         _finishingCredit.value = null
         _opponentEnergyEstimate.value = null
         _trainerReportedFaints.value = emptySet()
@@ -535,6 +543,7 @@ object DroidballOverlayPresentation {
     }
 
     fun reset() {
+        _lastSeenNames.value = emptyMap()
         _chargeTextProtected.value = false
         energyForecastMatchId = null
         lastAutomaticallyOpenedMatchId = null

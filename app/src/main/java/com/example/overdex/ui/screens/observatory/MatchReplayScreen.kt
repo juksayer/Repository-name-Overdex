@@ -83,6 +83,7 @@ import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.battle.replay.ReplayFastMoveAction
 import com.example.overdex.battle.replay.ReplayChargedMoveAction
 import com.example.overdex.battle.replay.ReplayChargePose
+import com.example.overdex.battle.replay.ReplayChargePhase
 import com.example.overdex.battle.replay.ReplayScene
 import com.example.overdex.battle.replay.ReplayCropProgress
 import com.example.overdex.battle.replay.MatchReplayModel
@@ -186,7 +187,17 @@ fun MatchReplayScreen(
             preparation = preparation.copy(complete = true, error = error.message ?: "Replay preparation failed.")
         }
     }
-    val model = preparation.replay?.model
+    var pairedEvidence by remember(archive) { mutableStateOf<com.example.overdex.battle.replay.PairedReplayEvidence?>(null) }
+    val baseModel = preparation.replay?.model
+    val projectedModel by androidx.compose.runtime.key(baseModel, pairedEvidence) {
+        produceState(baseModel) {
+            val evidence = pairedEvidence
+            if (baseModel != null && evidence != null) {
+                value = withContext(Dispatchers.Default) { baseModel.pairedWith(evidence) }
+            }
+        }
+    }
+    val model = if (pairedEvidence == null) baseModel else projectedModel ?: baseModel
     val cropProgress = preparation.progress
     val cropError = preparation.error
     if (model == null) {
@@ -292,7 +303,6 @@ fun MatchReplayScreen(
     }
     val currentModel by rememberUpdatedState(model)
     val pairScope = rememberCoroutineScope()
-    var pairedEvidence by remember(replayArchive) { mutableStateOf<com.example.overdex.battle.replay.PairedReplayEvidence?>(null) }
     var pendingPair by remember(replayArchive) { mutableStateOf<com.example.overdex.battle.replay.PairedReplayEvidence?>(null) }
     var pairStatus by remember(replayArchive) { mutableStateOf<String?>(null) }
     val pairFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -331,8 +341,8 @@ fun MatchReplayScreen(
                 resolveChargedMoveType(species, move)?.let { (species.uppercase() to move.uppercase()) to it }
             }.toMap()
     }
-    val pairedProjection = remember(pairedEvidence, model.matchStartNanos, pairedChargedTypes) {
-        pairedEvidence?.let { evidence -> model.matchStartNanos?.let {
+    val pairedProjection = remember(pairedEvidence, model, pairedChargedTypes) {
+        pairedEvidence?.takeIf { model !== baseModel }?.let { evidence -> model.matchStartNanos?.let {
             com.example.overdex.battle.replay.PairedReplayProjection(replayArchive.matchId, it, evidence, pairedChargedTypes)
         } }
     }
@@ -993,12 +1003,23 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                         modifier = Modifier.weight(1f),
                     )
                 }
+                scene.protectShield?.let { shield ->
+                    val playerDefends = shield.defendingSide == "PLAYER"
+                    val x = shieldCenterX(playerDefends, travelHalfWidth, spriteSize * 1.15f, opponentForwardX)
+                    ProtectShieldGraphic(shield, Modifier.align(Alignment.Center)
+                        .offset(x, if (playerDefends) 24.dp else opponentForwardY)
+                        .graphicsLayer {
+                            translationX = if (playerDefends) playerOffset else opponentOffset
+                            translationY = if (playerDefends) 25f else 0f
+                        }.size(spriteSize * .60f))
+                }
                 scene.fastMoveActions.forEach { action ->
                     FastMoveReplayIndicator(action, travelHalfWidth, opponentForwardX, opponentForwardY,
                         Modifier.align(Alignment.Center), playerOffset, opponentOffset)
                 }
                 scene.chargedMoveActions.forEach { action ->
-                    val visible = if (action.side == "OPPONENT" && cursor < action.announcementAtNanos)
+                    val visible = if (action.side == "OPPONENT" && cursor < action.announcementAtNanos &&
+                        !(action.hitsProtectShield && action.phase == ReplayChargePhase.STRIKING))
                         action.copy(moveName = null, type = null) else action
                     ChargedMoveReplayIndicator(visible, travelHalfWidth, spriteSize * 1.15f,
                         opponentForwardX, opponentForwardY, Modifier.align(Alignment.Center),
@@ -1442,7 +1463,8 @@ internal fun ChargedMoveReplayIndicator(
     // The opponent's front shoulder is both its launch point and the player's
     // landing point. Its glyph is drawn above that sprite on the attack plane.
     val originX = if (player) -travelHalfWidth + playerSpriteSize * 0.28f else opponentForwardX
-    val targetX = if (player) opponentForwardX else -travelHalfWidth
+    val targetX = if (action.hitsProtectShield) shieldCenterX(!player, travelHalfWidth, playerSpriteSize, opponentForwardX)
+        else if (player) opponentForwardX else -travelHalfWidth
     val originY = if (player) 24.dp - playerSpriteSize * 0.12f else opponentForwardY
     val targetY = if (player) opponentForwardY else 24.dp
     val color = action.type?.color ?: Color(0xFF88AFA0)
@@ -1455,7 +1477,8 @@ internal fun ChargedMoveReplayIndicator(
                     (if (player) 0f else 25f) * flight - 18f * sin(flight * Math.PI).toFloat()
             } else 0f
             translationX = if (attributed) performerOffsetPixels * (1f - flight) + recipientOffsetPixels * flight else 0f
-            alpha = pose.iconAlpha
+            alpha = if (action.hitsProtectShield) pose.iconAlpha * ((1f - flight) * 10f).coerceIn(0f, 1f)
+                else pose.iconAlpha
             scaleX = pose.iconScale
             scaleY = pose.iconScale
         }

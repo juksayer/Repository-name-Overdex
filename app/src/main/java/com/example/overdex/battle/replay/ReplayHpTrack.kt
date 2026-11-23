@@ -32,6 +32,10 @@ internal class ReplayHpEvidence(
 
     fun hasCompleteProfile(side: String, at: Long): Boolean = (side to at) in completeFrames
 
+    fun hasSettledProfile(side: String, at: Long): Boolean =
+        completeFrames[side to at]?.all { it.status == "LIVE_COLOR" && it.damageColumns == 0 &&
+            it.unmaskedUncertainColumns == 0 } == true
+
     /** Legacy numeric readings can corroborate ownership at their own capture time.
      * They cannot establish current terminal survival without classified live fill.
      */
@@ -248,6 +252,11 @@ internal class ReplayHpTrack(
         at != null && !ChargedImpactHpSource.matches(observation.sourceId) &&
             allowLastSeen(observation) && evidence.confirmsLiveHp(observation, at)
     }
+    private val reconciliationBaselines = lastSeenObservations.filter { row ->
+        val at = requireNotNull(row.monotonicTimeNanos)
+        evidence.hasSettledProfile(side, at)
+    }
+
     private data class Sample(
         val at: Long, val fraction: Float, val before: Float? = null, val aligned: Boolean = false,
         val projectedUntil: Long? = null,
@@ -462,7 +471,20 @@ internal class ReplayHpTrack(
         for ((index, appearance) in appearances.withIndex()) {
             if (appearance.speciesKey != current.speciesKey) continue
             val end = appearances.getOrNull(index + 1)?.start
+            // A fresh matching badge lets a subsequent settled whole bar repair
+            // a contradicted baseline. Historical readings keep their source time.
+            val baseline = if (appearance.reconfirmed) reconciliationBaselines.firstOrNull {
+                val at = it.monotonicTimeNanos!!
+                at in appearance.start..cursor && (end == null || at < end)
+            } else null
+            if (baseline != null) {
+                fraction = (baseline.payload as ArchivedActiveHpBarMeasured).filledFraction
+                measured = true
+                projectedUntil = null
+                damage = null
+            }
             for (sample in samples) {
+                if (baseline != null && sample.at <= baseline.monotonicTimeNanos!!) continue
                 if (sample.at > cursor) break
                 if (sample.at < appearance.start || (end != null && sample.at >= end)) continue
                 if (matchStart != null && sample.at < matchStart) continue
@@ -534,4 +556,4 @@ data class ReplayHpState(
     val estimatedBetweenMeasurements: Boolean = false,
 )
 
-internal data class ReplayHpAppearance(val speciesKey: String, val start: Long)
+internal data class ReplayHpAppearance(val speciesKey: String, val start: Long, val reconfirmed: Boolean = false)

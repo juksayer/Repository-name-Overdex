@@ -36,6 +36,7 @@ internal data class ReplayFinishingChargeCandidate(
     val articleIds: Set<String>,
     val completed: Boolean,
     val uniquelyOwned: Boolean = true,
+    val confirmedBlocked: Boolean = false,
 )
 
 /** Deliberately scoped to one resolved team loss followed by a known replacement.

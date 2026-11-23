@@ -635,7 +635,10 @@ internal class LiveActiveHpBarWitness(
                                     bounds.left.toFloat() / frame.bitmap.width, bounds.top.toFloat() / frame.bitmap.height,
                                     (bounds.right - bounds.left).toFloat() / frame.bitmap.width,
                                     (bounds.bottom - bounds.top).toFloat() / frame.bitmap.height), frame.overlayRegion)
-                            }.forEach { onDepartureCheck(it, frame.capturedAtMonotonicTimeNanos) }
+                            }.forEach { side ->
+                                match.speciesChecks.verifyAppearance(side, "DEPARTURE", null, frame.capturedAtMonotonicTimeNanos)
+                                onDepartureCheck(side, frame.capturedAtMonotonicTimeNanos)
+                            }
                         }
                         val measurements = located.measurements
                         if (recipientWatch.observe(frame.bitmap.width, frame.bitmap.height,

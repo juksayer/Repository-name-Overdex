@@ -66,15 +66,20 @@ internal class LiveOverlaySpeciesPipeline(
 ) : Observer {
     override val managesAvailability: Boolean = true
 
+    // A verification needs the first readable badge. Reserve one crop across PNG
+    // preservation and OCR so subsequent frames cannot evict it while OCR waits.
+    private val reservedAt = java.util.concurrent.atomic.AtomicLong(Long.MIN_VALUE)
+    private fun releaseReservation(at: Long) { reservedAt.compareAndSet(at, Long.MIN_VALUE) }
+
     private val crops = Channel<PreservedSpeciesCrop>(
         capacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
-        onUndeliveredElement = { sample -> sample.bitmap.recycle() },
+        onUndeliveredElement = { sample -> releaseReservation(sample.capturedAtMonotonicTimeNanos); sample.bitmap.recycle() },
     )
     private val liveCrops = Channel<LiveSpeciesCrop>(
         capacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
-        onUndeliveredElement = { sample -> sample.resolved.bitmap.recycle() }
+        onUndeliveredElement = { sample -> releaseReservation(sample.capturedAtMonotonicTimeNanos); sample.resolved.bitmap.recycle() }
     )
     private var scope: CoroutineScope? = null
     private var activeMatch: Match? = null
@@ -89,6 +94,7 @@ internal class LiveOverlaySpeciesPipeline(
         lastSubmittedSpecies = null
         lastRawReadings = emptyList()
         lastSampledAtNanos = 0L
+        reservedAt.set(Long.MIN_VALUE)
         captureOperating = null
         val sourceId = SourceId(observerId.id)
         val rawSourceId = SourceId("${observerId.id}_OCR")
@@ -118,7 +124,9 @@ internal class LiveOverlaySpeciesPipeline(
                 input.supplyFrames { frame ->
                     val calibratedRegion = cropContract.crop.region.regionIn(calibration)
                     val allowed = captureAllowed()
-                    if (allowed && lastSampledAtNanos > 0L &&
+                    val verification = match.speciesChecks.needsNativeBadge(side)
+                    if (reservedAt.get() != Long.MIN_VALUE) return@supplyFrames
+                    if (!verification && allowed && lastSampledAtNanos > 0L &&
                         frame.capturedAtMonotonicTimeNanos - lastSampledAtNanos <
                         SpeciesCheckCoordinator.SAMPLE_INTERVAL_NANOS
                     ) return@supplyFrames
@@ -165,6 +173,9 @@ internal class LiveOverlaySpeciesPipeline(
                     // Do not add a blind row offset after locating it: a failed
                     // pre-battle read otherwise walks a correct strip into the
                     // status bar and keeps displacing subsequent valid names.
+                    val nativeBadge = if (match.battleHasStartedAt(frame.capturedAtMonotonicTimeNanos))
+                        TeamBadgeCropLocator.nativeBadgeAtName(frame, side, calibration, searchRegion) else null
+                    if (verification && nativeBadge != true) return@supplyFrames
                     val resolved = BattleCropResolver.resolve(
                         cropName = cropContract.crop.cropName,
                         region = searchRegion,
@@ -173,17 +184,21 @@ internal class LiveOverlaySpeciesPipeline(
                         area = cropContract.crop.areaInRegion,
                     )
                         ?: return@supplyFrames
-                    liveCrops.trySend(
+                    if (verification) reservedAt.set(frame.capturedAtMonotonicTimeNanos)
+                    val queued = liveCrops.trySend(
                         LiveSpeciesCrop(
                             resolved,
                             resolved.provenance.overlayBounds(frame.overlayRegion),
                             window.id,
-                            if (match.battleHasStartedAt(frame.capturedAtMonotonicTimeNanos))
-                                TeamBadgeCropLocator.nativeBadgeAtName(frame, side, calibration, searchRegion) else null,
+                            nativeBadge,
                             frame.capturedAtWallTimeMillis,
                             frame.capturedAtMonotonicTimeNanos
                         )
                     )
+                    if (queued.isFailure) {
+                        releaseReservation(frame.capturedAtMonotonicTimeNanos)
+                        resolved.bitmap.recycle()
+                    }
                 }
             }
             pipelineScope.launch {
@@ -223,7 +238,10 @@ internal class LiveOverlaySpeciesPipeline(
                             error
                         )
                     } finally {
-                        if (!handedToOcr) sample.resolved.bitmap.recycle()
+                        if (!handedToOcr) {
+                            releaseReservation(sample.capturedAtMonotonicTimeNanos)
+                            sample.resolved.bitmap.recycle()
+                        }
                     }
                 }
             }
@@ -283,6 +301,7 @@ internal class LiveOverlaySpeciesPipeline(
                         Log.w("FAST_OVERLAY_SPECIES", "OCR failed side=$side", error)
                         continue
                     } finally {
+                        releaseReservation(sample.capturedAtMonotonicTimeNanos)
                         sample.bitmap.recycle()
                     }
                     readings ?: continue
@@ -342,7 +361,7 @@ internal class LiveOverlaySpeciesPipeline(
                         heightProfile.learn(evidence, sourceContext,
                             knownNames.any { it.equals(reading.text.trim(), ignoreCase = true) })
                     }
-                    if (resolution.speciesName.equals(lastSubmittedSpecies, ignoreCase = true)) {
+                    if (!match.speciesChecks.needsNativeBadge(side) && resolution.speciesName.equals(lastSubmittedSpecies, ignoreCase = true)) {
                         // A recovery read that confirms the current combatant still
                         // completes its window. Leaving it open made OCR chase the
                         // unchanged badge until expiry and delayed later switches.
@@ -352,6 +371,7 @@ internal class LiveOverlaySpeciesPipeline(
                             species = resolution.speciesName,
                             cropId = sample.cropEvidenceId,
                             capturedAtMonotonicTimeNanos = sample.capturedAtMonotonicTimeNanos,
+                            nativeBadge = sample.crop.nativeTeamBadgePresent == true,
                         )
                         continue
                     }
@@ -361,7 +381,8 @@ internal class LiveOverlaySpeciesPipeline(
                         windowId = sample.speciesCheckWindowId,
                         species = species.name,
                         cropId = sample.cropEvidenceId,
-                        capturedAtMonotonicTimeNanos = sample.capturedAtMonotonicTimeNanos
+                        capturedAtMonotonicTimeNanos = sample.capturedAtMonotonicTimeNanos,
+                        nativeBadge = sample.crop.nativeTeamBadgePresent == true,
                     ) ?: continue
                     lastSubmittedSpecies = species.name
                     match.custody.submitTestimony(

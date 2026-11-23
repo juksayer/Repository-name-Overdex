@@ -44,7 +44,7 @@ data class FastMoveUseDerivation(
 class FastMoveUseInference(private val onRebuild: ((String, Int) -> Unit)? = null,
     private val faintHistoryCache: FaintHistoryCache? = null,
     private val onFirstImpact: (RealityArticle) -> Unit = {}) {
-    private data class Appearance(val id: String, val speciesName: String?, val atNanos: Long)
+    private data class Appearance(val id: String, val speciesName: String?, val atNanos: Long, val verifyingBadge: Boolean = false)
     private data class UseEvidence(
         val article: RealityArticle, val kind: String, val defaultConfidence: Float,
         val audioSupport: RecipientAudioSupport? = null,
@@ -269,6 +269,8 @@ class FastMoveUseInference(private val onRebuild: ((String, Int) -> Unit)? = nul
             is ActivePokemonSpeciesWitnessed -> {
                 if (fainted.contains(payload.side, payload.speciesName)) return flushExpired(watermarkNanos)
                 val earlier = appearances[payload.side]
+                if (earlier?.verifyingBadge == true && !com.example.overdex.battle.observation.isSideLocatedSpeciesSource(article.sourceId.id))
+                    return flushExpired(watermarkNanos)
                 if (atNanos >= (earlier?.atNanos ?: Long.MIN_VALUE) &&
                     (!payload.speciesName.equals(earlier?.speciesName, ignoreCase = true) ||
                         (payload.appearanceStartedAtNanos != null && payload.appearanceStartedAtNanos != earlier?.atNanos))) {
@@ -284,12 +286,14 @@ class FastMoveUseInference(private val onRebuild: ((String, Int) -> Unit)? = nul
             is SpeciesCheckMeasured -> {
                 // A request to read a badge is not a switch. Announcement cues
                 // request BOTH sides and may arrive after the accepted identity.
-                // Only use a request to bound context that is still unidentified.
-                if (payload.status == "OPENED" && payload.reason in setOf("ENTRY", "EMPTY_HP", "FAINT", "SWITCH") &&
-                    appearances[payload.side]?.speciesName == null &&
+                // A side-specific count, departure or HP contradiction also suspends a known owner.
+                if (payload.status == "OPENED" && (payload.reason in com.example.overdex.battle.observation.SpeciesCheckCoordinator.VERIFICATION_REASONS ||
+                    payload.reason in setOf("ENTRY", "EMPTY_HP", "FAINT", "SWITCH") && appearances[payload.side]?.speciesName == null) &&
                     payload.triggerMonotonicNanos > (appearances[payload.side]?.atNanos ?: Long.MIN_VALUE)) {
-                    output += flushSide(payload.side)
-                    val appearance = Appearance(article.id.value, null, payload.triggerMonotonicNanos)
+                    output += flushSide(payload.side, beforeNanos = payload.triggerMonotonicNanos)
+                    val appearance = Appearance(article.id.value, null, payload.triggerMonotonicNanos,
+                        appearances[payload.side]?.verifyingBadge == true ||
+                            payload.reason in com.example.overdex.battle.observation.SpeciesCheckCoordinator.VERIFICATION_REASONS)
                     appearances[payload.side] = appearance
                     recordAppearanceBoundary(payload.side, appearance)
                 }

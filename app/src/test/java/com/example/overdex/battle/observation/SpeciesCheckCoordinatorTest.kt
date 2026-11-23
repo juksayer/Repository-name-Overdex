@@ -6,6 +6,27 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class SpeciesCheckCoordinatorTest {
+    @Test fun hiddenBadgeStaysPendingAndOldGalladeReadCannotCloseJumpluffCheck() {
+        checks.request(side, "CHARGE", "camera")
+        val old = checks.windowFor(side, time)!!
+        val before = time
+        time += 200_000_000L
+        checks.verifyAppearance(side, "BALL_DECREASE", "two-to-one", time)
+        val fresh = checks.windowFor(side, time)!!
+        checks.verifyAppearance(side, "DEPARTURE", "flash", time)
+        assertEquals(fresh.id, checks.windowFor(side, time)?.id)
+        assertNull(checks.acceptImmediate(side, old.id, "Gallade", "old", before, true))
+        assertNull(checks.acceptImmediate(side, fresh.id, "Gallade", "overlay", time, false))
+        time += SpeciesCheckCoordinator.MAX_WINDOW_NANOS + 1
+        assertTrue(checks.captureEnabled(side))
+        assertTrue(checks.needsNativeBadge(side))
+        assertFalse(checks.needsNativeBadge(ActivePokemonSide.PLAYER))
+        val returned = checks.windowFor(side, time)!!
+        assertNotNull(checks.acceptImmediate(side, returned.id, "Jumpluff", "new", time, true))
+        assertFalse(checks.needsNativeBadge(side))
+        assertNull(checks.acceptImmediate(side, old.id, "Gallade", "old", before, true))
+    }
+
     @Test fun `prebattle wake requires a bounded battle cue not a recovery timer`() {
         assertTrue(checks.captureEnabled(side))
         assertFalse(checks.hasBattleCue(side))

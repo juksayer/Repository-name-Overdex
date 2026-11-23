@@ -4,6 +4,8 @@ import com.example.overdex.battle.observation.ownedOcrPixels
 
 import android.graphics.BitmapFactory
 import android.util.Log
+import com.example.overdex.battle.archive.ArchivedSpeciesCheckMeasured
+import com.example.overdex.battle.observation.SpeciesCheckCoordinator
 import com.example.overdex.battle.archive.ArchivedCropCaptured
 import com.example.overdex.battle.archive.ArchivedPlayerTeamConfiguration
 import com.example.overdex.battle.archive.badgeBattleBoundary
@@ -126,25 +128,31 @@ object ArchivedSpeciesCropRecognizer {
         }
         val recognizedByTarget = targets.zip(names).toMap()
         onProgress(ReplayCropProgress("RESOLVING SPECIES"))
-        val lastBySide = mutableMapOf<String, String>()
+        // A matching badge after a fresh identity check is independent proof
+        // of who is still on screen, even when its text did not change.
+        val checks = rows.mapNotNull { row -> (row.payload as? ArchivedSpeciesCheckMeasured)?.takeIf {
+            it.status == "OPENED" && it.reason in SpeciesCheckCoordinator.VERIFICATION_REASONS
+        } }.groupBy({ it.side }, { it.triggerMonotonicNanos })
+        val lastBySide = mutableMapOf<String, ReplayIdentityObservation>()
         buildList {
             targets.sortedBy(Target::atNanos).forEach { target ->
                 val reading = recognizedByTarget[target] ?: return@forEach
                 val speciesName = reading.name
-                if (lastBySide[target.side] == speciesName) return@forEach
-                lastBySide[target.side] = speciesName
+                val prior = lastBySide[target.side]
+                if (prior?.speciesName == speciesName &&
+                    checks[target.side].orEmpty().none { it > prior.atNanos && it <= target.atNanos }) return@forEach
                 Log.d("REPLAY_SPECIES", "side=${target.side} species=$speciesName at=${target.atNanos}")
-                add(
-                    ReplayIdentityObservation(
-                        side = target.side,
-                        speciesName = speciesName,
-                        speciesId = resolveSpeciesId(speciesName),
-                        atNanos = target.atNanos,
-                        basis = "RECONSTRUCTED FROM ARCHIVED SPECIES CROP",
-                        ocrMatchBasis = reading.basis,
-                        articleId = target.articleId,
-                    )
+                val identity = ReplayIdentityObservation(
+                    side = target.side,
+                    speciesName = speciesName,
+                    speciesId = resolveSpeciesId(speciesName),
+                    atNanos = target.atNanos,
+                    basis = "RECONSTRUCTED FROM ARCHIVED SPECIES CROP",
+                    ocrMatchBasis = reading.basis,
+                    articleId = target.articleId,
                 )
+                add(identity)
+                lastBySide[target.side] = identity
             }
         }
     }

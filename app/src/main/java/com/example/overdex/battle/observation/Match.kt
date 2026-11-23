@@ -290,6 +290,8 @@ class Match(
     @Volatile private var firstIndependentCombatNanos: Long? = null
     private val openingCrySideGate = OpeningCrySideGate()
     val speciesChecks = SpeciesCheckCoordinator { measurement, refs ->
+        if (measurement.status == "OPENED" && measurement.reason in SpeciesCheckCoordinator.VERIFICATION_REASONS)
+            DroidballOverlayPresentation.checkingAppearance(measurement.side, activeSpeciesBySide[measurement.side])
         custody.submitTestimony(SourceId("SPECIES_CHECK_COORDINATOR"), measurement,
             System.currentTimeMillis(), null, refs, System.nanoTime())
     }
@@ -302,6 +304,9 @@ class Match(
     private val activeSpeciesAtBySide = ConcurrentHashMap<ActivePokemonSide, Long>()
     @Volatile var observationAttemptStartedAtNanos: Long = System.nanoTime()
         private set
+
+    private val appearanceHp = ActivePokemonSide.entries.associateWith { AppearanceHpBudget() }
+    private val lastBallCounts = mutableMapOf<ActivePokemonSide, Pair<Long, Int>>()
 
     private fun cueSpeciesChecks(article: RealityArticle) {
         val payload = article.payload
@@ -326,10 +331,39 @@ class Match(
             lastEntryAt = at
             if (repeated) return
         }
+        if (battleHasStartedAt(at)) {
+            val balls = when (payload) {
+                is com.example.overdex.battle.custody.PlayerPokeBallCountMeasured -> ActivePokemonSide.PLAYER to payload.visibleCount
+                is com.example.overdex.battle.custody.OpponentBattleResourceCountMeasured ->
+                    (ActivePokemonSide.OPPONENT to payload.visibleCount).takeIf { payload.resource == com.example.overdex.battle.custody.OpponentBattleResource.POKE_BALLS }
+                else -> null
+            }
+            if (balls != null) {
+                val (side, count) = balls
+                val previous = lastBallCounts[side]
+                if (at > (previous?.first ?: Long.MIN_VALUE)) {
+                    lastBallCounts[side] = at to count
+                    if (count < (previous?.second ?: 3)) speciesChecks.verifyAppearance(side, "BALL_DECREASE", article.id.value, at)
+                }
+            }
+            if (payload is com.example.overdex.battle.custody.CompleteHpBarObserved &&
+                article.evidenceReferences.isNullOrEmpty() && !speciesChecks.needsNativeBadge(payload.side) &&
+                appearanceHp.getValue(payload.side).contradicts(at, payload.status, payload.interiorColumns,
+                    payload.liveColumns, payload.damageColumns, payload.unmaskedUncertainColumns)) {
+                speciesChecks.verifyAppearance(payload.side, "HP_CONTRADICTION", article.id.value, at)
+            }
+        }
         val switchedSide = (payload as? ActivePokemonSpeciesWitnessed)?.let { witnessed ->
+            if (speciesChecks.needsNativeBadge(witnessed.side)) return@let null
             if (at < (activeSpeciesAtBySide[witnessed.side] ?: Long.MIN_VALUE)) return@let null
             activeSpeciesAtBySide[witnessed.side] = at
+            if (isSideLocatedSpeciesSource(article.sourceId.id) && !speciesChecks.needsNativeBadge(witnessed.side))
+                DroidballOverlayPresentation.checkingAppearance(witnessed.side, null)
             val prior = activeSpeciesBySide.put(witnessed.side, witnessed.speciesName)
+            val rechecked = isSideLocatedSpeciesSource(article.sourceId.id) && speciesChecks.confirmedVerification(witnessed.side, at)
+            val budget = appearanceHp.getValue(witnessed.side)
+            if (!witnessed.speciesName.equals(prior, true)) budget.beginAppearance(witnessed.speciesName, at)
+            else if (rechecked) budget.reset(at)
             witnessed.side.takeIf { prior != null && !prior.equals(witnessed.speciesName, ignoreCase = true) }
         }
         val reason = when {
@@ -459,6 +493,8 @@ class Match(
         lastEntryAt = Long.MIN_VALUE
         activeSpeciesBySide.clear()
         activeSpeciesAtBySide.clear()
+        lastBallCounts.clear()
+        appearanceHp.values.forEach { it.clear(System.nanoTime()) }
     }
 
     /** The total number of frames processed during this Match. */
@@ -710,6 +746,7 @@ class Match(
                 }
                 processingSpan?.next("hud_references")
                 (article.payload as? ActivePokemonSpeciesWitnessed)?.let { witnessed ->
+                    if (speciesChecks.needsNativeBadge(witnessed.side)) return@let
                     if ((article.monotonicTimeNanos ?: Long.MAX_VALUE) <
                         (activeSpeciesAtBySide[witnessed.side] ?: Long.MIN_VALUE)) return@let
                     val referenceName = if (witnessed.side == ActivePokemonSide.PLAYER)

@@ -129,7 +129,14 @@ internal class ReplayFinishingEvidence(
                     appearanceAt(use.attackingSide, hitAt), appearanceAt(use.damagedSide, hitAt))
                 val end = minOf(nextAppearance(use.attackingSide, hitAt) ?: Long.MAX_VALUE,
                     nextAppearance(use.damagedSide, hitAt) ?: Long.MAX_VALUE, hitAt + 120_000_000L)
-                ReplayFastMoveCycle(ReplayFastMoveWitness(use.attackingSide, at, null, null, null,
+                val actor = actorAt(use.attackingSide, at) ?: return@mapNotNull null
+                val appearance = appearanceAt(use.attackingSide, at)
+                val name = articles.asSequence().filter { it.monotonicTimeNanos!! in appearance..at }
+                    .mapNotNull { it.payload as? ArchivedFastMoveIdentified }
+                    .filter { it.side == use.attackingSide && speciesKey(it.speciesName) == speciesKey(actor.speciesName) &&
+                        !it.basis.startsWith("CONFIGURED_PLAYER_TEAM") }
+                    .map { it.moveName }.distinct().singleOrNull()
+                ReplayFastMoveCycle(ReplayFastMoveWitness(use.attackingSide, at, name, null, null,
                     start, end, use.evidenceKinds.toSet(), sources + a.articleId, setOf(at, hitAt)), start, hitAt)
             }
     }
@@ -727,6 +734,7 @@ internal class ReplayFinishingEvidence(
     }
 
     private fun blocked(charge: ReplayFinishingChargeCandidate, side: String, through: Long): Boolean {
+        if (charge.confirmedBlocked && charge.side != side) return true
         val shields = shieldReadings(side, charge.preparationAtNanos, minOf(through, charge.sourceAtNanos + MAX_CHARGE_IMPACT))
         val before = shields.filter { it.first <= charge.sourceAtNanos }
         val after = shields.filter { it.first >= charge.sourceAtNanos }

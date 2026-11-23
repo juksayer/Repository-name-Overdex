@@ -45,6 +45,22 @@ class ReplayHpCertaintyTest {
         }
     }
 
+    @Test fun `matching badge reconciles a contradicted baseline only on a later settled complete bar`() {
+        val later = row("fresh", 4*S, payload = hp.copy(filledFraction = .7f, fillColor = "GREEN"))
+        val profile = ArchivedCompleteHpBarObserved("OPPONENT",
+            540, 890, 845, 918, 1080, 2400, 297, 208, 0, "LIVE_COLOR", null, null,
+            180f, 140f, unmaskedUncertainColumns = 0)
+        val appearances = listOf(ReplayHpAppearance("swampert", 0), ReplayHpAppearance("", 2*S),
+            ReplayHpAppearance("swampert", 3*S, reconfirmed = true))
+        for (damage in listOf(0, 4)) {
+            val rows = listOf(row(), later, row("whole", 4*S, payload = profile.copy(damageColumns = damage)))
+            val track = ReplayHpTrack(rows, "OPPONENT", ReplayHpEvidence(rows))
+            assertEquals(.002f, track.stateAt(3*S, appearances, false, 0).filledFraction!!, 0f)
+            assertEquals(if (damage == 0) .7f else .002f,
+                track.stateAt(4*S, appearances, false, 0).filledFraction!!, 0f)
+        }
+    }
+
     @Test fun `weak HP cannot erase an independent hit or establish fresh damage`() {
         val weak = row(confidence = .2f)
         val pulse = row("pulse", payload = ArchivedActiveHpBarBorderPulseObserved("OPPONENT", 10f, 2))

@@ -43,6 +43,28 @@ class ReplayFinishingAttributionTest {
         assertEquals(before, MatchArchiveSerializer.serialize(archive))
     }
 
+    @Test fun blockedSurfThenIncinerateKeepsItsOwnLandingAndFaintCredit() {
+        val used = row("surf", 4*S, ArchivedChargedMoveEnergySpent("OPPONENT", "Sealeo", "Surf", 40, "ANNOUNCEMENT"))
+        val blockedAt = HIT - S/4
+        val block = row("blocked", blockedAt, ArchivedRawText("BLOCKED!"), "MATCH_OUTCOME_TEXT_WITNESS")
+        val replay = MatchReplayModel(match(fastRows() + listOf(used, block, faint)))
+        val blocked = replay.sceneAt(blockedAt)
+        assertEquals(ReplayProtectShield("PLAYER", 0), blocked.protectShield)
+        val surf = blocked.chargedMoveActions.single { it.hitsProtectShield }
+        assertEquals("Surf", surf.moveName)
+        assertEquals(1f, surf.progress, 0f)
+        assertNull(surf.finishingAssociation)
+        val link = replay.finishingAttributions.single()
+        val atHit = replay.sceneAt(HIT)
+        val fire = atHit.fastMoveActions.single { it.finishingAssociation == link }
+        assertEquals("Incinerate", fire.moveName)
+        assertEquals(1f, fire.progress, 0f)
+        assertEquals("Faint · Sealeo · Incinerate by Camerupt",
+            replay.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }.label)
+        assertEquals(blocked, replay.sceneAt(blockedAt))
+        assertEquals(atHit, replay.sceneAt(HIT))
+    }
+
     @Test fun `a complete charge recipient measurement must cite this completion phase`() {
         val source = chargeRows() + faint + player(6*S, "Turtonator", 776)
         val replay = MatchReplayModel(match(source))
@@ -181,7 +203,9 @@ class ReplayFinishingAttributionTest {
             row("sent", 4*S + 850_000_000L, ArchivedChargedMoveEnergySpent("OPPONENT", "Sealeo", "Surf", 45, "test")),
             row("shield-before", 4*S, ArchivedPlayerShieldCountMeasured(1)),
             row("shield-after", HIT + 1, ArchivedPlayerShieldCountMeasured(0)))
-        val replay = MatchReplayModel(match(fastRows() + incoming + faint))
+        val source = match(fastRows() + incoming + faint)
+        // Reception and faint establish the use even without a move ID.
+        val replay = MatchReplayModel(source.copy(articles = source.articles.filterNot { it.articleId == "name" }))
         val link = replay.finishingFastMoveAssociations.single()
         assertNull(link.moveName)
         assertEquals(HIT, link.landingAtNanos)

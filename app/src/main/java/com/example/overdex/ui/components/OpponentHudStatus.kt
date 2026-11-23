@@ -23,6 +23,7 @@ import kotlinx.coroutines.delay
 @Composable
 internal fun OpponentHudStatus(estimate: OpponentEnergyEstimate?) {
     val credit by DroidballOverlayPresentation.finishingCredit.collectAsState()
+    val pending by DroidballOverlayPresentation.lastSeenNames.collectAsState()
     val current = credit
     var showCredit by remember(current) { mutableStateOf(current != null && System.nanoTime() < current.showUntilNanos) }
     LaunchedEffect(current) {
@@ -38,6 +39,10 @@ internal fun OpponentHudStatus(estimate: OpponentEnergyEstimate?) {
             Text("${BattleSpeciesDisplay.name(hit.attackerSpeciesName)} · ${hit.moveName} KO’d ${BattleSpeciesDisplay.name(hit.recipientSpeciesName)}",
                 color = Color.White, fontSize = 11.sp, lineHeight = 13.sp,
                 modifier = Modifier.background(Color(0xDC141918)).padding(horizontal = 3.dp))
+        } else if (pending.isNotEmpty()) {
+            Text(pending.entries.joinToString(" · ") { (side, name) ->
+                "${if (side.name == "PLAYER") "You" else "Opponent"} last seen: ${BattleSpeciesDisplay.name(name)}"
+            }, color = Color.White, fontSize = 11.sp, modifier = Modifier.background(Color(0xDC141918)))
         } else if (estimate != null) {
             Text("≈${estimate.energy} E", fontSize = 8.sp, lineHeight = 10.sp,
                 style = TextStyle(shadow = BattleHudBadgeStyle.textShadow(LocalDensity.current)),

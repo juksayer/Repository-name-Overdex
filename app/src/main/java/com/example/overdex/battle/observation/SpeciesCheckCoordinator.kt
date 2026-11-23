@@ -10,7 +10,7 @@ class SpeciesCheckCoordinator(
 ) {
     data class Window(val id: Long, val openedAt: Long, val triggerAt: Long, val reason: String, val triggerId: String?)
     private data class AcceptedBadge(
-        val window: Window, val capturedAt: Long, val cropId: String, val species: String,
+        val window: Window, val capturedAt: Long, val cropId: String, val species: String, val nativeBadge: Boolean,
     )
     private data class State(
         var window: Window? = null,
@@ -23,11 +23,31 @@ class SpeciesCheckCoordinator(
         val recentWindows: LinkedHashMap<Long, Window> = linkedMapOf(),
         var latestAcceptedWindowOpenedAt: Long = Long.MIN_VALUE,
         var identityResolved: Boolean = false,
+        var verifySince: Long? = null,
+        var verifiedAt: Long? = null,
         var acceptedBadge: AcceptedBadge? = null,
     )
     private val states = ActivePokemonSide.entries.associateWith { State() }
     private var serial = 0L
     private var stopped = false
+
+    @Synchronized fun needsNativeBadge(side: ActivePokemonSide) = states.getValue(side).verifySince != null
+
+    @Synchronized fun confirmedVerification(side: ActivePokemonSide, at: Long) = states.getValue(side).verifiedAt == at
+
+    /** Independent suspicion. Keep the read side-local and keep trying when a camera hides its badge. */
+    @Synchronized fun verifyAppearance(side: ActivePokemonSide, reason: String, source: String?, at: Long) {
+        if (stopped || at < 0L) return
+        val state = states.getValue(side)
+        if ((state.acceptedBadge?.takeIf { it.nativeBadge }?.capturedAt ?: Long.MIN_VALUE) >= at) return
+        if (state.verifySince != null) {
+            state.verifySince = maxOf(state.verifySince!!, at)
+            return
+        }
+        state.verifySince = at
+        state.identityResolved = false
+        request(side, reason, source, at)
+    }
 
     @Synchronized fun request(side: ActivePokemonSide, reason: String, triggerId: String?, triggerAt: Long = now()) {
         if (stopped) return
@@ -51,8 +71,8 @@ class SpeciesCheckCoordinator(
             // quick succession (announcement, cry, inferred switch). Keep the
             // first lifecycle window so OCR already running for a valid badge
             // crop cannot be invalidated by the supporting cue that follows it.
-            if (reason !in LIFECYCLE_REASONS || state.window?.triggerId == triggerId) return
-            if (state.window?.reason in LIFECYCLE_REASONS) return
+            if (reason !in LIFECYCLE_REASONS || triggerId != null && state.window?.triggerId == triggerId && state.window?.reason == reason) return
+            if (state.window?.reason in LIFECYCLE_REASONS && reason !in VERIFICATION_REASONS) return
             val superseded = state.window!!
             emit(side, superseded, "SUPERSEDED", null, listOfNotNull(superseded.triggerId))
             state.recentWindows.remove(superseded.id)
@@ -91,6 +111,7 @@ class SpeciesCheckCoordinator(
         val state = states.getValue(side)
         reportMissedTarget(side, state)
         val window = state.window?.takeIf { it.id == windowId } ?: return null
+        if (state.verifySince != null) return null
         if (species == null) { state.candidate = null; state.reads.clear(); return null }
         if (state.candidate != species) {
             if (state.candidate != null) emit(side, window, "DISAGREEMENT", species, state.reads + cropId)
@@ -116,25 +137,32 @@ class SpeciesCheckCoordinator(
         windowId: Long,
         species: String,
         cropId: String,
-        capturedAtMonotonicTimeNanos: Long? = null
+        capturedAtMonotonicTimeNanos: Long? = null,
+        nativeBadge: Boolean = false,
     ): List<String>? {
         if (stopped) return null
         val state = states.getValue(side)
         val window = state.recentWindows[windowId] ?: return null
         val capturedAt = capturedAtMonotonicTimeNanos ?: now()
+        val since = state.verifySince
+        if (since != null && (!nativeBadge || capturedAtMonotonicTimeNanos == null || capturedAt < since)) return null
         if (capturedAt < window.openedAt ||
             capturedAt - window.openedAt > MAX_WINDOW_NANOS ||
             window.openedAt < state.latestAcceptedWindowOpenedAt
         ) return null
         val refs = listOfNotNull(window.triggerId) + cropId
-        if (state.window?.id == windowId) state.window = null
+        if (state.window?.id == windowId || since != null && capturedAt >= since) state.window = null
         state.nextRecoveryAt = now() + RECOVERY_INTERVAL_NANOS
         state.completed = window
         state.latestAcceptedWindowOpenedAt = window.openedAt
         state.deliveredSpecies = species
         // Earlier preserved OCR may finish during a replacement's newer check.
         // Its historical acceptance must not retire that unresolved appearance's recovery.
-        if (state.window == null) state.identityResolved = true
+        if (state.window == null) {
+            state.identityResolved = true
+            if (since != null) state.verifiedAt = capturedAt
+            state.verifySince = null
+        }
         state.candidate = species
         state.reads.clear()
         state.reads += cropId
@@ -143,7 +171,7 @@ class SpeciesCheckCoordinator(
         if (capturedAtMonotonicTimeNanos != null && capturedAt in 0L..now() &&
             cropId.isNotBlank() && species.isNotBlank() &&
             capturedAt > (state.acceptedBadge?.capturedAt ?: Long.MIN_VALUE)) {
-            state.acceptedBadge = AcceptedBadge(window, capturedAt, cropId, species)
+            state.acceptedBadge = AcceptedBadge(window, capturedAt, cropId, species, nativeBadge)
         }
         emit(side, window, "CONFIRMED", species, refs)
         return refs
@@ -199,6 +227,8 @@ class SpeciesCheckCoordinator(
             state.latestAcceptedWindowOpenedAt = Long.MIN_VALUE
             state.identityResolved = false
             state.acceptedBadge = null
+            state.verifySince = null
+            state.verifiedAt = null
         }
     }
 
@@ -225,7 +255,7 @@ class SpeciesCheckCoordinator(
             state.window = null
             state.candidate = null
             state.reads.clear()
-            state.nextRecoveryAt = now() + RECOVERY_INTERVAL_NANOS
+            state.nextRecoveryAt = if (state.verifySince == null) now() + RECOVERY_INTERVAL_NANOS else now()
         }
     }
     private fun emit(side: ActivePokemonSide, window: Window, status: String, species: String?, refs: List<String>) {
@@ -238,7 +268,8 @@ class SpeciesCheckCoordinator(
         const val SAMPLE_INTERVAL_NANOS = 150_000_000L
         const val RECOVERY_INTERVAL_NANOS = 5_000_000_000L
         const val MAX_RETAINED_WINDOWS = 8
-        private val LIFECYCLE_REASONS = setOf("ENTRY", "SWITCH", "FAINT", "CRY", "MATCH_START", "CHARGE", "QTE")
+        internal val VERIFICATION_REASONS = setOf("BALL_DECREASE", "DEPARTURE", "HP_CONTRADICTION")
+        private val LIFECYCLE_REASONS = VERIFICATION_REASONS + setOf("ENTRY", "SWITCH", "FAINT", "CRY", "MATCH_START", "CHARGE", "QTE")
         private val BATTLE_CUE_REASONS = LIFECYCLE_REASONS + setOf("VS", "COUNTDOWN")
     }
 }

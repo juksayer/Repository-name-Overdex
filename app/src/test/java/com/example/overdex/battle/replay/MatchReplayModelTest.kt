@@ -30,6 +30,7 @@ import com.example.overdex.model.Move
 import com.example.overdex.model.PokemonType
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
+import com.example.overdex.battle.archive.ArchivedOpponentBattleResourceCountMeasured
 import org.junit.Test
 
 class MatchReplayModelTest {
@@ -962,6 +963,33 @@ class MatchReplayModelTest {
         )))
         assertEquals("Raichu", model.sceneAt(20).player?.speciesName)
         assertEquals(1f, model.sceneAt(20).playerHp?.filledFraction)
+    }
+
+    @Test fun onlyAConfirmedSingleShieldSpendInterceptsTheOpposingThrow() {
+        val second = 1_000_000_000L
+        val charge = timed("charge", ArchivedChargedMoveEnergySpent("PLAYER", "Turtonator", "Dragon Pulse", 60, "ANNOUNCEMENT"), 5 * second)
+        fun count(id: String, n: Int, at: Long) = timed(id,
+            ArchivedOpponentBattleResourceCountMeasured("SHIELDS", n, 2), at)
+        val first = count("before", 2, second)
+        val last = count("after", 1, 6 * second)
+        fun model(vararg evidence: ArchivedRealityArticle) = MatchReplayModel(MatchArchive(matchId = "match",
+            articles = listOf(article("player", "PLAYER", "Turtonator", 776, 0),
+                article("opponent", "OPPONENT", "Vaporeon", 134, 0), charge) + evidence))
+        val replay = model(last, first)
+        val contactAt = 6_800_000_000L
+        val contact = replay.sceneAt(contactAt)
+        assertEquals("OPPONENT", contact.protectShield?.defendingSide)
+        assertEquals(0L, contact.protectShield?.nanosSinceImpact)
+        assertEquals(1f, contact.chargedMoveActions.single { it.hitsProtectShield }.progress)
+        assertEquals(null, replay.sceneAt(8 * second).protectShield)
+        assertEquals(contact, replay.sceneAt(contactAt))
+        assertEquals(null, model(last).sceneAt(contactAt).protectShield)
+        assertEquals(null, model(first, count("lostTwo", 0, 6 * second)).sceneAt(contactAt).protectShield)
+        assertEquals(null, model(first, timed("secondCharge", ArchivedChargedMoveEnergySpent("PLAYER",
+            "Turtonator", "Brutal Swing", 35, "ANNOUNCEMENT"), 3 * second), last).sceneAt(contactAt).protectShield)
+        assertEquals(null, model(raw("prompt", "Use a Protect Shield?", 4 * second)).sceneAt(contactAt).protectShield)
+        assertEquals(null, model(first, article("replacement", "OPPONENT", "Sealeo", 364, 5 * second + 1), last)
+            .sceneAt(contactAt).protectShield)
     }
 
     private fun hp(id: String, side: String, fraction: Float, nanos: Long) =

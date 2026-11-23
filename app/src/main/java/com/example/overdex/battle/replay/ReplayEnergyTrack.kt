@@ -17,6 +17,7 @@ internal class ReplayEnergyTrack(
     articles: List<ArchivedRealityArticle>,
     combatantAt: (String, Long) -> ReplayCombatant?,
     cycles: List<ReplayFastMoveCycle>,
+    unresolvedAt: (String, Long) -> Boolean = { _, _ -> false },
 ) {
     private fun appearanceName(side: String, name: String?, at: Long, combatantAt: (String, Long) -> ReplayCombatant?): String? {
         val active = combatantAt(side, at)?.speciesName ?: return name
@@ -78,6 +79,11 @@ internal class ReplayEnergyTrack(
             val use = (source?.predecessorIds.orEmpty() + cycle.witness.articleIds).asSequence()
                 .mapNotNull { byId[it]?.payload as? ArchivedFastMoveUseObserved }.firstOrNull()
             val at = if (cycle.hasReferenceDuration) cycle.impactAtNanos else cycle.witness.observedAtNanos
+            if (unresolvedAt(cycle.witness.side, cycle.witness.observedAtNanos)) continue
+            val active = combatantAt(cycle.witness.side, cycle.witness.observedAtNanos)
+            if (active != null && use?.attackerSpeciesName != null &&
+                com.example.overdex.battle.observation.TeamRosterSpeciesAttributor.speciesKey(active.speciesName) !=
+                com.example.overdex.battle.observation.TeamRosterSpeciesAttributor.speciesKey(use.attackerSpeciesName)) continue
             val species = appearanceName(cycle.witness.side, use?.attackerSpeciesName,
                 cycle.witness.observedAtNanos, combatantAt) ?: continue
             val gain = (matching?.payload as? ArchivedFastMoveEnergyDerived)?.energyPerUse
