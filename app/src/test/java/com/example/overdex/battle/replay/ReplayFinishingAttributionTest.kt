@@ -225,7 +225,11 @@ class ReplayFinishingAttributionTest {
             chargeRows() + pending, chargeRows() + unknown, chargeRows() + fastRows().filter { it.articleId in setOf("use", "tick") })) {
             val replay = MatchReplayModel(match(rows + faint))
             assertTrue(replay.finishingAttributions.toString(), replay.finishingAttributions.isEmpty())
-            assertNotNull(replay.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT })
+            val marker = replay.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }
+            val record = requireNotNull(replay.faintDecision(marker))
+            assertNull(record.credit)
+            assertFalse(record.entries.any { "credited use" in it.description })
+            assertTrue(record.entries.isNotEmpty())
         }
     }
 
@@ -248,7 +252,10 @@ class ReplayFinishingAttributionTest {
         val merged = ReplayFinishingAttributions.resolve(listOf(fast, second)) { true }.single()
         assertEquals(fast.reception, merged.reception)
         assertTrue(merged.evidenceArticleIds.containsAll(listOf("audio", "same-use-audio")))
-        assertTrue(ReplayFinishingAttributions.resolve(listOf(fast, charge)) { true }.isEmpty())
+        val conflict = ReplayFinishingAttributions.evaluate(listOf(fast, charge)) { null }
+        assertTrue(conflict.links.isEmpty())
+        assertEquals(setOf(fast, charge), conflict.rejections.map { it.candidate }.toSet())
+        assertTrue(conflict.rejections.all { "disagree" in it.reason })
     }
 
     @Test fun `terminal faint can cite a completed charge with no measured reception`() {

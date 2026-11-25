@@ -5,6 +5,10 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.overdex.battle.archive.*
+import com.example.overdex.battle.replay.ReplayRetainedSliverReader
+import com.example.overdex.battle.replay.ReplayReviewEvidence
+import com.example.overdex.battle.replay.SharedReplay
+import kotlinx.serialization.json.Json
 import com.example.overdex.battle.replay.MatchReplayModel
 import com.example.overdex.data.GameMasterLoader
 import com.example.overdex.data.LocalSpriteProvider
@@ -22,6 +26,38 @@ import java.util.concurrent.atomic.AtomicInteger
 /** Reads existing October 14 phone archives without altering or importing them. */
 class RecordedReplayOpenDeviceTest {
     @get:Rule val compose = createComposeRule()
+
+    @Test fun eveningGolbatDecisionShowsSurvivalAndCryOnTheLcd() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val file = File(context.cacheDir, "trial-19-30.zip")
+        val notes = File(context.cacheDir, "trial-19-30.json")
+        org.junit.Assume.assumeTrue(file.isFile && notes.isFile)
+        val archive = file.inputStream().use(MatchArchivePackageReader::read)
+        val go = requireNotNull(archive.articles.single { it.payload is ArchivedMatchStarted }.monotonicTimeNanos)
+        val retained = runBlocking { ReplayRetainedSliverReader.read(archive, file::inputStream) }
+        val readings = Json.decodeFromString<ReplayReviewEvidence>(notes.readText()).copy(retainedSliverEvidence = retained)
+        val share = SharedReplay(archive, readings)
+        val repo = PokemonRepository(PokedexDatabase.getDatabase(context).pokemonDao(),
+            LocalSpriteProvider(context.assets), GameMasterLoader(context))
+        val lcd = androidx.compose.runtime.mutableStateOf<(@androidx.compose.runtime.Composable () -> Unit)?>(null)
+        compose.setContent {
+            ODXFiShell(showBattleOverlay = false, lcdContent = lcd.value, lcdEdgeToEdgeContent = true) {
+                MatchReplayScreen(archive, onBack = {}, initialCursorNanos = go + 79_277_002_775L,
+                    sharedReplay = share, resolveSpeciesNames = repo::getAllSpeciesNames,
+                    resolveSpeciesId = { repo.getPokemonByName(it)?.id },
+                    resolveFastMoves = { repo.getPokemonByName(it)?.fastMoves.orEmpty() },
+                    resolveChargedMoves = { repo.getPokemonByName(it)?.chargedMoves.orEmpty() },
+                    onLcdContentUpdate = { lcd.value = it })
+            }
+        }
+        compose.waitUntil(120_000) { compose.onAllNodesWithText("Events").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Events").performClick()
+        compose.onNodeWithText("44/188 live HP columns", substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Shadow Ball by Golbat → Vaporeon", substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("1:19.277 · Faint marker · departure cry").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Show sources").performScrollTo().performClick()
+        compose.onAllNodesWithText("cebb38d4-8322-4d1d-925b-4e2acf46b2a3").onLast().performScrollTo().assertIsDisplayed()
+    }
 
     @Test fun pixelGourgeistFinishIsVisibleOnTheReplayLcd() {
         verifyGourgeistLcd("nov22-pixel-1425.zip", 138L)

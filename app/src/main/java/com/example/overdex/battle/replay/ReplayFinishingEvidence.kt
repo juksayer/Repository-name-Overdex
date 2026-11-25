@@ -656,9 +656,11 @@ internal class ReplayFinishingEvidence(
         // before accepting a centered orange impact inside the same charge and cry.
         val liveBefore = articles.lastOrNull { row ->
             val at = row.monotonicTimeNanos!!
+            val ordinary = row.payload as? ArchivedActiveHpBarMeasured
             at in maxOf(badge.monotonicTimeNanos!!, start - 10 * S) until start &&
-                (row.payload as? ArchivedCompleteHpBarObserved)?.side == faint.side &&
-                appearanceAt(faint.side, at) == faint.appearanceAtNanos && hp.corroboratedLiveProfile(row)
+                appearanceAt(faint.side, at) == faint.appearanceAtNanos &&
+                (((row.payload as? ArchivedCompleteHpBarObserved)?.side == faint.side && hp.corroboratedLiveProfile(row)) ||
+                    (ordinary?.side == faint.side && ordinary.filledFraction > 0f && hp.confirmsLiveHp(row)))
         }
         fun centeredImpact(row: ArchivedRealityArticle): Boolean {
             val bar = row.payload as? ArchivedCompleteHpBarObserved ?: return false
@@ -666,13 +668,12 @@ internal class ReplayFinishingEvidence(
                 row.sourceId == "COMPLETE_${faint.side}_HP_BAR_FRAME_WITNESS" && bar.side == faint.side &&
                 bar.damageColumns >= 3 && kotlin.math.abs(bar.barLeft + bar.barRight - bar.sourceWidth) <= bar.sourceWidth / 12
         }
-        val orangeOnly = liveBefore?.let {
-            articles.firstOrNull { row ->
-                val bar = row.payload as? ArchivedCompleteHpBarObserved
+        val orangeOnly = articles.firstOrNull { row ->
+            val bar = row.payload as? ArchivedCompleteHpBarObserved
+            (liveBefore != null || row.articleId in faint.sourceArticleIds) &&
                 bar != null && centeredImpact(row) && reliable(row) && ReplaySliverExchange.whole(bar, faint.side) &&
-                    bar.liveColumns == 0 && bar.unmaskedUncertainColumns == 0 &&
-                    bar.status in setOf("DAMAGE_COLOR", "SUSTAINED_DAMAGE_COLOR")
-            }
+                bar.liveColumns == 0 && bar.unmaskedUncertainColumns == 0 &&
+                bar.status in setOf("DAMAGE_COLOR", "SUSTAINED_DAMAGE_COLOR")
         }
         val trail = orangeOnly ?: articles.lastOrNull { row ->
             centeredImpact(row) && witnessedDamagedBar(row, faint.side, faint.appearanceAtNanos)

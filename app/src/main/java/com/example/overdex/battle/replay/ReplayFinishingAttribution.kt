@@ -34,21 +34,36 @@ internal object ReplayFinishingAttributions {
         candidates: List<ReplayFinishingAttribution>,
         permits: (ReplayFinishingAttribution) -> Boolean,
     ): List<ReplayFinishingAttribution> =
-        candidates.groupBy { it.recipientSide to it.recipientAppearanceAtNanos }.values.mapNotNull { links ->
+        evaluate(candidates) { if (permits(it)) null else "Credit withheld by the evidence." }.links
+
+    data class Rejection(val candidate: ReplayFinishingAttribution, val reason: String)
+    data class Selection(val links: List<ReplayFinishingAttribution>, val rejections: List<Rejection>)
+
+    fun evaluate(candidates: List<ReplayFinishingAttribution>, reason: (ReplayFinishingAttribution) -> String?): Selection {
+        val rejected = mutableListOf<Rejection>()
+        val admitted = candidates.groupBy { it.recipientSide to it.recipientAppearanceAtNanos }.values.mapNotNull { links ->
             // A second path to the same occurrence corroborates it. A second occurrence competes.
+            fun reject(reason: String): ReplayFinishingAttribution? {
+                rejected += links.distinct().map { Rejection(it, reason) }
+                return null
+            }
             val first = links.first()
             if (links.any { it::class != first::class || it.attackingSide != first.attackingSide ||
                     it.attackerAppearanceAtNanos != first.attackerAppearanceAtNanos ||
                     it.moveSourceAtNanos != first.moveSourceAtNanos ||
                     it.moveArticleIds.intersect(first.moveArticleIds.toSet()).isEmpty() ||
-                    (it.moveName != null && first.moveName != null && it.moveName != first.moveName) }) return@mapNotNull null
-            if (links.mapNotNull { it.moveName }.distinct().size > 1) return@mapNotNull null
+                    (it.moveName != null && first.moveName != null && it.moveName != first.moveName) }) return@mapNotNull reject("Candidates disagree on the attack or its owner.")
+            if (links.mapNotNull { it.moveName }.distinct().size > 1) return@mapNotNull reject("Candidates disagree on the move name.")
             val receptions = links.mapNotNull { it.reception }
-            if (receptions.map { it.atNanos }.distinct().size > 1) return@mapNotNull null
+            if (receptions.map { it.atNanos }.distinct().size > 1) return@mapNotNull reject("Candidates disagree on when the hit landed.")
             val preferred = links.firstOrNull { it.reception != null } ?: first
             val merged = merge(preferred, links, receptions)
-            merged.takeIf(permits)
+            val veto = reason(merged)
+            if (veto == null) merged else reject(veto)
         }.sortedWith(compareBy<ReplayFinishingAttribution> { it.landingAtNanos }.thenBy { it.recipientSide })
+
+        return Selection(admitted, rejected)
+    }
 
     private fun merge(
         preferred: ReplayFinishingAttribution,

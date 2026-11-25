@@ -1879,10 +1879,17 @@ class MatchReplayModel(
             source?.monotonicTimeNanos == at && (source.payload as? ArchivedCropCaptured)?.cropName == "AnnouncementCrop"
         } ?: return null
         fun nicknameKey(value: String) = value.filterNot(Char::isWhitespace).lowercase()
+        fun missingSymbol(longer: String, shorter: String) = longer.length == shorter.length + 1 &&
+            longer.indices.any { i -> !longer[i].isLetterOrDigit() && longer.removeRange(i, i + 1) == shorter }
         val badge = replayArticles.lastOrNull {
             it.sourceId == "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_RAW" &&
                 it.monotonicTimeNanos!! in maxOf(appearanceAt("PLAYER", at), at - CHARGE_MOVE_PREPARATION_MAX_NANOS)..at &&
-                (it.payload as? ArchivedRawText)?.value?.let(::nicknameKey) == nicknameKey(alias)
+                (it.payload as? ArchivedRawText)?.value?.let { value ->
+                    val read = nicknameKey(value)
+                    val named = nicknameKey(alias)
+                    read == named || (stem.equals(equipped.second, true) && named.any { c -> !c.isLetterOrDigit() } &&
+                        (missingSymbol(named, read) || missingSymbol(read, named)))
+                } == true
         }
         val badgeId = badge?.evidenceReferences.orEmpty().singleOrNull { id ->
             val source = replayArticlesById[id]
