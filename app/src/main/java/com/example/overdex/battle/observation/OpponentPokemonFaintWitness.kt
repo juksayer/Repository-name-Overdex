@@ -1,5 +1,6 @@
 package com.example.overdex.battle.observation
 
+import com.example.overdex.battle.inference.DepartureCryFaint
 import com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.BattleCryCandidatesMeasured
@@ -181,18 +182,19 @@ internal class TeamFaintTracker(
                 history.hpReconciliation.faints.any { TeamLossResolver.speciesKey(it.owner.speciesName) == key }) return@mapNotNull null
             val source = history.source(loss.sourceArticleId) ?: return@mapNotNull null
             val sample = (source.payload as? com.example.overdex.battle.custody.TerminalParticleObservations)
-                ?.samples?.singleOrNull { it.sourceAtNanos == loss.atNanos } ?: return@mapNotNull null
-            if (!reserve(key, loss.atNanos)) return@mapNotNull null
-            TeamFaintDecision(loss.owner.speciesName, loss.owner.speciesId, loss.evidenceReferences, false,
-                com.example.overdex.battle.inference.TerminalChargedFaintResolver.BASIS,
-                source.copy(perceivedAt = sample.wallTimeMillis, monotonicTimeNanos = sample.sourceAtNanos))
+                ?.samples?.singleOrNull { it.sourceAtNanos == loss.atNanos }
+            val onset = source.payload is com.example.overdex.battle.custody.BattleCryLocalized
+            if (!onset && sample == null) return@mapNotNull null
+            if (!reserve(key, loss.atNanos, loss.basis == DepartureCryFaint.LAST)) return@mapNotNull null
+            TeamFaintDecision(loss.owner.speciesName, loss.owner.speciesId, loss.evidenceReferences, onset, loss.basis,
+                sample?.let { source.copy(perceivedAt = it.wallTimeMillis, monotonicTimeNanos = it.sourceAtNanos) } ?: source)
         }
         return countDecisions + hpDecisions + terminalDecisions
     }
 
-    private fun reserve(owner: String, at: Long): Boolean {
+    private fun reserve(owner: String, at: Long, lastActiveDeparture: Boolean = false): Boolean {
         if (owner in deliveredOwners) return false
-        if (!history.faintLimits().permits(deliveredOwners.values, at, publishing = true)) return false
+        if (!history.faintLimits().permits(deliveredOwners.values, at, publishing = !lastActiveDeparture)) return false
         deliveredOwners[owner] = at
         return true
     }

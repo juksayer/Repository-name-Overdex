@@ -51,8 +51,9 @@ class PersistedAttackIncomingWitnessTest {
             assertEquals(14_000L, warning.perceivedAt)
             assertEquals(proof.map { it.id.value }.toSet(), warning.evidenceReferences?.toSet())
             assertNotNull(warning.sequenceNumber)
-            assertTrue("Late combat admission must not manufacture a start boundary",
-                articles.none { it.payload is MatchStarted || it.payload is CountdownGlyphWitnessed })
+            match.awaitAcceptedEvidencePublished()
+            assertTrue(timeline.getArticles().any { it.payload is MatchStarted })
+            assertTrue(articles.none { it.payload is CountdownGlyphWitnessed })
             assertEquals(listOf("left-crop"), proof[3].evidenceReferences)
             assertEquals(listOf("right-crop"), proof[4].evidenceReferences)
             assertEquals(PlayerChargeMoveLabelRead(1, "NOT"), proof[3].payload)

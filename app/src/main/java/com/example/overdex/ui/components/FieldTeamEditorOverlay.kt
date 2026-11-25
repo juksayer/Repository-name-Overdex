@@ -255,3 +255,22 @@ private fun FieldTeamAction(label: String, enabled: Boolean = true, modifier: Mo
             fontSize = 12.sp, fontWeight = FontWeight.Bold)
     }
 }
+
+@Composable
+internal fun PartyNicknameConfirmation(
+    question: com.example.overdex.battle.team.PartyNicknameQuestion,
+    width: androidx.compose.ui.unit.Dp,
+    answer: (com.example.overdex.battle.team.PartyNicknameQuestion, String?) -> Unit,
+) {
+    Column(Modifier.width(width).heightIn(max = 280.dp).background(FieldMenuPaper, RoundedCornerShape(12.dp))
+        .verticalScroll(rememberScrollState()).padding(10.dp)) {
+        Text("Slot ${question.slot} · ${question.text}", color = FieldTeamInk, fontWeight = FontWeight.Bold)
+        Text("Confirm the card for this nickname", color = FieldTeamInk)
+        question.cards.forEach { card ->
+            val species = card.speciesName ?: question.team.members.firstOrNull { it.slot == question.slot }?.speciesName ?: "#${card.speciesId}"
+            val details = listOfNotNull(card.cp?.let { "CP $it" }, card.fastMove, card.chargedMove1).joinToString(" · ")
+            FieldTeamAction("$species  $details") { answer(question, card.id) }
+        }
+        FieldTeamAction("Skip") { answer(question, null) }
+    }
+}

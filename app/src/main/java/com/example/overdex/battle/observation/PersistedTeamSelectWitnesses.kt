@@ -196,6 +196,7 @@ class PersistedPlayerTeamRosterSlotWitness(
     private val store: FileCropArtifactStore,
     private val slot: Int,
     private val cropName: String,
+    private val considerNickname: suspend (String, String) -> Unit = { _, _ -> },
     private val isEnabled: () -> Boolean = { true },
 ) : Observer {
     override val observerId = ObserverId("TEAM_SELECT_PLAYER_SLOT_${slot}_OCR_WITNESS", ObservationSource.SCREEN_CAPTURE)
@@ -227,7 +228,8 @@ class PersistedPlayerTeamRosterSlotWitness(
                 if (!rosterWindow.allows(source.monotonicTimeNanos ?: return@collect)) return@collect
                 val crop = source.payload as CropCaptured
                 val bitmap = store.loadVerifiedOcrPng(crop.artifact, crop.cropProvenance) ?: return@collect
-                fun resolvePartyName(text: String) = FastOverlaySpeciesResolver.resolveDetailed(text, knownNames)
+                fun resolvePartyName(text: String) = match.playerNicknameReading(text, requireNotNull(source.monotonicTimeNanos), slot)
+                    ?: FastOverlaySpeciesResolver.resolveDetailed(text, knownNames)
                     ?.takeIf { match.partySlotSupportsReading(slot, it.speciesName, it.basis) }
                 val readings = try {
                     SpeciesNameRecognizer.withReadingTurn {
@@ -236,6 +238,13 @@ class PersistedPlayerTeamRosterSlotWitness(
                         }
                     }
                 } finally { bitmap.recycle() }
+                val text = readings.firstOrNull { it.text.isNotBlank() }?.text?.trim()
+                val speciesOrCardRead = readings.any { reading -> resolvePartyName(reading.text)?.let {
+                    it.configurationArticleId != null || it.basis.startsWith("EXACT_CATALOGUE_TEXT")
+                } == true }
+                if (text != null && !speciesOrCardRead && isEnabled()) {
+                    considerNickname(text, source.id.value)
+                }
                 val resolution = readings.firstNotNullOfOrNull { reading ->
                     resolvePartyName(reading.text)
                 } ?: return@collect
@@ -245,7 +254,7 @@ class PersistedPlayerTeamRosterSlotWitness(
                     PlayerTeamRosterSlotWitnessed(slot, species.name, species.id),
                     source.perceivedAt,
                     resolution.confidence,
-                    listOf(source.id.value),
+                    listOfNotNull(source.id.value, resolution.configurationArticleId),
                     source.monotonicTimeNanos ?: return@collect
                 )
                 currentCoroutineContext().ensureActive()

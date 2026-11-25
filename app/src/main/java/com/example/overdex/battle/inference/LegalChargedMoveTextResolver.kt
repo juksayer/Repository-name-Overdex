@@ -43,12 +43,14 @@ internal object LegalChargedMoveTextResolver {
     fun namedAnnouncementReading(reading: String, moves: List<Move>): String {
         val boundary = reading.indexOf('!')
         if (boundary < 0) return reading
-        val tail = reading.substring(boundary + 1)
-        if (tail.isEmpty() || tail.contains("used", ignoreCase = true)) return reading
-        if (!tail.first().isWhitespace() && !(tail.length == 1 && tail.first().isLetter())) return reading
         val complete = reading.substring(0, boundary).trim()
         return if (moves.any { it.name.equals(complete, ignoreCase = true) }) complete else reading
     }
+
+    /** A final lower-case L can merge with the exclamation mark in a terminated banner. */
+    fun matchesConfiguredBanner(stem: String, name: String): Boolean = stem.length >= 7 &&
+        (name.equals(stem, true) || name.equals(stem + "l", true) ||
+            (stem.endsWith('|') && name.equals(stem.dropLast(1) + "l", true)))
 
     private fun normalize(value: String) = SpeciesOcrTypography.normalizeLabel(value)
 

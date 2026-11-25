@@ -80,7 +80,7 @@ class PreBattleArticleRouteTest {
             assertEquals(15L, match.preBattleListenerDiagnostics.snapshot().values.sumOf { it.deliveries })
             assertTrue(match.articleListenerDiagnostics!!.peakSubscriptions <= 1)
             custody.submitTestimony(SourceId(BattleWitnessContracts.countdownGlyph.witnessId),
-                CountdownGlyphWitnessed("GO", .99f, 1), 300, 1f, listOf("go-crop"), 300)
+                CountdownGlyphWitnessed("GO", .99f, 1), 300, 1f, listOf("go-crop"), System.nanoTime())
             withTimeout(5000) { match.awaitAcceptedEvidencePublished() }
             yield()
             val start = timeline.getArticles().single { it.payload == MatchStarted }

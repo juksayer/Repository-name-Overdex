@@ -64,7 +64,7 @@ class ChargedMoveAnnouncementInferenceTest {
         reader.accept(article("badge", SourceId("SPECIES"), ActivePokemonSpeciesWitnessed(
             ActivePokemonSide.PLAYER, jumpluff.name, jumpluff.id)), ::noRosterSide)
         assertNull(reader.accept(announcement("incomplete", "Jumpluff used Energy Bal!D"), ::noRosterSide))
-        val raw = announcement("original", "Jumpluff used Energy Ball!D")
+        val raw = announcement("original", "Jumpluff used Energy Ball!D used Rock Tomb!")
         val result = reader.accept(raw, ::noRosterSide)
         assertEquals("Energy Ball", result?.payload?.moveName)
         assertEquals(raw, result?.observedArticle)

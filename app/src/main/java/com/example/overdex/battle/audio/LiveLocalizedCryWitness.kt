@@ -2,6 +2,7 @@ package com.example.overdex.battle.audio
 
 import android.content.Context
 import android.util.Log
+import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.artifact.AudioArtifactStore
 import com.example.overdex.battle.custody.*
 import com.example.overdex.battle.observation.DroidballService
@@ -40,8 +41,22 @@ class LiveLocalizedCryWitness internal constructor(
         val source = SourceId(observerId.id)
         val gate = CryListeningGate()
         val evidence = CryDepartureEvidence()
+        val participants = BattleCryParticipants()
         val windows = Channel<CryAudioWindowSnapshot>(Channel.CONFLATED)
         val recent = CryRecentWindows()
+        data class ChargeJob(val row: RealityArticle, val ids: Set<Int>, val generation: Long)
+        val probes = Channel<ChargeJob>(2)
+        val retained = ArrayDeque<Triple<Long, Int, Long>>()
+        fun seen(epoch: Long, species: Int, onset: Long, duration: Long) = synchronized(retained) {
+            retained.any { it.first == epoch && it.second == species && abs(it.third - onset) < duration }
+        }
+        fun claim(epoch: Long, species: Int, onset: Long, duration: Long) = synchronized(retained) {
+            if (seen(epoch, species, onset, duration)) false else {
+                retained.addLast(Triple(epoch, species, onset))
+                if (retained.size > CryDepartureEvidence.MAX_CRIES) retained.removeFirst()
+                true
+            }
+        }
         val available = java.util.concurrent.atomic.AtomicBoolean(false)
         fun availability(value: Boolean, at: Long = System.currentTimeMillis()) {
             if (available.getAndSet(value) != value) match.custody.submitInputAvailability(source, value, at)
@@ -49,11 +64,16 @@ class LiveLocalizedCryWitness internal constructor(
         match.custody.submitAvailability(source, true, System.currentTimeMillis())
         match.custody.submitInputAvailability(source, false, System.currentTimeMillis())
         worker.launch(start = CoroutineStart.UNDISPATCHED) {
+            val chargeContext = ChargeClipContext()
             match.articles.collect { article ->
+                participants.observe(article)
+                chargeContext.observe(article)
                 gate.observe(article)
                 if (article.payload is MatchEnded || article.payload == ObservationRestartedByUser ||
                     article.payload == ObservationSessionStoppedByUser || article.payload == ScreenIgnoredByUser)
                     availability(false, article.perceivedAt)
+                if (!evidence.unavailable && chargeContext.accepts(article))
+                    probes.send(ChargeJob(article, participants.species, gate.generation))
                 for (candidate in evidence.observe(article)) {
                     match.custody.submitTestimony(SourceId("REPEAT_CRY_DEPARTURE_WITNESS"),
                         RepeatCryDepartureCandidateObserved(candidate.speciesId, candidate.side,
@@ -65,6 +85,29 @@ class LiveLocalizedCryWitness internal constructor(
                         requestDepartureCheck(it, candidate.atNanos)
                     }
                 }
+            }
+        }
+        worker.launch {
+            for ((row, ids, epoch) in probes) {
+                try {
+                    val start = row.monotonicTimeNanos ?: continue
+                    if (epoch != gate.generation || ids.isEmpty()) continue
+                    val clip = row.payload as AudioCaptured
+                    val bytes = withContext(Dispatchers.IO) { store.readWav(clip.artifact, ChargeClipCries.MAX_BYTES) } ?: continue
+                    val refs = withContext(Dispatchers.IO) { loadReferences(ids) } ?: continue
+                    if (refs.size !in 1..CryWaveformMatcher.MAX_REFERENCES || !refs.map { it.speciesId }.containsAll(ids)) continue
+                    for (fit in ChargeClipCries.measure(clip, bytes, CryWaveformMatcher(refs))) {
+                        ensureActive()
+                        val onset = start + fit.offsetNanos
+                        if (gate.accepts(onset, onset + fit.durationNanos, epoch) &&
+                            claim(epoch, fit.speciesId, onset, fit.durationNanos)) {
+                            match.custody.submitTestimony(source, BattleCryLocalized(fit.speciesId, fit.referenceSha256,
+                                fit.correlation, fit.durationNanos, "charge-clip-full-waveform-v1"),
+                                row.perceivedAt + fit.offsetNanos / 1_000_000, null, listOf(row.id.value), onset)
+                        }
+                    }
+                } catch (cancelled: CancellationException) { throw cancelled
+                } catch (error: Exception) { Log.e("LiveLocalizedCry", "Could not inspect retained charge sound", error) }
             }
         }
         worker.launch {
@@ -86,13 +129,12 @@ class LiveLocalizedCryWitness internal constructor(
                 var matcher: CryWaveformMatcher? = null
                 var referencesStartedNanos = 0L
                 var referencesReadyNanos = 0L
-                val retained = ArrayDeque<Pair<Int, Long>>()
                 var generation = gate.generation
                 suspend fun analyze(window: CryAudioWindowSnapshot, recognizer: CryWaveformMatcher, catchUp: Boolean) {
                     if (!gate.accepts(window.startNanos, window.endNanos, window.generation)) return
                     val began = System.nanoTime()
                     val fits = CryWaveformAcceptance.select(recognizer.measure(window.audio)).filter { fit ->
-                        retained.none { it.first == fit.speciesId && abs(it.second - (window.startNanos + fit.offsetNanos)) < fit.durationNanos }
+                        !seen(window.generation, fit.speciesId, window.startNanos + fit.offsetNanos, fit.durationNanos)
                     }
                     val matched = System.nanoTime()
                     if (fits.isNotEmpty() && gate.accepts(window.startNanos, window.endNanos, window.generation)) {
@@ -117,6 +159,7 @@ class LiveLocalizedCryWitness internal constructor(
                             val receipt = System.nanoTime()
                             if (gate.accepts(window.startNanos, window.endNanos, window.generation)) for (fit in fits) {
                                 val onset = window.startNanos + fit.offsetNanos
+                                if (!claim(window.generation, fit.speciesId, onset, fit.durationNanos)) continue
                                 val cry = match.custody.submitTestimony(source, BattleCryLocalized(fit.speciesId,
                                     fit.referenceSha256, fit.correlation, fit.durationNanos),
                                     window.endWallMillis - (window.endNanos - onset) / 1_000_000, null,
@@ -129,9 +172,7 @@ class LiveLocalizedCryWitness internal constructor(
                                     captureSubmittedNanos = submitted, captureReceiptNanos = receipt,
                                     crySubmittedNanos = System.nanoTime(), captureSequence = record.sequenceNumber,
                                     crySequence = cry.sequenceNumber))
-                                retained.addLast(fit.speciesId to onset)
                             }
-                            while (retained.size > CryDepartureEvidence.MAX_CRIES) retained.removeFirst()
                         }
                     }
                     // Time spent preserving evidence and waiting for publication already gives the matcher a rest.
@@ -142,12 +183,12 @@ class LiveLocalizedCryWitness internal constructor(
                 while (true) {
                     val window = deferredLive ?: windows.receiveCatching().getOrNull() ?: break
                     deferredLive = null
-                    if (generation != gate.generation) { retained.clear(); generation = gate.generation }
+                    if (generation != gate.generation) { generation = gate.generation }
                     if (!gate.accepts(window.startNanos, window.endNanos, window.generation) ||
                         System.nanoTime() - window.endNanos > MAX_LIVE_AGE_NANOS) {
                         availability(false, window.endWallMillis); continue
                     }
-                    val ids = evidence.speciesIds()
+                    val ids = participants.species
                     val searchChanged = ids != searched
                     // Freeze this bounded catch-up before loading references can age its PCM out.
                     val history = if (searchChanged) recent.preceding(window) else emptyList()
@@ -169,7 +210,7 @@ class LiveLocalizedCryWitness internal constructor(
                         if (deferredLive == null) {
                             val fresh = windows.tryReceive().getOrNull()
                             if (fresh != null) {
-                                if (fresh.generation != generation || evidence.speciesIds() != ids) deferredLive = fresh
+                                if (fresh.generation != generation || participants.species != ids) deferredLive = fresh
                                 else if (!evidence.unavailable && System.nanoTime() - fresh.endNanos <= MAX_LIVE_AGE_NANOS) {
                                     analyze(fresh, recognizer, catchUp = false)
                                 }
@@ -194,13 +235,12 @@ class LiveLocalizedCryWitness internal constructor(
     companion object {
         private const val MAX_LIVE_AGE_NANOS = 2_000_000_000L
         private fun verifiedReferenceLoader(context: Context): suspend (Set<Int>) -> List<CryWaveformReference>? {
-            var catalog: CryReferenceCatalog? = null
+            val catalog by lazy { CryReferenceCatalog.load(context) }
             return { ids ->
-                val corpus = catalog ?: CryReferenceCatalog.load(context).also { catalog = it }
-                val refs = corpus.references.filter { it.speciesId in ids }
+                val refs = ids.sorted().flatMap(catalog::referencesFor)
                 if (refs.isEmpty() || refs.size > CryWaveformMatcher.MAX_REFERENCES) null else {
                     val verified = refs.mapNotNull { ref ->
-                        corpus.openVerified(context, ref)?.let(WavPcm16::decodeBundledReference)?.let {
+                        catalog.openVerified(context, ref)?.let(WavPcm16::decodeBundledReference)?.let {
                             CryWaveformReference(ref.speciesId, ref.sha256, it)
                         }
                     }

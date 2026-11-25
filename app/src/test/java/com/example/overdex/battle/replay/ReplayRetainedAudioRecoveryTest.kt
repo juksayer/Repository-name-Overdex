@@ -185,6 +185,20 @@ class ReplayRetainedAudioRecoveryTest {
         assertEquals(setOf("Sceptile", "Greninja", "Cradily"), MatchReplayModel.audioParticipantNames(a, listOf(crop)))
     }
 
+    @Test fun replayCryPoolRejectsAnExtraSpeciesFromRawTextAndConflictingMoveOwners() {
+        val teams = mapOf("PLAYER" to listOf("Golbat", "Gallade", "Jumpluff"),
+            "OPPONENT" to listOf("Sneasel", "Sealeo", "Vaporeon"))
+        val identities = teams.flatMap { (side, names) -> names.map { name ->
+            event(name, 5*S, ArchivedActivePokemonSpeciesWitnessed(side, name))
+        } }
+        val a = archive().copy(articles = identities + listOf(
+            event("start", 0, ArchivedMatchStarted),
+            event("banner", 8*S, ArchivedRawText("Go, Polteageist!")).copy(sourceId = "ANNOUNCEMENT_WITNESS"),
+            event("extra", 10*S, ArchivedChargedMoveEnergySpent("OPPONENT", "Polteageist", "Shadow Ball", 55, "stale owner")),
+            event("end", 16*S, ArchivedMatchEnded("WIN"))))
+        assertEquals(teams.values.flatten().toSet(), MatchReplayModel.audioParticipantNames(a, emptyList()))
+    }
+
     @Test fun `early appearance permits bounded entry audio without admitting unrelated early clips`() {
         val a = archive().copy(articles = listOf(event("start", 0, ArchivedMatchStarted),
             event("identity", 20*S, ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Vaporeon", 134)),
@@ -199,7 +213,7 @@ class ReplayRetainedAudioRecoveryTest {
             event("end", 90*S, ArchivedMatchEnded("LOSS"))).reversed())
         assertEquals(listOf("after"), ReplayRetainedAudioRecovery.selectedArticles(a).map { it.articleId })
         assertEquals(setOf("Jumpluff"), MatchReplayModel.audioParticipantNames(a, emptyList()))
-        assertNull(MatchReplayModel(a).matchStartNanos)
+        assertEquals(80*S, MatchReplayModel(a).matchStartNanos)
         val resultOnly = a.copy(articles = a.articles.filterNot { it.articleId in setOf("phase", "badge") })
         assertTrue(ReplayRetainedAudioRecovery.selectedArticles(resultOnly).isEmpty())
         assertTrue(MatchReplayModel.audioParticipantNames(resultOnly, emptyList()).isEmpty())

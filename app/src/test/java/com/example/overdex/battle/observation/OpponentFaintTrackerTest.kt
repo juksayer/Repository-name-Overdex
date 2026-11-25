@@ -129,7 +129,7 @@ class OpponentFaintTrackerTest {
         assertEquals(3_000_000_000L, record.monotonicTimeNanos)
     }
 
-    @Test fun `winner has at most two signals and only a resolved loss can use the third slot`() {
+    @Test fun `zero badge cannot name the third faint even after a result`() {
         for (side in ActivePokemonSide.entries) {
             fun count(id: String, time: Long, n: Int) = article(id, time, if (side == ActivePokemonSide.PLAYER)
                 com.example.overdex.battle.custody.PlayerPokeBallCountMeasured(n) else balls(n))
@@ -142,10 +142,8 @@ class OpponentFaintTrackerTest {
                 val tracker = TeamFaintTracker(side)
                 assertEquals(listOf("Sealeo", "Camerupt"), events.flatMap(tracker::acceptAll).map { it.speciesName })
                 val ending = article("result", 12, com.example.overdex.battle.custody.MatchEnded(result))
-                val lost = (side == ActivePokemonSide.PLAYER) == (result == com.example.overdex.model.BattleResult.LOSS)
                 val final = tracker.acceptAll(ending)
-                assertEquals(if (lost) listOf("Vaporeon") else emptyList(), final.map { it.speciesName })
-                if (lost) assertEquals("zero", final.single().sourceArticle.id.value)
+                assertTrue(final.isEmpty())
                 assertTrue((events + ending).flatMap(tracker::acceptAll).isEmpty())
                 assertTrue(TeamFaintTracker(side).acceptAll(ending).isEmpty())
             }

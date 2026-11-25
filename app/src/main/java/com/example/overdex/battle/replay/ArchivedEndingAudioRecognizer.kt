@@ -27,8 +27,9 @@ object ArchivedEndingAudioRecognizer {
                           fastSearches: Map<Long, Set<String>> = emptyMap(),
                           shieldBlockTimes: Set<Long> = emptySet(),
                           entranceWindows: List<ReplayEntranceWindow> = emptyList()): ReplayAudioRecovery = withContext(Dispatchers.Default) {
+        val endingClips = ReplayRetainedAudioRecovery.selectedArticles(archive, captureWindow)
         val handoffClips = ReplayEntranceAudio.clips(archive, entranceWindows)
-        if (handoffClips.isEmpty() && ReplayRetainedAudioRecovery.selectedArticles(archive).isEmpty()) return@withContext ReplayAudioRecovery()
+        if (handoffClips.isEmpty() && endingClips.isEmpty()) return@withContext ReplayAudioRecovery()
         if (!archive.mediaIncluded) return@withContext ReplayAudioRecovery(unavailableArtifacts = listOf("Archive has no audio media"))
         val missing = mutableListOf<String>()
         fun key(s: String) = s.uppercase().filter(Char::isLetterOrDigit)
@@ -43,7 +44,7 @@ object ArchivedEndingAudioRecognizer {
         } }
         val fastSearchKeys = fastSearches.toSortedMap().map { (at, names) -> "$at=${names.sorted().joinToString(",")}" }
         val entranceKeys = entranceWindows.map { "entrance-${it.at}-${it.previous.speciesId}-${it.confirmation.speciesId}-${it.moveNames.sorted()}" }
-        val cacheKey = cache?.key(listOf("ending-audio-v2", captureWindow?.first.toString(), captureWindow?.last.toString(),
+        val cacheKey = cache?.key(listOf("ending-audio-v3", captureWindow?.first.toString(), captureWindow?.last.toString(),
             bannerMove.orEmpty(), speciesIds.sorted().joinToString(",")) + wanted.sorted() + entranceKeys + fastSearchKeys + shieldBlockTimes.sorted().map { "shield-block-$it" })
         if (cache != null && cacheKey != null) cache.read<ReplayAudioRecovery>(cacheKey)?.let { return@withContext it }
         var assetReadFailed = false
@@ -68,7 +69,7 @@ object ArchivedEndingAudioRecognizer {
             if (id in speciesIds) reference("Cry $id", false, id, r.getValue("assetPath").jsonPrimitive.content, r.getValue("sha256").jsonPrimitive.content)
         }
         missing += speciesIds.filter { id -> references.none { it.speciesId == id } }.map { "Cry $it" }
-        val targets = (handoffClips + ReplayRetainedAudioRecovery.selectedArticles(archive)).filter { captureWindow == null || it.monotonicTimeNanos in captureWindow }.map { it.payload as ArchivedAudioCaptured }.associateBy { it.artifactPath }
+        val targets = (handoffClips + endingClips).filter { captureWindow == null || it.monotonicTimeNanos in captureWindow }.map { it.payload as ArchivedAudioCaptured }.associateBy { it.artifactPath }
         val bytes = mutableMapOf<String, ByteArray>()
         val seen = mutableSetOf<String>()
         openArchive()?.use { input -> ZipInputStream(input).use { zip ->

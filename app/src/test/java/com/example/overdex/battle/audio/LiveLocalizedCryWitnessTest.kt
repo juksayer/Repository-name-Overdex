@@ -23,6 +23,57 @@ import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
 class LiveLocalizedCryWitnessTest {
+    @Test fun chargeClipsPublishDistinctSourceTimedCriesOnce() = runBlocking {
+        val samples = ShortArray(1_600) { Random(71 + it).nextInt(-15_000, 15_000).toShort() }
+        val reference = CryWaveformReference(134, "vaporeon-reference", Pcm16Audio(8000, 1, samples))
+        val root = Files.createTempDirectory("cry-charge-recovery").toFile()
+        val store = FileAudioArtifactStore(root)
+        val pcm = ByteArray(8 * 8000 * 2)
+        samples.forEachIndexed { i, sample ->
+            val offset = 2 * (32_000 + i)
+            pcm[offset] = sample.toByte()
+            pcm[offset + 1] = (sample.toInt() shr 8).toByte()
+        }
+        val artifact = requireNotNull(store.preserveWav(Pcm16WavEncoder.encode(pcm, 8000, 1)))
+        val clip = AudioCaptured(artifact, 8000, 1, 8_000_000_000L, "CHARGED_MOVE_EFFECT")
+        val timeline = InMemoryRealityTimeline()
+        val custody = InMemoryTestimonyCustody()
+        val match = Match("CHARGE_CRY", custody = custody, realityTimeline = timeline,
+            pokemonKnowledge = FakePokemonKnowledge())
+        val witness = LiveLocalizedCryWitness(store, { _, _ -> }, MutableSharedFlow()) { ids ->
+            listOf(reference).filter { it.speciesId in ids }
+        }
+        val base = System.nanoTime()
+        try {
+            witness.start(match)
+            custody.submitTestimony(SourceId("VS"), VsScreenWitnessed, 1000, null, emptyList(), base)
+            custody.submitTestimony(SourceId("OPPONENT_POKE_BALLS_WITNESS"),
+                OpponentBattleResourceCountMeasured(OpponentBattleResource.POKE_BALLS, 1, 3),
+                1000, null, emptyList(), base)
+            custody.submitTestimony(SourceId("SPECIES_WITNESS"),
+                ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Vaporeon", 134),
+                1000, null, listOf("badge"), base)
+            for (offset in listOf(1L, 1L, 11L)) custody.submitTestimony(SourceId("STAT_CHANGE_AUDIO_CAPTURE"),
+                clip, 1000 + offset * 1000, null, listOf("charge-$offset"), base + offset * 1_000_000_000L)
+            withTimeout(8000) {
+                while (timeline.getArticles().none { it.payload is BattleCryLocalized &&
+                        it.monotonicTimeNanos == base + 15_000_000_000L }) delay(10)
+            }
+            val rows = timeline.getArticles()
+            val cries = rows.filter { it.payload is BattleCryLocalized }
+            assertEquals(listOf(6000L, 16000L), cries.map { it.perceivedAt })
+            for (cry in cries) {
+                val original = rows.single { it.id.value == cry.evidenceReferences!!.single() }
+                assertEquals(clip, original.payload)
+                assertEquals(original.monotonicTimeNanos!! + 4_000_000_000L, cry.monotonicTimeNanos)
+            }
+        } finally {
+            witness.stop()
+            match.release()
+            root.deleteRecursively()
+        }
+    }
+
     @Test fun `a live cry is delivered between historical cries and all three keep their original audio`() = runBlocking {
         val reference = ShortArray(1600) { Random(71 + it).nextInt(-15000, 15000).toShort() }
         val cradily = CryWaveformReference(346, "cradily-reference", Pcm16Audio(8000, 1, reference))

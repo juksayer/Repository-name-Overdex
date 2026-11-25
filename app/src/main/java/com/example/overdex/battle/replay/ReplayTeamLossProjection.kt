@@ -24,6 +24,8 @@ internal class ReplayTeamLossProjection(archive: MatchArchive) {
                     TeamLossObservation.Identity(article.articleId, at, p.speciesName, p.speciesId) else null
                 is ArchivedActiveHpBarMeasured -> if (p.side == side && hpEvidence.supportsSurvivalAtCapture(article))
                     TeamLossObservation.Alive(article.articleId, at) else null
+                is ArchivedCompleteHpBarObserved -> if (p.side == side && hpEvidence.corroboratedLiveProfile(article))
+                    TeamLossObservation.Alive(article.articleId, at) else null
                 is ArchivedPlayerPokeBallCountMeasured -> if (side == "PLAYER" && p.maximumCount == 3)
                     TeamLossObservation.Count(article.articleId, at, p.visibleCount) else null
                 is ArchivedOpponentBattleResourceCountMeasured -> if (side == "OPPONENT" &&

@@ -31,6 +31,7 @@ import com.example.overdex.battle.custody.WitnessOperating
 import com.example.overdex.battle.custody.VsScreenWitnessed
 import android.util.Log
 import com.example.overdex.battle.interpretation.BattleInterpreter
+import com.example.overdex.battle.inference.BattleStartEvidence
 import com.example.overdex.battle.inference.FastMoveCadenceInference
 import com.example.overdex.battle.inference.FastMoveCandidateSnapshot
 import com.example.overdex.battle.inference.FastMoveEnergyInference
@@ -139,7 +140,7 @@ class Match(
     // Fast Move sound analysis now follows the shared PCM stream independently.
     private val fastMoveUseInference = FastMoveUseInference(onRebuild = rebuildCounter("fast_move"), faintHistoryCache = faintHistoryCache)
     private val chargedMoveAnnouncementInference = ChargedMoveAnnouncementInference(
-        pokemonKnowledge, rebuildCounter("charge"), faintHistoryCache, ::battleHasStartedAt)
+        pokemonKnowledge, rebuildCounter("charge"), faintHistoryCache, ::battleHasStartedAt, ::selectedCardForNickname)
     private val chargeMoveQteVibrationInference = ChargeMoveQteVibrationInference()
 
     /** Owned by this match and baselined by the session at the accepted start boundary. */
@@ -313,11 +314,7 @@ class Match(
         val text = ((payload as? RawTestimony)?.data as? String)?.trim()
         val at = article.monotonicTimeNanos ?: System.nanoTime()
         if (at >= observationAttemptStartedAtNanos && at < (firstIndependentCombatNanos ?: Long.MAX_VALUE)) {
-            val inCombat = when (payload) {
-                GetReadyWitnessed, AttackIncoming, ChargeMoveUsedAnnounced -> true
-                is com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured -> payload.isConsistentLoss()
-                else -> false
-            }
+            val inCombat = BattleStartEvidence.accepts(payload, article.sourceId.id, !article.evidenceReferences.isNullOrEmpty())
             if (inCombat && article.monotonicTimeNanos != null) firstIndependentCombatNanos = at
         }
         if (payload is CountdownGlyphWitnessed && !countdownCuesSeen.add(payload.glyph)) return
@@ -453,6 +450,21 @@ class Match(
         return capturedAtNanos != null && capturedAtNanos >= observationAttemptStartedAtNanos && capturedAtNanos >= start
     }
 
+    private fun selectedCardForNickname(text: String, at: Long): RealityArticle? {
+        val team = playerConfigurationScope.at(at).values.filter {
+            it.sourceId.id == "CURRENT_TEAM_CONFIGURATION" &&
+                (it.monotonicTimeNanos ?: Long.MIN_VALUE) >= observationAttemptStartedAtNanos
+        }
+        return com.example.overdex.battle.team.selectedNicknameOwner(text, team)
+    }
+
+    internal fun playerNicknameReading(text: String, at: Long, slot: Int? = null): FastOverlaySpeciesResolution? {
+        val source = selectedCardForNickname(text, at) ?: return null
+        val member = source.payload as PlayerTeamSlotConfigured
+        if (slot != null && member.slot != slot) return null
+        return FastOverlaySpeciesResolution(member.speciesName, 1f, "CONFIRMED_CARD_NICKNAME", source.id.value)
+    }
+
     internal fun partySlotSupportsReading(slot: Int, species: String, basis: String): Boolean {
         if (basis.startsWith("EXACT_CATALOGUE_TEXT")) return true
         val independent = playerRosterBySlot[slot] ?: return false
@@ -477,7 +489,6 @@ class Match(
     /** Clears only mutable conclusions from an abandoned pre-battle attempt. */
     fun restartPreBattleObservationAttempt() {
         observationAttemptStartedAtNanos = System.nanoTime()
-        countdownMatchStartInference.reset()
         firstIndependentCombatNanos = null
         speciesChecks.restartObservationAttempt()
         playerRosterBySlot.clear()
@@ -809,13 +820,11 @@ class Match(
                 battleMemory.timeline.record(article)
 
                 processingSpan?.next("match_start")
-                // Prefer witnessed GO; a countdown prediction needs later combat
-                // to establish the clock. Independently measured combat can enable
-                // use accounting even when the exact start remains unknown.
-                if (!matchStartRecorded) {
-                    val started = interpreter.interpretMatchStart(article) ?: article
-                        .takeIf { (it.monotonicTimeNanos ?: Long.MIN_VALUE) >= observationAttemptStartedAtNanos }
-                        ?.let(countdownMatchStartInference::accept)
+                // The first witnessed countdown or battle event opens the match on its source clock.
+                val alreadyStarted = matchStartRecorded
+                if (!alreadyStarted && (article.monotonicTimeNanos ?: Long.MIN_VALUE) >= observationAttemptStartedAtNanos &&
+                    (recordedEnd?.monotonicTimeNanos?.let { article.monotonicTimeNanos!! <= it } != false)) {
+                    val started = interpreter.interpretMatchStart(article) ?: countdownMatchStartInference.accept(article)
                     started?.let { derivedArticle ->
                         realityTimeline.append(derivedArticle)
                         cueSpeciesChecks(derivedArticle)
@@ -825,7 +834,9 @@ class Match(
                         fastMoveUseInference.accept(derivedArticle)
                         appendFastMoveEnergyDerivations(derivedArticle)
                         appendFastMoveCadenceDerivations(derivedArticle)
-                        appendTeamSelectLeadAtBattleEvidence(derivedArticle)
+                        // An opening glyph can establish the selected lead. A mid-battle
+                        // observation starts tracking but cannot place that lead on screen.
+                        if (article.payload is CountdownGlyphWitnessed) appendTeamSelectLeadAtBattleEvidence(derivedArticle)
                         _matchStarted.tryEmit(derivedArticle)
                         appendChargedMoveAnnouncement(derivedArticle)
                         Log.d("MATCH_START", "Derived MatchStarted article appended: articleId=${derivedArticle.id.value}, predecessor=${article.id.value}")
@@ -870,7 +881,7 @@ class Match(
                     // A countdown-shaped battlefield animation may fool this
                     // crop later in combat. It may still remain raw visual
                     // testimony, but it must not open a new battle-cry window.
-                    if (!matchStartRecorded && glyph.glyph in setOf("3", "2", "1", "GO")) {
+                    if (!alreadyStarted && glyph.glyph in setOf("3", "2", "1", "GO")) {
                         DroidballService.requestCueCenteredAudio(article.id.value,
                             com.example.overdex.battle.audio.BattleCryCueKind.valueOf("COUNTDOWN_${glyph.glyph}"),
                             article.monotonicTimeNanos)

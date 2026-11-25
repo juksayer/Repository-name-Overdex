@@ -253,13 +253,16 @@ internal class LiveOverlaySpeciesPipeline(
                 catch (cancelled: CancellationException) { throw cancelled }
                 catch (error: Exception) { Log.w("FAST_OVERLAY_SPECIES", "OCR warm-up failed; will retry on a crop", error) }
                 val knownNames = match.pokemonKnowledge.getAllSpeciesNames()
+                val canonicalNames = knownNames.mapTo(hashSetOf()) { it.lowercase() }
                 for (firstWaitingCrop in crops) {
                     var sample = firstWaitingCrop
                     // Acceptance and publication resolve the same candidate. Keep
                     // that work within this crop rather than scanning the full
                     // catalogue again after publishing its raw OCR testimony.
                     val readingResolver = FastOverlaySpeciesReadingResolver { text ->
-                        FastOverlaySpeciesResolver.resolveDetailed(text, knownNames)?.takeIf {
+                        val nickname = if (side == ActivePokemonSide.PLAYER && sample.crop.nativeTeamBadgePresent == true &&
+                            text.trim().lowercase() !in canonicalNames) match.playerNicknameReading(text, sample.capturedAtMonotonicTimeNanos) else null
+                        nickname ?: FastOverlaySpeciesResolver.resolveDetailed(text, knownNames)?.takeIf {
                             (it.basis.startsWith("EXACT_CATALOGUE_TEXT") || sample.crop.nativeTeamBadgePresent == true) &&
                                 match.rosterAllowsBadgeReading(side, it.speciesName, it.basis)
                         }
@@ -391,7 +394,7 @@ internal class LiveOverlaySpeciesPipeline(
                             ocrText = reading.text, ocrMatchBasis = resolution.basis),
                         timestamp = sample.capturedAtWallTimeMillis,
                         confidence = resolution.confidence,
-                        evidenceReferences = evidenceReferences,
+                        evidenceReferences = evidenceReferences + listOfNotNull(resolution.configurationArticleId),
                         monotonicTimeNanos = sample.capturedAtMonotonicTimeNanos
                     )
                     Log.i(
@@ -467,7 +470,8 @@ internal class LiveOverlaySpeciesPipeline(
 internal data class FastOverlaySpeciesResolution(
     val speciesName: String,
     val confidence: Float,
-    val basis: String
+    val basis: String,
+    val configurationArticleId: String? = null,
 )
 
 /** One crop's OCR treatments share results, including rejected candidate text. */

@@ -57,6 +57,24 @@ class DroidballSessionVsCaptureTest {
         }
 
     @Test
+    fun `a numeral opens tracking while later countdown glyphs can still be captured`() =
+        withSession { session, custody, timeline ->
+            session.armCountdown()
+            val at = System.nanoTime()
+            suspend fun glyph(text: String, step: Int) {
+                custody.submitTestimony(SourceId(BattleWitnessContracts.countdownGlyph.witnessId), CountdownGlyphWitnessed(text, .99f, step),
+                    1000L + step, 1f, emptyList(), at + step * 1_000_000L)
+            }
+            glyph("2", 1)
+            withTimeout(4000L) { while (session.phase.value != DroidballSessionPhase.BATTLE_ACTIVE) delay(10) }
+            assertTrue(session.countdownWitnessingActive())
+            glyph("1", 2)
+            glyph("GO", 3)
+            withTimeout(4000L) { while (session.countdownWitnessingActive()) delay(10) }
+            assertEquals(1, timeline.getArticles().count { it.payload == MatchStarted })
+        }
+
+    @Test
     fun `Team Select acceptance still advances an explicitly restarted scan`() =
         withSession { session, custody, timeline ->
             session.armCountdown()
@@ -91,7 +109,8 @@ class DroidballSessionVsCaptureTest {
         withTimeout(4_000L) {
             while (session.vsScreenWitnessingActive()) delay(10L)
         }
-        assertFalse(timeline.getArticles().any { it.payload == MatchStarted })
+        session.match.awaitAcceptedEvidencePublished()
+        assertEquals(payload == GetReadyWitnessed, timeline.getArticles().any { it.payload == MatchStarted })
     }
 
     private fun withSession(

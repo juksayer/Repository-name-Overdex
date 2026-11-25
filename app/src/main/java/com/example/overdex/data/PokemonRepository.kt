@@ -19,6 +19,12 @@ class PokemonRepository(
     private val cryProvider: CryProvider? = null,
 ) : PokemonKnowledge {
 
+    private val announcementMoves by lazy {
+        gameMasterLoader?.allMoves().orEmpty().filter { it.energy > 0 && it.energyGain == 0 }
+            .map { it.name.lowercase() }.toSet()
+    }
+    override fun chargedMoveNames(): Set<String> = announcementMoves
+
     private val searchRepository = PokemonSearchRepository(pokemonDao)
     suspend fun getRegistrationCatalogue(): List<Pokemon> = pokemonDao.getRegistrationCatalogue()
         .filterNot { it.id == DroidballDexEntry.ID }.map { it.toDomain() }

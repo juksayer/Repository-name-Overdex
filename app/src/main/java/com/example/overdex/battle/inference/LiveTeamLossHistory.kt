@@ -45,6 +45,11 @@ internal class LiveTeamLossHistory(private val side: ActivePokemonSide,
     fun accept(article: RealityArticle): Boolean {
         val at = article.monotonicTimeNanos ?: return false
         if (at < attemptFrom) return false
+        when (val reading = article.payload) {
+            is PlayerPokeBallCountMeasured -> if (reading.visibleCount == 0) return false
+            is OpponentBattleResourceCountMeasured -> if (reading.resource == OpponentBattleResource.POKE_BALLS && reading.visibleCount == 0) return false
+            else -> Unit
+        }
         val terminalChanged = terminalHistory.accept(article)
         val resultChanged = (article.payload as? MatchEnded)?.let { limits.result(it.result) } == true
         val hpChanged = hpHistory.accept(article) || terminalChanged || resultChanged

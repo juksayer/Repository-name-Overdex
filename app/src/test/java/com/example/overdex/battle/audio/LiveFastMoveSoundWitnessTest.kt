@@ -98,7 +98,7 @@ class LiveFastMoveSoundWitnessTest {
                 custody.submitTestimony(SourceId("TEST"), payload,
                     998 + index.toLong(), null, emptyList(), base - context.size + index)
             }
-            custody.submitTestimony(SourceId("TEST"), opening,
+            custody.submitTestimony(SourceId(if (opening is CountdownGlyphWitnessed) "COUNTDOWN_GLYPH_WITNESS" else "TEST"), opening,
                 1000, null, emptyList(), base)
             withTimeout(4000) { while (timeline.getArticles().none { it.payload == opening }) delay(10) }
             for (index in 0 until 80) {
@@ -151,7 +151,15 @@ class LiveFastMoveSoundWitnessTest {
             })
             assertTrue(articles.none { it.payload is FastMoveIdentified })
             assertTrue(articles.none { it.payload is FastMoveEnergyDerived })
-            assertTrue(articles.none { it.payload is MatchStarted })
+            val start = articles.singleOrNull { it.payload is MatchStarted }
+            // Even if VS only armed the reader, a subsequently accepted move sound
+            // is direct combat evidence. A rejected comparison cannot open a match.
+            if (opening == VsScreenWitnessed && !measured.referenceMatchAccepted) assertNull(start)
+            else {
+                assertNotNull(start)
+                assertTrue(start!!.predecessorIds.any { id -> articles.any { it.id == id &&
+                    (it.payload == opening || it.payload is FastMoveSoundMeasured) } })
+            }
             assertEquals((context + opening).map { payload -> articles.single { it.payload == payload }.id.value }.toSet(),
                 capture.evidenceReferences.orEmpty().toSet())
         } finally { releaseStorage.countDown(); witness.stop(); match.release(); root.deleteRecursively() }

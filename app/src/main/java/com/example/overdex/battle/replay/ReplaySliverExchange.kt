@@ -25,7 +25,7 @@ internal object ReplaySliverExchange {
     private const val SECOND = 1_000_000_000L
     private fun reliable(article: ArchivedRealityArticle) = article.confidence?.let { it in .8f..1f } == true
 
-    private fun whole(p: ArchivedCompleteHpBarObserved, side: String = "OPPONENT") = p.side == side &&
+    internal fun whole(p: ArchivedCompleteHpBarObserved, side: String = "OPPONENT") = p.side == side &&
         p.barLeft >= 0 && p.barTop >= 0 && p.barRight < p.sourceWidth && p.barBottom < p.sourceHeight &&
         p.barBottom > p.barTop && p.barRight - p.barLeft >= 6 * (p.barBottom - p.barTop) &&
         p.interiorColumns in 40..(p.barRight - p.barLeft) &&

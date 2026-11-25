@@ -35,9 +35,15 @@ data class ReplayCountdown(
 
         fun from(articles: List<ArchivedRealityArticle>): ReplayCountdown? {
             val timed = articles.filter { it.monotonicTimeNanos != null }.sortedBy { it.monotonicTimeNanos }
-            val confirmation = timed.firstOrNull { it.payload is ArchivedMatchStarted }
+            val confirmedStart = timed.firstOrNull { it.payload is ArchivedMatchStarted }
+            val sourceIsFirstWitness = confirmedStart?.sourceId == com.example.overdex.battle.inference.BattleStartEvidence.SOURCE
+            val confirmation = confirmedStart?.takeUnless { sourceIsFirstWitness }
                 ?: timed.firstOrNull { (it.payload as? ArchivedCountdownGlyphWitnessed)?.glyph == "GO" }
                 ?: timed.firstOrNull { confirmsCombat(it.payload) }
+                ?: confirmedStart?.let { start -> timed.firstOrNull { row -> row.articleId in start.predecessorIds &&
+                    row.payload is ArchivedCountdownGlyphWitnessed } }?.takeUnless { cue -> timed.any {
+                    it.payload == ArchivedObservationSessionStoppedByUser && it.monotonicTimeNanos!! > cue.monotonicTimeNanos!!
+                } }
                 ?: return null
             val confirmedAt = confirmation.monotonicTimeNanos!!
             // A restarted/ignored attempt must not supply a later battle's countdown.
@@ -46,7 +52,9 @@ data class ReplayCountdown(
                     (it.payload is ArchivedObservationRestartedByUser || it.payload is ArchivedScreenIgnoredByUser)
             }?.monotonicTimeNanos ?: Long.MIN_VALUE
             val attempt = timed.filter { it.monotonicTimeNanos!! >= attemptStart }
-            val recordedStart = attempt.firstOrNull { it.payload is ArchivedMatchStarted }
+            val recordedStart = attempt.firstOrNull { it.payload is ArchivedMatchStarted &&
+                it.sourceId != com.example.overdex.battle.inference.BattleStartEvidence.SOURCE }
+            // Starting observation on a combat event or numeral does not date the GO glyph.
             val observedGo = attempt.firstOrNull {
                 (it.payload as? ArchivedCountdownGlyphWitnessed)?.glyph == "GO"
             }

@@ -1,6 +1,7 @@
 package com.example.overdex.battle.replay
 
 import com.example.overdex.battle.archive.*
+import com.example.overdex.battle.inference.DepartureCryFaint
 import com.example.overdex.battle.inference.FastMoveUseEvidence
 import com.example.overdex.battle.inference.LiveFinishingHitResolver
 import com.example.overdex.battle.observation.TeamRosterSpeciesAttributor
@@ -144,7 +145,7 @@ internal class ReplayFinishingEvidence(
     fun observed(knockouts: List<ReplayKnockout>): List<ReplayFinishingAttribution> =
         knockouts.filter { it.sourceArticleIds.isNotEmpty() }.flatMap { faint ->
             val direct = (fast + pendingFastCycles).mapNotNull { directFast(faint, it) } +
-                charges.mapNotNull { directCharge(faint, it) }
+                charges.mapNotNull { directCharge(faint, it) ?: chargeBeforeLastCry(faint, it) }
             if (direct.isNotEmpty()) direct else lastRecipient(faint)
         }
 
@@ -446,15 +447,7 @@ internal class ReplayFinishingEvidence(
             departedBy = ReplayTimeBound(flash.monotonicTimeNanos!!, flash.articleId))
     }
 
-    private fun supportedFragment(cry: ReplayRecoveredCry) = cry.fragments.firstOrNull { f ->
-        val row = byId[f.articleId]
-        val clip = row?.payload as? ArchivedAudioCaptured
-        clip != null && row.monotonicTimeNanos == f.captureAtNanos && clip.sha256 == f.audioSha256 &&
-            f.estimatedOnsetNanos == cry.estimatedOnsetNanos && f.referenceSha256.isNotBlank() &&
-            f.durationNanos >= 500_000_000L && f.queryOffsetNanos in 0..(clip.durationNanos - f.durationNanos) &&
-            f.referenceOffsetNanos in 0..(cry.referenceDurationNanos - f.durationNanos) &&
-            f.correlation in .93f..1f && f.correlation - (f.runnerUpCorrelation ?: 1f) >= .35f
-    }
+    private fun supportedFragment(cry: ReplayRecoveredCry) = cry.supportedFragment(byId)
 
     private fun lastTerminalBall(side: String, appearance: Long, hit: Long, end: Long): ArchivedRealityArticle? {
         val counts = articles.mapNotNull { row ->
@@ -591,6 +584,14 @@ internal class ReplayFinishingEvidence(
         return emptyList()
     }
 
+    private fun cryImpact(faint: ReplayKnockout): ArchivedRealityArticle? {
+        if (!DepartureCryFaint.isBasis(faint.basis)) return null
+        return faint.sourceArticleIds.mapNotNull(byId::get).singleOrNull { row ->
+            val bar = row.payload as? ArchivedCompleteHpBarObserved
+            bar?.side == faint.side && bar.status in setOf("DAMAGE_COLOR", "SUSTAINED_DAMAGE_COLOR")
+        }
+    }
+
     private fun directFast(faint: ReplayKnockout, cycle: ReplayFastMoveCycle): ReplayFinishingFastAssociation? {
         val use = cycle.witness
         if (!opposes(use.side, faint.side) || "HP_DAMAGE_TICK" !in use.evidenceKinds ||
@@ -612,6 +613,7 @@ internal class ReplayFinishingEvidence(
                             (witness != null && witness.side != use.side)
                     } } == true
             }) return null
+        val orange = cryImpact(faint)
         val receipt = occurrences.flatMap { it.predecessorIds + it.evidenceReferences.orEmpty() }
             .distinct().mapNotNull(byId::get).filter { a ->
                 val p = a.payload as? ArchivedActiveHpBarDamageTickMeasured ?: return@filter false
@@ -620,7 +622,7 @@ internal class ReplayFinishingEvidence(
                     p.afterFraction == 0f && p.lostFraction in Float.MIN_VALUE..1f &&
                     time in (at - HP_CONFIRMATION_TAIL)..(at + HP_CONFIRMATION_TAIL) &&
                     qualifiedReception(faint, use.side, owner, time) && reliable(a) &&
-                    hp.acceptsSingleHit(a) && qualifiedEmpty(faint.side, time, faint.appearanceAtNanos).isNotEmpty()
+                    hp.acceptsSingleHit(a) && (orange?.monotonicTimeNanos == time || qualifiedEmpty(faint.side, time, faint.appearanceAtNanos).isNotEmpty())
             }.singleOrNull() ?: return null
         val time = receipt.monotonicTimeNanos!!
         if (cycle.impactAtNanos > faint.recordedAtNanos ||
@@ -628,8 +630,77 @@ internal class ReplayFinishingEvidence(
         return ReplayFinishingFastAssociation(use.side, attacker.speciesName, faint.side, faint.speciesName,
             faint.appearanceAtNanos, use.moveName, time, at, faint.recordedAtNanos,
             use.articleIds.sorted(), emptyList(), faint.sourceArticleIds.sorted(), owner,
-            ReplayFinishingReception(time, listOf(receipt.articleId) + qualifiedEmpty(faint.side, time, faint.appearanceAtNanos)),
-            "SOURCE_LINKED_FAST_MOVE_DAMAGE_TO_ZERO")
+            ReplayFinishingReception(time, listOfNotNull(receipt.articleId, orange?.articleId) + qualifiedEmpty(faint.side, time, faint.appearanceAtNanos)),
+            if (orange?.monotonicTimeNanos == time) DepartureCryFaint.IMPACT else "SOURCE_LINKED_FAST_MOVE_DAMAGE_TO_ZERO")
+    }
+
+    /** Once the departure cry has independently established a last-active faint, a
+     * centered damage trail can connect it to a completed charge. The bar may still
+     * contain live pixels. Only the cry bounds the estimated landing. */
+    private fun chargeBeforeLastCry(faint: ReplayKnockout, charge: ReplayFinishingChargeCandidate): ReplayFinishingChargeAssociation? {
+        val start = charge.sourceAtNanos
+        val end = faint.recordedAtNanos
+        if (faint.basis != DepartureCryFaint.LAST || faint.replacementAtNanos != null ||
+            !charge.completed || !charge.uniquelyOwned || charge.moveName == null ||
+            !opposes(charge.side, faint.side) || end - start !in -ANNOUNCEMENT_OVERLAP..LAST_RECIPIENT_CONFIRMATION ||
+            charge.preparationAtNanos > end ||
+            blocked(charge, faint.side, end)) return null
+        val proof = chargeEvidence.getValue(charge)
+        if (proof.isEmpty()) return null
+        val owner = appearanceAt(charge.side, start)
+        val actor = actorAt(charge.side, start) ?: return null
+        if (!sameExchange(charge.side, owner, faint, start, end)) return null
+        val badge = lastTerminalBall(faint.side, faint.appearanceAtNanos, start, end) ?: return null
+        // The live tracker can retain the old appearance ID across a replacement.
+        // Re-establish the recipient from its last-ball badge and a fresh ordinary bar
+        // before accepting a centered orange impact inside the same charge and cry.
+        val liveBefore = articles.lastOrNull { row ->
+            val at = row.monotonicTimeNanos!!
+            at in maxOf(badge.monotonicTimeNanos!!, start - 10 * S) until start &&
+                (row.payload as? ArchivedCompleteHpBarObserved)?.side == faint.side &&
+                appearanceAt(faint.side, at) == faint.appearanceAtNanos && hp.corroboratedLiveProfile(row)
+        }
+        fun centeredImpact(row: ArchivedRealityArticle): Boolean {
+            val bar = row.payload as? ArchivedCompleteHpBarObserved ?: return false
+            return row.monotonicTimeNanos!! in start until end &&
+                row.sourceId == "COMPLETE_${faint.side}_HP_BAR_FRAME_WITNESS" && bar.side == faint.side &&
+                bar.damageColumns >= 3 && kotlin.math.abs(bar.barLeft + bar.barRight - bar.sourceWidth) <= bar.sourceWidth / 12
+        }
+        val orangeOnly = liveBefore?.let {
+            articles.firstOrNull { row ->
+                val bar = row.payload as? ArchivedCompleteHpBarObserved
+                bar != null && centeredImpact(row) && reliable(row) && ReplaySliverExchange.whole(bar, faint.side) &&
+                    bar.liveColumns == 0 && bar.unmaskedUncertainColumns == 0 &&
+                    bar.status in setOf("DAMAGE_COLOR", "SUSTAINED_DAMAGE_COLOR")
+            }
+        }
+        val trail = orangeOnly ?: articles.lastOrNull { row ->
+            centeredImpact(row) && witnessedDamagedBar(row, faint.side, faint.appearanceAtNanos)
+        }
+        val support = trail?.let { listOfNotNull(it.articleId, liveBefore?.articleId?.takeIf { orangeOnly != null }) } ?: run {
+            // The impact sampler can miss the camera transition. Require an earlier
+            // ordinary damaged bar and an independent re-match to the saved audio.
+            val prior = articles.lastOrNull { row ->
+                val time = row.monotonicTimeNanos!!
+                if (time !in (start - 10 * S) until minOf(start, end)) return@lastOrNull false
+                val bar = row.payload as? ArchivedActiveHpBarMeasured
+                witnessedDamagedBar(row, faint.side, faint.appearanceAtNanos) ||
+                    (bar?.side == faint.side && bar.filledFraction < 1f &&
+                        appearanceAt(faint.side, time) == faint.appearanceAtNanos && hp.confirmsLiveHp(row))
+            } ?: return null
+            val target = actorAt(faint.side, start) ?: return null
+            val cry = recoveredCries.filter { it.speciesId == target.speciesId &&
+                kotlin.math.abs(it.estimatedOnsetNanos - end) <= 100_000_000L }.distinct().singleOrNull() ?: return null
+            val fragment = supportedFragment(cry) ?: return null
+            listOf(prior.articleId, fragment.articleId)
+        }
+        val after = trail?.monotonicTimeNanos ?: start
+        if (hasLivingHpAfter(faint.side, faint.appearanceAtNanos, after + 1, end)) return null
+        return ReplayFinishingChargeAssociation(charge.side, actor.speciesName, owner, faint.side,
+            faint.speciesName, faint.appearanceAtNanos, charge.moveName, start, end, end, null,
+            (charge.articleIds + proof).sorted(), (faint.sourceArticleIds + badge.articleId).distinct(),
+            emptyList(), if (trail != null) "CHARGED_DAMAGE_TRAIL_AND_LAST_DEPARTURE_CRY"
+            else CHARGE_AND_REVIEWED_CRY, impactSupportArticleIds = support)
     }
 
     private fun directCharge(faint: ReplayKnockout, charge: ReplayFinishingChargeCandidate): ReplayFinishingChargeAssociation? {
@@ -653,7 +724,11 @@ internal class ReplayFinishingEvidence(
             }) return null
         val terminal = faint.basis == TerminalChargedFaintResolver.BASIS &&
             faint.sourceArticleIds.any { it in ids }
-        val shieldProof = unshielded(charge, faint)
+        val orange = cryImpact(faint)?.takeIf { it.monotonicTimeNanos!! - charge.sourceAtNanos in 0..MAX_CHARGE_IMPACT }
+        val shieldProof = unshielded(charge, faint) ?: orange?.let {
+            shieldReadings(faint.side, Long.MIN_VALUE, charge.sourceAtNanos).lastOrNull()
+                ?.takeIf { count -> count.second == 0 }?.let { count -> listOf(count.third) }
+        }
         if (!terminal && shieldProof == null) return null
         val measurements = articles.filter { a ->
             val time = a.monotonicTimeNanos!!
@@ -666,8 +741,8 @@ internal class ReplayFinishingEvidence(
                 a.articleId in qualifiedEmpty(faint.side, time, faint.appearanceAtNanos)
         }
         val measured = measurements.firstOrNull()
-        if (measured == null && !terminal) return null
-        val receipt = measured?.let {
+        if (measured == null && !terminal && orange == null) return null
+        val receipt = orange?.let { ReplayFinishingReception(it.monotonicTimeNanos!!, listOf(it.articleId)) } ?: measured?.let {
             val time = it.monotonicTimeNanos!!
             ReplayFinishingReception(time, qualifiedEmpty(faint.side, time, faint.appearanceAtNanos))
         }
@@ -678,7 +753,7 @@ internal class ReplayFinishingEvidence(
             faint.side, faint.speciesName, faint.appearanceAtNanos, charge.moveName, charge.sourceAtNanos,
             faint.recordedAtNanos, landing, faint.replacementAtNanos, (charge.articleIds + ids).sorted(),
             faint.sourceArticleIds.sorted(), shieldProof.orEmpty(),
-            if (receipt == null) TerminalChargedFaintResolver.BASIS else "PHASE_LINKED_CHARGED_IMPACT_TO_ZERO",
+            if (orange != null) DepartureCryFaint.IMPACT else if (receipt == null) TerminalChargedFaintResolver.BASIS else "PHASE_LINKED_CHARGED_IMPACT_TO_ZERO",
             receipt)
     }
 
@@ -709,13 +784,16 @@ internal class ReplayFinishingEvidence(
                 is ArchivedActiveHpBarMeasured -> p.side == side && hp.confirmsLiveHp(a)
                 is ArchivedCompleteHpBarObserved -> p.side == side && p.status == "LIVE_COLOR" &&
                     p.liveColumns > 0 && complete(p) && reliable(a) &&
-                    belongsToAppearance(p, time, appearance)
+                    (belongsToAppearance(p, time, appearance) || hp.corroboratedLiveProfile(a))
                 else -> false
             }
         }
     }
 
-    fun allows(link: ReplayFinishingAttribution, knockouts: List<ReplayKnockout>): Boolean {
+    fun allows(link: ReplayFinishingAttribution, knockouts: List<ReplayKnockout>): Boolean =
+        rejectionReason(link, knockouts) == null
+
+    fun rejectionReason(link: ReplayFinishingAttribution, knockouts: List<ReplayKnockout>): String? {
         val receipt = link.reception?.atNanos ?: link.landingAtNanos
         val owner = link.attackerAppearanceAtNanos
         if (knockouts.any { it.side == link.attackingSide && it.appearanceAtNanos == owner &&
@@ -723,7 +801,7 @@ internal class ReplayFinishingEvidence(
             appearanceAt(link.attackingSide, link.moveSourceAtNanos) != owner ||
             appearanceAt(link.attackingSide, receipt) != owner ||
             appearanceAt(link.recipientSide, link.moveSourceAtNanos) != link.recipientAppearanceAtNanos ||
-            appearanceAt(link.recipientSide, receipt) != link.recipientAppearanceAtNanos) return false
+            appearanceAt(link.recipientSide, receipt) != link.recipientAppearanceAtNanos) return "The active appearances changed or the attacker had already fainted."
         val next = nextAppearance(link.recipientSide, receipt)
         // Later count publication can follow a replacement. Never inspect the replacement's HP.
         val battleEnd = articles.firstOrNull { it.payload is ArchivedMatchEnded && it.monotonicTimeNanos!! >= receipt }
@@ -734,12 +812,12 @@ internal class ReplayFinishingEvidence(
                     (it.payload is ArchivedObservationRestartedByUser ||
                         it.payload is ArchivedObservationSessionStoppedByUser ||
                         it.payload is ArchivedScreenIgnoredByUser || it.payload is ArchivedMatchEnded)
-            }) return false
-        if (hasLivingHpAfter(link.recipientSide, link.recipientAppearanceAtNanos, receipt, battleEnd ?: Long.MAX_VALUE)) return false
+            }) return "Observation was interrupted during the exchange."
+        if (hasLivingHpAfter(link.recipientSide, link.recipientAppearanceAtNanos, receipt, battleEnd ?: Long.MAX_VALUE)) return "The recipient had living HP after the proposed impact."
         val charge = charges.singleOrNull { it.side == link.attackingSide && it.sourceAtNanos == link.moveSourceAtNanos &&
             it.articleIds.any(link.moveArticleIds::contains) }
         val selectedCharge = charge.takeIf { link is ReplayFinishingChargeAssociation }
-        if (selectedCharge != null && blocked(selectedCharge, link.recipientSide, through)) return false
+        if (selectedCharge != null && blocked(selectedCharge, link.recipientSide, through)) return "The charged hit was shielded."
 
         // A raw use remains a conflicting claim even when no decorative cycle was scheduled.
         val cycle = fast.singleOrNull { it.witness.side == link.attackingSide &&
@@ -750,11 +828,17 @@ internal class ReplayFinishingEvidence(
         val fastOccurrences = ownIds.mapNotNull { byId[it]?.fastOccurrenceId() }.toSet()
         // A last-opponent cry can cite a living whole bar just before Get Ready.
         // In the pending-move window it can settle only an earlier, damage-linked use.
+        val canSettlePending = link.basis in setOf(REPEAT_CHARGE, CHARGE_AND_REVIEWED_CRY, "CHARGED_DAMAGE_TRAIL_AND_LAST_DEPARTURE_CRY")
         val preChargeLiveAt = selectedCharge?.let { cast ->
-            val earliest = if (link.basis == REPEAT_CHARGE) from else cast.preparationAtNanos
-            link.faintArticleIds.mapNotNull(byId::get)
+            val earliest = if (canSettlePending) from else cast.preparationAtNanos
+            (link.faintArticleIds + (link as? ReplayFinishingChargeAssociation)?.impactSupportArticleIds.orEmpty()).mapNotNull(byId::get)
                 .filter { it.monotonicTimeNanos!! in earliest until cast.sourceAtNanos &&
-                    witnessedDamagedBar(it, link.recipientSide, link.recipientAppearanceAtNanos) }
+                    (witnessedDamagedBar(it, link.recipientSide, link.recipientAppearanceAtNanos) ||
+                        ((it.payload as? ArchivedCompleteHpBarObserved)?.side == link.recipientSide &&
+                            appearanceAt(link.recipientSide, it.monotonicTimeNanos) == link.recipientAppearanceAtNanos &&
+                            hp.corroboratedLiveProfile(it)) ||
+                        (link.basis == CHARGE_AND_REVIEWED_CRY && (it.payload as? ArchivedActiveHpBarMeasured)?.side == link.recipientSide &&
+                            appearanceAt(link.recipientSide, it.monotonicTimeNanos) == link.recipientAppearanceAtNanos && hp.confirmsLiveHp(it))) }
                 .maxOfOrNull { it.monotonicTimeNanos!! }
         }
         val competingFrom = minOf(link.moveSourceAtNanos, receipt)
@@ -763,7 +847,7 @@ internal class ReplayFinishingEvidence(
         val knownChargeClaims = otherCharges.flatMap { other ->
             chargeEvidence.getValue(other).map { it to other }
         }.groupBy({ it.first }, { it.second })
-        return claims.none { claim ->
+        val uncontested = claims.none { claim ->
             claim.articleId !in ownIds && claim.atNanos in from..competingUntil &&
                 (claim.attackingSide !in SIDES || claim.attackingSide == link.attackingSide) &&
                 (claim.damagedSide !in SIDES || claim.damagedSide == link.recipientSide) &&
@@ -773,7 +857,7 @@ internal class ReplayFinishingEvidence(
                     "FAST_USE" -> byId[claim.articleId]?.fastOccurrenceId() !in fastOccurrences &&
                         !(preChargeLiveAt != null && claim.atNanos < preChargeLiveAt &&
                             receivedNonlethalFast(claim.articleId, link.recipientSide, claim.atNanos,
-                                preChargeLiveAt.takeIf { link.basis == REPEAT_CHARGE })) &&
+                                preChargeLiveAt.takeIf { canSettlePending })) &&
                         (claim.atNanos >= competingFrom || (selectedCharge != null && fast.none {
                             claim.articleId in it.witness.articleIds && it.impactAtNanos < selectedCharge.preparationAtNanos
                         }))
@@ -807,6 +891,7 @@ internal class ReplayFinishingEvidence(
                     other.impactAtNanos + 1, receipt - 1) || neutralSurvivalBeforeRetainedImpact(link, receipt, other))
             !survived && (other.side !in SIDES || !other.uniquelyOwned || !blocked(other, link.recipientSide, through))
         }
+        return if (uncontested) null else "Another attack could account for this hit."
     }
 
     /** A supported Fast Move in neutral play can separate the previous charge from this later impact. */
@@ -828,7 +913,23 @@ internal class ReplayFinishingEvidence(
     private fun receivedNonlethalFast(id: String, side: String, sourceAt: Long, laterLiveAt: Long? = null): Boolean {
         val row = byId[id] ?: return false
         val use = row.payload as? ArchivedFastMoveUseObserved ?: return false
-        if (use.damagedSide != side || "HP_DAMAGE_TICK" !in use.evidenceKinds) return false
+        if (use.damagedSide != side) return false
+        // A pulse on the recipient's border is an impact cue. A later complete,
+        // settled living bar on this appearance rules it out as the finishing hit.
+        if (use.evidenceKinds.toSet() == setOf("HP_BORDER_PULSE") && laterLiveAt != null && laterLiveAt > sourceAt) {
+            val pulse = (row.predecessorIds + row.evidenceReferences.orEmpty()).distinct().mapNotNull(byId::get)
+                .singleOrNull { it.sourceId == "${side}_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS" &&
+                    it.monotonicTimeNanos == sourceAt && (it.payload as? ArchivedHpBarBorderPulse)?.let { p ->
+                        p.barSide == side && p.status == "PRESENT"
+                    } == true } ?: return false
+            return reliable(pulse) && appearanceAt(side, sourceAt) == appearanceAt(side, laterLiveAt) &&
+                profiles[side to laterLiveAt].orEmpty().singleOrNull()?.let {
+                    val p = it.payload as ArchivedCompleteHpBarObserved
+                    it.sourceId == "COMPLETE_${side}_HP_BAR_FRAME_WITNESS" && p.damageColumns == 0 &&
+                        ReplaySliverExchange.inBattlePosition(p) && witnessedDamagedBar(it, side, appearanceAt(side, sourceAt))
+                } == true
+        }
+        if ("HP_DAMAGE_TICK" !in use.evidenceKinds) return false
         val tickRow = (row.predecessorIds + row.evidenceReferences.orEmpty()).distinct().mapNotNull(byId::get)
             .singleOrNull { it.payload is ArchivedActiveHpBarDamageTickMeasured } ?: return false
         val tick = tickRow.payload as ArchivedActiveHpBarDamageTickMeasured
@@ -961,12 +1062,25 @@ internal class ReplayFinishingEvidence(
         internal const val REPEAT_CHARGE = "NAMED_CHARGED_IMPACT_AND_SIDED_REPEAT_CRY"
         internal const val LAST_RECIPIENT_BASIS = "UNCONTESTED_ATTACK_ON_LAST_RECIPIENT"
         private val CHARGE_DAMAGE_PROFILES = setOf("DAMAGE_COLOR", "SUSTAINED_DAMAGE_COLOR", "UNRESOLVED_COLOR")
+        private const val CHARGE_AND_REVIEWED_CRY = "NAMED_CHARGE_AND_AUDIO_CONFIRMED_LAST_DEPARTURE_CRY"
         private const val LAST_RECIPIENT_CONFIRMATION = 2_500_000_000L
         private val SIDES = setOf("PLAYER", "OPPONENT")
         private val USED_MOVE = Regex("(.+?) used .+[!.]?", RegexOption.IGNORE_CASE)
+        // A captured banner can still be visible when the departure cry begins.
+        private const val ANNOUNCEMENT_OVERLAP = 500_000_000L
         private const val HP_CONFIRMATION_TAIL = 350_000_000L
         private const val MAX_CHARGE_IMPACT = 3_500_000_000L
         private const val MAX_FAINT_CONFIRMATION = 8_000_000_000L
         private const val MAX_PENDING_FAST = 2_500_000_000L
     }
+}
+
+internal fun ReplayRecoveredCry.supportedFragment(byId: Map<String, ArchivedRealityArticle>) = fragments.firstOrNull { f ->
+    val row = byId[f.articleId]
+    val clip = row?.payload as? ArchivedAudioCaptured
+    clip?.captureSource == "PLAYBACK_POKEMON_GO" && row.monotonicTimeNanos == f.captureAtNanos && clip.sha256 == f.audioSha256 &&
+        f.estimatedOnsetNanos == estimatedOnsetNanos && f.referenceSha256.isNotBlank() &&
+        f.durationNanos >= 500_000_000L && f.queryOffsetNanos in 0..(clip.durationNanos - f.durationNanos) &&
+        f.referenceOffsetNanos in 0..(referenceDurationNanos - f.durationNanos) &&
+        f.correlation in .93f..1f && f.correlation - (f.runnerUpCorrelation ?: 1f) >= .35f
 }

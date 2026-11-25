@@ -21,13 +21,14 @@ class PersistedBattleCryCandidateWitness(private val context: Context, private v
     override fun start(match: Match) {
         if (scope != null) return
         scope = CoroutineScope(Dispatchers.IO + SupervisorJob()).also { scope -> scope.launch {
-            // Decode/hash the bundled corpus once per process, off the UI thread.
-            // Subsequent matches reuse the same reference features, never live evidence.
-            val references = PreparedCryReferenceIndex.get(context)
+            val participants = BattleCryParticipants()
             match.articles.collect { article ->
+                participants.observe(article)
                 val audio = article.payload as? AudioCaptured ?: return@collect
                 if (article.sourceId.id != BattleCryListeningCue.audioCaptureSourceId) return@collect
                 if (!BattleCryListeningCue.accepts(audio.cueKind)) return@collect
+                val references = PreparedCryReferenceIndex.get(context, participants.species)
+                if (references.isEmpty()) return@collect
                 val bytes = File(root, audio.artifact.relativePath).takeIf { it.isFile }?.readBytes() ?: return@collect
                 if (sha(bytes) != audio.artifact.sha256) return@collect
                 val query = WavPcm16.decode(bytes) ?: return@collect

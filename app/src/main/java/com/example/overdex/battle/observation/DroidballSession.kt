@@ -52,7 +52,9 @@ class DroidballSession(val match: Match) {
         }
         scope.launch {
             match.articles.collect { article ->
-                if (article.payload.closesCountdownCapture()) countdownCaptureFinished = true
+                val witnessedGo = article.sourceId.id == BattleWitnessContracts.countdownGlyph.witnessId &&
+                    (article.payload as? com.example.overdex.battle.custody.CountdownGlyphWitnessed)?.glyph == "GO"
+                if (witnessedGo || article.payload.closesCountdownCapture()) countdownCaptureFinished = true
                 val announcement = (article.payload as? RawTestimony)?.data as? String
                 if (article.sourceId.id == "ANNOUNCEMENT_WITNESS" &&
                     announcement?.trim()?.startsWith("Go,", ignoreCase = true) == true
@@ -146,7 +148,16 @@ class DroidballSession(val match: Match) {
         requireNotNull(article.monotonicTimeNanos) {
             "MatchStarted article must preserve its observed or inferred monotonic boundary"
         }
-        countdownCaptureFinished = true
+        if (hasCompletedMatch) return
+        // A numeral or a visible badge may open tracking before GO. Preserve
+        // the remaining glyphs during the existing bounded countdown window.
+        if (article.sourceId.id == com.example.overdex.battle.inference.BattleStartEvidence.SOURCE) {
+            if (countdownCaptureDeadlineNanos == Long.MIN_VALUE) {
+                countdownCaptureDeadlineNanos = article.monotonicTimeNanos + COUNTDOWN_AFTER_ENTRY_NANOS
+            }
+        } else {
+            countdownCaptureFinished = true
+        }
         _phase.value = DroidballSessionPhase.BATTLE_ACTIVE
     }
 

@@ -181,7 +181,9 @@ class ReplayEventMarkersTest {
         val replay = model(species("p", "PLAYER", "Raichu", 5),
             event("incoming", ArchivedAttackIncoming, 15))
         assertEquals(ReplayCountdownTiming.PRESENTATION_ONLY, replay.countdown?.timingBasis)
-        assertTrue(replay.eventMarkers.none { it.kind == ReplayEventMarkerKind.MATCH_START })
+        val marker = replay.eventMarkers.single { it.kind == ReplayEventMarkerKind.MATCH_START }
+        assertEquals("Match start · first battle evidence", marker.label)
+        assertTrue("incoming" in marker.sourceArticleIds)
     }
 
     @Test fun `only a witnessed GO at the boundary qualifies the match start label`() {

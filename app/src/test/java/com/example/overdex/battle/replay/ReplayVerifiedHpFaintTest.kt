@@ -69,8 +69,8 @@ class ReplayVerifiedHpFaintTest {
     @Test fun `count-confirmed KO and repeated zero cannot make a second marker or loss`() {
         val base = recorded("OPPONENT")
         val input = base.copy(articles = base.articles + listOf(
-            event("before", 58 * S, ArchivedOpponentBattleResourceCountMeasured("POKE_BALLS", 1, 3)),
-            event("after", 61 * S, ArchivedOpponentBattleResourceCountMeasured("POKE_BALLS", 0, 3)),
+            event("before", 58 * S, ArchivedOpponentBattleResourceCountMeasured("POKE_BALLS", 2, 3)),
+            event("after", 61 * S, ArchivedOpponentBattleResourceCountMeasured("POKE_BALLS", 1, 3)),
             base.articles.single { it.articleId == "empty" }.copy(articleId = "empty-again", monotonicTimeNanos = EMPTY_AT + 20_000_000)))
         val model = MatchReplayModel(input)
         assertEquals(1, model.eventMarkers.count { it.kind == ReplayEventMarkerKind.FAINT })
@@ -81,8 +81,8 @@ class ReplayVerifiedHpFaintTest {
             assertEquals(EMPTY_AT, marker.atNanos)
             assertTrue(marker.sourceArticleIds.containsAll(listOf("identity", "red", "empty", "before", "after")))
             assertTrue(replay.sceneAt(EMPTY_AT + 10_000_000L).opponent!!.isFainted)
-            assertEquals(1, replay.sceneAt(EMPTY_AT + 10_000_000L).opponentResources.pokeBalls)
-            assertEquals(0, replay.sceneAt(61 * S).opponentResources.pokeBalls)
+            assertEquals(2, replay.sceneAt(EMPTY_AT + 10_000_000L).opponentResources.pokeBalls)
+            assertEquals(1, replay.sceneAt(61 * S).opponentResources.pokeBalls)
         }
     }
 

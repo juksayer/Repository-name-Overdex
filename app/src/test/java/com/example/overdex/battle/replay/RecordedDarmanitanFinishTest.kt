@@ -75,9 +75,26 @@ class RecordedDarmanitanFinishTest {
             model(a, e).finishingFastMoveAssociations.singleOrNull { it.basis == ReplayLastOpponentFastFinish.BASIS }
         assertTrue(burstRow.articleId in requireNotNull(credit(withBurst)).faintArticleIds)
         assertFalse(burstRow.articleId in requireNotNull(credit(archive.copy(articles = archive.articles + burst(2.0)))).faintArticleIds)
+        val noOutcome = archive.copy(articles = archive.articles.filterNot {
+            it.payload is ArchivedMatchEnded || it.payload is ArchivedMatchOutcomeLabelWitnessed
+        })
+        val burstOnly = noOutcome.copy(articles = noOutcome.articles + burstRow)
+        val cryAnchored = requireNotNull(ReplayLastOpponentFastFinish.read(burstOnly, gm, file::inputStream) { File(assets,it).readBytes() })
+        val burstFinish = requireNotNull(credit(burstOnly, cryAnchored)) { "Qualified departure with no result" }
+        assertEquals(link.moveSourceAtNanos, burstFinish.moveSourceAtNanos)
+        assertEquals(link.faintSourceAtNanos, burstFinish.faintSourceAtNanos)
+        assertTrue(burstRow.articleId in burstFinish.faintArticleIds)
+        assertEquals(burstFinish, model(burstOnly, cryAnchored).sceneAt(burstFinish.impactAtNanos)
+            .fastMoveActions.single { it.side == "PLAYER" }.finishingAssociation)
+        val lateResult = cry.copy(articleId = "late-win", monotonicTimeNanos = cryTime.atNanos + 31_000_000_000L,
+            payload = ArchivedMatchEnded("WIN"))
+        assertEquals(cryTime.atNanos, credit(noOutcome.copy(articles = noOutcome.articles + lateResult))?.faintSourceAtNanos)
+        assertNull(credit(noOutcome.copy(articles = noOutcome.articles + burst(2.0))))
+        assertNull(credit(burstOnly.copy(articles = burstOnly.articles + cry.copy(articleId = "loss",
+            monotonicTimeNanos = link.impactAtNanos + 2_000_000_000L, payload = ArchivedMatchEnded("LOSS")))))
         assertNull(credit(withBurst.copy(articles = withBurst.articles - cry)))
         assertNull(credit(withBurst, data.copy(audio = data.audio.copy(mixedCandidates = emptyList()))))
-        assertNull(credit(withBurst, data.copy(opponentMoves = data.opponentMoves + "Counter")))
+        assertNull(credit(withBurst, data.copy(defendingMoves = data.defendingMoves + "Counter")))
         val afterCry = link.impactAtNanos + 200_000_000L
         val switched = cry.copy(articleId = "living-switch", monotonicTimeNanos = afterCry,
             payload = ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Torchic", 255))
@@ -99,6 +116,38 @@ class RecordedDarmanitanFinishTest {
                 payload = remaining)
         }
         assertNull(credit(withBurst.copy(articles = withBurst.articles + highHp)))
+        // Feed the identical audio and geometry from the other side. Only the opponent
+        // can own Counter here. The black frames stand in for a missed results label.
+        val playerBall = cry.copy(articleId = "last-player", monotonicTimeNanos = link.moveSourceAtNanos - 1,
+            payload = ArchivedPlayerPokeBallCountMeasured(1, 3))
+        val strip = archive.articles.first { row -> row.sourceId == "ANNOUNCEMENT_CROP_CAPTURE" &&
+            (row.payload as? ArchivedCropCaptured)?.cropName == "AnnouncementCrop" }
+        val darkFrames = (1..2).map { n -> strip.copy(articleId = "dark-$n",
+            monotonicTimeNanos = cryTime.atNanos + n * 200_000_000L) }
+        val playerBar = cry.copy(articleId = "player-terminal-bar", sourceId = "COMPLETE_PLAYER_HP_BAR_FRAME_WITNESS",
+            confidence = .99f, monotonicTimeNanos = cryTime.atNanos - 50_000_000L,
+            payload = bar.copy(side = "PLAYER", status = "DAMAGE_COLOR", liveColumns = 0, damageColumns = 1,
+                unmaskedUncertainColumns = 0, appearanceStartedAtNanos = null))
+        fun reverseFinish(profile: ArchivedRealityArticle, darkIds: List<String> = darkFrames.map { it.articleId },
+                          extra: List<ArchivedRealityArticle> = emptyList()) = ReplayLastOpponentFastFinish.resolve(
+            data.copy(recipientSide = "PLAYER"), (listOf(cry, playerBall, profile) + darkFrames + extra).sortedBy { it.monotonicTimeNanos },
+            requireNotNull(replay.sceneAt(link.moveSourceAtNanos).player), requireNotNull(replay.sceneAt(link.moveSourceAtNanos).opponent),
+            link.attackerAppearanceAtNanos, link.recipientAppearanceAtNanos, darkIds)
+        val reversedFinish = requireNotNull(reverseFinish(playerBar))
+        assertEquals("OPPONENT", reversedFinish.attackingSide)
+        assertEquals("PLAYER", reversedFinish.recipientSide)
+        assertEquals("Counter", reversedFinish.moveName)
+        assertTrue(darkFrames.all { it.articleId in reversedFinish.faintArticleIds })
+        val orange = playerBar.payload as ArchivedCompleteHpBarObserved
+        assertNull(reverseFinish(playerBar.copy(payload = orange.copy(liveColumns = 1))))
+        assertNull(reverseFinish(playerBar.copy(payload = orange.copy(unmaskedUncertainColumns = 1))))
+        val restored = sliver.copy(sourceId = "PLAYER_ACTIVE_HP_BAR_WITNESS",
+            payload = (sliver.payload as ArchivedActiveHpBarMeasured).copy(side = "PLAYER"))
+        assertNull(reverseFinish(playerBar, extra = listOf(restored.copy(articleId = "restored-before-cry",
+            monotonicTimeNanos = cryTime.atNanos - 1))))
+        assertNull(reverseFinish(playerBar, darkIds = listOf(darkFrames.first().articleId)))
+        assertNull(reverseFinish(playerBar, extra = listOf(cry.copy(articleId = "competing-charge",
+            monotonicTimeNanos = cryTime.atNanos - 10, payload = ArchivedChargeMoveUsedAnnounced))))
         assertEquals(hash,ReplayRetainedAudioRecovery.sha(file.readBytes()))
     }
 }

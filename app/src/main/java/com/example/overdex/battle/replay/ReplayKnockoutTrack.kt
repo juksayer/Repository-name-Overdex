@@ -1,5 +1,6 @@
 package com.example.overdex.battle.replay
 
+import com.example.overdex.battle.inference.DepartureCryFaint
 import com.example.overdex.battle.archive.ArchivedActivePokemonFaintedWitnessed
 import com.example.overdex.battle.archive.ArchivedActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.archive.ArchivedOpponentBattleResourceCountMeasured
@@ -69,9 +70,12 @@ internal class ReplayKnockoutTrack(
             return@mapNotNull ReplayKnockout(faint.side, appearance.speciesName, appearance.atNanos,
                 at, at, replacement?.atNanos, hpResolution?.evidenceReferences ?: terminalResolution!!.evidenceReferences,
                 timing = hpResolution?.let { ReplayFaintTiming.ZeroHp(ReplayTimeBound(it.atNanos, it.emptyArticleId)) }
-                    ?: ReplayFaintTiming.Window(null, ReplayTimeBound(at, terminalResolution!!.sourceArticleId)),
+                    ?: ReplayTimeBound(at, terminalResolution!!.sourceArticleId).let { bound ->
+                        if (DepartureCryFaint.isBasis(terminalResolution.basis)) ReplayFaintTiming.Cry(bound)
+                        else ReplayFaintTiming.Window(null, bound)
+                    },
                 basis = if (hpResolution != null) VerifiedHpFaintResolver.BASIS else
-                    com.example.overdex.battle.inference.TerminalChargedFaintResolver.BASIS)
+                    terminalResolution!!.basis)
         }
         if (resolution != null) {
             val candidate = resolution.resolved ?: return@mapNotNull null

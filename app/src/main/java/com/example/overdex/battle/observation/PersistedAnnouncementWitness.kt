@@ -127,7 +127,7 @@ class PersistedAnnouncementWitness internal constructor(
                         val completedAt = now()
                         var acceptedText = readings.firstOrNull { it.acceptedText.isNotBlank() }?.acceptedText.orEmpty()
                         if (cropContract == BattleCropContracts.announcement) {
-                            acceptedText = extractCompleteUsedAnnouncement(acceptedText)
+                            acceptedText = extractCompleteUsedAnnouncement(acceptedText, match.pokemonKnowledge.chargedMoveNames())
                         }
                         val vocabularyResolution = if (observerId.id == "QTE_PROGRESS_TEXT_WITNESS" &&
                             cropContract == BattleCropContracts.qteProgressText)
@@ -212,12 +212,16 @@ class PersistedAnnouncementWitness internal constructor(
 }
 
 private val USED_WORD = Regex("\\bused\\b", RegexOption.IGNORE_CASE)
-private val COMPLETE_USED_LINE = Regex("^.+\\s+used\\s+[\\p{L}\\p{N}][\\p{L}\\p{N} '’\\-]*!$", RegexOption.IGNORE_CASE)
+private val COMPLETE_USED_LINE = Regex("^.+?\\s+used\\s+([\\p{L}\\p{N}][\\p{L}\\p{N} '’()\\-]*)!", RegexOption.IGNORE_CASE)
 
-/** Keep wrapped or competing announcements intact for the existing resolver. */
-internal fun extractCompleteUsedAnnouncement(text: String): String {
-    val moveLines = text.lineSequence().map(String::trim).filter { USED_WORD.containsMatchIn(it) }.toList()
-    return moveLines.singleOrNull()?.takeIf(COMPLETE_USED_LINE::matches) ?: text
+/** A known move ends at its own terminator. Keep unresolved or wrapped readings available for review. */
+internal fun extractCompleteUsedAnnouncement(text: String, chargedMoveNames: Set<String> = emptySet()): String {
+    val moveLines = text.lineSequence().map(String::trim).filter { USED_WORD.containsMatchIn(it) }.iterator()
+    if (!moveLines.hasNext()) return text
+    val first = moveLines.next()
+    val banner = COMPLETE_USED_LINE.find(first) ?: return text
+    if (banner.groupValues[1].lowercase() in chargedMoveNames) return banner.value
+    return if (banner.value == first && !moveLines.hasNext()) first else text
 }
 
 /** The backend grants a turn before the witness chooses its current crop. */

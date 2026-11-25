@@ -37,21 +37,16 @@ class AggregateLiveFaintConsumersTest {
         assertTrue(tracker.acceptAll(count("still-one", 12, 1)).isEmpty())
     }
 
-    @Test fun `later evidence can name a second aggregate owner without republishing the first`() {
+    @Test fun `invalid zero cannot resolve an ambiguous aggregate and later survival names only the two losses`() {
         val tracker = TeamFaintTracker(SIDE)
         val inputs = prefix() + count("one", 10, 1) + species("b-return", 12, "Gourgeist", 711) +
             count("zero", 14, 0)
-        val first = inputs.flatMap(tracker::acceptAll)
-        assertEquals(listOf("Turtonator"), first.map { it.speciesName })
-        // This delayed image was captured before the final count and proves B survived the earlier interval.
-        val second = tracker.acceptAll(hp("b-before-zero", 13))
-        assertEquals(listOf("Camerupt"), second.map { it.speciesName })
-        val third = tracker.acceptAll(article("won", 16, MatchEnded(com.example.overdex.model.BattleResult.WIN)))
-        val next = second + third
-        assertEquals(setOf("Camerupt", "Gourgeist"), next.map { it.speciesName }.toSet())
-        assertEquals("one", next.single { it.speciesName == "Camerupt" }.sourceArticle.id.value)
-        assertEquals("zero", next.single { it.speciesName == "Gourgeist" }.sourceArticle.id.value)
-        assertTrue(tracker.acceptAll(hp("b-before-zero", 13)).isEmpty())
+        assertTrue(inputs.flatMap(tracker::acceptAll).isEmpty())
+        val losses = tracker.acceptAll(hp("b-return-hp", 13))
+        assertEquals(setOf("Turtonator", "Camerupt"), losses.map { it.speciesName }.toSet())
+        assertTrue(losses.all { it.sourceArticle.id.value == "one" })
+        assertTrue(tracker.acceptAll(article("won", 16, MatchEnded(com.example.overdex.model.BattleResult.WIN))).isEmpty())
+        assertTrue(tracker.acceptAll(hp("b-return-hp", 13)).isEmpty())
     }
 
     @Test fun `aggregate exclusions retain earlier attacks and leave the surviving actor usable`() {

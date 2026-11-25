@@ -76,8 +76,8 @@ class DroidballMatchStartPresentationTest {
                 at + 3_100_000_000L, "PLAYER_ACTIVE_HP_DAMAGE_WITNESS")
             await { DroidballOverlayPresentation.expanded.value }
             val started = f.match.matchStarted.replayCache.single()
-            assertEquals(at + 3_000_000_000L, started.monotonicTimeNanos)
-            assertEquals(2, started.predecessorIds.size)
+            assertEquals(at, started.monotonicTimeNanos)
+            assertEquals(1, started.predecessorIds.size)
             assertTrue(DroidballJourney.state.value.fieldOwnsBody)
             assertEquals(1, f.timeline.getArticles().count { it.payload is MatchStarted })
         } finally { delivery.cancelAndJoin(); f.close() }

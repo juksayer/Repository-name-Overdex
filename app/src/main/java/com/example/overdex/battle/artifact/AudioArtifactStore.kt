@@ -17,10 +17,22 @@ data class AudioArtifactReference(
  */
 interface AudioArtifactStore {
     fun preserveWav(bytes: ByteArray): AudioArtifactReference?
+    fun readWav(reference: AudioArtifactReference, maxBytes: Long): ByteArray? = null
 }
 
 /** Content-addressed, portable audio artifact repository. */
 class FileAudioArtifactStore(private val repositoryRoot: File) : AudioArtifactStore {
+    override fun readWav(reference: AudioArtifactReference, maxBytes: Long): ByteArray? {
+        if (reference.byteCount !in 1..maxBytes || !SHA256.matches(reference.sha256)) return null
+        val path = "artifacts/audio/sha256/${reference.sha256}.wav"
+        val file = File(repositoryRoot, path)
+        if (reference.relativePath != path || !isWithinRoot(file) || !file.isFile ||
+            file.length() != reference.byteCount) return null
+        return file.readBytes()
+    }
+
+    private companion object { val SHA256 = Regex("[0-9a-f]{64}") }
+
     override fun preserveWav(bytes: ByteArray): AudioArtifactReference? {
         val hash = sha256(bytes)
         val relativePath = "artifacts/audio/sha256/$hash.wav"

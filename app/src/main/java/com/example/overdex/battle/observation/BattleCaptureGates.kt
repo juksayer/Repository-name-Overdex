@@ -79,6 +79,20 @@ class TeamResourceSnapshotGate(
     override val managesAvailability = true
     private var scope: CoroutineScope? = null
     private val assignments = BoundedCaptureAssignments(cropNames, now)
+    private var opponentBallCount: Int? = null
+    private var lastAdjacentCheckAt: Long? = null
+    private var opponentCountAt = Long.MIN_VALUE
+    private var lastEntry: Pair<String, Long>? = null
+
+    /** Only inspect the adjacent strip while a known native count can still decrease. */
+    @Synchronized fun opponentBallBaseline(at: Long): Int? {
+        val count = opponentBallCount ?: return null
+        if (ended || count <= 1 || at <= opponentCountAt || at > now() ||
+            lastAdjacentCheckAt?.let { at - it < 400_000_000L } == true) return null
+        lastAdjacentCheckAt = at
+        return count
+    }
+
     private val shieldCropNames = cropNames - pokeBallCropNames
     private val speciesBySide = mutableMapOf<ActivePokemonSide, String>()
     private val speciesAtBySide = mutableMapOf<ActivePokemonSide, Long>()
@@ -181,6 +195,17 @@ class TeamResourceSnapshotGate(
                         }
                     }
                     GetReadyWitnessed, AttackIncoming, ChargeMoveUsedAnnounced -> requestResourceWatch(at)
+                    is RawTestimony -> if (article.sourceId.id == "ANNOUNCEMENT_WITNESS") {
+                        val name = EntryAnnouncementSpeciesTextResolver.entryField(payload.data as? String ?: return)
+                            ?: return
+                        val previous = lastEntry
+                        if (previous == null || at > previous.second &&
+                            (!name.equals(previous.first, true) || at - previous.second > 4_000_000_000L)) {
+                            lastEntry = name to at
+                            // The unsided banner wakes the two independent readers. Only their pixels establish a loss.
+                            requestPokeBallSnapshot(at)
+                        }
+                    }
                     is ActivePokemonSpeciesWitnessed -> {
                         observeSpecies(payload.side, payload.speciesName, at)
                         if (payload.side == ActivePokemonSide.OPPONENT && at == speciesAtBySide[payload.side] &&
@@ -193,10 +218,16 @@ class TeamResourceSnapshotGate(
                     is ForcedReplacementPromptWitnessed -> requestSnapshot(sideCrops(ActivePokemonSide.PLAYER), at)
                     is SpeciesCheckMeasured -> if (payload.status == "OPENED" && payload.reason in setOf("SWITCH", "FAINT"))
                         requestSnapshot(sideCrops(payload.side), payload.triggerMonotonicNanos)
-                    is PlayerPokeBallCountMeasured -> measured(BattleCropContracts.playerPokeBalls.cropName, at)
+                    is PlayerPokeBallCountMeasured -> if (payload.maximumCount == 3 && payload.visibleCount in 1..3)
+                        measured(BattleCropContracts.playerPokeBalls.cropName, at)
                     is PlayerShieldCountMeasured -> measured(BattleCropContracts.playerShields.cropName, at)
                     is OpponentBattleResourceCountMeasured -> {
                         if (payload.resource == OpponentBattleResource.POKE_BALLS) {
+                            if (payload.maximumCount != 3 || payload.visibleCount !in 1..3) return
+                            if (at > opponentCountAt && payload.visibleCount <= (opponentBallCount ?: 3)) {
+                                opponentCountAt = at
+                                opponentBallCount = payload.visibleCount
+                            }
                             measured(BattleCropContracts.opponentPokeBalls.cropName, at)
                         } else {
                             measured(BattleCropContracts.opponentShields.cropName, at)
@@ -228,6 +259,7 @@ class TeamResourceSnapshotGate(
     }
     private fun reset(from: Long) {
         ended = false; initialized = false; startObserved = false; attemptFrom = from; lifecycleAt = from; assignments.clear()
+        opponentBallCount = null; lastAdjacentCheckAt = null; opponentCountAt = Long.MIN_VALUE; lastEntry = null
         speciesBySide.clear(); speciesAtBySide.clear(); hpAtBySide.clear(); emptyHpSides.clear()
     }
 }

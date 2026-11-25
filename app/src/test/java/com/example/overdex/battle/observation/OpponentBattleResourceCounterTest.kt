@@ -144,8 +144,8 @@ class OpponentBattleResourceCounterTest {
         }
     }
 
-    @Test fun `three visible darkened balls can establish zero survivors`() {
-        assertEquals(0, OpponentBattleResourceCounter.pokeBallCount(90, 24) { x, y ->
+    @Test fun `three darkened balls are an unreadable native badge`() {
+        assertNull(OpponentBattleResourceCounter.pokeBallCount(90, 24) { x, y ->
             if (y in 6..17 && listOf(8..20, 35..47, 62..74).any { x in it }) rgb(65, 65, 65) else WHITE
         })
     }

@@ -996,17 +996,26 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         },
                     )
                 } else {
+                    val questions by fieldViewModel.partyNicknameQuestions.collectAsState()
+                    val nicknameQuestion = questions.firstOrNull()
                     val draft by fieldViewModel.fieldTeamEditor.draft.collectAsState()
                     val savedTeams by fieldViewModel.selectableBattleTeams.collectAsState()
                     val journey by DroidballJourney.state.collectAsState()
                     val traveling = journey.phase == DroidballJourneyPhase.ARRIVING || journey.phase == DroidballJourneyPhase.RETURNING
-                    LaunchedEffect(draft != null) { setFieldEditorWindow(draft != null) }
+                    val confirmingNickname = nicknameQuestion != null && draft == null && !traveling
+                    LaunchedEffect(draft != null, confirmingNickname) {
+                        setFieldEditorWindow(draft != null || confirmingNickname, confirmingNickname)
+                    }
                     if (draft != null && !traveling) com.example.overdex.ui.components.FieldTeamEditorOverlay(
                         editor = fieldViewModel.fieldTeamEditor,
                         savedTeams = savedTeams,
                         width = (FieldBattleMenuGeometry.widthPx(bounds.width()) / resources.displayMetrics.density).dp,
                         onRescan = { emitSignal(DroidballSignal.ScanTeamSelectRequested) },
-                    ) else BattleOverlay(
+                    ) else if (nicknameQuestion != null && !traveling) {
+                        com.example.overdex.ui.components.PartyNicknameConfirmation(nicknameQuestion,
+                            (FieldBattleMenuGeometry.widthPx(bounds.width()) / resources.displayMetrics.density).dp,
+                            fieldViewModel::answerPartyNickname)
+                    } else BattleOverlay(
                     bodyCanvasWidthPx = bodyCanvasWidthPx,
                     panelWidthPx = panelWidthPx,
                     fieldMenuWidthPx = FieldBattleMenuGeometry.widthPx(bounds.width()),
@@ -1237,7 +1246,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    private fun setFieldEditorWindow(open: Boolean) {
+    private fun setFieldEditorWindow(open: Boolean, nicknameOnly: Boolean = false) {
         if (open) retainedOpponentBadge.reset()
         val view = overlayView ?: return
         val params = overlayParams ?: return
@@ -1255,6 +1264,12 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             // paused. USE THIS TEAM or CLOSE returns touch input to the game.
             params.flags = params.flags and
                 (WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL).inv()
+            if (nicknameOnly) {
+                // The question is above the party slots. Leave GO touchable and continue
+                // watching the VS/countdown transition even if the trainer ignores it.
+                params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+            }
             params.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
             params.width = FieldBattleMenuGeometry.widthPx(displayBounds().width())
             params.height = WindowManager.LayoutParams.WRAP_CONTENT
@@ -1424,6 +1439,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val view = overlayView ?: return
         val params = overlayParams ?: return
         // Arrival owns only a compact body window, not the saved HUD position.
+        if (fieldEditorOriginalPosition != null) return
         if (!registrationMode && DroidballJourney.state.value.phase in setOf(
                 DroidballJourneyPhase.ARRIVING, DroidballJourneyPhase.RETURNING)) return
         overlayPanelVisible = panelVisible
@@ -1468,7 +1484,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private fun alignFreeOverlayWindow() {
         if (registrationMode || overlayAnchoredToBattleHud || overlayJourneyTravel ||
             DroidballJourney.state.value.phase != DroidballJourneyPhase.FIELD ||
-            fieldViewModel.fieldTeamEditor.draft.value != null) return
+            fieldEditorOriginalPosition != null || fieldViewModel.fieldTeamEditor.draft.value != null) return
         val view = overlayView ?: return
         val params = overlayParams ?: return
         val bounds = displayBounds()

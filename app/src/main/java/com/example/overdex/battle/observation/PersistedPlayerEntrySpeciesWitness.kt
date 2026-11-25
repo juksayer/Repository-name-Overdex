@@ -137,12 +137,15 @@ class PersistedPlayerEntrySpeciesWitness(
 object EntryAnnouncementSpeciesTextResolver {
     private val entryPattern = Regex("^\\s*Go,\\s*(.+?)[!.]*\\s*$", RegexOption.IGNORE_CASE)
 
+    internal fun entryField(rawText: String): String? =
+        entryPattern.matchEntire(rawText.trim().replace(Regex("\\s+"), " "))?.groupValues?.get(1)
+            ?.takeIf { it.any(Char::isLetter) }
+
     fun resolve(rawText: String, knownSpeciesNames: Set<String>): String? =
         resolveDetailed(rawText, knownSpeciesNames)?.speciesName
 
     internal fun resolveDetailed(rawText: String, knownSpeciesNames: Set<String>): SpeciesTextResolution? {
-        val singleLine = rawText.trim().replace(Regex("\\s+"), " ")
-        val speciesField = entryPattern.matchEntire(singleLine)?.groupValues?.get(1) ?: return null
+        val speciesField = entryField(rawText) ?: return null
         return SpeciesTextResolver.match(speciesField, knownSpeciesNames).resolution
     }
 }

@@ -11,10 +11,10 @@ import javax.imageio.ImageIO
 
 class TeamBadgeCropLocatorTest {
     @Test fun `one remaining ball is found above misleading HUD cards`() = checkRecordedRows("one", 1, 2)
-    @Test fun `two remaining balls are found above misleading HUD cards`() = checkRecordedRows("two", 2, 0)
-    @Test fun `three remaining balls are found above misleading HUD cards`() = checkRecordedRows("three", 3, 0)
+    @Test fun `two remaining balls are found above misleading HUD cards`() = checkRecordedRows("two", 2, null)
+    @Test fun `three remaining balls are found above misleading HUD cards`() = checkRecordedRows("three", 3, null)
 
-    private fun checkRecordedRows(name: String, remaining: Int, falseHudCount: Int) {
+    private fun checkRecordedRows(name: String, remaining: Int, falseHudCount: Int?) {
         val directory = File("src/test/resources/battle/badge-location-20261024")
         val hud = ImageIO.read(File(directory, "$name-assigned-hud.png"))
         val native = ImageIO.read(File(directory, "$name-native.png"))

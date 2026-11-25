@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed
 import androidx.room.withTransaction
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -285,6 +286,52 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             pokemonRepository::getPokemonByName, pokemonRepository::getAllSpeciesNames,
         )
     }
+    private val nicknameQuestions = MutableStateFlow(emptyList<com.example.overdex.battle.team.PartyNicknameQuestion>())
+    internal val partyNicknameQuestions = nicknameQuestions.asStateFlow()
+
+    internal fun answerPartyNickname(question: com.example.overdex.battle.team.PartyNicknameQuestion, cardId: String?) {
+        if (question !in nicknameQuestions.value) return
+        nicknameQuestions.update { it - question }
+        val card = question.cards.singleOrNull { it.id == cardId } ?: return
+        val session = _droidballSession.value ?: return
+        fun current() = _droidballSession.value === session && session.match.matchId == question.matchId &&
+            session.match.observationAttemptStartedAtNanos == question.attempt && session.canObserveTeamSelect &&
+            !session.battleSurfaceEstablished.value && question.stillApplies(currentBattleTeam.value) &&
+            currentBattleTeam.value.members.none { it.slot != question.slot && it.ownedPokemonId == card.id }
+        if (!current()) return
+        viewModelScope.launch {
+            try {
+                val dao = db.ownedPokemonDao()
+                val confirmed = db.withTransaction {
+                    val row = dao.getOwnedPokemonById(card.id).first() ?: return@withTransaction false
+                    if (!current() || row.toDomain().copy(speciesName = row.speciesName ?: card.speciesName) != card)
+                        return@withTransaction false
+                    if (row.displayName.isNullOrBlank()) dao.updateOwnedPokemon(row.copy(
+                        displayName = question.text, updatedAt = System.currentTimeMillis()))
+                    true
+                }
+                if (!confirmed || !current()) return@launch
+                val team = currentBattleTeam.value
+                val member = team.members.singleOrNull { it.slot == question.slot }
+                if (member != null) saveCurrentBattleTeam(team.copy(members = team.members.map {
+                    if (it.slot == question.slot) it.copy(ownedPokemonId = card.id) else it
+                }))
+                val species = member?.speciesName ?: card.speciesName ?: pokemonRepository.getPokemonById(card.speciesId)?.name
+                if (species != null && session.canObserveTeamSelect && !session.battleSurfaceEstablished.value &&
+                    session.match.observationAttemptStartedAtNanos == question.attempt && _droidballSession.value === session) {
+                    session.match.custody.submitTestimony(SourceId("TRAINER_CONFIRMED_PARTY_NICKNAME"),
+                        PlayerTeamRosterSlotWitnessed(question.slot, species, card.speciesId),
+                        System.currentTimeMillis(), 1f, listOf(question.cropId), System.nanoTime())
+                }
+            } catch (error: Exception) {
+                if (error is kotlinx.coroutines.CancellationException) throw error
+                Log.e("CURRENT_TEAM", "Could not save confirmed party nickname", error)
+                android.widget.Toast.makeText(getApplication(), "Could not save the nickname. Try again in Team Select.",
+                    android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     val fieldTeamEditor by lazy {
         com.example.overdex.battle.team.FieldTeamEditor(
             pokemonRepository, viewModelScope,
@@ -585,6 +632,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 getApplication<Application>().filesDir, "diagnostics/enable-match-processing-profile").isFile)
                 com.example.overdex.battle.observation.MatchProcessingDiagnostics() else null,
         )
+        nicknameQuestions.value = emptyList()
         val session = DroidballSession(match)
         DroidballOverlayPresentation.clearOpponentSpecies()
         DroidballOverlayPresentation.showNavigationIdle()
@@ -615,7 +663,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         }
         DroidballOverlayPresentation.showSessionPhase(session.phase.value)
         viewModelScope.launch {
+            session.battleSurfaceEstablished.collect { entered ->
+                if (entered && _droidballSession.value === session) nicknameQuestions.value = emptyList()
+            }
+        }
+        viewModelScope.launch {
             session.phase.collect { phase ->
+                if (_droidballSession.value === session && !session.canObserveTeamSelect) nicknameQuestions.value = emptyList()
                 if (!com.example.overdex.battle.observation.presentDroidballSessionPhase(
                         session = session,
                         currentSession = _droidballSession.value,
@@ -844,7 +898,34 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             2 to TeamSelectCropContracts.playerRosterName2.cropName,
             3 to TeamSelectCropContracts.playerRosterName3.cropName
         ).forEach { (slot, cropName) ->
+            var offered: Pair<Long, CurrentBattleTeam>? = null
             observationDispatcher.register(PersistedPlayerTeamRosterSlotWitness(cropArtifactStore, slot, cropName,
+                considerNickname = consider@{ text, cropId ->
+                    val attempt = match.observationAttemptStartedAtNanos
+                    val team = currentBattleTeam.value
+                    val scope = attempt to team
+                    if (offered == scope || session.battleSurfaceEstablished.value) return@consider
+                    val member = team.members.singleOrNull { it.slot == slot }
+                    val reserved = team.members.filter { it.slot != slot }.mapNotNull { it.ownedPokemonId }.toSet()
+                    val collection = db.ownedPokemonDao().getAllOwnedPokemonWithSpecies().first().map { entry ->
+                        entry.owned.toDomain().copy(speciesName = entry.owned.speciesName ?: entry.speciesName)
+                    }
+                    val cards = com.example.overdex.battle.team.partyNicknameCards(text, member, collection)
+                        .filterNot { it.id in reserved }
+                    if (cards.isEmpty()) return@consider
+                    offered = scope
+                    if (cards.singleOrNull()?.let { it.id == member?.ownedPokemonId &&
+                            com.example.overdex.battle.team.nicknameKey(it.displayName) ==
+                                com.example.overdex.battle.team.nicknameKey(text) } == true) return@consider
+                    withContext(Dispatchers.Main.immediate) {
+                        if (session.canObserveTeamSelect && !session.battleSurfaceEstablished.value &&
+                            _droidballSession.value === session && currentBattleTeam.value == team &&
+                            match.observationAttemptStartedAtNanos == attempt) {
+                            nicknameQuestions.update { it.filterNot { q -> q.slot == slot } +
+                                com.example.overdex.battle.team.PartyNicknameQuestion(match.matchId, attempt, slot, text, cropId, team, cards) }
+                        }
+                    }
+                },
                 isEnabled = { session.canObserveTeamSelect }))
         }
         val teamSelectSpriteMatcher = TeamSelectSpriteMatcher(getApplication<Application>().assets)
@@ -955,6 +1036,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 captureDispatcher = auxiliaryCaptureDispatcher,
                 observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE),
                 name = name,
+                opponentBallBaseline = if (contract == BattleWitnessContracts.opponentShieldsCapture)
+                    { _, at -> teamResourceSnapshotGate.opponentBallBaseline(at) } else null,
                 acceptsFrame = { teamResourceSnapshotGate.acceptsFrame(contract.crop.cropName, it) },
                 onCaptured = { _, _, _ ->
                     teamResourceSnapshotGate.captured(contract.crop.cropName)
@@ -1238,7 +1321,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 captureIntervalNanos = transientTextIntervalNanos,
                 captureDispatcher = auxiliaryCaptureDispatcher,
                 observerId = ObserverId(BattleWitnessContracts.announcementCropCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
-                name = "Announcement Crop Capture", onAnnouncementPixels = announcementPreview::inspect)
+                name = "Announcement Crop Capture", opponentBallBaseline = { strip, at ->
+                    if (announcementPreview.readingFor(at, strip.provenance)?.hasText == true)
+                        teamResourceSnapshotGate.opponentBallBaseline(at) else null
+                },
+                onAnnouncementPixels = announcementPreview::inspect)
         )
         observationDispatcher.register(PersistedAnnouncementWitness(cropArtifactStore, announcementPreview))
         // Read the independently calibrated higher QTE band without publishing
@@ -1451,6 +1538,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         }
 
         fun restartObservationAttempt() {
+            nicknameQuestions.value = emptyList()
             if (!session.restartObservation()) return
             fieldTeamEditor.discardScan()
             match.custody.submitTestimony(
@@ -1751,6 +1839,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     fun stopObservation() = stopObservation(automaticReason = null)
 
     private fun stopObservation(automaticReason: String?) {
+        nicknameQuestions.value = emptyList()
         if (_deploymentState.value == InstrumentDeploymentState.RETURNING) return
         com.example.overdex.presentation.DroidballJourney.stopped(isOverdexVisible)
         _deploymentState.value = InstrumentDeploymentState.RETURNING

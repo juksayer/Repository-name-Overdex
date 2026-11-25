@@ -20,7 +20,7 @@ import org.junit.Test
 class MatchInterpretationTest {
 
     @Test
-    fun `missing GO is confirmed by post-countdown damage and starts the session once`() = runBlocking {
+    fun `first countdown glyph starts the session before damage and late GO`() = runBlocking {
         val custody = InMemoryTestimonyCustody()
         val timeline = InMemoryRealityTimeline()
         val match = Match(
@@ -49,8 +49,8 @@ class MatchInterpretationTest {
             }
             val starts = timeline.getArticles().filter { it.payload is MatchStarted }
             assertEquals(1, starts.size)
-            assertEquals(at + 3_000_000_000L, starts.single().monotonicTimeNanos)
-            assertEquals(2, starts.single().predecessorIds.size)
+            assertEquals(at, starts.single().monotonicTimeNanos)
+            assertEquals(1, starts.single().predecessorIds.size)
         } finally { session.end(); match.release() }
     }
 
@@ -76,7 +76,7 @@ class MatchInterpretationTest {
     }
 
     @Test
-    fun `GO glyph creates one match start while timer support remains independent`() = runBlocking {
+    fun `first glyph creates one match start while GO and timer remain independent`() = runBlocking {
         val custody = InMemoryTestimonyCustody()
         val timeline = InMemoryRealityTimeline()
         val match = Match(
@@ -102,17 +102,17 @@ class MatchInterpretationTest {
         val articles = timeline.getArticles()
         val starts = articles.filter { it.payload is MatchStarted }
         assertEquals(1, starts.size)
-        val goArticle = articles.first { (it.payload as? CountdownGlyphWitnessed)?.glyph == "GO" }
-        assertEquals(listOf(goArticle.id), starts.single().predecessorIds)
-        assertEquals(goArticle.perceivedAt, starts.single().perceivedAt)
-        assertEquals(goArticle.monotonicTimeNanos, starts.single().monotonicTimeNanos)
+        val openingGlyph = articles.first { it.payload is CountdownGlyphWitnessed }
+        assertEquals(listOf(openingGlyph.id), starts.single().predecessorIds)
+        assertEquals(openingGlyph.perceivedAt, starts.single().perceivedAt)
+        assertEquals(openingGlyph.monotonicTimeNanos, starts.single().monotonicTimeNanos)
         assertEquals(MatchState.CREATED, match.state)
         assertEquals(DroidballSessionPhase.BATTLE_ACTIVE, session.phase.value)
         assertEquals(
             50L,
             match.clock.elapsedNanosBetween(
-                ClockReading(goArticle.perceivedAt, goArticle.monotonicTimeNanos!!),
-                ClockReading(1250L, goArticle.monotonicTimeNanos!! + 50L)
+                ClockReading(openingGlyph.perceivedAt, openingGlyph.monotonicTimeNanos!!),
+                ClockReading(1250L, openingGlyph.monotonicTimeNanos!! + 50L)
             )
         )
         assertEquals(2, articles.count { it.payload is CountdownGlyphWitnessed && (it.payload as CountdownGlyphWitnessed).glyph == "GO" })

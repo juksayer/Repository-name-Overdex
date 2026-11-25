@@ -652,6 +652,15 @@ fun MatchReplayScreen(
         play,
         ReplayLcdAction("step-forward", "+1 sec", "Step forward one second", run = { scrubBy(SCRUB_STEP_NANOS) }),
     )
+    val selectedDecision = if (lcdView == ReplayLcdView.Events && !viewChooserOpen) {
+        val index = ReplayEventMarkerNavigation.currentIndex(eventMarkers, cursor, selectedMarkerId)
+        eventMarkers.getOrNull(index)?.let(model::faintDecision)
+    } else null
+    var showDecisionSources by remember(model, selectedDecision?.markerId) { mutableStateOf(false) }
+    val decisionSources = selectedDecision?.let {
+        ReplayLcdAction("decision-sources", if (showDecisionSources) "Hide sources" else "Show sources",
+            run = { showDecisionSources = !showDecisionSources })
+    }
     val eventActions = listOf(
         ReplayLcdAction("previous", "Previous", "Previous replay event",
             ReplayEventMarkerNavigation.previousIndex(eventMarkers, cursor, selectedMarkerId) != null,
@@ -730,7 +739,7 @@ fun MatchReplayScreen(
         section != null -> listOf(menuBack) + menuActions
         else -> (if (compactTabs) listOf(chooser) else tabs) + when (lcdView) {
             ReplayLcdView.Playback -> playbackActions
-            ReplayLcdView.Events -> eventActions
+            ReplayLcdView.Events -> eventActions + listOfNotNull(decisionSources)
             ReplayLcdView.Menu -> menuActions
         }
     }
@@ -829,6 +838,18 @@ fun MatchReplayScreen(
                             model.matchStartNanos, model.startNanos)
                         ReplayLcdActionRow(eventActions, stackControls) { action, modifier ->
                             Action(action, modifier, alignedStart = stackControls)
+                        }
+                        selectedDecision?.let { record ->
+                            ReplayLcdText("Faint decision", heading = true)
+                            if (record.credit == null) ReplayLcdText("Finishing attack unresolved")
+                            val origin = model.matchStartNanos ?: model.startNanos
+                            for (entry in record.entries) {
+                                val ms = kotlin.math.round((entry.atNanos - origin) / 1_000_000.0).toLong()
+                                ReplayLcdText(String.format(Locale.ROOT, "%d:%02d.%03d · %s",
+                                    ms / 60_000, ms / 1_000 % 60, ms % 1_000, entry.description))
+                                if (showDecisionSources) entry.sourceArticleIds.forEach { ReplayLcdText(it) }
+                            }
+                            decisionSources?.let { Action(it) }
                         }
                     }
                     ReplayLcdView.Menu -> {
@@ -1065,7 +1086,7 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                     if (scene.opponent != null) ReplayResourceBadge(scene.opponentResources, "Opponent", scene.opponentEnergy, mirrored = true,
                         types = speciesTypes[scene.opponent.speciesName.uppercase().filter(Char::isLetterOrDigit)].orEmpty())
                 }
-                if (scene.player != null && !scene.player.isFainted && scene.outcome == null && scene.trainerConcession == null &&
+                if (scene.player != null && !scene.player.isFainted && !scene.combatEnded && scene.outcome == null && scene.trainerConcession == null &&
                     scene.decisionTimer == null && scene.chargedMoveActions.isEmpty()) {
                     ReplayChargeButtons(scene.playerChargedMoves, scene.playerEnergy,
                         Modifier.align(Alignment.BottomCenter).padding(horizontal = 12.dp, vertical = 18.dp))

@@ -42,19 +42,12 @@ internal object ReplayImpactFinish {
         val end = result.monotonicTimeNanos!!
         val counts = articles.filter { article ->
             val count = article.payload as? ArchivedOpponentBattleResourceCountMeasured
-            count?.resource == "POKE_BALLS" && count.maximumCount == 3
+            count?.resource == "POKE_BALLS" && count.maximumCount == 3 && count.visibleCount in 1..3
         }
         val count = counts.lastOrNull { it.monotonicTimeNanos!! <= f.at } ?: return null
         if ((count.payload as ArchivedOpponentBattleResourceCountMeasured).visibleCount != 1 ||
             counts.any { it.monotonicTimeNanos!! in count.monotonicTimeNanos!!..end &&
                 (it.payload as ArchivedOpponentBattleResourceCountMeasured).visibleCount > 1 }) return null
-        val emptyBadge = counts.firstOrNull {
-            it.monotonicTimeNanos!! in f.landing..minOf(end, f.landing + 5*S) &&
-                it.sourceId == count.sourceId && !it.evidenceReferences.isNullOrEmpty() &&
-                (it.payload as ArchivedOpponentBattleResourceCountMeasured).visibleCount == 0
-        }
-        if (emptyBadge != null && counts.any { it.monotonicTimeNanos!! in emptyBadge.monotonicTimeNanos!!..end &&
-                (it.payload as ArchivedOpponentBattleResourceCountMeasured).visibleCount != 0 }) return null
         val burstAt = f.clearedAt?.takeIf { f.chargeSound == null && f.departureIds.size == 3 }
         val repeatCry = f.chargeSound?.let {
             val entrance = articles.singleOrNull { row -> row.articleId == f.departureIds.firstOrNull() } ?: return null
@@ -70,7 +63,7 @@ internal object ReplayImpactFinish {
                     (row.payload as? ArchivedAudioCaptured)?.sha256 == departure.audioSha256 }) return null
             departure
         }
-        val clear = burstAt ?: emptyBadge?.monotonicTimeNanos ?: repeatCry?.captureAtNanos ?: return null
+        val clear = burstAt ?: repeatCry?.captureAtNanos ?: return null
         if (articles.filter { it.payload is ArchivedMatchEnded }.any { (it.payload as ArchivedMatchEnded).result != "WIN" } ||
             clear !in f.landing..end || end - clear > 20*S ||
             actor?.speciesName != f.actor.speciesName || target?.speciesId == null || target.speciesName == actor.speciesName ||
@@ -88,7 +81,7 @@ internal object ReplayImpactFinish {
         // One unavailable cue is silence, not a contrary observation. Require two
         // independent kinds of departure evidence; a second clip still counts as audio.
         val qualifiedCry = cry != null && sounds.unavailableReferences.isEmpty() && sounds.unavailableArtifacts.isEmpty()
-        if (repeatCry == null && listOf(qualifiedCry, burstAt != null, emptyBadge != null).count { it } < 2) return null
+        if (repeatCry == null && (!qualifiedCry || burstAt == null)) return null
         if (articles.any { a -> a.monotonicTimeNanos!! in (f.at - 2_500_000_000L)..clear &&
                 (a.payload as? ArchivedFastMoveUseObserved)?.damagedSide == "OPPONENT" }) return null
         if (articles.any { a -> a.monotonicTimeNanos!! in f.at..end && when (val p = a.payload) {
@@ -102,8 +95,8 @@ internal object ReplayImpactFinish {
         return ReplayFinishingChargeAssociation("PLAYER", actor.speciesName, ownerAt, "OPPONENT", target.speciesName, targetAt,
             f.move, f.at, clear, f.landing, null, (listOf(f.announcementCropId, f.frameSha256) + f.chargeSound?.fragments.orEmpty().map { it.articleId }).distinct(),
             f.departureIds + (cry?.fragments.orEmpty() + partial?.fragments.orEmpty()).map { it.articleId } +
-                listOfNotNull(count.articleId, emptyBadge?.articleId, result.articleId),
+                listOf(count.articleId, result.articleId),
             emptyList(), if (repeatCry == null) BASIS else ReplaySoundMatchedBanner.BASIS, impactSupportArticleIds = listOf(f.profileId),
-            departedBy = ReplayTimeBound(clear, if (burstAt != null) f.departureIds.last() else repeatCry?.articleId ?: requireNotNull(emptyBadge).articleId))
+            departedBy = ReplayTimeBound(clear, if (burstAt != null) f.departureIds.last() else requireNotNull(repeatCry).articleId))
     }
 }

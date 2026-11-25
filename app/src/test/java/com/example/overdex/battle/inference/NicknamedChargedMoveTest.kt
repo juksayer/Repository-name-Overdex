@@ -16,11 +16,11 @@ class NicknamedChargedMoveTest {
     private val galvantula = Pokemon(596, "Galvantula", listOf(PokemonType.BUG), "Unova",
         fastMoves = emptyList(), chargedMoves = listOf(lunge))
     private val sealeo = galvantula.copy(id = 364, name = "Sealeo", chargedMoves = listOf(Move("Surf", PokemonType.WATER, 75, 45, false)))
-    private fun resolver(vararg species: Pokemon) = ChargedMoveAnnouncementInference(object : PokemonKnowledge {
+    private fun resolver(vararg species: Pokemon, nickname: ((String, Long) -> RealityArticle?)? = null) = ChargedMoveAnnouncementInference(object : PokemonKnowledge {
         override suspend fun getPokemonByName(name: String) = species.firstOrNull { it.name == name }
         override suspend fun getPokemonById(id: Int) = species.firstOrNull { it.id == id }
         override suspend fun getAllSpeciesNames() = species.map { it.name }.toSet()
-    })
+    }, selectedCardForNickname = nickname)
     private suspend fun ChargedMoveAnnouncementInference.accept(article: RealityArticle) = accept(article) { null }
 
     @Test fun `recorded gbl used Lunge resolves through both active movepools with citations`() = runBlocking {
@@ -69,6 +69,19 @@ class NicknamedChargedMoveTest {
         inference.accept(species("later", "Other", ActivePokemonSide.PLAYER).copy(monotonicTimeNanos = 70_000_000_000))
         assertEquals("Galvantula", inference.accept(announcement("gbl used Lunge!", 52_665_000_000))?.payload?.speciesName)
     }
+    @Test fun selectedCardIdentifiesSymbolWithoutPlayerBadge() = runBlocking {
+        val card = species("card", "Galvantula", ActivePokemonSide.PLAYER).copy(
+            payload = PlayerTeamSlotConfigured(1, "Galvantula", 596, "Volt Switch", listOf("Lunge")))
+        val inference = resolver(galvantula, sealeo, nickname = { text, _ -> card.takeIf { text == "X(° o °)X" } })
+        val raw = announcement("X(° o °)X used Lunge! cloud")
+        val charge = requireNotNull(inference.accept(raw))
+        assertEquals("Galvantula", charge.payload.speciesName)
+        assertEquals("Lunge", charge.payload.moveName)
+        assertEquals(ActivePokemonSide.PLAYER, charge.payload.side)
+        assertEquals(setOf(raw.id, card.id), charge.predecessorIds.toSet())
+        assertNull(inference.accept(raw))
+    }
+
     private fun announcement(text: String, at: Long = 10_000_000_000) = RealityArticle(
         ArticleId("raw-$at"), 1000, 2000, SourceId("ANNOUNCEMENT_WITNESS"), RawTestimony(text), monotonicTimeNanos = at)
     private fun species(id: String, name: String, side: ActivePokemonSide) = RealityArticle(

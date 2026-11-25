@@ -46,9 +46,11 @@ class PersistedAnnouncementWitnessTest {
         }
         val timeline = InMemoryRealityTimeline()
         val match = Match("direct-announcement-test", custody = custody, realityTimeline = timeline,
-            pokemonKnowledge = FakePokemonKnowledge())
+            pokemonKnowledge = object : FakePokemonKnowledge() {
+                override fun chargedMoveNames() = setOf("rock tomb")
+            })
         val at = System.nanoTime() - 1_000_000L
-        val recordedText = "Cradily used Rock Tomb!\nE"
+        val recordedText = "Cradily used Rock Tomb!':E"
         val reader = ControlledReader(read = { listOf(text(recordedText)) })
         val witness = PersistedAnnouncementWitness(reader, directCapture = true)
         try {
@@ -83,6 +85,17 @@ class PersistedAnnouncementWitnessTest {
             gate.complete(Unit)
             witness.stop()
             match.release()
+        }
+    }
+
+    @Test fun `only a complete named move terminates a noisy banner at its exclamation mark`() {
+        val names = setOf("shadow ball")
+        val banner = "X!X used Shadow Ball!"
+        for (suffix in listOf("':", "AB", "Fake used Rock Tomb!", "\nCloud used Ice Beam!")) {
+            assertEquals(banner, extractCompleteUsedAnnouncement(banner + suffix, names))
+        }
+        for (text in listOf("X!X used Shadow Bal!D", "X!X used Shadow BallD", "X!X used Shadow Bal!\nY used Shadow Ball!", "Get Ready! X")) {
+            assertEquals(text, extractCompleteUsedAnnouncement(text, names))
         }
     }
 

@@ -15,7 +15,7 @@ internal class PlayerTeamConfigurationScope {
     val latestConfirmationNanos: Long? get() = confirmations.lastOrNull()
 
     /** True only when this article establishes a newer invalidation boundary. */
-    fun accept(article: RealityArticle): Boolean {
+    @Synchronized fun accept(article: RealityArticle): Boolean {
         val at = article.monotonicTimeNanos
         if (at == null) {
             val configured = article.payload as? PlayerTeamSlotConfigured
@@ -40,7 +40,7 @@ internal class PlayerTeamConfigurationScope {
         return false
     }
 
-    fun at(atNanos: Long): Map<Int, RealityArticle> {
+    @Synchronized fun at(atNanos: Long): Map<Int, RealityArticle> {
         val boundary = confirmations.floor(atNanos)
         val dated = configurations.mapNotNull { (slot, history) ->
             history.floorEntry(atNanos)?.takeIf { boundary == null || it.key > boundary }
@@ -56,5 +56,5 @@ internal class PlayerTeamConfigurationScope {
         return current()[slot]?.id == article.id
     }
 
-    fun clearConfigurations() { configurations.clear(); undatedConfigurations.clear() }
+    @Synchronized fun clearConfigurations() { configurations.clear(); undatedConfigurations.clear() }
 }

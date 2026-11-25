@@ -17,7 +17,7 @@ class ReplayMissingMatchStartTest {
         // with the catalogue. Only the latter previously hit the cycle.
         for (catalogue in listOf(emptyMap(), species)) {
             val model = MatchReplayModel(archive, speciesIdsByName = catalogue)
-            assertNull(model.matchStartNanos)
+            assertNotNull(model.matchStartNanos)
             assertEquals("Camerupt", model.sceneAt(60_000_000_000L).player?.speciesName)
             assertEquals("Vaporeon", model.sceneAt(60_000_000_000L).opponent?.speciesName)
             assertEquals("WIN", model.sceneAt(model.endNanos).outcome)
@@ -37,7 +37,7 @@ class ReplayMissingMatchStartTest {
         val original = MatchArchiveSerializer.serialize(archive)
         val model = MatchReplayModel(archive, speciesIdsByName = mapOf("Camerupt" to 323, "Vaporeon" to 134))
 
-        assertNull(model.matchStartNanos)
+        assertNotNull(model.matchStartNanos)
         assertEquals("Camerupt", model.sceneAt(5_000_000_000L).player?.speciesName)
         assertEquals("Vaporeon", model.sceneAt(5_000_000_000L).opponent?.speciesName)
         assertTrue(model.endNanos >= 10_000_000_000L + ReplayFaintPose.DURATION_NANOS)

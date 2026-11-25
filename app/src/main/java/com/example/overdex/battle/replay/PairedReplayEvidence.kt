@@ -144,7 +144,7 @@ internal object PairedReplayEvidenceBuilder {
         return PairedReplayEvidence(offset, residual, events.sortedBy { it.observations.minOf { o -> o.offsetNanos } }, identities)
     }
 
-    private fun start(archive: MatchArchive): Long = requireNotNull(archive.articles.singleOrNull {
+    private fun start(archive: MatchArchive): Long = requireNotNull(archive.withWitnessedBattleStart().articles.singleOrNull {
         it.payload is ArchivedMatchStarted && it.monotonicTimeNanos != null
     }?.monotonicTimeNanos) { "Exactly one timed Match Start is required" }
 

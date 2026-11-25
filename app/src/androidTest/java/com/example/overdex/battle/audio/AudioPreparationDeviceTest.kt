@@ -10,12 +10,13 @@ class AudioPreparationDeviceTest {
     @Test fun cryIndexIsSharedAcrossMatchesAndCapturedAudioDecodesWithoutChangingSamples() = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val start = System.nanoTime()
-        val first = PreparedCryReferenceIndex.get(instrumentation.targetContext)
+        val participants = setOf(42, 134)
+        val first = PreparedCryReferenceIndex.get(instrumentation.targetContext, participants)
         val preparedAt = System.nanoTime()
-        val second = PreparedCryReferenceIndex.get(instrumentation.targetContext)
+        val second = PreparedCryReferenceIndex.get(instrumentation.targetContext, participants)
         val reusedAt = System.nanoTime()
         assertSame(first, second)
-        val expected = CryReferenceCatalog.load(instrumentation.targetContext).references.map { it.sha256 }.toSet()
+        val expected = CryReferenceCatalog.load(instrumentation.targetContext).references.filter { it.speciesId in participants }.map { it.sha256 }.toSet()
         assertTrue(expected.isNotEmpty())
         assertEquals(expected, first.map { it.reference.sha256 }.toSet())
         val pcm = ByteArray(115200) { (it * 31).toByte() }

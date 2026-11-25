@@ -48,8 +48,8 @@ object ReplayRetainedAudioRecovery {
     private const val SECOND = 1_000_000_000L
     private const val WHOLE_FIT_TOLERANCE_NANOS = 5_000_000L
     private const val FRAGMENT_SAMPLES = 4800
-    fun selectedArticles(archive: MatchArchive): List<ArchivedRealityArticle> {
-        val end = archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedMatchEnded }
+    fun selectedArticles(archive: MatchArchive, captureWindow: LongRange? = null): List<ArchivedRealityArticle> {
+        val end = captureWindow?.last ?: archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedMatchEnded }
             .mapNotNull { it.monotonicTimeNanos }.minOrNull() ?: return emptyList()
         val unique = archive.articles.filter { it.matchId == archive.matchId }
             .groupBy { it.articleId }.values.mapNotNull { it.distinct().singleOrNull() }
@@ -69,6 +69,7 @@ object ReplayRetainedAudioRecovery {
                     p != null && p.captureSource == "PLAYBACK_POKEMON_GO" && p.durationNanos in 600_000_000L..(16 * SECOND) &&
                     p.byteCount in 44..1_600_044 }
             .sortedBy { it.monotonicTimeNanos }
+        if (captureWindow != null) return clips.filter { it.monotonicTimeNanos in captureWindow }.takeLast(64)
         val ending = clips.filter { it.monotonicTimeNanos!! >= end - 40 * SECOND }.takeLast(64)
         val changes = ReplaySliverExchange.changesOnBothSides(unique)
         val departureCandidates = unique.mapNotNull { a ->
@@ -116,9 +117,9 @@ object ReplayRetainedAudioRecovery {
         }.groupBy({ it.first }, { it.second })
         val shieldSearches = ReplayShieldCounter.searches(archive.articles.filter { it.matchId == archive.matchId }, shieldBlockTimes)
         val overlaps = mutableListOf<ReplayCryOverlapEffect>()
-        val selected = selectedArticles(archive).filter { captureWindow == null || it.monotonicTimeNanos in captureWindow }
+        val selected = selectedArticles(archive, captureWindow)
         val changes = ReplaySliverExchange.changesOnBothSides(archive.articles.filter { it.matchId == archive.matchId })
-        val end = archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedMatchEnded }
+        val end = captureWindow?.last ?: archive.articles.filter { it.matchId == archive.matchId && it.payload is ArchivedMatchEnded }
             .mapNotNull { it.monotonicTimeNanos }.minOrNull()
         if (end != null && (selected.count { it.monotonicTimeNanos!! < end - 40 * SECOND } >= 64 ||
                     selected.count { it.monotonicTimeNanos!! >= end - 40 * SECOND } >= 64))

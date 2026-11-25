@@ -37,6 +37,7 @@ class ChargedMoveAnnouncementInference(
     private val onRebuild: ((String, Int) -> Unit)? = null,
     private val faintHistoryCache: FaintHistoryCache? = null,
     private val battleUnderwayAt: ((Long?) -> Boolean)? = null,
+    private val selectedCardForNickname: ((String, Long) -> RealityArticle?)? = null,
 ) {
     private val activeSpeciesHistory = ArrayDeque<RealityArticle>()
     private var knownSpeciesNames: Set<String>? = null
@@ -118,7 +119,22 @@ class ChargedMoveAnnouncementInference(
         val side: ActivePokemonSide
         val supportingIds: List<ArticleId>
         val basis: String
-        if (speciesName != null) {
+        val card = selectedCardForNickname?.invoke(performerText, at)
+        if (card != null && (knownSpeciesNames.orEmpty().none { it.equals(performerText, true) })) {
+            val member = card.payload as com.example.overdex.battle.custody.PlayerTeamSlotConfigured
+            side = ActivePokemonSide.PLAYER
+            val player = activeSpeciesBySide[side]
+            if ((player != null && !member.speciesName.equals(player, true)) ||
+                member.speciesName.equals(activeSpeciesBySide[ActivePokemonSide.OPPONENT], true)) return null
+            pokemon = pokemon(member.speciesName) ?: return null
+            val name = LegalChargedMoveTextResolver.namedAnnouncementReading(match.groupValues[2], pokemon.chargedMoves)
+            val equipped = member.chargedMoveNames.singleOrNull {
+                it.equals(name.trim(), true)
+            } ?: return null
+            move = pokemon.chargedMoves.singleOrNull { it.name.equals(equipped, true) } ?: return null
+            supportingIds = listOfNotNull(card.id, activeAtUse[side]?.id)
+            basis = "ANNOUNCED_MOVE_AND_CONFIRMED_PLAYER_CARD_NICKNAME"
+        } else if (speciesName != null) {
             // GO's announcement uses the bare species label. Side selection
             // compares that label; the selected appearance supplies the form's
             // legal movepool. A mirror's player roster never supplies its opponent.

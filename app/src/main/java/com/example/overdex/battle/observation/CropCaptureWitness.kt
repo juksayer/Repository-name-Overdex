@@ -55,6 +55,8 @@ class CropCaptureWitness(
     private val companionCrop: BattleWitnessContract<CropCaptured>? = null,
     /** Synchronous preview of the announcement strip before file I/O; never transfers bitmap ownership. */
     private val onAnnouncementPixels: ((ResolvedBattleCrop, Long, OcrBox?) -> Unit)? = null,
+    /** On selected native frames, a changed adjacent strip goes to the existing count reader. */
+    private val opponentBallBaseline: ((ResolvedBattleCrop, Long) -> Int?)? = null,
 ) : Observer {
     private var scope: CoroutineScope? = null
     private var activeMatch: Match? = null
@@ -99,7 +101,12 @@ class CropCaptureWitness(
                                 Log.w("CropCapture", "Announcement preview unavailable", failure)
                             }
                         }
-                        if (primary != null) capture(match, frame, contract, primary, preserveCompleteFrame, onCaptured)
+                        if (primary != null) {
+                            capture(match, frame, contract, primary, preserveCompleteFrame, onCaptured)
+                            opponentBallBaseline?.invoke(primary, frame.capturedAtMonotonicTimeNanos)?.let { before ->
+                                captureChangedOpponentBalls(match, frame, activeCalibration, before)
+                            }
+                        }
                         if (companion != null) capture(match, frame, requireNotNull(companionCrop), companion, false, null)
                     } finally {
                         primary?.bitmap?.recycle()
@@ -107,6 +114,20 @@ class CropCaptureWitness(
                     }
                 }
             }
+        }
+    }
+
+    private suspend fun captureChangedOpponentBalls(
+        match: Match, frame: CapturedVisualFrame, calibration: BattleCalibration, before: Int,
+    ) {
+        val balls = BattleWitnessContracts.opponentPokeBallsCapture
+        val strip = resolve(balls, calibration, frame) ?: return
+        try {
+            val overlay = strip.provenance.overlayBounds(frame.overlayRegion)
+            val count = OpponentBattleResourceCounter.pokeBallCount(strip.bitmap, overlay)
+            if (count != null && count < before) capture(match, frame, balls, strip, false, null)
+        } finally {
+            strip.bitmap.recycle()
         }
     }
 

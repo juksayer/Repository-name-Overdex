@@ -231,6 +231,7 @@ internal object OpponentBattleResourceCounter {
         // darkens. Requiring the badge and slots rejects black masks and sky.
         if (outlinePixels.any { it < maxOf(2, width * height / 400) }) return null
         return count(width, height, { x, y -> if (covered(x, y, overlayBounds)) 0 else pixelAt(x, y) }, 3, ::isBrightPokeBallRed)
+            .takeIf { it in 1..3 } // The last native ball stays lit through the result transition.
     }
 
     private fun covered(x: Int, y: Int, bounds: OcrBox?): Boolean = bounds != null &&

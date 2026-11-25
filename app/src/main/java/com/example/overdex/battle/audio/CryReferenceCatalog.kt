@@ -20,10 +20,11 @@ data class CryReference(
  * immutable reference identity in its later conclusion.
  */
 class CryReferenceCatalog private constructor(val references: List<CryReference>) {
-    val speciesIds: Set<Int> = references.map { it.speciesId }.toSet()
+    private val bySpecies = references.groupBy { it.speciesId }
+    val speciesIds: Set<Int> get() = bySpecies.keys
 
     fun referencesFor(speciesId: Int): List<CryReference> =
-        references.filter { it.speciesId == speciesId }
+        bySpecies[speciesId].orEmpty()
 
     fun openVerified(context: Context, reference: CryReference): ByteArray? = try {
         val bytes = context.assets.open(reference.assetPath).use { it.readBytes() }

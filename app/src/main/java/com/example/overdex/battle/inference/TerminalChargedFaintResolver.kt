@@ -8,11 +8,13 @@ import com.example.overdex.model.BattleResult
 internal data class TerminalFinishRecord(
     val id: String, val at: Long, val source: String, val confidence: Float?,
     val payload: TestimonyPayload,
+    val cryMatchedThroughNanos: Long? = null,
 )
 
 internal data class TerminalChargedFaintResolution(
     val side: ActivePokemonSide, val owner: TeamLossCandidate, val atNanos: Long,
     val sourceArticleId: String, val evidenceReferences: List<String>,
+    val basis: String = TerminalChargedFaintResolver.BASIS,
 )
 
 /**
@@ -23,6 +25,9 @@ internal object TerminalChargedFaintResolver {
     const val BASIS = "FINAL_CHARGED_COLLAPSE_AND_RESULT"
 
     fun relevant(p: TestimonyPayload, source: String): Boolean = when (p) {
+        is PlayerTeamSlotConfigured, is PlayerTeamRosterSlotWitnessed, is PlayerTeamRosterConfirmation -> true
+        is BattleCryLocalized -> source == "LOCALIZED_BATTLE_CRY_WITNESS"
+        is ActivePokemonFaintedWitnessed -> !DepartureCryFaint.isBasis(p.basis) && (p.basis.contains("POKE_BALL_COUNT_DECREASE") || p.basis == VerifiedHpFaintResolver.BASIS)
         is TerminalParticleObservations, is CompleteHpBarObserved, is ActivePokemonSpeciesWitnessed, is ActiveHpBarMeasured,
         is PlayerPokeBallCountMeasured, is OpponentBattleResourceCountMeasured,
         is ChargedMoveEnergySpent, is FastMoveUseObserved, is SpeciesCheckMeasured, is MatchOutcomeLabelWitnessed,
@@ -67,7 +72,9 @@ internal object TerminalChargedFaintResolver {
         val rows = groups.values.mapNotNull { it.distinct().singleOrNull() }.sortedBy { it.at }
         val reset = rows.lastOrNull { it.payload == ObservationRestartedByUser || it.payload == ScreenIgnoredByUser }?.at
             ?: Long.MIN_VALUE
-        val start = rows.firstOrNull { it.at >= reset && it.payload == MatchStarted }?.at ?: return emptyList()
+        val start = rows.firstOrNull { it.at >= reset && it.payload == MatchStarted }?.at
+            ?: rows.firstOrNull { it.at >= reset && BattleStartEvidence.accepts(it.payload, it.source) }?.at
+            ?: return emptyList()
         val outcome = rows.firstOrNull { it.at >= start && result(it) != null } ?: return emptyList()
         val expected = result(outcome)!!
         if (rows.any { it.at >= start && result(it)?.let { r -> r != expected } == true } ||
@@ -248,6 +255,11 @@ internal class LiveTerminalChargedFaintHistory(private val side: ActivePokemonSi
     private val sources = mutableMapOf<String, RealityArticle>()
     private var matchId: String? = null
     private var hasResult = false
+    private val cryTimes = java.util.TreeSet<Long>()
+    private val candidateCries = mutableSetOf<Long>()
+    private data class CryWindow(val span: LongRange, val eligibleDeparture: Boolean)
+    private val cryWindows = mutableMapOf<Int, MutableList<CryWindow>>()
+    private val orangeTimes = java.util.TreeSet<Long>()
     var resolutions: List<TerminalChargedFaintResolution> = emptyList()
         private set
     fun source(id: String) = sources[id]
@@ -280,11 +292,47 @@ internal class LiveTerminalChargedFaintHistory(private val side: ActivePokemonSi
         rows[r.id] = r; sources[r.id] = a
         hasResult = hasResult || a.payload is MatchEnded || a.payload is MatchOutcomeLabelWitnessed ||
             a.sourceId.id == "YOU_WIN_WITNESS" || a.sourceId.id == "GOOD_EFFORT_WITNESS"
-        if (!hasResult) return false
+        val payload = a.payload
+        if (side == ActivePokemonSide.OPPONENT && payload is BattleCryLocalized && payload.durationNanos > 0 &&
+            payload.correlation in com.example.overdex.battle.audio.CryWaveformAcceptance.MIN_CORRELATION..1f) {
+            val windows = cryWindows.getOrPut(payload.speciesId) { mutableListOf() }
+            val window = at until at + payload.durationNanos
+            val eligibleDeparture = payload.correlation >= DepartureCryFaint.MIN_REPEAT_CORRELATION
+            for (other in windows) {
+                if (other.span.last < at && eligibleDeparture) candidateCries += at
+                if (window.last < other.span.first && other.eligibleDeparture) candidateCries += other.span.first
+            }
+            windows += CryWindow(window, eligibleDeparture)
+        }
+        if (payload is BattleCryLocalized && payload.correlation in DepartureCryFaint.MIN_IMPACT_CORRELATION..1f) {
+            cryTimes += at
+            if (orangeTimes.floor(at)?.let { at - it <= 2_000_000_000L } == true) candidateCries += at
+        }
+        if (payload is CompleteHpBarObserved && payload.side == side && DepartureCryFaint.orange(payload)) {
+            orangeTimes += at
+            candidateCries += cryTimes.subSet(at, true, at + 2_000_000_000L, true)
+        }
+        val nearCry = candidateCries.isNotEmpty() && when (payload) {
+            is PlayerTeamSlotConfigured, is PlayerTeamRosterSlotWitnessed, is PlayerTeamRosterConfirmation -> true
+            is FastMoveUseObserved -> resolutions.any { it.basis == DepartureCryFaint.LAST && at >= it.atNanos && payload.attackingSide == side }
+            is ActivePokemonSpeciesWitnessed, is ActivePokemonFaintedWitnessed, is PlayerPokeBallCountMeasured,
+            MatchStarted, ScreenIgnoredByUser, ObservationRestartedByUser -> true
+            is OpponentBattleResourceCountMeasured -> payload.resource == OpponentBattleResource.POKE_BALLS
+            is CompleteHpBarObserved, is ActiveHpBarMeasured -> {
+                val measuredSide = if (payload is CompleteHpBarObserved) payload.side else (payload as ActiveHpBarMeasured).side
+                measuredSide == side && (candidateCries.any { at in (it - 3_000_000_000L)..(it + 3_000_000_000L) } ||
+                    resolutions.any { it.basis == DepartureCryFaint.LAST && at > it.atNanos })
+            }
+            is BattleCryLocalized -> true
+            is RawTestimony -> DepartureCryFaint.entryName(payload) != null
+            else -> false
+        }
+        if (!hasResult && !nearCry) return false
         val input = rows.values.toList() + conflicts
         val compute = {
             onRebuild?.invoke("terminal_charge_${side.name}", input.size)
-            TerminalChargedFaintResolver.resolve(input).filter { it.side == side }
+            (DepartureCryFaint.resolve(input) + TerminalChargedFaintResolver.resolve(input)).filter { it.side == side }
+                .distinctBy { TeamLossResolver.speciesKey(it.owner.speciesName) }
         }
         val next = cache?.terminal(side, input, compute) ?: compute()
         if (next == resolutions) return false
@@ -294,4 +342,4 @@ internal class LiveTerminalChargedFaintHistory(private val side: ActivePokemonSi
 }
 
 internal fun isRevisableVisualFaint(basis: String?) =
-    basis == VerifiedHpFaintResolver.BASIS || basis == TerminalChargedFaintResolver.BASIS
+    basis == VerifiedHpFaintResolver.BASIS || basis == TerminalChargedFaintResolver.BASIS || DepartureCryFaint.isBasis(basis)

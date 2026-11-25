@@ -60,7 +60,7 @@ class MatchTeamSelectLeadTest {
             }
             assertEquals(listOf("Water Shuriken"), greninjaMoves.map { (it.payload as FastMoveIdentified).moveName })
             assertTrue(greninjaMoves.all { it.monotonicTimeNanos == incoming.monotonicTimeNanos })
-            assertTrue(fixture.articles().none { it.payload is MatchStarted })
+            assertTrue(fixture.articles().count { it.payload is MatchStarted } == 1)
             assertEquals(1, fixture.leads().size)
             assertEquals(damage.payload, fixture.articles().single { it.id == damage.id }.payload)
         } finally { fixture.close() }
@@ -76,7 +76,7 @@ class MatchTeamSelectLeadTest {
                 fixture.damage(4)
                 assertTrue("observedRoster=$observedRoster", fixture.leads().isEmpty())
                 assertTrue(fixture.identities().isEmpty())
-                assertTrue(fixture.articles().none { it.payload is MatchStarted })
+                assertTrue(fixture.articles().count { it.payload is MatchStarted } == 1)
             } finally { fixture.close() }
         }
     }
@@ -94,7 +94,7 @@ class MatchTeamSelectLeadTest {
             fixture.publish(ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, 1f, .95f, .20f), 7)
             assertTrue(fixture.leads().isEmpty())
             assertTrue(fixture.identities().isEmpty())
-            assertTrue(fixture.articles().none { it.payload is MatchStarted })
+            assertTrue(fixture.articles().count { it.payload is MatchStarted } == 1)
         } finally { fixture.close() }
     }
 
@@ -213,7 +213,7 @@ class MatchTeamSelectLeadTest {
                     (it.payload as ActivePokemonSpeciesWitnessed).speciesName == "Golbat"
                 })
                 assertTrue(fixture.identities().none { it.speciesName == "Golbat" })
-                assertTrue(fixture.articles().none { it.payload is MatchStarted })
+                assertTrue(fixture.articles().count { it.payload is MatchStarted } == 1)
             } finally { fixture.close() }
         }
     }
@@ -251,14 +251,14 @@ class MatchTeamSelectLeadTest {
             f.publish(VsScreenWitnessed, 1)
             f.publish(CountdownGlyphWitnessed("3", .98f, 2), 2, BattleWitnessContracts.countdownGlyph.witnessId)
             val prefix = "UNIQUE_OVERMON_PREFIX_MATCH"
-            assertFalse(f.match.battleHasStartedAt(f.at(2)))
+            assertTrue(f.match.battleHasStartedAt(f.at(2)))
             assertFalse(f.match.rosterAllowsBadgeReading(ActivePokemonSide.PLAYER, "Polteageist", prefix))
             assertTrue(f.match.rosterAllowsBadgeReading(ActivePokemonSide.PLAYER, "Golbat", prefix))
             assertFalse(f.match.partySlotSupportsReading(1, "Polteageist", prefix))
             assertFalse(f.match.partySlotSupportsReading(1, "Greninja", prefix))
             assertTrue(f.match.partySlotSupportsReading(1, "Golbat", prefix))
             f.go(5)
-            assertFalse(f.match.battleHasStartedAt(f.at(4)))
+            assertTrue(f.match.battleHasStartedAt(f.at(4)))
             assertTrue(f.match.battleHasStartedAt(f.at(5)))
         }
     }
@@ -268,7 +268,7 @@ class MatchTeamSelectLeadTest {
             f.publish(ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, 1f, .9f, .5f), 2)
             assertFalse(f.match.battleHasStartedAt(f.at(2)))
             f.damage(4)
-            assertTrue(f.articles().none { it.payload is MatchStarted })
+            assertTrue(f.articles().count { it.payload is MatchStarted } == 1)
             assertFalse(f.match.battleHasStartedAt(f.at(3)))
             assertTrue(f.match.battleHasStartedAt(f.at(4)))
         }

@@ -12,6 +12,7 @@ import com.example.overdex.battle.archive.ArchivedActivePokemonFaintedWitnessed
 import com.example.overdex.battle.archive.ArchivedChargeMoveUsedAnnounced
 import com.example.overdex.battle.archive.ArchivedGetReadyWitnessed
 import com.example.overdex.battle.archive.ArchivedAttackIncoming
+import com.example.overdex.battle.archive.ArchivedMatchStarted
 import com.example.overdex.battle.archive.ArchivedMatchEnded
 import com.example.overdex.battle.archive.ArchivedSpeciesCheckMeasured
 import com.example.overdex.battle.archive.ArchivedPlayerPokeBallCountMeasured
@@ -35,6 +36,32 @@ internal class ReplayHpEvidence(
     fun hasSettledProfile(side: String, at: Long): Boolean =
         completeFrames[side to at]?.all { it.status == "LIVE_COLOR" && it.damageColumns == 0 &&
             it.unmaskedUncertainColumns == 0 } == true
+
+    /** A fresh ordinary-side outline and a separate same-frame fill measurement can
+     * agree even when the camera's original size anchor belonged to a different bar. */
+    fun corroboratedLiveProfile(article: ArchivedRealityArticle): Boolean {
+        val p = article.payload as? ArchivedCompleteHpBarObserved ?: return false
+        val at = article.monotonicTimeNanos ?: return false
+        if (article.sourceId != "COMPLETE_${p.side}_HP_BAR_FRAME_WITNESS" ||
+            (article.confidence ?: 0f) !in .80f..1f || !ReplaySliverExchange.whole(p, p.side) ||
+            !ReplaySliverExchange.inBattlePosition(p) || p.status != "LIVE_COLOR" ||
+            p.liveColumns <= 0 || p.damageColumns != 0 || p.unmaskedUncertainColumns != 0 ||
+            completeFrames[p.side to at]?.distinct()?.singleOrNull() != p) return false
+        return ordinaryReadings[p.side to at]?.all { sample ->
+            val bar = sample.payload as ArchivedActiveHpBarMeasured
+            (sample.confidence ?: 0f) in .80f..1f && bar.sourceWidth == p.sourceWidth && bar.sourceHeight == p.sourceHeight &&
+                bar.barLeft == p.barLeft && bar.barRight == p.barRight &&
+                kotlin.math.abs(bar.barTop - p.barTop) <= 1 && kotlin.math.abs(bar.barBottom - p.barBottom) <= 1 &&
+                bar.filledFraction in 0f..1f && bar.filledFraction > 0 &&
+                kotlin.math.abs(bar.filledFraction * p.interiorColumns - p.liveColumns) <= 2f &&
+                bar.filledFraction !in contradictedFills[p.side to at].orEmpty()
+        } == true
+    }
+
+    private val ordinaryReadings = articles.filter {
+        val bar = it.payload as? ArchivedActiveHpBarMeasured
+        bar != null && it.sourceId == "${bar.side}_ACTIVE_HP_BAR_WITNESS"
+    }.groupBy { (it.payload as ArchivedActiveHpBarMeasured).side to it.monotonicTimeNanos }
 
     /** Legacy numeric readings can corroborate ownership at their own capture time.
      * They cannot establish current terminal survival without classified live fill.
@@ -89,7 +116,8 @@ internal class ReplayHpEvidence(
         val at = article.monotonicTimeNanos ?: return@mapNotNull null
         Triple(bar.side, at, bar)
     }
-    private val anchors = measured.filter { it.third.hasBarShape() }
+    private val go = articles.filter { it.payload is ArchivedMatchStarted }.minOfOrNull { it.monotonicTimeNanos ?: Long.MAX_VALUE }
+    private val anchors = measured.filter { it.second >= (go ?: Long.MIN_VALUE) && it.third.hasBarShape() }
         .groupBy { it.first }.mapValues { (_, bars) -> bars.first().third }
     private val byFrame = measured.associate { (side, at, bar) -> (side to at) to bar }
     // A single effect-obscured fill can have perfectly valid outline geometry.

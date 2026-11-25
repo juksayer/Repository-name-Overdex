@@ -35,8 +35,8 @@ class ReplayCountdownTest {
             ))
             assertSequence(model, 20.0)
             assertEquals(ReplayCountdownTiming.ESTIMATED_FROM_NUMERAL, model.countdown!!.timingBasis)
-            assertEquals(setOf("number", "combat"), model.countdown!!.evidenceArticleIds.toSet())
-            assertNull("Presentation cannot insert a dated MatchStarted", model.matchStartNanos)
+            assertTrue("number" in model.countdown!!.evidenceArticleIds)
+            assertEquals(ns(20.0 - number), model.matchStartNanos)
         }
     }
 
@@ -63,7 +63,7 @@ class ReplayCountdownTest {
             event("attack", ArchivedChargeMoveUsedAnnounced, 90.0),
         ))
         assertSequence(model, 50.0)
-        assertNull(model.matchStartNanos)
+        assertEquals(ns(90.0), model.matchStartNanos)
         assertEquals(ReplayCountdownTiming.PRESENTATION_ONLY, model.countdown!!.timingBasis)
         assertTrue(model.sceneAt(ns(48.0)).countdownFrame!!.lcdLabel.contains("START TIME UNKNOWN"))
         assertEquals(ns(90.0), model.timedArticles.single { it.articleId == "attack" }.monotonicTimeNanos)
@@ -137,7 +137,7 @@ class ReplayCountdownTest {
     private fun archive(vararg articles: ArchivedRealityArticle) = MatchArchive(matchId = "match", articles = articles.toList())
     private fun glyph(id: String, glyph: String, seconds: Double) = event(
         id, ArchivedCountdownGlyphWitnessed(glyph, .98f, 1, basis = "TEST"), seconds,
-    )
+    ).copy(sourceId = "COUNTDOWN_GLYPH_WITNESS")
     private fun event(id: String, payload: ArchivedTestimonyPayload, seconds: Double) = ArchivedRealityArticle(
         articleId = id, matchId = "match", perceivedAt = (seconds * 1_000).toLong(),
         recordedAt = (seconds * 1_000).toLong() + 500, sourceId = "test", payload = payload,

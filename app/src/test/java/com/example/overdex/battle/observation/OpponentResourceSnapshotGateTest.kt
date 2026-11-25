@@ -18,6 +18,41 @@ class TeamResourceSnapshotGateTest {
     private fun gate() = TeamResourceSnapshotGate(crops, balls, now = { now })
     private fun resolveAll(gate: TeamResourceSnapshotGate, at: Long = now) = crops.forEach { gate.measured(it, at) }
 
+    @Test fun `late entry banner wakes a fresh ball check once and zero cannot complete it`() {
+        val gate = gate()
+        val source = now
+        val banner = article(RawTestimony("Go, Vaporeon!"), source)
+            .copy(sourceId = SourceId("ANNOUNCEMENT_WITNESS"))
+        now += 13 * SECOND
+        gate.observe(banner.copy(sourceId = SourceId("OTHER")))
+        assertFalse(gate.isEnabled(opponentBalls))
+        gate.observe(banner)
+        assertTrue(gate.acceptsFrame(opponentBalls, now))
+        assertFalse(gate.acceptsFrame(opponentBalls, source))
+        assertFalse(gate.isEnabled(opponentShields))
+        gate.observe(article(OpponentBattleResourceCountMeasured(OpponentBattleResource.POKE_BALLS, 0, 3), now))
+        assertTrue(gate.isEnabled(opponentBalls))
+        now += 4 * SECOND
+        gate.observe(banner.copy(monotonicTimeNanos = source + SECOND))
+        assertFalse(gate.isEnabled(opponentBalls))
+    }
+
+    @Test fun `adjacent strip checks share a rate limit and stop at the last ball`() {
+        val gate = gate()
+        fun counted(n: Int) = gate.observe(article(OpponentBattleResourceCountMeasured(
+            OpponentBattleResource.POKE_BALLS, n, 3), now))
+        counted(2)
+        now += SECOND
+        assertEquals(2, gate.opponentBallBaseline(now))
+        assertNull(gate.opponentBallBaseline(now))
+        counted(0)
+        now += SECOND
+        assertEquals(2, gate.opponentBallBaseline(now))
+        counted(1)
+        now += SECOND
+        assertNull(gate.opponentBallBaseline(now))
+    }
+
     @Test fun `first opponent identity retries its missing baseline after pre-GO window expires`() {
         val gate = gate()
         gate.observeActiveHp(ActivePokemonSide.PLAYER, 1f, now)
