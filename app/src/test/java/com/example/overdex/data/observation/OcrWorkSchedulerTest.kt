@@ -5,6 +5,27 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class OcrWorkSchedulerTest {
+    @Test fun `result flashes pass waiting jobs while other lanes keep their turns`() = runBlocking {
+        val scheduler = OcrWorkScheduler()
+        val release = CompletableDeferred<Unit>()
+        val blocker = launch(start = CoroutineStart.UNDISPATCHED) {
+            scheduler.run(OcrPriority.NORMAL) { release.await() }
+        }
+        val order = mutableListOf<OcrPriority>()
+        val ordinary = listOf(OcrPriority.NORMAL, OcrPriority.TRANSIENT, OcrPriority.URGENT)
+        val jobs = (ordinary + List(4) { OcrPriority.RESULT_FLASH }).map { priority ->
+            launch(start = CoroutineStart.UNDISPATCHED) {
+                scheduler.run(priority) { order += priority }
+            }
+        }
+        assertTrue(order.isEmpty())
+        release.complete(Unit)
+        blocker.join()
+        jobs.joinAll()
+        assertEquals(listOf(OcrPriority.RESULT_FLASH, OcrPriority.URGENT, OcrPriority.RESULT_FLASH,
+            OcrPriority.TRANSIENT, OcrPriority.RESULT_FLASH, OcrPriority.NORMAL, OcrPriority.RESULT_FLASH), order)
+    }
+
     @Test fun `obsolete routine work is skipped at admission and releases its slot`() = runBlocking {
         val scheduler = OcrWorkScheduler()
         val release = CompletableDeferred<Unit>()

@@ -317,6 +317,17 @@ class Match(
             val inCombat = BattleStartEvidence.accepts(payload, article.sourceId.id, !article.evidenceReferences.isNullOrEmpty())
             if (inCombat && article.monotonicTimeNanos != null) firstIndependentCombatNanos = at
         }
+        val selectedLead = if (payload == MatchStarted && !playerRosterContradicted) {
+            val selection = playerConfigurationScope.at(at).values.filter { it.sourceId.id == "CURRENT_TEAM_CONFIGURATION" }
+            val selectedAt = selection.mapNotNull { it.monotonicTimeNanos }.maxOrNull()
+            val team = selection.filter { selectedAt != null && it.monotonicTimeNanos == selectedAt }
+                .map { it.payload as PlayerTeamSlotConfigured }
+            team.singleOrNull { it.slot == 1 }?.takeIf { lead ->
+                team.map { it.slot }.toSet() == setOf(1, 2, 3) && team.count { it.speciesId == lead.speciesId } == 1 &&
+                    playerRosterBySlot[1].equals(lead.speciesName, true)
+            }
+        } else null
+        speciesChecks.observePlayerBadgeCue(article, selectedLead)
         if (payload is CountdownGlyphWitnessed && !countdownCuesSeen.add(payload.glyph)) return
         if (payload is VsScreenWitnessed) {
             if (vsCueSeen) return
@@ -682,7 +693,7 @@ class Match(
                 (article.payload as? ActivePokemonSpeciesWitnessed)
                     ?.takeIf { isSideLocatedSpeciesSource(article.sourceId.id) }
                     ?.let { badge ->
-                        DroidballOverlayPresentation.recordBattleBadgePresent()
+                        if (badge.side == ActivePokemonSide.OPPONENT) DroidballOverlayPresentation.recordBattleBadgePresent()
                         article.monotonicTimeNanos?.let { at ->
                             entrySideTracker.observeBadge(badge.side, badge.speciesName, article.id.value, at)
                         }

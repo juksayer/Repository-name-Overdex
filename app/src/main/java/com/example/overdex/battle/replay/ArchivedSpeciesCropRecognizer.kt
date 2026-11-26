@@ -91,7 +91,7 @@ object ArchivedSpeciesCropRecognizer {
                     complete = false
                     null
                 } else {
-                    val bitmap = decodeTargetCrop(bytes, target.payload)?.ownedOcrPixels(target.payload.statusBarRows)
+                    val bitmap = decodeTargetCrop(bytes, target.payload)?.ownedOcrPixels(target.payload.statusBarRows, target.payload.overlayBounds)
                     if (bitmap == null) {
                         complete = false
                         null

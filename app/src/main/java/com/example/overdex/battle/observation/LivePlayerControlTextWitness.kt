@@ -71,6 +71,12 @@ internal class LivePlayerControlTextWitness(
     override fun start(match: Match) {
         if (scope != null) return
         activeMatch = match
+        val diagnostics = match.processingDiagnostics
+        val readerKey = when {
+            slot == 0 -> "pointer"
+            effectiveness -> "effectiveness.$slot"
+            else -> "chargedLabel.$slot"
+        }
         val channel = Channel<Sample>(Channel.CONFLATED, onUndeliveredElement = { it.crop.bitmap.recycle() })
         samples = channel
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { workers ->
@@ -98,6 +104,7 @@ internal class LivePlayerControlTextWitness(
                             if (kotlin.math.abs(actual / display - 1) > 0.01) return@supplyFrames
                         }
                         val resolved = crop?.resolve(calibration, frame) ?: return@supplyFrames
+                        diagnostics?.recordReaderWork("$readerKey.captured")
                         lastAt = at
                         if (channel.trySend(Sample(resolved, frame.capturedAtWallTimeMillis, at,
                                 frame.displayWidth, frame.displayHeight, singleCentered)).isFailure) resolved.bitmap.recycle()
@@ -117,6 +124,7 @@ internal class LivePlayerControlTextWitness(
                         if (!isEnabled()) continue
                         var ink: LabelInk? = null
                         var reused: StableLabelReading.Reading? = null
+                        if (slot != 0) diagnostics?.recordReaderWork("$readerKey.queueRequest")
                         val text = if (slot == 0) {
                             // Pointer diagnostics are optional; never queue them.
                             sample.crop.withOcrPixels { PlayerControlTextRecognizer.readScheduled(it, onlyIfIdle = true) }
@@ -145,7 +153,14 @@ internal class LivePlayerControlTextWitness(
                                 bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
                                 ink = LabelInk.fromPixels(bitmap.width, bitmap.height, pixels)
                                 reused = stableReading.reuse(requireNotNull(ink), sample.at)
-                                reused?.text ?: PlayerControlTextRecognizer.readPrepared(bitmap) { read(it).text }
+                                val cached = reused
+                                if (cached != null) {
+                                    diagnostics?.recordReaderWork("$readerKey.reused")
+                                    cached.text
+                                } else PlayerControlTextRecognizer.readPrepared(bitmap) {
+                                    diagnostics?.recordReaderWork("$readerKey.nativePass")
+                                    read(it).text
+                                }
                             }
                         }
                         if (text == null) continue
@@ -199,6 +214,7 @@ internal class LivePlayerControlTextWitness(
                         // Keep the original OCR basis as well as this fresh visibility measurement.
                         references = (references + reused?.references.orEmpty()).distinct()
                         match.custody.submitTestimony(source, payload, sample.wall, null, references, sample.at)
+                        if (slot != 0) diagnostics?.recordReaderWork("$readerKey.published")
                     } catch (cancelled: CancellationException) { throw cancelled }
                     catch (error: Exception) { Log.w("PLAYER_CONTROL_TEXT", "Read failed for $name", error) }
                     finally { sample.crop.bitmap.recycle() }

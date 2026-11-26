@@ -173,6 +173,8 @@ data class BattleCalibration(
     val rocketVictorySummaryRegion: AnchorRegion = AnchorRegion(
         x = 0.055f, y = 0.265f, width = 0.89f, height = 0.18f
     ),
+    // Display territory only. No reader consumes these pixels as game evidence.
+    val battleHudRegion: AnchorRegion = DEFAULT_BATTLE_HUD_REGION,
     // Guessed starting box on the whole 1080 x 2400 Moondrop display. The user
     // will position it over the opponent's hand; this is no event detector.
     val opponentTrainerHandRegion: AnchorRegion = AnchorRegion(
@@ -203,6 +205,7 @@ data class BattleCalibration(
     )
 ) {
     companion object {
+        val DEFAULT_BATTLE_HUD_REGION = AnchorRegion(645f / 1080f, .365f, 415f / 1080f, .18f)
         /** Superseded factory strip that sampled sky or effectiveness below the toast. */
         val PREVIOUS_DEFAULT_ANNOUNCEMENT_REGION = AnchorRegion(
             x = 0f, y = 710f / 2400f, width = 1f, height = 160f / 2400f

@@ -80,14 +80,23 @@ class TeamResourceSnapshotGate(
     private var scope: CoroutineScope? = null
     private val assignments = BoundedCaptureAssignments(cropNames, now)
     private var opponentBallCount: Int? = null
+    private var chargeDefender: Pair<ActivePokemonSide, Long>? = null
     private var lastAdjacentCheckAt: Long? = null
+    private var lastImpactAt: Long? = null
+    private var impactCheckFrom: Long? = null
+    private val awaitingRead = mutableMapOf<String, MutableSet<Long>>()
+    private val decodedThrough = mutableMapOf<String, Long>()
     private var opponentCountAt = Long.MIN_VALUE
     private var lastEntry: Pair<String, Long>? = null
+    private data class UnsidedEntry(val name: String, val at: Long, val received: Long)
+    private var unsidedEntry: UnsidedEntry? = null
 
     /** Only inspect the adjacent strip while a known native count can still decrease. */
     @Synchronized fun opponentBallBaseline(at: Long): Int? {
         val count = opponentBallCount ?: return null
         if (ended || count <= 1 || at <= opponentCountAt || at > now() ||
+            (!assignments.accepts(ballCrop(ActivePokemonSide.OPPONENT), at) &&
+                impactCheckFrom?.let { at - it in 0 until BoundedCaptureAssignments.WINDOW_NANOS } != true) ||
             lastAdjacentCheckAt?.let { at - it < 400_000_000L } == true) return null
         lastAdjacentCheckAt = at
         return count
@@ -104,15 +113,47 @@ class TeamResourceSnapshotGate(
     private var attemptFrom = Long.MIN_VALUE
     private var lifecycleAt = Long.MIN_VALUE
 
-    @Synchronized fun isEnabled(cropName: String): Boolean = !ended && assignments.enabled(cropName)
-    @Synchronized fun acceptsFrame(cropName: String, at: Long): Boolean =
-        !ended && at >= attemptFrom && assignments.accepts(cropName, at)
+    private fun checkPendingPlayerEntry(cropName: String) {
+        if (cropName != ballCrop(ActivePokemonSide.PLAYER)) return
+        val entry = unsidedEntry ?: return
+        if (now() - entry.received < ENTRY_SIDE_WAIT_NANOS) return
+        unsidedEntry = null
+        requestSnapshot(setOf(cropName), entry.at)
+    }
+    @Synchronized fun isEnabled(cropName: String): Boolean {
+        checkPendingPlayerEntry(cropName)
+        return !ended && assignments.enabled(cropName)
+    }
+    @Synchronized fun acceptsFrame(cropName: String, at: Long): Boolean {
+        checkPendingPlayerEntry(cropName)
+        if (ended || at < attemptFrom || !assignments.accepts(cropName, at)) return false
+        // A shield count persists. Once initialized, allow its previous frame to finish
+        // before taking another. Ball drops still get a pair immediately during departures.
+        val limit = if (cropName in shieldCropNames && assignments.hasMeasurement(cropName)) 1 else 2
+        return awaitingRead[cropName].orEmpty().count { assignments.accepts(cropName, it) } < limit
+    }
 
     /** Preservation alone cannot establish that a badge was visible or successfully interpreted. */
-    fun captured(@Suppress("UNUSED_PARAMETER") cropName: String) = Unit
+    @Synchronized fun captured(cropName: String, at: Long = now()) {
+        if (!assignments.accepts(cropName, at) || at <= (decodedThrough[cropName] ?: Long.MIN_VALUE)) return
+        val pending = awaitingRead.getOrPut(cropName) { mutableSetOf() }
+        pending.removeAll { !assignments.accepts(cropName, it) }
+        pending.add(at)
+    }
+
+    /** Release the capture slot on decode, without waiting for count testimony to cross the timeline. */
+    @Synchronized fun finishedRead(cropName: String, at: Long, candidate: Boolean, confirmedAt: Long?) {
+        if (ended || at < attemptFrom || at > now()) return
+        awaitingRead[cropName]?.remove(at)
+        decodedThrough[cropName] = maxOf(at, decodedThrough[cropName] ?: Long.MIN_VALUE)
+        if (candidate) candidateRead(cropName, at)
+        if (confirmedAt != null) measured(cropName, confirmedAt)
+    }
 
     @Synchronized internal fun requestSnapshot(requestedCrops: Set<String> = cropNames, observedAt: Long = now()) {
-        if (!ended && observedAt >= attemptFrom) assignments.request(requestedCrops, observedAt)
+        if (!ended && observedAt >= attemptFrom) {
+            assignments.request(requestedCrops, observedAt)
+        }
     }
     @Synchronized internal fun requestPokeBallSnapshot(observedAt: Long = now()) = requestSnapshot(pokeBallCropNames, observedAt)
     @Synchronized internal fun requestResourceWatch(observedAt: Long = now()) = requestSnapshot(shieldCropNames, observedAt)
@@ -194,7 +235,23 @@ class TeamResourceSnapshotGate(
                             requestMissingBaseline(cropNames, at)
                         }
                     }
-                    GetReadyWitnessed, AttackIncoming, ChargeMoveUsedAnnounced -> requestResourceWatch(at)
+                    GetReadyWitnessed, AttackIncoming -> {
+                        val defender = if (payload == GetReadyWitnessed) ActivePokemonSide.OPPONENT else ActivePokemonSide.PLAYER
+                        if (at >= (chargeDefender?.second ?: Long.MIN_VALUE)) chargeDefender = defender to at
+                        requestSnapshot(setOf(shieldCrop(defender)), at)
+                    }
+                    ChargeMoveUsedAnnounced -> {
+                        val defender = chargeDefender?.takeIf { at - it.second in 0..12_000_000_000L }?.first
+                        if (defender == null) requestResourceWatch(at) else {
+                            requestSnapshot(setOf(shieldCrop(defender)), at)
+                            chargeDefender = null
+                        }
+                        // A just-landed charge can remove a ball before its cry or entry banner is read.
+                        if (at > (lastImpactAt ?: Long.MIN_VALUE)) {
+                            lastImpactAt = at
+                            impactCheckFrom = now()
+                        }
+                    }
                     is RawTestimony -> if (article.sourceId.id == "ANNOUNCEMENT_WITNESS") {
                         val name = EntryAnnouncementSpeciesTextResolver.entryField(payload.data as? String ?: return)
                             ?: return
@@ -202,11 +259,28 @@ class TeamResourceSnapshotGate(
                         if (previous == null || at > previous.second &&
                             (!name.equals(previous.first, true) || at - previous.second > 4_000_000_000L)) {
                             lastEntry = name to at
-                            // The unsided banner wakes the two independent readers. Only their pixels establish a loss.
-                            requestPokeBallSnapshot(at)
+                            // Protect the brief opponent ball change immediately. If the player's baseline is
+                            // already known, a fresh opponent badge can settle which side entered.
+                            requestDepartureCheck(ActivePokemonSide.OPPONENT, at)
+                            val playerBalls = ballCrop(ActivePokemonSide.PLAYER)
+                            if (!assignments.hasMeasurement(playerBalls) || assignments.enabled(playerBalls) ||
+                                speciesBySide[ActivePokemonSide.OPPONENT].equals(name, true)) {
+                                requestSnapshot(setOf(playerBalls), at)
+                                unsidedEntry = null
+                            } else {
+                                unsidedEntry?.let { requestSnapshot(setOf(playerBalls), it.at) }
+                                unsidedEntry = UnsidedEntry(name, at, now())
+                            }
                         }
                     }
                     is ActivePokemonSpeciesWitnessed -> {
+                        val entry = unsidedEntry
+                        if (entry != null && at >= entry.at && isSideLocatedSpeciesSource(article.sourceId.id) &&
+                            entry.name.equals(payload.speciesName, true)) {
+                            if (payload.side == ActivePokemonSide.PLAYER)
+                                requestDepartureCheck(ActivePokemonSide.PLAYER, entry.at)
+                            unsidedEntry = null
+                        }
                         observeSpecies(payload.side, payload.speciesName, at)
                         if (payload.side == ActivePokemonSide.OPPONENT && at == speciesAtBySide[payload.side] &&
                             article.sourceId.id == "OPPONENT_SPECIES_OVERLAY_PIPELINE")
@@ -255,13 +329,16 @@ class TeamResourceSnapshotGate(
         if (at < attemptFrom || at < lifecycleAt || at > now()) return
         lifecycleAt = at
         ended = true
+        unsidedEntry = null
         assignments.clear()
     }
     private fun reset(from: Long) {
         ended = false; initialized = false; startObserved = false; attemptFrom = from; lifecycleAt = from; assignments.clear()
-        opponentBallCount = null; lastAdjacentCheckAt = null; opponentCountAt = Long.MIN_VALUE; lastEntry = null
+        opponentBallCount = null; lastAdjacentCheckAt = null; opponentCountAt = Long.MIN_VALUE; lastEntry = null; unsidedEntry = null
+        awaitingRead.clear(); decodedThrough.clear(); impactCheckFrom = null; lastImpactAt = null; chargeDefender = null
         speciesBySide.clear(); speciesAtBySide.clear(); hpAtBySide.clear(); emptyHpSides.clear()
     }
+    private companion object { const val ENTRY_SIDE_WAIT_NANOS = 2_000_000_000L }
 }
 
 /** Initial player bench acquisition, then bounded assignments for player changes or replacement text. */
@@ -363,6 +440,7 @@ class MatchOutcomeCaptureGate(
     @Volatile private var ended = false
     @Volatile private var playerBallCount: Int? = null
     @Volatile private var opponentBallCount: Int? = null
+    private var chargeDefender: Pair<ActivePokemonSide, Long>? = null
     private val finalCriticalHpSides = mutableSetOf<ActivePokemonSide>()
     private var lastChargedMoveAt: Long? = null
     private var lastProbeFrameAt: Long? = null

@@ -131,6 +131,19 @@ class OutcomeEvidenceQueueTest {
         assertEquals("future after reversal", queue.pollRecovery(11))
     }
 
+    @Test fun `flash and ordinary reads can claim the same candidate only once`() {
+        val queue = OutcomeEvidenceQueue<String>(recentWindowNanos = 10)
+        queue.offer("already read", 10, 10)
+        assertEquals("already read", queue.pollRecent(10))
+        assertNull(queue.take("already read"))
+        queue.offer("aged flash", 10, 10)
+        queue.offer("fresh flash", 25, 25)
+        assertEquals("aged flash", queue.take("aged flash"))
+        assertEquals("fresh flash", queue.take("fresh flash"))
+        assertNull(queue.pollRecovery(25))
+        assertNull(queue.pollRecent(25))
+    }
+
     @Test fun `close clears both lanes and refuses future offers`() {
         val queue = OutcomeEvidenceQueue<String>(recentWindowNanos = 10)
         queue.offer("old", 1, 20)

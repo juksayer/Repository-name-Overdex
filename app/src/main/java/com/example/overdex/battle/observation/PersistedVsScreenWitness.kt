@@ -44,7 +44,7 @@ class PersistedVsScreenWitness(
                     .collect { article ->
                     if (accepted || !isEnabled()) return@collect
                     val crop = article.payload as CropCaptured
-                    val bitmap = artifactStore.loadVerifiedOcrPng(crop.artifact, crop.cropProvenance) ?: return@collect
+                    val bitmap = artifactStore.loadVerifiedOcrPng(crop) ?: return@collect
                     val isVsScreen = try {
                         // This crop contains the central VS token. A substring match can
                         // mistake a fast-moving, high-contrast Pokémon feature for “VS”.
@@ -58,6 +58,7 @@ class PersistedVsScreenWitness(
 
                     val monotonicTimeNanos = article.monotonicTimeNanos ?: return@collect
                     accepted = true
+                    DroidballOverlayPresentation.dismissTeamSelectForBattle()
                     match.custody.submitTestimony(
                         sourceId = sourceId,
                         payload = VsScreenWitnessed,

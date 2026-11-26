@@ -50,14 +50,13 @@ class DroidballOverlayPresentationTest {
         for (phase in listOf(
             DroidballSessionPhase.COUNTDOWN,
             DroidballSessionPhase.BATTLE_ACTIVE,
-            DroidballSessionPhase.RESULT,
         )) {
             DroidballOverlayPresentation.showSessionPhase(phase)
             assertFalse(DroidballOverlayPresentation.panelAllowed.value)
             assertFalse(DroidballOverlayPresentation.expanded.value)
         }
 
-        DroidballOverlayPresentation.toggleExpanded()
+        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.RESULT)
         assertTrue(DroidballOverlayPresentation.panelAllowed.value)
         assertTrue(DroidballOverlayPresentation.expanded.value)
         assertEquals(DroidballOverlayMode.RESULT, DroidballOverlayPresentation.mode.value)
@@ -116,10 +115,14 @@ class DroidballOverlayPresentationTest {
             assertFalse(p.expanded.value)
             assertEquals(DroidballOverlayMode.BATTLE_HUD, p.mode.value)
             p.showSessionPhase(DroidballSessionPhase.RESULT)
-            assertFalse(p.expanded.value)
+            assertTrue(p.expanded.value)
 
             p.toggleExpanded()
-            assertTrue(p.expanded.value)
+            p.showSessionPhase(DroidballSessionPhase.RESULT)
+            p.showBattleHud()
+            p.showAcceptedTeamSelect()
+            assertFalse(p.expanded.value)
+            assertEquals(DroidballOverlayMode.RESULT, p.mode.value)
         }
     }
 
@@ -160,6 +163,8 @@ class DroidballOverlayPresentationTest {
         DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.RESULT)
         assertEquals(DroidballOverlayMode.RESULT, DroidballOverlayPresentation.mode.value)
         assertTrue(DroidballOverlayPresentation.expanded.value)
+        DroidballOverlayPresentation.toggleExpanded()
+        assertFalse(DroidballOverlayPresentation.expanded.value)
     }
 
     @Test fun `an explicit HUD request opens without a Team Select observation`() {
@@ -313,7 +318,7 @@ class DroidballOverlayPresentationTest {
         for ((reset, mode) in listOf(
             DroidballOverlayPresentation::showNavigationIdle to DroidballOverlayMode.PRE_BATTLE,
             DroidballOverlayPresentation::showTeamSelectScan to DroidballOverlayMode.SEEKING_TEAM_SELECT,
-            DroidballOverlayPresentation::showAcceptedTeamSelect to DroidballOverlayMode.TEAM_SELECT,
+
         )) {
             DroidballOverlayPresentation.recordBattleBadgePresent()
             DroidballOverlayPresentation.showBattleHud()
@@ -348,6 +353,30 @@ class DroidballOverlayPresentationTest {
         assertEquals(true, DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves.single().isConfirmed)
         DroidballOverlayPresentation.recordOpponentFastMove(identity("Quick Attack"))
         assertEquals("Quick Attack", DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves.single().name)
+    }
+
+    @Test fun `late setup cannot render over countdown and stale badges cannot restore a wider move list`() {
+        val p = DroidballOverlayPresentation
+        p.showAcceptedTeamSelect()
+        p.showBattleHud()
+        p.showStartedMatch("battle")
+        p.showAcceptedTeamSelect()
+        fun canRender() = com.example.overdex.ui.components.battleOverlayPanelAvailable(
+            battleOverlayDisplayMode(p.mode.value, p.battleBadgeSeen.value), p.setupHidden.value)
+        assertFalse(canRender())
+        p.recordBattleBadgePresent()
+        assertTrue(canRender())
+        val water = listOf("Water Gun" to PokemonType.WATER, "Powder Snow" to PokemonType.ICE)
+        p.recordOpponentSpecies("Sealeo", 364, water, emptyList(), observedAtNanos = 100)
+        p.recordOpponentSpecies("Vaporeon", 134, water.take(1), emptyList(), observedAtNanos = 200)
+        p.recordOpponentFastMove(com.example.overdex.battle.custody.FastMoveIdentified(
+            com.example.overdex.battle.custody.ActivePokemonSide.OPPONENT, "Vaporeon", "Water Gun",
+            500_000_000, null, 0, "AUDIO_REFERENCE"))
+        p.recordOpponentSpecies("Sealeo", 364, water, emptyList(), observedAtNanos = 150)
+        p.showAcceptedTeamSelect()
+        assertTrue(p.battleBadgeSeen.value)
+        assertEquals("Vaporeon", p.activeOpponentMovePossibilities.value!!.speciesName)
+        assertTrue(p.activeOpponentMovePossibilities.value!!.fastMoves.single().isConfirmed)
     }
 
     @Test fun readinessUsesEnergyCostAndOneWholeFastMove() {

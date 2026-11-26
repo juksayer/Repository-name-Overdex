@@ -27,6 +27,7 @@ internal fun presentDroidballSessionPhase(
             }
         }
     }
-    DroidballOverlayPresentation.showSessionPhase(phase)
+    // The lobby retires post-battle crops. Keep Stop Session and Next Match on screen.
+    DroidballOverlayPresentation.showSessionPhase(if (session.awaitingNextMatch) DroidballSessionPhase.RESULT else phase)
     return true
 }

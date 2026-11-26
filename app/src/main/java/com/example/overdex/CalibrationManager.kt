@@ -199,6 +199,10 @@ class CalibrationManager(context: Context) {
             .putFloat("exit_icon_w", calibration.exitIconRegion.width)
             .putFloat("exit_icon_h", calibration.exitIconRegion.height)
 
+            .putFloat("battle_hud_x", calibration.battleHudRegion.x)
+            .putFloat("battle_hud_y", calibration.battleHudRegion.y)
+            .putFloat("battle_hud_w", calibration.battleHudRegion.width)
+            .putFloat("battle_hud_h", calibration.battleHudRegion.height)
             .putFloat("opponent_trainer_hand_x", calibration.opponentTrainerHandRegion.x)
             .putFloat("opponent_trainer_hand_y", calibration.opponentTrainerHandRegion.y)
             .putFloat("opponent_trainer_hand_w", calibration.opponentTrainerHandRegion.width)
@@ -742,6 +746,7 @@ class CalibrationManager(context: Context) {
             outOfBattleMenuRegion = outOfBattleMenuRegion,
             matchOutcomeRegion = matchOutcomeRegion,
             rocketVictorySummaryRegion = loadExtraRegion("rocket_victory_summary", BattleCalibration().rocketVictorySummaryRegion),
+            battleHudRegion = loadExtraRegion("battle_hud", BattleCalibration.DEFAULT_BATTLE_HUD_REGION),
             opponentTrainerHandRegion = loadExtraRegion("opponent_trainer_hand", BattleCalibration().opponentTrainerHandRegion),
             chargedImpactHpRegion = loadExtraRegion("charged_impact_hp", BattleCalibration().chargedImpactHpRegion),
             forcedReplacementMessageRegion = loadExtraRegion("forced_replacement_message", BattleCalibration().forcedReplacementMessageRegion),

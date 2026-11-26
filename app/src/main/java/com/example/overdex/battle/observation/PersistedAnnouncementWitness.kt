@@ -23,7 +23,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
@@ -60,6 +59,9 @@ class PersistedAnnouncementWitness internal constructor(
             // unbounded native requests. Probe results are scheduling hints;
             // only OCR of the selected preserved crop can produce testimony.
             val pending = PendingTransientTextCrops()
+            val gradeGate = if (cropContract == BattleCropContracts.qteProgressText) QteGradeReadGate() else null
+            val recentSleep = ArrayDeque<Pair<RealityArticle, TransientTextProbe.Reading?>>()
+            val gradeSignatures = LinkedHashMap<Long, Long>()
             val wake = Channel<Unit>(Channel.CONFLATED)
             witnessScope.coroutineContext[kotlinx.coroutines.Job]!!.invokeOnCompletion {
                 pending.clear()
@@ -67,9 +69,31 @@ class PersistedAnnouncementWitness internal constructor(
             }
             witnessScope.launch(start = CoroutineStart.UNDISPATCHED) {
                 val crops = if (directCapture) match.capturedAnnouncements else match.articles
-                crops.filter { article ->
-                    (article.payload as? CropCaptured)?.cropProvenance?.cropName == cropContract.cropName
-                }.collect { article ->
+                crops.collect { article ->
+                    val at = article.monotonicTimeNanos ?: return@collect
+                    if ((article.payload as? CropCaptured)?.cropProvenance?.cropName != cropContract.cropName) {
+                        if (gradeGate != null) {
+                            if (article.sourceId.id == observerId.id && article.payload is RawTestimony) {
+                                gradeGate.confirm(article.payload.data as? String ?: "", at, gradeSignatures[at] ?: 0L)
+                            }
+                            val start = gradeGate.observe(article.payload, at, article.sourceId.id)
+                            if (start != null) {
+                                val iterator = recentSleep.iterator()
+                                while (iterator.hasNext()) {
+                                    val (old, probe) = iterator.next()
+                                    val oldAt = old.monotonicTimeNanos ?: continue
+                                    if (oldAt >= start && gradeGate.inCharge(oldAt) && pending.canOffer(old) &&
+                                        now() - oldAt in 0..10_000_000_000L) {
+                                        match.processingDiagnostics?.recordGradeDecision("lateCue", old.id.value, oldAt)
+                                        pending.offer(old, probe)
+                                        iterator.remove()
+                                        wake.trySend(Unit)
+                                    }
+                                }
+                            }
+                        }
+                        return@collect
+                    }
                     if (!pending.canOffer(article)) return@collect
                     val visual = try { reader.inspect(article) }
                     catch (cancelled: CancellationException) { throw cancelled }
@@ -78,6 +102,19 @@ class PersistedAnnouncementWitness internal constructor(
                         null
                     }
                     currentCoroutineContext().ensureActive()
+                    if (gradeGate != null) {
+                        val decision = gradeGate.decide(at, visual)
+                        match.processingDiagnostics?.recordGradeDecision(decision.name, article.id.value, at)
+                        if (!decision.read) {
+                            if (decision == QteGradeReadGate.Reason.NO_GRADE) {
+                                if (recentSleep.size == 3) recentSleep.removeFirst()
+                                recentSleep.addLast(article to visual)
+                            }
+                            return@collect
+                        }
+                        gradeSignatures[at] = visual?.signature ?: 0L
+                        if (gradeSignatures.size > 32) gradeSignatures.remove(gradeSignatures.keys.first())
+                    }
                     pending.offer(article, visual)
                     wake.trySend(Unit)
                 }
@@ -94,6 +131,7 @@ class PersistedAnnouncementWitness internal constructor(
                         var replacedAtSelection = 0L
                         var selection: PendingTransientTextCrops.Selection? = null
                         val readings = try {
+                            if (gradeGate != null) match.processingDiagnostics?.recordReaderWork("grade.queueRequest")
                             reader.withReadingTurn(OcrPriority.TRANSIENT) { turn ->
                                 currentCoroutineContext().ensureActive()
                                 admittedAt = now()
@@ -244,9 +282,9 @@ private class ArtifactAnnouncementCropReader(
     override suspend fun inspect(article: RealityArticle): TransientTextProbe.Reading? = withContext(Dispatchers.IO) {
         val crop = article.payload as CropCaptured
         preview?.readingFor(article.monotonicTimeNanos, crop.cropProvenance)?.let { return@withContext it }
-        val bitmap = artifactStore.loadVerifiedOcrPng(crop.artifact, crop.cropProvenance) ?: return@withContext null
+        val bitmap = artifactStore.loadVerifiedOcrPng(crop) ?: return@withContext null
         try {
-            readTransientTextPixels(bitmap, crop.overlayBounds)
+            readTransientTextPixels(bitmap, crop.overlayBounds, crop.cropProvenance.cropName == BattleCropContracts.qteProgressText.cropName)
         } finally { bitmap.recycle() }
     }
     override suspend fun <T> withReadingTurn(
@@ -260,7 +298,7 @@ private class ArtifactAnnouncementCropReader(
             override suspend fun recognize(article: RealityArticle, profile: OcrHeightProfile): List<OcrTextEvidence> =
                 withContext(Dispatchers.IO) {
                     val crop = article.payload as CropCaptured
-                    val bitmap = artifactStore.loadVerifiedOcrPng(crop.artifact, crop.cropProvenance)
+                    val bitmap = artifactStore.loadVerifiedOcrPng(crop)
                         ?: return@withContext emptyList()
                     try {
                         nativeTurn.recognizeEvidence(bitmap,

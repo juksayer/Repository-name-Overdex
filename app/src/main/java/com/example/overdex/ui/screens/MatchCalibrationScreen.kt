@@ -267,6 +267,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.TRAINER_INACTIVE_POKEMON,
             CalibrationRegion.MATCH_OUTCOME,
             CalibrationRegion.ROCKET_VICTORY_SUMMARY,
+            CalibrationRegion.BATTLE_HUD,
             CalibrationRegion.OPPONENT_TRAINER_HAND,
             CalibrationRegion.CHARGED_IMPACT_HP,
             CalibrationRegion.FORCED_REPLACEMENT_MESSAGE,
@@ -312,6 +313,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.QTE_GLYPH_RIGHT -> "QTE · Right"
             CalibrationRegion.QTE_GLYPH_LOW_CENTER -> "QTE · Low center"
             CalibrationRegion.EXIT_ICON -> "Exit Icon"
+            CalibrationRegion.BATTLE_HUD -> "Battle HUD (position and size)"
             CalibrationRegion.OPPONENT_TRAINER_HAND -> "Opponent Hand / Poké Ball"
             CalibrationRegion.CHARGED_IMPACT_HP -> "Charged Impact HP"
             CalibrationRegion.FORCED_REPLACEMENT_MESSAGE -> "Forced Replacement Message"
@@ -372,6 +374,7 @@ fun MatchCalibrationScreen(
         CalibrationRegion.QTE_GLYPH_RIGHT -> calibration.qteGlyphRegion(QteGlyphCrop.RIGHT)
         CalibrationRegion.QTE_GLYPH_LOW_CENTER -> calibration.qteGlyphRegion(QteGlyphCrop.LOW_CENTER)
         CalibrationRegion.EXIT_ICON -> calibration.exitIconRegion
+        CalibrationRegion.BATTLE_HUD -> calibration.battleHudRegion
         CalibrationRegion.OPPONENT_TRAINER_HAND -> calibration.opponentTrainerHandRegion
         CalibrationRegion.CHARGED_IMPACT_HP -> calibration.chargedImpactHpRegion
         CalibrationRegion.FORCED_REPLACEMENT_MESSAGE -> calibration.forcedReplacementMessageRegion
@@ -464,6 +467,7 @@ fun MatchCalibrationScreen(
         CalibrationRegion.QTE_GLYPH_RIGHT -> calibration.withQteGlyphRegion(QteGlyphCrop.RIGHT, updated)
         CalibrationRegion.QTE_GLYPH_LOW_CENTER -> calibration.withQteGlyphRegion(QteGlyphCrop.LOW_CENTER, updated)
             CalibrationRegion.EXIT_ICON -> calibration.copy(exitIconRegion = updated)
+            CalibrationRegion.BATTLE_HUD -> calibration.copy(battleHudRegion = updated)
             CalibrationRegion.OPPONENT_TRAINER_HAND -> calibration.copy(opponentTrainerHandRegion = updated)
             CalibrationRegion.CHARGED_IMPACT_HP -> calibration.copy(chargedImpactHpRegion = updated)
             CalibrationRegion.FORCED_REPLACEMENT_MESSAGE -> calibration.copy(forcedReplacementMessageRegion = updated)

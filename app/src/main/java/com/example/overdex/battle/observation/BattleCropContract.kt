@@ -23,6 +23,7 @@ data class BattleCropProvenance(
     val bounds: BattleCropBounds,
     /** Number of top rows occupied by Android chrome when captured. The saved PNG is always raw. */
     val statusBarRows: Int = 0,
+    val hudBounds: OcrBox? = null,
 )
 data class ResolvedBattleCrop(val provenance: BattleCropProvenance, val bitmap: Bitmap)
 
@@ -34,6 +35,11 @@ fun BattleCropProvenance.overlayBounds(region: AnchorRegion?): OcrBox? {
         (region.y + region.height) * sourceHeight - bounds.top)
     val crop = OcrBox(0f, 0f, (bounds.right - bounds.left).toFloat(), (bounds.bottom - bounds.top).toFloat())
     return box.takeIf { crop.overlapFraction(it) > 0f }
+}
+
+internal fun ResolvedBattleCrop.withHudRegion(region: AnchorRegion?): ResolvedBattleCrop {
+    val overlap = provenance.overlayBounds(region) ?: return this
+    return copy(provenance = provenance.copy(hudBounds = overlap))
 }
 
 /** A crop may inspect a measured subsection of its calibrated Battle Region. */
@@ -57,6 +63,7 @@ object BattleCropResolver {
         minimumSize: Int = 1,
         area: CropAreaInRegion = CropAreaInRegion()
     ): ResolvedBattleCrop? = resolve(cropName, region, frame.bitmap, minimumSize, area, frame.statusBarBottomPx)
+        ?.withHudRegion(frame.overlayRegion)
 
     fun resolveRect(
         region: AnchorRegion,

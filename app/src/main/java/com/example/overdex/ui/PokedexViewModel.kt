@@ -842,12 +842,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             nextMatchVsWatcher?.stop()
             nextMatchVsWatcher = NextMatchVsWatcher(
                 calibration = calibration,
-                awaitingNextMatch = {
-                    val session = _droidballSession.value ?: return@NextMatchVsWatcher false
-                    session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.RESULT ||
-                        (session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.NAVIGATION_IDLE &&
-                            session.hasCompletedMatch)
-                },
+                awaitingNextMatch = { _droidballSession.value?.awaitingNextMatch == true },
                 onVs = { crop, frame ->
                     val nextMatch = startFreshMatch(resultCode, data, startCaptureService = false)
                     val artifact = cropArtifactStore.preserveFrameCrop(
@@ -1039,24 +1034,23 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 opponentBallBaseline = if (contract == BattleWitnessContracts.opponentShieldsCapture)
                     { _, at -> teamResourceSnapshotGate.opponentBallBaseline(at) } else null,
                 acceptsFrame = { teamResourceSnapshotGate.acceptsFrame(contract.crop.cropName, it) },
-                onCaptured = { _, _, _ ->
-                    teamResourceSnapshotGate.captured(contract.crop.cropName)
+                onCaptured = { _, _, at ->
+                    teamResourceSnapshotGate.captured(contract.crop.cropName, at)
                 }
             ))
         }
         observationDispatcher.register(teamResourceSnapshotGate)
-        observationDispatcher.register(PersistedPlayerPokeBallWitness(cropArtifactStore, onCandidateRead = { at ->
-            teamResourceSnapshotGate.candidateRead(BattleCropContracts.playerPokeBalls.cropName, at)
-        }))
-        observationDispatcher.register(PersistedOpponentBattleResourceWitness.pokeBalls(cropArtifactStore) { at ->
-            teamResourceSnapshotGate.candidateRead(BattleCropContracts.opponentPokeBalls.cropName, at)
-        })
-        observationDispatcher.register(PersistedOpponentBattleResourceWitness.shields(cropArtifactStore) { at ->
-            teamResourceSnapshotGate.candidateRead(BattleCropContracts.opponentShields.cropName, at)
-        })
-        observationDispatcher.register(PersistedOpponentBattleResourceWitness.playerShields(cropArtifactStore) { at ->
-            teamResourceSnapshotGate.candidateRead(BattleCropContracts.playerShields.cropName, at)
-        })
+        fun resourceFeedback(name: String): (Long, Boolean, Long?) -> Unit = { at, candidate, confirmedAt ->
+            teamResourceSnapshotGate.finishedRead(name, at, candidate, confirmedAt)
+        }
+        observationDispatcher.register(PersistedPlayerPokeBallWitness(cropArtifactStore,
+            onRead = resourceFeedback(BattleCropContracts.playerPokeBalls.cropName)))
+        observationDispatcher.register(PersistedOpponentBattleResourceWitness.pokeBalls(cropArtifactStore,
+            resourceFeedback(BattleCropContracts.opponentPokeBalls.cropName)))
+        observationDispatcher.register(PersistedOpponentBattleResourceWitness.shields(cropArtifactStore,
+            resourceFeedback(BattleCropContracts.opponentShields.cropName)))
+        observationDispatcher.register(PersistedOpponentBattleResourceWitness.playerShields(cropArtifactStore,
+            resourceFeedback(BattleCropContracts.playerShields.cropName)))
         observationDispatcher.register(PersistedActivePokemonTypeWitness.player(cropArtifactStore) { at ->
             battleEvidenceLive() && activeTypeSampling.needsReading(com.example.overdex.battle.custody.ActivePokemonSide.PLAYER, at)
         })
@@ -1676,7 +1670,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         stopObservation()
                     }
                     is DroidballSignal.BeginNextMatch -> {
-                        if (session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.RESULT) {
+                        if (session.awaitingNextMatch) {
                             observationDispatcher.stopAll()
                             retainAndArchiveMatch(match, "next match", awaitAcceptedEvidence = true)
                             session.end()

@@ -3,6 +3,7 @@ package com.example.overdex.battle.observation
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed
+import com.example.overdex.battle.custody.BattleCryLocalized
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
@@ -39,6 +40,20 @@ class PersistedPlayerEntrySpeciesWitness(
                 var lastWitnessedAt = Long.MIN_VALUE
                 val pending = ArrayDeque<Pair<RealityArticle, SpeciesTextResolution>>()
 
+                var recovery = CorroboratedOpponentEntry()
+                var attempt = match.observationAttemptStartedAtNanos
+                fun recover(article: RealityArticle, unresolved: Boolean = false) {
+                    for (entry in recovery.accept(article, match.playerRosterSpecies(), unresolved)) {
+                        val witnessed = entry.species.side to entry.species.speciesName
+                        val at = requireNotNull(entry.banner.monotonicTimeNanos)
+                        if (witnessed == lastWitnessed && kotlin.math.abs(at - lastWitnessedAt) < DUPLICATE_WINDOW_NANOS) continue
+                        match.custody.submitTestimony(sourceId, entry.species, entry.banner.perceivedAt, .95f,
+                            entry.references, at)
+                        lastWitnessed = witnessed
+                        lastWitnessedAt = at
+                    }
+                }
+
                 suspend fun publish(article: RealityArticle, resolution: SpeciesTextResolution): Boolean {
                     val speciesName = resolution.speciesName
                     val atNanos = article.monotonicTimeNanos ?: return false
@@ -65,6 +80,14 @@ class PersistedPlayerEntrySpeciesWitness(
                 }
 
                 match.articles.collect { article ->
+                    if (attempt != match.observationAttemptStartedAtNanos) {
+                        attempt = match.observationAttemptStartedAtNanos
+                        recovery = CorroboratedOpponentEntry()
+                    }
+                    if ((article.monotonicTimeNanos ?: Long.MIN_VALUE) < attempt) return@collect
+                    if (article.payload is BattleCryLocalized ||
+                        article.payload is ActivePokemonSpeciesWitnessed ||
+                        article.sourceId.id == "OPPONENT_ACTIVE_SPECIES_TEXT_CAPTURE") recover(article)
                     pending.removeAll { (entry, _) ->
                         (entry.monotonicTimeNanos ?: Long.MIN_VALUE) < match.observationAttemptStartedAtNanos
                     }
@@ -103,7 +126,10 @@ class PersistedPlayerEntrySpeciesWitness(
                         .also { knownSpeciesNames = it }
                     val resolution = EntryAnnouncementSpeciesTextResolver.resolveDetailed(rawText, names)
                     Log.d("ENTRY_ANNOUNCEMENT_SPECIES", "announcement=$rawText resolved=${resolution?.speciesName ?: "none"} catalogue=${names.size}")
-                    resolution ?: return@collect
+                    if (resolution == null) {
+                        recover(article, unresolved = true)
+                        return@collect
+                    }
                     if (!publish(article, resolution)) {
                         // The name itself remains useful testimony even when the
                         // announcement no longer establishes a trainer side.

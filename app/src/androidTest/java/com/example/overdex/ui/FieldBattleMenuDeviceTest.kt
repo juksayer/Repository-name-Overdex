@@ -42,6 +42,14 @@ class FieldBattleMenuDeviceTest {
         tapAndExpect("STOP SESSION", DroidballSignal.StopSessionRequested)
     }
 
+    @Test fun resultMenuOffersSeparateStopAndNextMatchActions() {
+        showMenu(DroidballOverlayMode.RESULT)
+        compose.onNodeWithText("MATCH COMPLETE").assertIsDisplayed()
+        assertSeparated(buttonBounds("NEXT MATCH"), buttonBounds("STOP SESSION"))
+        tapAndExpect("NEXT MATCH", DroidballSignal.BeginNextMatch)
+        tapAndExpect("STOP SESSION", DroidballSignal.StopSessionRequested)
+    }
+
     @Test fun readyMenuShowsBattleInstructionsAndHideWithoutAnotherStart() {
         showMenu(DroidballOverlayMode.BATTLE_READY)
 

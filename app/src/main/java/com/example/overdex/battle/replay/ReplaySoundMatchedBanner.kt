@@ -134,7 +134,7 @@ internal object ReplaySoundMatchedBanner {
         val right = minOf(box.cropRight, bitmap.width * 3 / 4)
         if (box.cropLeft !in 0 until right || box.cropTop !in 0 until box.cropBottom || box.cropBottom > bitmap.height) return null
         val strip = Bitmap.createBitmap(bitmap, box.cropLeft, box.cropTop, right-box.cropLeft, box.cropBottom-box.cropTop)
-        return try { strip.withOcrPixels(box.statusBarRows) { SharedLatinTextRecognizer.readText(it) }.lineSequence().mapNotNull { banner.matchEntire(it.trim()) }.singleOrNull() }
+        return try { strip.withOcrPixels(box.statusBarRows, box.overlayBounds) { SharedLatinTextRecognizer.readText(it) }.lineSequence().mapNotNull { banner.matchEntire(it.trim()) }.singleOrNull() }
             finally { if (strip !== bitmap) strip.recycle() }
     }
 }

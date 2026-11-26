@@ -24,6 +24,8 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineStart
+import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withContext
 import com.example.overdex.battle.reality.RealityArticle
@@ -57,9 +59,16 @@ class PersistedOutcomeTextWitness internal constructor(
             val probeSource = BattleWitnessContracts.matchOutcomeProbeCapture.witnessId
             val recentWake = Channel<Unit>(Channel.CONFLATED)
             val recoveryWake = Channel<Unit>(Channel.CONFLATED)
+            // Reserve one immutable reference. Later blanks and reward screens cannot evict it.
+            val flash = AtomicReference<RealityArticle?>(null)
+            val previews = Channel<RealityArticle>(12, BufferOverflow.DROP_OLDEST)
+            val flashWake = Channel<Unit>(Channel.CONFLATED)
             val probeWake = Channel<Unit>(Channel.CONFLATED)
             witnessScope.coroutineContext[kotlinx.coroutines.Job]!!.invokeOnCompletion {
                 pending.close()
+                flash.set(null)
+                flashWake.close()
+                previews.close()
                 probePending.clear()
                 recentWake.close()
                 recoveryWake.close()
@@ -79,7 +88,23 @@ class PersistedOutcomeTextWitness internal constructor(
                     if (pending.offer(article, capturedAt, now())) {
                         recentWake.trySend(Unit)
                         recoveryWake.trySend(Unit)
+                        previews.trySend(article)
                     }
+                }
+            }
+            // All originals are already in the ordinary read queue. A slow preview must never
+            // hold up that queue or make a newer blank replace a result already selected.
+            witnessScope.launch {
+                for (article in previews) {
+                    val capturedAt = article.monotonicTimeNanos ?: continue
+                    if (now() - capturedAt !in 0L..3_000_000_000L || flash.get() != null) continue
+                    val prominent = try { reader.hasProminentResultLine(article) }
+                    catch (cancelled: CancellationException) { throw cancelled }
+                    catch (error: Exception) {
+                        Log.w("OutcomeText", "Result preview unavailable", error)
+                        false
+                    }
+                    if (prominent && flash.compareAndSet(null, article)) flashWake.trySend(Unit)
                 }
             }
             // Inspect sparse checks separately so their I/O cannot delay urgent
@@ -112,9 +137,14 @@ class PersistedOutcomeTextWitness internal constructor(
             // Pay model startup while the battle is underway, before the brief result.
             witnessScope.launch { reader.warmUp() }
             fun launchLane(lane: OutcomeReadLane, wake: Channel<Unit>) = witnessScope.launch {
-                val priority = if (lane == OutcomeReadLane.RECOVERY) OcrPriority.NORMAL else OcrPriority.URGENT
+                val priority = when (lane) {
+                    OutcomeReadLane.FLASH -> OcrPriority.RESULT_FLASH
+                    OutcomeReadLane.RECOVERY -> OcrPriority.NORMAL
+                    else -> OcrPriority.URGENT
+                }
                 for (signal in wake) {
                     fun hasPending() = when (lane) {
+                        OutcomeReadLane.FLASH -> flash.get() != null
                         OutcomeReadLane.RECENT -> pending.counts(now()).recent > 0
                         OutcomeReadLane.RECOVERY -> pending.counts(now()).recovery > 0
                         OutcomeReadLane.PROBE -> probePending.hasPending(now())
@@ -133,6 +163,7 @@ class PersistedOutcomeTextWitness internal constructor(
                                 // Selection and expiry happen after admission.
                                 // A newer blank cannot leap over a brief recent result.
                                 val article = when (lane) {
+                                    OutcomeReadLane.FLASH -> flash.getAndSet(null)?.let(pending::take)
                                     OutcomeReadLane.RECENT -> pending.pollRecent(admittedAt)
                                     OutcomeReadLane.RECOVERY -> pending.pollRecovery(admittedAt)
                                     OutcomeReadLane.PROBE -> probePending.select(admittedAt)
@@ -206,6 +237,7 @@ class PersistedOutcomeTextWitness internal constructor(
                     if (lane == OutcomeReadLane.RECENT && pending.counts(now()).recovery > 0) recoveryWake.trySend(Unit)
                 }
             }
+            launchLane(OutcomeReadLane.FLASH, flashWake)
             launchLane(OutcomeReadLane.RECENT, recentWake)
             launchLane(OutcomeReadLane.RECOVERY, recoveryWake)
             launchLane(OutcomeReadLane.PROBE, probeWake)
@@ -218,6 +250,7 @@ class PersistedOutcomeTextWitness internal constructor(
 /** Admission is separate from crop selection, so a waiting turn never fixes stale pixels. */
 internal interface OutcomeCropReader {
     suspend fun warmUp()
+    suspend fun hasProminentResultLine(article: RealityArticle): Boolean = false
     /** Scheduling hint only; weak/failed probes still retain an OCR fallback. */
     suspend fun inspect(article: RealityArticle): TransientTextProbe.Reading? = null
     suspend fun <T> withReadingTurn(priority: OcrPriority, block: suspend (OutcomeCropReadingTurn) -> T): T
@@ -231,9 +264,18 @@ internal interface OutcomeCropReadingTurn {
 
 internal class ArtifactOutcomeCropReader(private val artifactStore: FileCropArtifactStore) : OutcomeCropReader {
     override suspend fun warmUp() { OutcomeTextRecognizer.warmUp() }
+    override suspend fun hasProminentResultLine(article: RealityArticle): Boolean {
+        val reading = inspect(article) ?: return false
+        val line = reading.textBounds ?: return false
+        val crop = (article.payload as CropCaptured).cropProvenance.bounds
+        // Ranking only. The native OCR and result phrase witness still decide what the line says.
+        return reading.hasText && line.right - line.left >= (crop.right - crop.left) / 2 &&
+            line.bottom - line.top >= (crop.bottom - crop.top) / 5
+    }
+
     override suspend fun inspect(article: RealityArticle): TransientTextProbe.Reading? = withContext(Dispatchers.IO) {
         val crop = article.payload as CropCaptured
-        val bitmap = artifactStore.loadVerifiedOcrPng(crop.artifact, crop.cropProvenance) ?: return@withContext null
+        val bitmap = artifactStore.loadVerifiedOcrPng(crop) ?: return@withContext null
         try {
             val pixels = IntArray(bitmap.width * bitmap.height)
             bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
@@ -254,7 +296,7 @@ internal class ArtifactOutcomeCropReader(private val artifactStore: FileCropArti
             override val readCount: Int get() = nativeTurn.readCount
             override suspend fun recognize(article: RealityArticle): List<OcrTextEvidence> {
                 val crop = article.payload as CropCaptured
-                val bitmap = artifactStore.loadVerifiedOcrPng(crop.artifact, crop.cropProvenance) ?: return emptyList()
+                val bitmap = artifactStore.loadVerifiedOcrPng(crop) ?: return emptyList()
                 return try {
                     nativeTurn.recognizeCandidates(bitmap) { MatchOutcomeTextResolver.resolve(it) != null }
                 } finally { bitmap.recycle() }
@@ -263,7 +305,7 @@ internal class ArtifactOutcomeCropReader(private val artifactStore: FileCropArti
     }
 }
 
-private enum class OutcomeReadLane { RECENT, RECOVERY, PROBE }
+private enum class OutcomeReadLane { FLASH, RECENT, RECOVERY, PROBE }
 
 internal enum class MatchOutcomePhrase { WIN, LOSS }
 

@@ -40,6 +40,20 @@ class ReplayCountdownTest {
         }
     }
 
+    @Test fun `two distinct numerals alone reconstruct missing beats on capture time`() {
+        val three = glyph("three", "3", 10.0)
+        val one = glyph("one", "1", 12.4)
+        val countdown = requireNotNull(ReplayCountdown.from(listOf(one, three.copy(recordedAt = 40_000L))))
+        assertEquals(ns(13.0), countdown.goAtNanos)
+        assertEquals("2", countdown.frameAt(ns(11.2))!!.glyph)
+        assertTrue(countdown.frameAt(ns(13.0))!!.observedArticleIds.isEmpty())
+        assertEquals(setOf("one", "three"), countdown.evidenceArticleIds.toSet())
+        assertEquals(ReplayCountdownTiming.ESTIMATED_FROM_NUMERAL, countdown.timingBasis)
+        assertNull(ReplayCountdown.from(listOf(three, glyph("repeat", "3", 10.2))))
+        assertNull(ReplayCountdown.from(listOf(three, glyph("late", "1", 16.0))))
+        assertNull(ReplayCountdown.from(listOf(three, event("restart", ArchivedObservationRestartedByUser, 11.0), one)))
+    }
+
     @Test fun `recording first GO still has a complete reachable countdown`() {
         val model = MatchReplayModel(archive(glyph("go", "GO", 100.0)))
         assertEquals(ns(100.0), model.recordingStartNanos)

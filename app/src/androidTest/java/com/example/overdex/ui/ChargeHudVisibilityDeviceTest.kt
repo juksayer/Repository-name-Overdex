@@ -117,7 +117,7 @@ class ChargeHudVisibilityDeviceTest {
         val originalSprite = sprite.assertIsDisplayed().fetchSemanticsNode().boundsInRoot
         val originalMove = move.assertIsDisplayed().fetchSemanticsNode().boundsInRoot
         compose.onNodeWithTag("move-type:Liquidation", true).assertWidthIsEqualTo(15.dp)
-        compose.onNodeWithTag("move-hazard:Liquidation", true).assertWidthIsEqualTo(15.dp)
+        compose.onNodeWithTag("move-hazard:Liquidation", true).assertDoesNotExist()
         val custody = InMemoryTestimonyCustody()
         val match = Match("field-hud-test", custody = custody, realityTimeline = InMemoryRealityTimeline(),
             pokemonKnowledge = object : PokemonKnowledge {
@@ -132,7 +132,8 @@ class ChargeHudVisibilityDeviceTest {
         try {
             observer.start(match)
             cue(GetReadyWitnessed, "GET_READY_WITNESS")
-            compose.waitUntil(5_000) { hud.chargeTextProtected.value }
+            val visibleMove = compose.onAllNodesWithContentDescription("Liquidation, water type", useUnmergedTree = true)
+            compose.waitUntil(5_000) { hud.chargeTextProtected.value && visibleMove.fetchSemanticsNodes().isEmpty() }
             move.assertDoesNotExist()
             assertEquals(originalSprite, sprite.fetchSemanticsNode().boundsInRoot)
             cue(RawTestimony("GREAT\nLqutdation"), "QTE_PROGRESS_TEXT_WITNESS")
@@ -143,7 +144,7 @@ class ChargeHudVisibilityDeviceTest {
             move.assertDoesNotExist()
             cue(FastMoveUseObserved("ordinary-use", ActivePokemonSide.OPPONENT, ActivePokemonSide.PLAYER,
                 evidenceKinds = listOf("HP_DAMAGE_TICK")), "FAST_MOVE_USE_INFERENCE")
-            compose.waitUntil(5_000) { !hud.chargeTextProtected.value }
+            compose.waitUntil(5_000) { !hud.chargeTextProtected.value && visibleMove.fetchSemanticsNodes().size == 1 }
             assertEquals(originalSprite, sprite.fetchSemanticsNode().boundsInRoot)
             assertEquals(originalMove, move.assertIsDisplayed().fetchSemanticsNode().boundsInRoot)
         } finally {

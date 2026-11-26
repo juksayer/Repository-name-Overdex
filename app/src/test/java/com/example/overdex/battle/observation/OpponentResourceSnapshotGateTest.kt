@@ -37,12 +37,49 @@ class TeamResourceSnapshotGateTest {
         assertFalse(gate.isEnabled(opponentBalls))
     }
 
+    @Test fun `unsided entry checks opponent immediately and player only if unresolved or independently triggered`() {
+        fun exercise(opponentConfirmed: Boolean) {
+            val gate = gate()
+            gate.observe(article(MatchStarted, now))
+            resolveAll(gate)
+            now += SECOND
+            gate.observe(article(RawTestimony("Go, Vaporeon!"), now).copy(sourceId = SourceId("ANNOUNCEMENT_WITNESS")))
+            assertTrue(gate.isEnabled(opponentBalls))
+            assertFalse(gate.isEnabled(playerBalls))
+            now += SECOND
+            if (opponentConfirmed) gate.observe(article(ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT,
+                "Vaporeon", 134), now).copy(sourceId = SourceId("OPPONENT_SPECIES_OVERLAY_PIPELINE")))
+            now += 2 * SECOND
+            assertEquals(!opponentConfirmed, gate.isEnabled(playerBalls))
+            gate.requestDepartureCheck(ActivePokemonSide.PLAYER, now)
+            assertTrue(gate.acceptsFrame(playerBalls, now))
+        }
+        exercise(true)
+        exercise(false)
+    }
+
+    @Test fun `slow resource decoding admits a confirmation pair and releases on unreadable pixels`() {
+        val gate = gate()
+        gate.requestSnapshot()
+        gate.captured(opponentBalls, now)
+        val first = now
+        now += SECOND / 4
+        gate.captured(opponentBalls, now)
+        assertFalse(gate.acceptsFrame(opponentBalls, now))
+        gate.finishedRead(opponentBalls, first, false, null)
+        assertTrue(gate.acceptsFrame(opponentBalls, now))
+        gate.finishedRead(opponentBalls, now, true, now)
+        assertFalse(gate.isEnabled(opponentBalls))
+    }
+
     @Test fun `adjacent strip checks share a rate limit and stop at the last ball`() {
         val gate = gate()
         fun counted(n: Int) = gate.observe(article(OpponentBattleResourceCountMeasured(
             OpponentBattleResource.POKE_BALLS, n, 3), now))
         counted(2)
         now += SECOND
+        assertNull(gate.opponentBallBaseline(now))
+        gate.requestDepartureCheck(ActivePokemonSide.OPPONENT, now)
         assertEquals(2, gate.opponentBallBaseline(now))
         assertNull(gate.opponentBallBaseline(now))
         counted(0)
@@ -196,8 +233,8 @@ class TeamResourceSnapshotGateTest {
             resolveAll(gate)
             now += SECOND
             gate.observe(article(cue, now))
-            assertTrue(gate.isEnabled(playerShields))
-            assertTrue(gate.isEnabled(opponentShields))
+            assertEquals(cue != GetReadyWitnessed, gate.isEnabled(playerShields))
+            assertEquals(cue != AttackIncoming, gate.isEnabled(opponentShields))
             assertFalse(gate.isEnabled(playerBalls))
             assertFalse(gate.isEnabled(opponentBalls))
             now += 3 * SECOND
@@ -435,22 +472,22 @@ class TeamResourceSnapshotGateTest {
             now = cueAt + lag
             val receivedAt = now
             gate.observe(article(AttackIncoming, cueAt))
-            assertTrue("lag=$lag", gate.isEnabled(opponentShields))
+            assertTrue("lag=$lag", gate.isEnabled(playerShields))
             assertFalse(gate.isEnabled(opponentBalls))
-            assertFalse(gate.acceptsFrame(opponentShields, receivedAt - 1))
-            assertTrue(gate.acceptsFrame(opponentShields, receivedAt))
+            assertFalse(gate.acceptsFrame(playerShields, receivedAt - 1))
+            assertTrue(gate.acceptsFrame(playerShields, receivedAt))
             now += 200_000_000L
-            assertTrue(gate.acceptsFrame(opponentShields, now))
+            assertTrue(gate.acceptsFrame(playerShields, now))
             // A confirmation first citing an old queued candidate cannot close
             // the new assignment. Its next unchanged fresh count can do so.
-            gate.measured(opponentShields, receivedAt - 1)
-            assertTrue(gate.isEnabled(opponentShields))
-            gate.measured(opponentShields, now)
-            assertFalse(gate.isEnabled(opponentShields))
+            gate.measured(playerShields, receivedAt - 1)
+            assertTrue(gate.isEnabled(playerShields))
+            gate.measured(playerShields, now)
+            assertFalse(gate.isEnabled(playerShields))
             now = receivedAt + 3 * SECOND - 1
             gate.observe(article(AttackIncoming, cueAt))
-            assertTrue(gate.isEnabled(playerShields))
             assertFalse(gate.isEnabled(opponentShields))
+            assertFalse(gate.isEnabled(playerShields))
             now++
             assertFalse(gate.isEnabled(playerShields))
             gate.observe(article(AttackIncoming, cueAt))

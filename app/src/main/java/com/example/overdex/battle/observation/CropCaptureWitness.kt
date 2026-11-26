@@ -124,6 +124,7 @@ class CropCaptureWitness(
         val strip = resolve(balls, calibration, frame) ?: return
         try {
             val overlay = strip.provenance.overlayBounds(frame.overlayRegion)
+            match.processingDiagnostics?.recordBadgePixelRead("OpponentPokeBallsAdjacent")
             val count = OpponentBattleResourceCounter.pokeBallCount(strip.bitmap, overlay)
             if (count != null && count < before) capture(match, frame, balls, strip, false, null)
         } finally {

@@ -23,7 +23,7 @@ class PersistedOpponentBattleResourceWitness private constructor(
     private val resource: OpponentBattleResource,
     private val maximumCount: Int,
     private val playerShields: Boolean = false,
-    private val onCandidateRead: (Long) -> Unit = {},
+    private val onRead: (Long, Boolean, Long?) -> Unit = { _, _, _ -> },
     override val observerId: ObserverId,
     override val name: String
 ) : Observer {
@@ -39,16 +39,22 @@ class PersistedOpponentBattleResourceWitness private constructor(
                     confirmation.observeLifecycle(article)
                     val captured = article.payload as? CropCaptured ?: return@collect
                     if (captured.cropProvenance.cropName != cropName) return@collect
+                    val at = article.monotonicTimeNanos ?: return@collect
                     val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance)
-                        ?: return@collect
+                    if (bitmap == null) {
+                        onRead(at, false, null)
+                        return@collect
+                    }
+                    match.processingDiagnostics?.recordBadgePixelRead(captured.cropProvenance.cropName)
                     val count = try {
                         if (resource == OpponentBattleResource.POKE_BALLS) OpponentBattleResourceCounter.pokeBallCount(bitmap, captured.overlayBounds)
                         else OpponentBattleResourceCounter.shieldCount(bitmap, captured.overlayBounds)
                     } finally {
                         bitmap.recycle()
                     }
-                    if (count != null) article.monotonicTimeNanos?.let(onCandidateRead)
-                    val confirmed = confirmation.observe(article, count) ?: return@collect
+                    val confirmed = confirmation.observe(article, count)
+                    onRead(at, count != null, confirmed?.observed?.monotonicTimeNanos)
+                    if (confirmed == null) return@collect
                     // Repeated ball snapshots also prove that an intervening
                     // species change was a switch, rather than a faint.
                     // A fresh unchanged shield count completes a newly armed
@@ -74,9 +80,9 @@ class PersistedOpponentBattleResourceWitness private constructor(
     }
 
     companion object {
-        fun pokeBalls(artifactStore: FileCropArtifactStore, onCandidateRead: (Long) -> Unit = {}) = PersistedOpponentBattleResourceWitness(
+        fun pokeBalls(artifactStore: FileCropArtifactStore, onRead: (Long, Boolean, Long?) -> Unit = { _, _, _ -> }) = PersistedOpponentBattleResourceWitness(
             artifactStore = artifactStore,
-            onCandidateRead = onCandidateRead,
+            onRead = onRead,
             cropName = BattleCropContracts.opponentPokeBalls.cropName,
             resource = OpponentBattleResource.POKE_BALLS,
             maximumCount = 3,
@@ -84,9 +90,9 @@ class PersistedOpponentBattleResourceWitness private constructor(
             name = "Opponent Poké Balls"
         )
 
-        fun playerShields(artifactStore: FileCropArtifactStore, onCandidateRead: (Long) -> Unit = {}) = PersistedOpponentBattleResourceWitness(
+        fun playerShields(artifactStore: FileCropArtifactStore, onRead: (Long, Boolean, Long?) -> Unit = { _, _, _ -> }) = PersistedOpponentBattleResourceWitness(
             artifactStore = artifactStore,
-            onCandidateRead = onCandidateRead,
+            onRead = onRead,
             cropName = BattleCropContracts.playerShields.cropName,
             resource = OpponentBattleResource.SHIELDS,
             maximumCount = 2,
@@ -95,9 +101,9 @@ class PersistedOpponentBattleResourceWitness private constructor(
             name = "Player Shields"
         )
 
-        fun shields(artifactStore: FileCropArtifactStore, onCandidateRead: (Long) -> Unit = {}) = PersistedOpponentBattleResourceWitness(
+        fun shields(artifactStore: FileCropArtifactStore, onRead: (Long, Boolean, Long?) -> Unit = { _, _, _ -> }) = PersistedOpponentBattleResourceWitness(
             artifactStore = artifactStore,
-            onCandidateRead = onCandidateRead,
+            onRead = onRead,
             cropName = BattleCropContracts.opponentShields.cropName,
             resource = OpponentBattleResource.SHIELDS,
             maximumCount = 2,
@@ -115,7 +121,7 @@ class PersistedPlayerPokeBallWitness(
         ObservationSource.SCREEN_CAPTURE
     ),
     override val name: String = "Player Poké Balls",
-    private val onCandidateRead: (Long) -> Unit = {},
+    private val onRead: (Long, Boolean, Long?) -> Unit = { _, _, _ -> },
 ) : Observer {
     private var scope: CoroutineScope? = null
 
@@ -129,15 +135,21 @@ class PersistedPlayerPokeBallWitness(
                     confirmation.observeLifecycle(article)
                     val captured = article.payload as? CropCaptured ?: return@collect
                     if (captured.cropProvenance.cropName != BattleCropContracts.playerPokeBalls.cropName) return@collect
+                    val at = article.monotonicTimeNanos ?: return@collect
                     val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance)
-                        ?: return@collect
+                    if (bitmap == null) {
+                        onRead(at, false, null)
+                        return@collect
+                    }
+                    match.processingDiagnostics?.recordBadgePixelRead(captured.cropProvenance.cropName)
                     val count = try {
                         OpponentBattleResourceCounter.pokeBallCount(bitmap, captured.overlayBounds)
                     } finally {
                         bitmap.recycle()
                     }
-                    if (count != null) article.monotonicTimeNanos?.let(onCandidateRead)
-                    val confirmed = confirmation.observe(article, count) ?: return@collect
+                    val confirmed = confirmation.observe(article, count)
+                    onRead(at, count != null, confirmed?.observed?.monotonicTimeNanos)
+                    if (confirmed == null) return@collect
                     val observed = confirmed.observed
                     match.custody.submitTestimony(
                         sourceId = sourceId,

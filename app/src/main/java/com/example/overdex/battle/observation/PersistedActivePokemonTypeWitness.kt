@@ -38,6 +38,7 @@ class PersistedActivePokemonTypeWitness(
                     val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance) ?: return@collect
                     try {
                         if (!needsReading(capturedAt)) return@collect
+                        match.processingDiagnostics?.recordReaderWork("type.${side.name}.pixelRead")
                         val matches = runCatching { PokemonGoTypeIconMatcher.matchCrop(bitmap) }
                             .getOrElse { error ->
                                 // One malformed or undersized artifact means this

@@ -113,8 +113,9 @@ object DroidballOverlayPresentation {
 
     /** Capture-only presence, never a species/count witness or a Timeline event. */
     fun recordBattleBadgePresent() {
+        preBattleMenuSuppressed = true
         _battleBadgeSeen.value = true
-        if (preBattleMenuSuppressed && !userHidPendingHud && _mode.value == DroidballOverlayMode.BATTLE_HUD) {
+        if (!userHidPendingHud && _mode.value == DroidballOverlayMode.BATTLE_HUD) {
             _expanded.value = _panelAllowed.value
         }
     }
@@ -139,7 +140,11 @@ object DroidballOverlayPresentation {
     val panelAllowed = _panelAllowed.asStateFlow()
     // A setup menu must not stay over entry announcements or 3/2/1 while the
     // compact battle layout is still waiting for its native badge anchor.
-    @Volatile private var preBattleMenuSuppressed = false
+    private val setupSuppressed = MutableStateFlow(false)
+    internal val setupHidden = setupSuppressed.asStateFlow()
+    private var preBattleMenuSuppressed: Boolean
+        get() = setupSuppressed.value
+        set(value) { setupSuppressed.value = value }
     @Volatile private var userHidPendingHud = false
     private var lastAutomaticallyOpenedMatchId: String? = null
     @Volatile private var matchStartRequestedHud = false
@@ -177,6 +182,7 @@ object DroidballOverlayPresentation {
     private var activePlayerTypes: List<PokemonType> = emptyList()
     private var activeOpponentFastMoves: List<Pair<String, PokemonType>> = emptyList()
     private var activeOpponentChargedMoves: List<Pair<String, PokemonType>> = emptyList()
+    private var activeOpponentObservedAt = Long.MIN_VALUE
     private var activeOpponentSpeciesName: String? = null
     private var activeMoveEnergy: Map<String, Int> = emptyMap()
     private val confirmedFastMovesBySpecies = mutableMapOf<String, String>()
@@ -189,6 +195,7 @@ object DroidballOverlayPresentation {
         if (phase == DroidballSessionPhase.RESULT || phase == DroidballSessionPhase.ENDED) {
             _chargeTextProtected.value = false
         }
+        val enteringResult = phase == DroidballSessionPhase.RESULT && _mode.value != DroidballOverlayMode.RESULT
         _teamEditingAllowed.value = phase !in setOf(DroidballSessionPhase.BATTLE_ACTIVE, DroidballSessionPhase.RESULT, DroidballSessionPhase.ENDED)
         // Session state is delivered asynchronously. A prebattle emission can
         // arrive after VS/countdown has requested the HUD layout; it must not
@@ -210,8 +217,11 @@ object DroidballOverlayPresentation {
         if (phase == DroidballSessionPhase.COUNTDOWN || phase == DroidballSessionPhase.BATTLE_ACTIVE) {
             if (!_battleBadgeSeen.value) dismissTeamSelectForBattle()
             _expanded.value = _panelAllowed.value && (_battleBadgeSeen.value || matchStartRequestedHud) && !userHidPendingHud
-        } else if (phase == DroidballSessionPhase.RESULT) {
-            _expanded.value = _panelAllowed.value && !userHidPendingHud
+        } else if (enteringResult) {
+            preBattleMenuSuppressed = true
+            userHidPendingHud = false
+            _panelAllowed.value = true
+            _expanded.value = true
         }
     }
 
@@ -238,6 +248,7 @@ object DroidballOverlayPresentation {
     }
 
     fun showAcceptedTeamSelect() {
+        if (_mode.value == DroidballOverlayMode.RESULT) return
         // A delayed prebattle read may still contribute roster evidence, but
         // it cannot replace a started Match's display or undo a later Hide.
         if (matchStartRequestedHud) return
@@ -262,8 +273,8 @@ object DroidballOverlayPresentation {
 
     /** Collapse setup from fresh surface departure, without testifying that GO occurred. */
     fun dismissTeamSelectForBattle() {
-        if (_battleBadgeSeen.value || matchStartRequestedHud || _mode.value == DroidballOverlayMode.RESULT) return
         preBattleMenuSuppressed = true
+        if (_battleBadgeSeen.value || matchStartRequestedHud || _mode.value == DroidballOverlayMode.RESULT) return
         _expanded.value = false
     }
 
@@ -274,6 +285,7 @@ object DroidballOverlayPresentation {
      */
     fun showStartedMatch(matchId: String): Boolean {
         if (matchId == lastAutomaticallyOpenedMatchId) return false
+        preBattleMenuSuppressed = true
         lastAutomaticallyOpenedMatchId = matchId
         matchStartRequestedHud = true
         _panelAllowed.value = true
@@ -285,13 +297,12 @@ object DroidballOverlayPresentation {
 
     /** Other battle evidence selects its layout without authorizing a new display. */
     fun showBattleHud(userRequested: Boolean = false) {
+        if (_mode.value == DroidballOverlayMode.RESULT) return
         if (userRequested) {
             _panelAllowed.value = true
             userHidPendingHud = false
         }
-        if (_mode.value != DroidballOverlayMode.RESULT) {
-            _mode.value = DroidballOverlayMode.BATTLE_HUD
-        }
+        _mode.value = DroidballOverlayMode.BATTLE_HUD
         if (!userRequested && !_battleBadgeSeen.value) dismissTeamSelectForBattle()
         _expanded.value = _panelAllowed.value &&
             (userRequested || ((_battleBadgeSeen.value || matchStartRequestedHud) && !userHidPendingHud))
@@ -309,6 +320,7 @@ object DroidballOverlayPresentation {
         activePlayerTypes = emptyList()
         activeOpponentFastMoves = emptyList()
         activeOpponentChargedMoves = emptyList()
+        activeOpponentObservedAt = Long.MIN_VALUE
         activeOpponentSpeciesName = null
         confirmedFastMovesBySpecies.clear()
         opponentFastMoveCandidateNames = null
@@ -353,6 +365,12 @@ object DroidballOverlayPresentation {
         observedAtNanos: Long? = null,
         moveEnergy: Map<String, Int> = emptyMap(),
     ) {
+        // An older badge can finish OCR after the replacement already has a confirmed move.
+        // Its original article stays in custody; only the current HUD selection has a time floor.
+        if (observedAtNanos != null) {
+            if (observedAtNanos < activeOpponentObservedAt) return
+            activeOpponentObservedAt = observedAtNanos
+        }
         val existing = _opponentSpecies.value.firstOrNull {
             it.speciesName.equals(speciesName, ignoreCase = true)
         }

@@ -37,6 +37,18 @@ internal object MatchProcessingDiagnosticExport {
                 })
             }
             put("acceptedTestimony", match.custody.getRecords().count { it is TestimonyRecord })
+            put("readerWork", buildJsonObject { snapshot.readerWork.forEach { (name, count) -> put(name, count) } })
+            put("recentGradeIntervals", buildJsonArray {
+                for (span in snapshot.recentGradeIntervals) add(buildJsonObject {
+                    put("decision", span.decision)
+                    put("firstCropId", span.firstId)
+                    put("lastCropId", span.lastId)
+                    put("firstSourceNanos", span.firstSourceNanos)
+                    put("lastSourceNanos", span.lastSourceNanos)
+                    put("samples", span.samples)
+                })
+            })
+            put("badgePixelReads", buildJsonObject { snapshot.badgePixelReads.forEach { (crop, count) -> put(crop, count) } })
             put("completedTestimony", snapshot.completed)
             put("lastCompletedSequence", snapshot.lastCompletedSequence)
             put("activeSequence", snapshot.activeSequence)

@@ -156,7 +156,7 @@ class PersistedSpeciesWitness(
         heightProfile: OcrHeightProfile,
     ): SpeciesRecognition? {
         val captured = article.payload as? CropCaptured ?: return null
-        val bitmap = artifactStore.loadVerifiedOcrPng(captured.artifact, captured.cropProvenance) ?: run {
+        val bitmap = artifactStore.loadVerifiedOcrPng(captured) ?: run {
             Log.w("ACTIVE_SPECIES", "missing verified artifact side=$side crop=${captured.cropProvenance.cropName}")
             return null
         }

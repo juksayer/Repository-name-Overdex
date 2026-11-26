@@ -126,7 +126,7 @@ data class CropCaptured(
     val artifact: CropArtifactReference,
     val cropProvenance: BattleCropProvenance,
     /** Capture-time HUD bounds in crop pixels; null when absent or unavailable in legacy records. */
-    val overlayBounds: com.example.overdex.model.observation.OcrBox? = null,
+    val overlayBounds: com.example.overdex.model.observation.OcrBox? = cropProvenance.hudBounds,
     /** Same-side native team badge measured beside an active name, null when unmeasured. */
     val nativeTeamBadgePresent: Boolean? = null,
 ) : TestimonyPayload

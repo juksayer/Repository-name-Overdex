@@ -92,6 +92,27 @@ class ChargeTextProtectionWindowTest {
         assertFalse(window.isProtected(13 * SECOND))
     }
 
+    @Test fun `an observed GO leaves the move list alone until a later charge`() {
+        val window = ChargeTextProtectionWindow()
+        window.observe(article(CountdownGlyphWitnessed("GO", .99f, 1), 10), 10 * SECOND)
+        window.observe(article(MatchStarted, 10), 10 * SECOND)
+        assertFalse(window.isProtected(13 * SECOND))
+        window.observe(article(GetReadyWitnessed, 17), 17 * SECOND)
+        assertTrue(window.isProtected(17 * SECOND))
+        window.observe(article(fast, 28), 28 * SECOND)
+        assertFalse(window.isProtected(28 * SECOND))
+    }
+
+    @Test fun `late observation beginning during QTE preserves its opening cue in either delivery order`() {
+        for (order in listOf(listOf(MatchStarted, GetReadyWitnessed), listOf(GetReadyWitnessed, MatchStarted))) {
+            val window = ChargeTextProtectionWindow()
+            order.forEach { window.observe(article(it, 10), 11 * SECOND) }
+            assertTrue(window.isProtected(11 * SECOND))
+            window.observe(article(fast, 20), 20 * SECOND)
+            assertFalse(window.isProtected(20 * SECOND))
+        }
+    }
+
     @Test fun `new charge can protect text after a completed earlier match`() {
         val window = ChargeTextProtectionWindow()
         window.observe(article(MatchEnded(BattleResult.WIN), 12), 12 * SECOND)

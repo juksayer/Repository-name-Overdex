@@ -226,8 +226,12 @@ class FileCropArtifactStore(private val repositoryRoot: File) : CropArtifactStor
         }
     }
 
+    internal fun loadVerifiedOcrPng(crop: com.example.overdex.battle.custody.CropCaptured): Bitmap? =
+        loadVerifiedPng(crop.artifact, crop.cropProvenance)?.ownedOcrPixels(
+            crop.cropProvenance.statusBarRows, crop.overlayBounds ?: crop.cropProvenance.hudBounds)
+
     internal fun loadVerifiedOcrPng(reference: CropArtifactReference, provenance: BattleCropProvenance): Bitmap? =
-        loadVerifiedPng(reference, provenance)?.ownedOcrPixels(provenance.statusBarRows)
+        loadVerifiedPng(reference, provenance)?.ownedOcrPixels(provenance.statusBarRows, provenance.hudBounds)
 
     fun loadVerifiedPng(reference: CropArtifactReference): Bitmap? {
         if (!isSupportedVisualReference(reference)) return null

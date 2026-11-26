@@ -1,7 +1,9 @@
 package com.example.overdex.battle.observation
 
 import com.example.overdex.battle.custody.ActivePokemonSide
+import com.example.overdex.battle.custody.PlayerTeamSlotConfigured
 import com.example.overdex.battle.custody.SpeciesCheckMeasured
+import com.example.overdex.battle.reality.RealityArticle
 
 /** Monotonic species checks with a measured latency target. Capture workers and OCR share this per-match state. */
 class SpeciesCheckCoordinator(
@@ -30,6 +32,13 @@ class SpeciesCheckCoordinator(
     private val states = ActivePokemonSide.entries.associateWith { State() }
     private var serial = 0L
     private var stopped = false
+    private var playerBadge = PlayerBadgeReadPolicy()
+
+    @Synchronized internal fun observePlayerBadgeCue(article: RealityArticle, selectedLead: PlayerTeamSlotConfigured? = null) {
+        playerBadge.observe(article, selectedLead)
+    }
+
+    private fun resting(side: ActivePokemonSide) = side == ActivePokemonSide.PLAYER && playerBadge.resting(now())
 
     @Synchronized fun needsNativeBadge(side: ActivePokemonSide) = states.getValue(side).verifySince != null
 
@@ -40,6 +49,7 @@ class SpeciesCheckCoordinator(
         if (stopped || at < 0L) return
         val state = states.getValue(side)
         if ((state.acceptedBadge?.takeIf { it.nativeBadge }?.capturedAt ?: Long.MIN_VALUE) >= at) return
+        if (side == ActivePokemonSide.PLAYER) playerBadge.changed(at)
         if (state.verifySince != null) {
             state.verifySince = maxOf(state.verifySince!!, at)
             return
@@ -52,7 +62,11 @@ class SpeciesCheckCoordinator(
     @Synchronized fun request(side: ActivePokemonSide, reason: String, triggerId: String?, triggerAt: Long = now()) {
         if (stopped) return
         val state = states.getValue(side)
-        if (reason == "RECOVERY" && state.identityResolved) return
+        if (side == ActivePokemonSide.PLAYER && reason in PLAYER_IDENTITY_CHANGE_REASONS) {
+            playerBadge.changed(triggerAt)
+        }
+        if (resting(side)) return
+        if (reason == "RECOVERY" && state.identityResolved && !(side == ActivePokemonSide.PLAYER && playerBadge.requiresRecheck())) return
         if (reason == "ENTRY" && !triggerId.isNullOrBlank() && triggerAt >= 0L) {
             val badge = state.acceptedBadge?.takeIf { triggerAt < it.capturedAt && it.capturedAt <= now() }
             if (badge != null) {
@@ -91,15 +105,16 @@ class SpeciesCheckCoordinator(
     }
 
     @Synchronized fun captureEnabled(side: ActivePokemonSide): Boolean {
-        if (stopped) return false
+        if (stopped || resting(side)) return false
         val state = states.getValue(side)
         reportMissedTarget(side, state)
         // Unknown appearances retain recovery. A confirmed appearance rests until a real cue.
-        if (!state.identityResolved && state.window == null && now() >= state.nextRecoveryAt) request(side, "RECOVERY", null)
+        if ((!state.identityResolved || side == ActivePokemonSide.PLAYER && playerBadge.requiresRecheck()) && state.window == null && now() >= state.nextRecoveryAt) request(side, "RECOVERY", null)
         return state.window != null
     }
 
     @Synchronized fun windowFor(side: ActivePokemonSide, capturedAt: Long): Window? {
+        if (resting(side)) return null
         val state = states.getValue(side)
         reportMissedTarget(side, state)
         return state.window?.takeIf { capturedAt >= it.openedAt }
@@ -139,6 +154,7 @@ class SpeciesCheckCoordinator(
         cropId: String,
         capturedAtMonotonicTimeNanos: Long? = null,
         nativeBadge: Boolean = false,
+        trustedPlayerName: Boolean = true,
     ): List<String>? {
         if (stopped) return null
         val state = states.getValue(side)
@@ -160,6 +176,8 @@ class SpeciesCheckCoordinator(
         // Its historical acceptance must not retire that unresolved appearance's recovery.
         if (state.window == null) {
             state.identityResolved = true
+            if (side == ActivePokemonSide.PLAYER && nativeBadge && trustedPlayerName && capturedAtMonotonicTimeNanos != null)
+                playerBadge.badge(species, capturedAt)
             if (since != null) state.verifiedAt = capturedAt
             state.verifySince = null
         }
@@ -196,7 +214,7 @@ class SpeciesCheckCoordinator(
 
     /** Skip leftover crops from a confirmed/superseded check before native OCR starts. */
     @Synchronized fun needsReading(side: ActivePokemonSide, windowId: Long, capturedAt: Long): Boolean {
-        if (stopped) return false
+        if (stopped || resting(side)) return false
         val state = states.getValue(side)
         val window = state.recentWindows[windowId] ?: return false
         return window.openedAt > state.latestAcceptedWindowOpenedAt &&
@@ -214,6 +232,7 @@ class SpeciesCheckCoordinator(
      */
     @Synchronized fun restartObservationAttempt() {
         if (stopped) return
+        playerBadge = PlayerBadgeReadPolicy()
         states.forEach { (side, state) ->
             state.window?.let { emit(side, it, "RESTARTED", state.candidate, listOfNotNull(it.triggerId) + state.reads) }
             state.window = null
@@ -269,6 +288,7 @@ class SpeciesCheckCoordinator(
         const val RECOVERY_INTERVAL_NANOS = 5_000_000_000L
         const val MAX_RETAINED_WINDOWS = 8
         internal val VERIFICATION_REASONS = setOf("BALL_DECREASE", "DEPARTURE", "HP_CONTRADICTION")
+        private val PLAYER_IDENTITY_CHANGE_REASONS = VERIFICATION_REASONS + setOf("SWITCH", "FAINT")
         private val LIFECYCLE_REASONS = VERIFICATION_REASONS + setOf("ENTRY", "SWITCH", "FAINT", "CRY", "MATCH_START", "CHARGE", "QTE")
         private val BATTLE_CUE_REASONS = LIFECYCLE_REASONS + setOf("VS", "COUNTDOWN")
     }

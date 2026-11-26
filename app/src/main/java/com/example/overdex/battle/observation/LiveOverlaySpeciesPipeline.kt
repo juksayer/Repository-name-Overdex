@@ -289,7 +289,7 @@ internal class LiveOverlaySpeciesPipeline(
                                 !match.speciesChecks.needsReading(side, sample.speciesCheckWindowId,
                                     sample.capturedAtMonotonicTimeNanos)) return@withReadingTurn null
                             val context = OcrSourceContext(sample.crop.cropProvenance.sourceWidth, sample.crop.overlayBounds)
-                            sample.bitmap.withOcrPixels(sample.crop.cropProvenance.statusBarRows) { pixels ->
+                            sample.bitmap.withOcrPixels(sample.crop.cropProvenance.statusBarRows, sample.crop.overlayBounds) { pixels ->
                                 recognizeCandidates(pixels, context, heightProfile) { rawText ->
                                     readingResolver.resolve(rawText) != null
                                 }
@@ -360,6 +360,8 @@ internal class LiveOverlaySpeciesPipeline(
                     }
                     if (resolvedReading == null) continue
                     val (reading, resolution) = resolvedReading
+                    val trustedPlayerName = resolution.basis.startsWith("EXACT_CATALOGUE_TEXT") ||
+                        resolution.basis == "CONFIRMED_CARD_NICKNAME"
                     reading.evidence?.let { evidence ->
                         heightProfile.learn(evidence, sourceContext,
                             knownNames.any { it.equals(reading.text.trim(), ignoreCase = true) })
@@ -375,6 +377,7 @@ internal class LiveOverlaySpeciesPipeline(
                             cropId = sample.cropEvidenceId,
                             capturedAtMonotonicTimeNanos = sample.capturedAtMonotonicTimeNanos,
                             nativeBadge = sample.crop.nativeTeamBadgePresent == true,
+                            trustedPlayerName = trustedPlayerName,
                         )
                         continue
                     }
@@ -386,6 +389,7 @@ internal class LiveOverlaySpeciesPipeline(
                         cropId = sample.cropEvidenceId,
                         capturedAtMonotonicTimeNanos = sample.capturedAtMonotonicTimeNanos,
                         nativeBadge = sample.crop.nativeTeamBadgePresent == true,
+                        trustedPlayerName = trustedPlayerName,
                     ) ?: continue
                     lastSubmittedSpecies = species.name
                     match.custody.submitTestimony(

@@ -3,6 +3,9 @@ package com.example.overdex.battle.observation
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.InMemoryTestimonyCustody
+import com.example.overdex.battle.custody.MatchEnded
+import com.example.overdex.battle.custody.OutOfBattleMenuWitnessed
+import com.example.overdex.model.BattleResult
 import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.custody.TeamSelectPartyWitnessed
@@ -102,6 +105,25 @@ class DroidballSessionVsCaptureTest {
         session.end()
         assertFalse(session.vsScreenWitnessingActive())
     }
+
+    @Test fun `recording the lobby after a win keeps the result menu available`() =
+        withSession { session, custody, timeline ->
+            session.armCountdown()
+            custody.submitTestimony(SourceId("RESULT_TEST"), MatchEnded(BattleResult.WIN), 1_000L, null, emptyList(), System.nanoTime())
+            withTimeout(4_000L) { while (!session.hasCompletedMatch) delay(10) }
+            custody.submitTestimony(SourceId("MENU_TEST"), OutOfBattleMenuWitnessed, 2_000L, null, emptyList(), System.nanoTime())
+            session.match.awaitAcceptedEvidencePublished()
+            assertTrue(timeline.getArticles().any { it.payload == OutOfBattleMenuWitnessed })
+            withTimeout(4_000L) { while (session.phase.value != DroidballSessionPhase.NAVIGATION_IDLE) delay(10) }
+            assertTrue(session.awaitingNextMatch)
+            try {
+                presentDroidballSessionPhase(session, session, session.phase.value, true, false)
+                assertEquals(DroidballOverlayMode.RESULT, DroidballOverlayPresentation.mode.value)
+                assertTrue(DroidballOverlayPresentation.expanded.value)
+            } finally {
+                DroidballOverlayPresentation.reset()
+            }
+        }
 
     private fun assertCaptureRetires(payload: TestimonyPayload) = withSession { session, custody, timeline ->
         session.armCountdown()

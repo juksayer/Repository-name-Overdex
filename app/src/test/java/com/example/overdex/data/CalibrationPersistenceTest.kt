@@ -64,6 +64,18 @@ class CalibrationPersistenceTest {
         assertEquals(original, CalibrationManager(context).load())
     }
 
+    @Test fun `resized HUD round trips as display geometry in preferences and the active profile`() {
+        val context = TestContext(temporary.newFolder())
+        val manager = CalibrationManager(context)
+        val original = manager.load()
+        val changed = original.copy(battleHudRegion = AnchorRegion(.68f, .37f, .30f, .14f))
+        assertTrue(manager.save(changed))
+        assertEquals(changed, manager.load())
+        saveProfile(context, original)
+        assertTrue(manager.save(changed))
+        assertEquals(changed, MatchCalibrationProfileStore(context).activeProfile()!!.battleCalibration)
+    }
+
     @Test fun `older profiles receive only new territory defaults without rewriting the saved file`() {
         val context = TestContext(temporary.newFolder())
         val original = BattleCalibration(opponentTrainerHandRegion = strip(925f, 745f, 95f, 155f))
@@ -75,7 +87,7 @@ class CalibrationPersistenceTest {
         val regions = json["battleRegions"] as kotlinx.serialization.json.JsonObject
         val checkpoint = json["workingCheckpoint"] as kotlinx.serialization.json.JsonObject
         val checkpointRegions = checkpoint["battleRegions"] as kotlinx.serialization.json.JsonObject
-        val newKeys = setOf("forced_replacement_message", "player_terminal_visual", "opponent_terminal_visual",
+        val newKeys = setOf("battle_hud", "forced_replacement_message", "player_terminal_visual", "opponent_terminal_visual",
             "player_appearance", "appearance_color_reference", "appearance_background", "rocket_victory_summary")
         file.writeText(kotlinx.serialization.json.JsonObject(json + mapOf(
             "battleRegions" to kotlinx.serialization.json.JsonObject(regions - newKeys),

@@ -37,6 +37,8 @@ class DroidballSession(val match: Match) {
     private val _firstLiveCombatArticle = MutableStateFlow<RealityArticle?>(null)
     /** The first preserved in-battle HUD evidence. Countdown can still follow it. */
     val firstLiveCombatArticle = _firstLiveCombatArticle.asStateFlow()
+    val awaitingNextMatch: Boolean get() = hasCompletedMatch &&
+        (_phase.value == DroidballSessionPhase.RESULT || _phase.value == DroidballSessionPhase.NAVIGATION_IDLE)
     val canEditTeam: Boolean get() = !hasCompletedMatch && match.matchStarted.replayCache.isEmpty() &&
         _phase.value !in setOf(DroidballSessionPhase.BATTLE_ACTIVE, DroidballSessionPhase.RESULT, DroidballSessionPhase.ENDED)
     /** A manually armed HUD must not stop the scanner while still in the menus. */

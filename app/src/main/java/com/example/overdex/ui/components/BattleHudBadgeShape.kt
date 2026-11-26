@@ -32,6 +32,8 @@ internal object BattleHudBadgeStyle {
     // Approximately 17 capture pixels at 672/1080 scale in the retained GO badge.
     // Scale with badge width, not Android font or density settings.
     fun cornerPx(width: Float): Float = width * 27f / 415f
+    fun rosterPadding(widthPx: Float, density: Float) =
+        (cornerPx(widthPx) + centerDipPx(widthPx)) to density
     fun centerDipPx(width: Float): Float = width * 1.5f / 415f
 }
 

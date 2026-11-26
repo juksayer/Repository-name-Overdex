@@ -30,12 +30,14 @@ internal class LiveAnnouncementPreview(
         at?.let { synchronized(readings) { readings[it to provenance] } }
 }
 
-internal fun readTransientTextPixels(bitmap: Bitmap, overlay: OcrBox?): TransientTextProbe.Reading {
+internal fun readTransientTextPixels(bitmap: Bitmap, overlay: OcrBox?, grade: Boolean = false): TransientTextProbe.Reading {
     val pixels = IntArray(bitmap.width * bitmap.height)
     bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
     val excluded = overlay?.let {
         TransientTextProbe.PixelBounds(floor(it.left).toInt(), floor(it.top).toInt(),
             ceil(it.right).toInt(), ceil(it.bottom).toInt())
     }
-    return TransientTextProbe.analyze(pixels, bitmap.width, bitmap.height, listOfNotNull(excluded))
+    val exclusions = listOfNotNull(excluded)
+    val reading = TransientTextProbe.analyze(pixels, bitmap.width, bitmap.height, exclusions)
+    return if (grade) gradeTextProbe(pixels, bitmap.width, bitmap.height, exclusions, reading) else reading
 }

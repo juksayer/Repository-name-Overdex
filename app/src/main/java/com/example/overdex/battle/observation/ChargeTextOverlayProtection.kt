@@ -72,10 +72,13 @@ internal class ChargeTextProtectionWindow(private var boundaryNanos: Long = Long
             article.payload is ObservationSessionStoppedByUser || article.payload is ObservationRestartedByUser ||
             article.payload is ScreenIgnoredByUser ||
             article.payload is MatchStarted || article.payload is TeamSelectPartyWitnessed) {
-            if (at >= latestPhaseNanos) {
-                closePhase(at)
-                bannerBoundaryNanos = at
-                if (bannerUntil <= at + BANNER_TAIL) bannerUntil = Long.MIN_VALUE
+            // The first charged-move cue can establish Match Start at its own capture time.
+            // Clear only earlier frames at start, regardless of which article arrives first.
+            val lastClosed = if (article.payload is MatchStarted) at - 1 else at
+            if (lastClosed >= boundaryNanos && lastClosed >= latestPhaseNanos) {
+                closePhase(lastClosed)
+                bannerBoundaryNanos = maxOf(bannerBoundaryNanos, lastClosed)
+                if (bannerUntil <= lastClosed + BANNER_TAIL) bannerUntil = Long.MIN_VALUE
             }
         }
     }

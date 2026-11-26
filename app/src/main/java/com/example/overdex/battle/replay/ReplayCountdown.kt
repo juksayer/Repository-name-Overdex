@@ -37,9 +37,12 @@ data class ReplayCountdown(
             val timed = articles.filter { it.monotonicTimeNanos != null }.sortedBy { it.monotonicTimeNanos }
             val confirmedStart = timed.firstOrNull { it.payload is ArchivedMatchStarted }
             val sourceIsFirstWitness = confirmedStart?.sourceId == com.example.overdex.battle.inference.BattleStartEvidence.SOURCE
+            // Two distinct numerals can date the missing beats even if combat was never captured.
+            // A frame can arrive anywhere within its glyph's one-second display interval.
             val confirmation = confirmedStart?.takeUnless { sourceIsFirstWitness }
                 ?: timed.firstOrNull { (it.payload as? ArchivedCountdownGlyphWitnessed)?.glyph == "GO" }
                 ?: timed.firstOrNull { confirmsCombat(it.payload) }
+                ?: consistentNumeralPair(timed.takeLastWhile { !endsAttempt(it.payload) })?.second
                 ?: confirmedStart?.let { start -> timed.firstOrNull { row -> row.articleId in start.predecessorIds &&
                     row.payload is ArchivedCountdownGlyphWitnessed } }?.takeUnless { cue -> timed.any {
                     it.payload == ArchivedObservationSessionStoppedByUser && it.monotonicTimeNanos!! > cue.monotonicTimeNanos!!
@@ -51,7 +54,8 @@ data class ReplayCountdown(
                 it.monotonicTimeNanos!! <= confirmedAt &&
                     (it.payload is ArchivedObservationRestartedByUser || it.payload is ArchivedScreenIgnoredByUser)
             }?.monotonicTimeNanos ?: Long.MIN_VALUE
-            val attempt = timed.filter { it.monotonicTimeNanos!! >= attemptStart }
+            val attempt = timed.dropWhile { it.monotonicTimeNanos!! < attemptStart }
+                .takeWhile { it.monotonicTimeNanos!! <= confirmedAt || !endsAttempt(it.payload) }
             val recordedStart = attempt.firstOrNull { it.payload is ArchivedMatchStarted &&
                 it.sourceId != com.example.overdex.battle.inference.BattleStartEvidence.SOURCE }
             // Starting observation on a combat event or numeral does not date the GO glyph.
@@ -69,6 +73,7 @@ data class ReplayCountdown(
                 .filter { (it.payload as ArchivedCountdownGlyphWitnessed).glyph != "GO" }
                 .distinctBy { (it.payload as ArchivedCountdownGlyphWitnessed).glyph }
                 .minByOrNull { (it.payload as ArchivedCountdownGlyphWitnessed).glyph.toInt() }
+            val pair = consistentNumeralPair(glyphArticles)
             val timer = attempt.firstOrNull {
                 it.payload is ArchivedSupportingMatchStart && it.monotonicTimeNanos!! <= confirmedAt
             }
@@ -81,6 +86,7 @@ data class ReplayCountdown(
             val goAt = when {
                 recordedStart != null -> recordedStart.monotonicTimeNanos!!
                 observedGo != null -> observedGo.monotonicTimeNanos!!
+                pair != null -> minOf(latestGoFromNumeral(pair.first), latestGoFromNumeral(pair.second))
                 numeral != null -> numeral.monotonicTimeNanos!! +
                     (numeral.payload as ArchivedCountdownGlyphWitnessed).glyph.toLong() * BEAT_NANOS
                 timer != null -> timer.monotonicTimeNanos!!
@@ -110,6 +116,29 @@ data class ReplayCountdown(
                     )
                 },
             )
+        }
+
+        private fun endsAttempt(payload: ArchivedTestimonyPayload) = payload is ArchivedObservationSessionStoppedByUser ||
+            payload is ArchivedObservationRestartedByUser || payload is ArchivedScreenIgnoredByUser
+
+        private fun latestGoFromNumeral(article: ArchivedRealityArticle): Long =
+            article.monotonicTimeNanos!! + (article.payload as ArchivedCountdownGlyphWitnessed).glyph.toLong() * BEAT_NANOS
+
+        private fun consistentNumeralPair(rows: List<ArchivedRealityArticle>): Pair<ArchivedRealityArticle, ArchivedRealityArticle>? {
+            val lastSeen = mutableMapOf<Int, ArchivedRealityArticle>()
+            for (row in rows) {
+                val number = (row.payload as? ArchivedCountdownGlyphWitnessed)?.glyph?.toIntOrNull() ?: continue
+                if (number !in 1..3) continue
+                for (previousNumber in number + 1..3) {
+                    val previous = lastSeen[previousNumber] ?: continue
+                    if (row.monotonicTimeNanos!! > previous.monotonicTimeNanos!! &&
+                        kotlin.math.abs(latestGoFromNumeral(row) - latestGoFromNumeral(previous)) < BEAT_NANOS) {
+                        return previous to row
+                    }
+                }
+                lastSeen[number] = row
+            }
+            return null
         }
 
         private fun confirmsCombat(payload: ArchivedTestimonyPayload): Boolean = when (payload) {

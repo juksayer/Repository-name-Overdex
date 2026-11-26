@@ -4,7 +4,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 
-internal enum class OcrPriority { URGENT, TRANSIENT, NORMAL }
+internal enum class OcrPriority { RESULT_FLASH, URGENT, TRANSIENT, NORMAL }
 
 /**
  * Admit one job to ML Kit at a time. Its Latin clients share a backend queue,
@@ -67,7 +67,12 @@ internal class OcrWorkScheduler {
                 val hasNormal = waiting.any { it.priority == OcrPriority.NORMAL }
                 val hasTransient = waiting.any { it.priority == OcrPriority.TRANSIENT }
                 val hasUrgent = waiting.any { it.priority == OcrPriority.URGENT }
+                // A brief result line gets the next free turn. Alternate under repeated false
+                // positives so normal fairness still advances between flash requests.
+                val flashWaiting = waiting.any { it.priority == OcrPriority.RESULT_FLASH }
                 val preferred = when {
+                    flashWaiting && (request.priority != OcrPriority.RESULT_FLASH ||
+                        waiting.all { it.priority == OcrPriority.RESULT_FLASH }) -> OcrPriority.RESULT_FLASH
                     hasUrgent && (urgentRun < 2 || (!hasNormal && !hasTransient)) -> OcrPriority.URGENT
                     hasTransient && (transientRun < 2 || !hasNormal) -> OcrPriority.TRANSIENT
                     hasNormal -> OcrPriority.NORMAL
@@ -76,7 +81,11 @@ internal class OcrWorkScheduler {
                 val index = waiting.indexOfFirst { it.priority == preferred }.takeIf { it >= 0 } ?: 0
                 val selected = if (waiting.isEmpty()) null else waiting.removeAt(index)
                 active = selected
-                urgentRun = if (selected?.priority == OcrPriority.URGENT) (urgentRun + 1).coerceAtMost(2) else 0
+                urgentRun = when (selected?.priority) {
+                    OcrPriority.URGENT -> (urgentRun + 1).coerceAtMost(2)
+                    OcrPriority.RESULT_FLASH -> urgentRun
+                    else -> 0
+                }
                 transientRun = when (selected?.priority) {
                     OcrPriority.TRANSIENT -> (transientRun + 1).coerceAtMost(2)
                     OcrPriority.NORMAL, null -> 0

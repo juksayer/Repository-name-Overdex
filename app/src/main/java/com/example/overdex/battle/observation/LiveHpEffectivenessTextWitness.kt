@@ -126,7 +126,7 @@ internal class LiveHpEffectivenessTextWitness(
                         } else {
                             "OpponentHpEffectivenessTextCrop"
                         },
-                    ) ?: return@supplyFrames
+                    )?.withHudRegion(frame.overlayRegion) ?: return@supplyFrames
                     if (!frame.canObserve(resolved.provenance.bounds)) {
                         resolved.bitmap.recycle()
                         return@supplyFrames

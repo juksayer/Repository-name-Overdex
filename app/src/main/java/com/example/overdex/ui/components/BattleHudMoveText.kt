@@ -34,7 +34,7 @@ internal fun BattleHudMoveText(
     val backingStyle = with(LocalDensity.current) {
         TextStyle(
             drawStyle = Stroke(width = .45.dp.toPx()),
-            shadow = Shadow(Color(appearance.shadowColor), Offset(.9.dp.toPx(), .9.dp.toPx()), .35.dp.toPx()),
+            shadow = Shadow(Color(appearance.shadowColor), Offset(1.35.dp.toPx(), 1.5.dp.toPx()), 1.dp.toPx()),
         )
     }
     Box(modifier.semantics(mergeDescendants = true) { }) {

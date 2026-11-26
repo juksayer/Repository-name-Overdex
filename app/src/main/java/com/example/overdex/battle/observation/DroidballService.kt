@@ -336,18 +336,24 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     @Volatile private var fieldEditorResumeAtNanos = 0L
     private var fieldEditorOriginalPosition: Pair<Int, Int>? = null
     private fun fieldEditorBlocksCapture(now: Long): Boolean = !registrationMode &&
-        (fieldViewModel.fieldTeamEditor.draft.value != null || now < fieldEditorResumeAtNanos)
+        ((fieldViewModel.fieldTeamEditor.draft.value != null && !DroidballOverlayPresentation.setupHidden.value) ||
+            now < fieldEditorResumeAtNanos)
     private var overlayView: FrameLayout? = null
     private val badgeCalibration by lazy { com.example.overdex.CalibrationManager(this).load() }
     private val teamSelectMenuCalibration by lazy { TeamSelectCalibrationStore(this).load() }
     private val teamSelectMenuDeparture = TeamSelectMenuDepartureMonitor()
     private val retainedOpponentBadge by lazy { RetainedOpponentBadge(this, windowManager) }
     @Volatile private var visibleStatusBarHeightPx = 0
-    @Volatile private var capturedOverlayRegion: com.example.overdex.model.AnchorRegion? = null
+    private data class OverlayFootprint(val window: com.example.overdex.model.AnchorRegion,
+        val readerMask: com.example.overdex.model.AnchorRegion)
+    @Volatile private var capturedOverlayRegion: OverlayFootprint? = null
     private var overlayParams: WindowManager.LayoutParams? = null
     // The renderer and native window share one physical canvas for this overlay.
     private var fieldBodyCanvasWidthPx = 1
     private var fieldWindowScreenOffsetY: Int? = null
+    private var activeHudRegion = com.example.overdex.data.BattleCalibration.DEFAULT_BATTLE_HUD_REGION
+    private val battleHudBox = androidx.compose.runtime.mutableStateOf(BattleHudOverlayGeometry.PanelBox(0, 0, 1, 1))
+    private var draggedBattleHudLayout: BattleHudLayout? = null
     private var overlayAnchoredToBattleHud = false
     private var overlayPanelVisible = false
     private var overlayJourneyTravel = false
@@ -701,6 +707,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     val badgeScope = badgeSession?.let {
                         RetainedBadgeScope(it.match.matchId, it.match.observationAttemptStartedAtNanos)
                     }
+                    val footprint = capturedOverlayRegion
+                    val frameHudRegion = footprint?.readerMask
                     if (badgeSession != null && !badgeSession.hasCompletedMatch &&
                         !DroidballOverlayPresentation.battleBadgeSeen.value &&
                         (badgeSession.canObserveTeamSelect ||
@@ -710,7 +718,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                             badgeSession.match.observationAttemptStartedAtNanos)
                         if (teamSelectMenuDeparture.shouldSample(menuScope, receivedAtNanos) &&
                             teamSelectMenuDeparture.observe(receivedAtNanos,
-                                TeamSelectMenuSurfaceProbe.visible(bitmap, teamSelectMenuCalibration, capturedOverlayRegion))) {
+                                TeamSelectMenuSurfaceProbe.visible(bitmap, teamSelectMenuCalibration, frameHudRegion))) {
                             // Observe even before accepted Team Select reveals the menu:
                             // delayed OCR must not reveal it after the party has departed.
                             // This fresh geometry check does not wait for countdown OCR.
@@ -721,7 +729,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     val statusBarBottom = capturedStatusBarBottom(visibleStatusBarHeightPx, height, imgHeight)
                     val nativeFrame = CapturedVisualFrame(bitmap, capturedAtWallTimeMillis, receivedAtNanos,
                         statusBarBottomPx = statusBarBottom,
-                        overlayRegion = capturedOverlayRegion, retainedBadgeRegion = badgeExclusionBefore)
+                        overlayRegion = frameHudRegion, retainedBadgeRegion = badgeExclusionBefore)
                     val playerBadgeRegion = if (!battleSurfaceEstablished) badgeCalibration.playerTeamInfoRegion else
                         TeamBadgeCropLocator.locate(BattleRegionId.PLAYER_TEAM_INFO, badgeCalibration, nativeFrame)
                     val opponentBadgeRegion = if (!battleSurfaceEstablished || badgeExclusionBefore != null)
@@ -750,7 +758,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         }
                     }
                     if (!registrationMode && !DroidballOverlayPresentation.battleBadgeSeen.value &&
-                        playerBadgePresent && opponentBadgePresent) {
+                        opponentBadgePresent) {
                         DroidballOverlayPresentation.recordBattleBadgePresent()
                         DroidballOverlayPresentation.showBattleHud()
                         emitSignal(DroidballSignal.BattleHudWitnessed)
@@ -764,7 +772,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                                 DroidballJourney.state.value.phase == DroidballJourneyPhase.FIELD &&
                                 DroidballOverlayPresentation.mode.value == DroidballOverlayMode.BATTLE_HUD &&
                                 DroidballOverlayPresentation.battleBadgeSeen.value,
-                            capturedOverlayRegion, DroidballOverlayPresentation.opponentBadgeContent.value)
+                            footprint?.window, DroidballOverlayPresentation.opponentBadgeContent.value)
                     }
                     val capturedAtMonotonicTimeNanos = receivedAtNanos
                     lastPublishedFrameNanos?.let { previous ->
@@ -783,7 +791,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                             capturedAtMonotonicTimeNanos = capturedAtMonotonicTimeNanos,
                             displayWidth = width,
                             displayHeight = height,
-                            overlayRegion = capturedOverlayRegion,
+                            overlayRegion = frameHudRegion,
                             retainedBadgeRegion = retainedBadgeRegion,
                             publication = publication,
                             statusBarBottomPx = statusBarBottom,
@@ -961,7 +969,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val savedBattleHudLayout = battleHudLayoutStore.load(bounds.width(), bounds.height())
         val bodyCanvasWidthPx = DroidballFieldGeometry.bodyCanvasWidthPx(bounds.width())
         fieldBodyCanvasWidthPx = bodyCanvasWidthPx
-        val panelWidthPx = BattleHudOverlayGeometry.panelWidthPx(bounds.width())
+        activeHudRegion = badgeCalibration.battleHudRegion
+        battleHudBox.value = resolveHudBox(bounds, savedBattleHudLayout, 0)
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -1002,25 +1011,28 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     val savedTeams by fieldViewModel.selectableBattleTeams.collectAsState()
                     val journey by DroidballJourney.state.collectAsState()
                     val traveling = journey.phase == DroidballJourneyPhase.ARRIVING || journey.phase == DroidballJourneyPhase.RETURNING
-                    val confirmingNickname = nicknameQuestion != null && draft == null && !traveling
-                    LaunchedEffect(draft != null, confirmingNickname) {
-                        setFieldEditorWindow(draft != null || confirmingNickname, confirmingNickname)
+                    val setupHidden by DroidballOverlayPresentation.setupHidden.collectAsState()
+                    val editing = draft != null && !traveling && !setupHidden
+                    val confirmingNickname = nicknameQuestion != null && draft == null && !traveling && !setupHidden
+                    LaunchedEffect(editing, confirmingNickname) {
+                        setFieldEditorWindow(editing || confirmingNickname, confirmingNickname)
                     }
-                    if (draft != null && !traveling) com.example.overdex.ui.components.FieldTeamEditorOverlay(
+                    if (editing) com.example.overdex.ui.components.FieldTeamEditorOverlay(
                         editor = fieldViewModel.fieldTeamEditor,
                         savedTeams = savedTeams,
                         width = (FieldBattleMenuGeometry.widthPx(bounds.width()) / resources.displayMetrics.density).dp,
                         onRescan = { emitSignal(DroidballSignal.ScanTeamSelectRequested) },
-                    ) else if (nicknameQuestion != null && !traveling) {
+                    ) else if (nicknameQuestion != null && confirmingNickname) {
                         com.example.overdex.ui.components.PartyNicknameConfirmation(nicknameQuestion,
                             (FieldBattleMenuGeometry.widthPx(bounds.width()) / resources.displayMetrics.density).dp,
                             fieldViewModel::answerPartyNickname)
                     } else BattleOverlay(
                     bodyCanvasWidthPx = bodyCanvasWidthPx,
-                    panelWidthPx = panelWidthPx,
+                    panelWidthPx = battleHudBox.value.width,
                     fieldMenuWidthPx = FieldBattleMenuGeometry.widthPx(bounds.width()),
                     fieldMenuHeightPx = FieldBattleMenuGeometry.heightPx(bounds.height()),
                     initialLayout = savedBattleHudLayout,
+                    maxBattlePanelHeightPx = battleHudBox.value.height,
                     onDrag = { deltaX, deltaY ->
                         if (overlayAnchoredToBattleHud) moveBattleHudBy(deltaX, deltaY)
                         else moveOverlayBy(deltaX, deltaY)
@@ -1060,7 +1072,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                 overlayView!!.getLocationOnScreen(location)
                 fieldWindowScreenOffsetY = location[1] - params.y
             }
-            if (right - left != oldRight - oldLeft || bottom - top != oldBottom - oldTop) {
+            if (!overlayAnchoredToBattleHud && (right - left != oldRight - oldLeft || bottom - top != oldBottom - oldTop)) {
                 alignFreeOverlayWindow()
             }
         }
@@ -1081,9 +1093,14 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                 (!overlayAnchoredToBattleHud || DroidballOverlayPresentation.battleBadgeSeen.value)) {
                 val location = IntArray(2)
                 view.getLocationOnScreen(location)
-                com.example.overdex.model.AnchorRegion(location[0].toFloat() / bounds.width(),
+                val window = com.example.overdex.model.AnchorRegion(location[0].toFloat() / bounds.width(),
                     location[1].toFloat() / bounds.height(), view.width.toFloat() / bounds.width(),
                     view.height.toFloat() / bounds.height())
+                // Only the rounded, unlettered shoulders overlap the native resource row.
+                val inset = if (overlayAnchoredToBattleHud)
+                    com.example.overdex.ui.components.BattleHudBadgeStyle.cornerPx(view.width.toFloat())
+                        .coerceAtMost(view.height / 2f) / bounds.height() else 0f
+                OverlayFootprint(window, window.copy(y = window.y + inset, height = window.height - inset))
             } else {
                 null
             }
@@ -1281,7 +1298,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
             getSystemService(android.view.inputmethod.InputMethodManager::class.java)
                 ?.hideSoftInputFromWindow(view.windowToken, 0)
-            overlayPanelVisible = DroidballOverlayPresentation.panelAllowed.value && DroidballOverlayPresentation.expanded.value
+            val displayMode = battleOverlayDisplayMode(DroidballOverlayPresentation.mode.value, DroidballOverlayPresentation.battleBadgeSeen.value)
+            overlayPanelVisible = DroidballOverlayPresentation.panelAllowed.value && DroidballOverlayPresentation.expanded.value &&
+                com.example.overdex.ui.components.battleOverlayPanelAvailable(displayMode, DroidballOverlayPresentation.setupHidden.value)
             overlayAnchoredToBattleHud = overlayPanelVisible &&
                 battleOverlayDisplayMode(DroidballOverlayPresentation.mode.value, DroidballOverlayPresentation.battleBadgeSeen.value) in
                     setOf(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayMode.BATTLE_LIVE)
@@ -1346,24 +1365,30 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val params = overlayParams ?: return
         val bounds = displayBounds()
         val windowScreenOffsetY = overlayWindowScreenOffsetY(view, params)
-        params.x = (params.x + deltaX.toInt()).coerceIn(
-            0,
-            (bounds.width() - view.width.coerceAtLeast(1)).coerceAtLeast(0),
-        )
-        params.y = (params.y + deltaY.toInt()).coerceIn(
-            BattleHudOverlayGeometry.minimumEditableWindowTopPx(windowScreenOffsetY),
-            (bounds.height() - view.height.coerceAtLeast(1)).coerceAtLeast(0),
-        )
+        val current = draggedBattleHudLayout
+        val x = ((current?.windowX ?: params.x) + deltaX.toInt()).coerceIn(0, (bounds.width() - view.width).coerceAtLeast(0))
+        val top = current?.windowY?.let { BattleHudOverlayGeometry.windowTopForSavedSeam(it, bounds.width()) } ?: params.y
+        val minY = BattleHudOverlayGeometry.minimumEditableWindowTopPx(windowScreenOffsetY)
+        val y = (top + deltaY.toInt()).coerceIn(minY, (bounds.height() - view.height).coerceAtLeast(minY))
+        draggedBattleHudLayout = BattleHudLayout(windowX = x,
+            windowY = BattleHudOverlayGeometry.savedSeamForWindowTop(y, bounds.width()))
+        applyBattleHudWindowPosition(view, params, bounds)
         if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
     }
 
     private fun saveBattleHudPosition() {
         if (!overlayAnchoredToBattleHud) return
-        val params = overlayParams ?: return
+        val layout = draggedBattleHudLayout ?: return
         val bounds = displayBounds()
-        // Keep persisted Y as the flat badge seam used by existing profiles.
-        battleHudLayoutStore.saveWindow(bounds.width(), bounds.height(), params.x,
-            BattleHudOverlayGeometry.savedSeamForWindowTop(params.y, bounds.width()))
+        battleHudLayoutStore.saveWindow(bounds.width(), bounds.height(), requireNotNull(layout.windowX), requireNotNull(layout.windowY))
+        val box = battleHudBox.value
+        saveHudRegion(activeHudRegion.copy(x = box.left.toFloat() / bounds.width(), y = box.top.toFloat() / bounds.height()))
+        draggedBattleHudLayout = null
+    }
+
+    private fun saveHudRegion(region: com.example.overdex.model.AnchorRegion) {
+        val manager = com.example.overdex.CalibrationManager(this)
+        if (manager.save(manager.load().copy(battleHudRegion = region))) activeHudRegion = region
     }
 
     private fun saveBattleHudHalfPositions(
@@ -1387,7 +1412,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val view = overlayView ?: return
         val params = overlayParams ?: return
         val bounds = displayBounds()
+        draggedBattleHudLayout = null
         battleHudLayoutStore.reset(bounds.width(), bounds.height())
+        saveHudRegion(com.example.overdex.data.BattleCalibration.DEFAULT_BATTLE_HUD_REGION)
         applyBattleHudWindowPosition(view, params, bounds, BattleHudLayout())
         if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
     }
@@ -1396,22 +1423,29 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         view: android.view.View,
         params: WindowManager.LayoutParams,
         bounds: android.graphics.Rect,
-        layout: BattleHudLayout = battleHudLayoutStore.load(bounds.width(), bounds.height()),
+        layout: BattleHudLayout = draggedBattleHudLayout ?: battleHudLayoutStore.load(bounds.width(), bounds.height()),
         windowScreenOffsetY: Int = overlayWindowScreenOffsetY(view, params),
     ) {
-        val attachedWindowTop = BattleHudOverlayGeometry.attachedPanelWindowTopPx(
-            bounds.height(),
-            windowScreenOffsetY,
-        )
-        val minimumWindowTop = BattleHudOverlayGeometry.minimumEditableWindowTopPx(
-            windowScreenOffsetY,
-        )
-        val maximumWindowTop = (bounds.height() - view.height.coerceAtLeast(1))
-            .coerceAtLeast(minimumWindowTop)
-        val savedY = layout.windowY
-        params.x = layout.windowX ?: BattleHudOverlayGeometry.panelLeftPx(bounds.width())
-        params.y = BattleHudOverlayGeometry.windowTopForSavedSeam(savedY ?: attachedWindowTop, bounds.width())
-            .coerceIn(minimumWindowTop, maximumWindowTop)
+        val box = resolveHudBox(bounds, layout, windowScreenOffsetY)
+        battleHudBox.value = box
+        params.x = box.left
+        params.y = box.top - windowScreenOffsetY
+    }
+
+    private fun resolveHudBox(bounds: android.graphics.Rect, layout: BattleHudLayout, screenOffsetY: Int):
+        BattleHudOverlayGeometry.PanelBox {
+        val width = bounds.width()
+        val height = bounds.height()
+        val region = activeHudRegion
+        val useWindowAnchor = layout === draggedBattleHudLayout ||
+            region == com.example.overdex.data.BattleCalibration.DEFAULT_BATTLE_HUD_REGION
+        val left = if (useWindowAnchor) layout.windowX else null
+        val top = if (useWindowAnchor) layout.windowY?.let {
+            BattleHudOverlayGeometry.windowTopForSavedSeam(it, width) + screenOffsetY
+        } else null
+        return BattleHudOverlayGeometry.panelBox(width, height, left ?: (region.x * width).roundToInt(),
+            top ?: (region.y * height).roundToInt(), (region.width * width).roundToInt(),
+            (region.height * height).roundToInt(), badgeCalibration, resources.displayMetrics.density)
     }
 
     /**
@@ -1459,7 +1493,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             // Reapply once attached so getLocationOnScreen supplies the real inset.
             view.post {
                 if (overlayAnchoredToBattleHud && !overlayJourneyTravel &&
-                    fieldViewModel.fieldTeamEditor.draft.value == null &&
+                    (fieldViewModel.fieldTeamEditor.draft.value == null || DroidballOverlayPresentation.setupHidden.value) &&
                     overlayView === view && view.isAttachedToWindow) {
                     val liveParams = overlayParams ?: return@post
                     applyBattleHudWindowPosition(view, liveParams, displayBounds())
@@ -1470,6 +1504,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         }
 
         overlayAnchoredToBattleHud = false
+        draggedBattleHudLayout = null
         if (wasAnchored) {
             params.x = freeOverlayX ?: params.x
             params.y = freeOverlayY ?: params.y
@@ -1484,7 +1519,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private fun alignFreeOverlayWindow() {
         if (registrationMode || overlayAnchoredToBattleHud || overlayJourneyTravel ||
             DroidballJourney.state.value.phase != DroidballJourneyPhase.FIELD ||
-            fieldEditorOriginalPosition != null || fieldViewModel.fieldTeamEditor.draft.value != null) return
+            fieldEditorOriginalPosition != null ||
+            (fieldViewModel.fieldTeamEditor.draft.value != null && !DroidballOverlayPresentation.setupHidden.value)) return
         val view = overlayView ?: return
         val params = overlayParams ?: return
         val bounds = displayBounds()

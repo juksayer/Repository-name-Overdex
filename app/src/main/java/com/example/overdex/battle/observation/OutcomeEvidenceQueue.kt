@@ -59,6 +59,21 @@ internal class OutcomeEvidenceQueue<T>(
         return recovery.poll()?.value
     }
 
+    /** Claim the selected crop once, even if it aged into recovery while OCR was busy. */
+    @Synchronized
+    fun take(value: T): T? {
+        for (queue in listOf(recent, recovery)) {
+            val entries = queue.iterator()
+            while (entries.hasNext()) {
+                if (entries.next().value == value) {
+                    entries.remove()
+                    return value
+                }
+            }
+        }
+        return null
+    }
+
     @Synchronized
     fun counts(nowNanos: Long): Counts {
         refresh(nowNanos)

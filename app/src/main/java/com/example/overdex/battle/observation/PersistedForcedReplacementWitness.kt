@@ -90,7 +90,7 @@ private class ArtifactForcedReplacementCropReader(private val artifacts: FileCro
             if (!isFresh()) return@withReadingTurn null
             val crop = article.payload as CropCaptured
             val bitmap = withContext(Dispatchers.IO) {
-                artifacts.loadVerifiedOcrPng(crop.artifact, crop.cropProvenance)
+                artifacts.loadVerifiedOcrPng(crop)
             } ?: return@withReadingTurn null
             try {
                 if (!isFresh()) return@withReadingTurn null

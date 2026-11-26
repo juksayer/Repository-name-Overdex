@@ -53,7 +53,10 @@ class October12OutcomeDeviceTest {
         blank.eraseColor(android.graphics.Color.BLACK)
         val win = instrumentation.context.assets.open("battle/oct12/result-win-preserved-crop.png")
             .use(BitmapFactory::decodeStream)!!
-        val at = System.nanoTime()
+        // These six saved frames are delivered in a burst. The newest timestamp is the
+        // present; future-dated frames are intentionally ineligible for live priority.
+        OutcomeTextRecognizer.warmUp()
+        val at = System.nanoTime() - 1_250_000_000L
         try {
             phrase.start(match)
             reader.start(match)

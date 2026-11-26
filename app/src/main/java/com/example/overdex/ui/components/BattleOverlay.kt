@@ -1,9 +1,14 @@
 package com.example.overdex.ui.components
 
+import com.example.overdex.data.BattleCalibration
 import com.example.overdex.data.HudMoveAppearance
 import com.example.overdex.data.ODXFiAppearancePreferences
 import com.example.overdex.battle.BattleSpeciesDisplay
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -86,6 +91,84 @@ internal object BattleHudOverlayGeometry {
     fun panelWidthPx(displayWidth: Int): Int =
         (displayWidth * OPPONENT_BADGE_WIDTH / REFERENCE_WIDTH).roundToInt()
 
+    data class PanelBox(val left: Int, val top: Int, val width: Int, val height: Int)
+
+    /** Fit the entire calibrated box in a clear band, independently of which rows are showing. */
+    fun panelBox(displayWidth: Int, displayHeight: Int, left: Int, top: Int, width: Int, height: Int,
+                 calibration: BattleCalibration, density: Float): PanelBox {
+        // Team badges and their resource crops can be calibrated separately. Protect
+        // both sides so a saved window or a manual drag cannot cover the native counts.
+        val protected = with(calibration) {
+            listOf(playerTeamInfoRegion, playerPokeBallsRegion, playerShieldsRegion,
+                opponentTeamInfoRegion, opponentPokeBallsRegion, opponentShieldsRegion,
+                announcementRegion, qteProgressTextRegion)
+        }
+        val w = width.coerceIn(1, displayWidth)
+        val x = left.coerceIn(0, displayWidth - w)
+        // A box placed at the opponent seam can interlock with its lower corners.
+        // Align both edges before allowing the decorative tips to enter the badge crop.
+        val badge = calibration.opponentTeamInfoRegion
+        val badgeLeft = (badge.x * displayWidth).roundToInt()
+        val badgeRight = ((badge.x + badge.width) * displayWidth).roundToInt().coerceAtMost(displayWidth)
+        val badgeWidth = badgeRight - badgeLeft
+        val radius = BattleHudBadgeStyle.cornerPx(badgeWidth.toFloat())
+        val seam = kotlin.math.ceil((badge.y + badge.height) * displayHeight).toInt() + 1
+        val lift = (35f * badgeWidth / 415f).roundToInt()
+        if (badgeWidth > 0 && kotlin.math.abs(x - badgeLeft) <= radius &&
+            kotlin.math.abs(x + w - badgeRight) <= radius && top in seam - lift * 2..seam + 2) {
+            var dockTop = seam - lift
+            for (row in listOf(calibration.opponentPokeBallsRegion, calibration.opponentShieldsRegion)) {
+                val l = row.x * displayWidth
+                val r = (row.x + row.width) * displayWidth
+                if (r <= badgeLeft || l >= badgeRight || row.y * displayHeight >= seam) continue
+                val inset = minOf(l - badgeLeft, badgeRight - r).coerceIn(0f, radius)
+                val curveDepth = kotlin.math.sqrt(inset * (2f * radius - inset))
+                val rowBottom = (row.y + row.height) * displayHeight
+                dockTop = maxOf(dockTop, kotlin.math.ceil(rowBottom - curveDepth).toInt() + 1)
+            }
+            var limit = displayHeight
+            for (region in protected) {
+                if (region == badge || (region == calibration.opponentPokeBallsRegion ||
+                    region == calibration.opponentShieldsRegion) && region.y * displayHeight < seam) continue
+                if ((region.x + region.width) * displayWidth <= badgeLeft || region.x * displayWidth >= badgeRight ||
+                    (region.y + region.height) * displayHeight <= dockTop) continue
+                limit = minOf(limit, kotlin.math.floor(region.y * displayHeight).toInt() - 1)
+            }
+            val header = radius + BattleHudBadgeStyle.centerDipPx(badgeWidth.toFloat()) + 37f * density
+            if (dockTop in 0 until seam && limit - dockTop >= minOf(height, kotlin.math.ceil(header).toInt()))
+                return PanelBox(badgeLeft, dockTop, badgeWidth, minOf(height, limit - dockTop))
+        }
+        var clear = listOf(0 until displayHeight)
+        for (region in protected) {
+            if (x + w <= kotlin.math.floor(region.x * displayWidth) ||
+                x >= kotlin.math.ceil((region.x + region.width) * displayWidth)) continue
+            val above = kotlin.math.floor(region.y * displayHeight).toInt() - 2
+            val below = kotlin.math.ceil((region.y + region.height) * displayHeight).toInt() + 1
+            clear = clear.flatMap { band ->
+                listOf(band.first..minOf(band.last, above), maxOf(band.first, below)..band.last)
+            }.filterNot { it.isEmpty() }
+        }
+        // At the badge seam, use the space below the badge first. The move list already
+        // scrolls. Keeping the full roster here avoids pushing it down across battlefield HP.
+        val (topPadding, bottomPadding) = BattleHudBadgeStyle.rosterPadding(w.toFloat(), density)
+        val headerHeight = topPadding.roundToInt() + (36 * density).roundToInt() + bottomPadding.roundToInt()
+        for (badge in listOf(calibration.playerTeamInfoRegion, calibration.opponentTeamInfoRegion)) {
+            if (x + w <= badge.x * displayWidth || x >= (badge.x + badge.width) * displayWidth) continue
+            val badgeBottom = kotlin.math.ceil((badge.y + badge.height) * displayHeight).toInt()
+            val band = clear.firstOrNull { it.first == badgeBottom + 1 } ?: continue
+            if (top >= badge.y * displayHeight && top <= band.last &&
+                band.last - band.first + 1 >= minOf(height, headerHeight)) {
+                val h = height.coerceIn(1, band.last - band.first + 1)
+                return PanelBox(x, top.coerceIn(band.first, band.last - h + 1), w, h)
+            }
+        }
+        return clear.map { band ->
+            val h = height.coerceIn(1, band.last - band.first + 1)
+            PanelBox(x, top.coerceIn(band.first, band.last - h + 1), w, h)
+        }.minWithOrNull(compareBy<PanelBox> { height - it.height }.thenBy { kotlin.math.abs(it.top - top) })
+            ?: PanelBox(x, 0, w, 0)
+    }
+
     fun jointDepthPx(displayWidth: Int): Int =
         BattleHudBadgeStyle.cornerPx(panelWidthPx(displayWidth).toFloat()).roundToInt()
 
@@ -93,6 +176,10 @@ internal object BattleHudOverlayGeometry {
     fun windowTopForSavedSeam(savedSeamY: Int, displayWidth: Int): Int = savedSeamY - jointDepthPx(displayWidth)
     fun savedSeamForWindowTop(windowTopY: Int, displayWidth: Int): Int = windowTopY + jointDepthPx(displayWidth)
 }
+
+internal fun battleOverlayPanelAvailable(mode: DroidballOverlayMode, setupHidden: Boolean): Boolean =
+    mode == DroidballOverlayMode.RESULT || mode == DroidballOverlayMode.BATTLE_HUD ||
+        mode == DroidballOverlayMode.BATTLE_LIVE || !setupHidden
 
 /** Travel changes a small native window's location, never its touch footprint. */
 internal object DroidballFieldGeometry {
@@ -133,6 +220,7 @@ fun BattleOverlay(
     fieldMenuWidthPx: Int = 930,
     fieldMenuHeightPx: Int = 484,
     initialLayout: BattleHudLayout = BattleHudLayout(),
+    maxBattlePanelHeightPx: Int? = null,
     onDrag: (Float, Float) -> Unit = { _, _ -> },
     onDragFinished: () -> Unit = {},
     onHalfPositionsChanged: (Float, Float, Float, Float) -> Unit = { _, _, _, _ -> },
@@ -162,7 +250,9 @@ fun BattleOverlay(
     SideEffect { if (traveling) onJourneyOffsetChanged(pose.xBodies) }
 
     val battleMode = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
-    val panelIsVisible = panelAllowed && !traveling && expanded
+    val setupHidden by DroidballOverlayPresentation.setupHidden.collectAsState()
+    val showPanel = battleOverlayPanelAvailable(mode, setupHidden)
+    val panelIsVisible = panelAllowed && !traveling && expanded && showPanel
     val anchoredToBattleHud = battleMode && panelIsVisible
     val mayMove = !traveling && !panelIsVisible && mode != DroidballOverlayMode.RESULT
     val currentOnDrag by rememberUpdatedState(onDrag)
@@ -232,7 +322,7 @@ fun BattleOverlay(
             .alpha(if (anchoredToBattleHud && !badgeSeen) 0f else 1f),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (!anchoredToBattleHud && journey.fieldOwnsBody && !panelIsVisible) {
+        if (showPanel && !anchoredToBattleHud && journey.fieldOwnsBody && !panelIsVisible) {
             // The rotating antennae and short scan beam extend beyond the
             // body canvas. Only travel gets this small safety margin.
             Box(
@@ -253,6 +343,7 @@ fun BattleOverlay(
                 playerTeamConfirmed,
                 configuredPlayerTeam,
                 panelWidthPx,
+                maxBattlePanelHeightPx,
                 fieldMenuWidthPx,
                 fieldMenuHeightPx,
                 fieldBody.takeIf { journey.fieldOwnsBody },
@@ -270,6 +361,7 @@ private fun OverlayPanel(
     playerTeamConfirmed: Boolean,
     configuredPlayerTeam: List<String>,
     panelWidthPx: Int,
+    maxBattlePanelHeightPx: Int?,
     fieldMenuWidthPx: Int,
     fieldMenuHeightPx: Int,
     fieldBody: (@Composable () -> Unit)?,
@@ -286,9 +378,17 @@ private fun OverlayPanel(
     }
     // Match the calibrated opponent badge exactly at every display width.
     val teamInfoWidth = with(LocalDensity.current) { panelWidthPx.toDp() }
-    val jointDepth = with(LocalDensity.current) { BattleHudBadgeStyle.cornerPx(panelWidthPx.toFloat()).toDp() }
+    val density = LocalDensity.current
+    val (rosterTop, rosterBottom) = BattleHudBadgeStyle.rosterPadding(panelWidthPx.toFloat(), density.density)
+    val scroll = rememberScrollState()
     Column(
-        modifier = Modifier.width(teamInfoWidth),
+        modifier = Modifier.width(teamInfoWidth).then(if (maxBattlePanelHeightPx == null) Modifier else
+            Modifier.heightIn(max = with(LocalDensity.current) { maxBattlePanelHeightPx.toDp() })
+                .drawWithContent {
+                    // A scrolled label must stay below the native counters too.
+                    if (scroll.value == 0) drawContent() else
+                        clipRect(top = rosterTop.coerceAtMost(size.height)) { this@drawWithContent.drawContent() }
+                }.verticalScroll(scroll)),
         horizontalAlignment = Alignment.End,
     ) {
         if (isBattleHud) {
@@ -303,7 +403,7 @@ private fun OverlayPanel(
             // inactive cards share their edges so every available pixel can
             // belong to the sprites.
             Column(Modifier.fillMaxWidth().battleHudBadgeBackground()
-                .padding(start = 8.dp, end = 8.dp, top = jointDepth + 2.dp, bottom = 2.dp)) {
+                .padding(start = 8.dp, end = 8.dp, top = with(density) { rosterTop.toDp() }, bottom = with(density) { rosterBottom.toDp() })) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
                     repeat(3) { index ->
                         val observed = opponentSpecies.getOrNull(index)
@@ -319,7 +419,7 @@ private fun OverlayPanel(
             // the entire lower section while that source-bounded phase is active;
             // the native window shrinks and its capture footprint follows suit.
             // Keep the roster header and its calibrated seam stable.
-            if (!chargeTextProtected) Column(Modifier.fillMaxWidth().padding(start = 8.dp, end = 6.dp, bottom = 2.dp),
+            if (!chargeTextProtected) Column(Modifier.fillMaxWidth().padding(start = 8.dp, end = 2.dp, bottom = 2.dp),
                 horizontalAlignment = Alignment.End) {
                 if (opponentMoves != null) {
                     val context = LocalContext.current

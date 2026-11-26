@@ -39,7 +39,7 @@ internal class PendingTransientTextCrops(
     fun canOffer(article: RealityArticle): Boolean {
         val at = article.monotonicTimeNanos ?: return false
         return at !in recentSourceTimes && (at > lastOfferedAt ||
-            (isChargedImpactAnnouncement(article) && lastOfferedAt - at in 1..maximumAgeNanos))
+            ((isChargedImpactAnnouncement(article) || article.sourceId.id == BattleWitnessContracts.qteProgressTextCapture.witnessId) && lastOfferedAt - at in 1..maximumAgeNanos))
     }
 
     @Synchronized
@@ -120,7 +120,11 @@ internal class PendingTransientTextCrops(
         val kind: String
         if (candidates.isNotEmpty()) {
             frame = candidates.removeAt(0)
-            kind = if (frame.episode == null) "CHARGED_IMPACT_FRAME" else "TEXT_KEYFRAME"
+            kind = when {
+                frame.episode != null -> "TEXT_KEYFRAME"
+                isChargedImpactAnnouncement(frame.article) -> "CHARGED_IMPACT_FRAME"
+                else -> "LATE_QTE_FRAME"
+            }
             if (frame.episode != null && latest?.episode == frame.episode) latest = null
         } else {
             frame = latest ?: return null

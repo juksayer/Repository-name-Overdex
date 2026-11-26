@@ -38,8 +38,6 @@ import com.example.overdex.battle.archive.ArchivedFastMoveUseObserved
 import com.example.overdex.battle.archive.ArchivedFastMoveSoundMeasured
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.FastMoveSoundMeasured
-import com.example.overdex.battle.custody.FastMoveSoundCandidate
-import com.example.overdex.battle.custody.FastMoveSoundSearchScope
 import com.example.overdex.battle.inference.RecipientAudioSupport
 import com.example.overdex.battle.inference.fastMoveIdentitySupportsEnergy
 import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillIncreased
@@ -2324,18 +2322,7 @@ class MatchReplayModel(
         val sounds = replayArticles.mapNotNull { article ->
             if (article.articleId in coveredIds) return@mapNotNull null
             val archived = article.payload as? ArchivedFastMoveSoundMeasured ?: return@mapNotNull null
-            val sound = runCatching {
-                FastMoveSoundMeasured(archived.audible, archived.onsetOffsetNanos, archived.soundDurationNanos,
-                    archived.spectralCentroidHz, archived.peakAmplitude,
-                    referenceCandidates = archived.referenceCandidates.map {
-                        FastMoveSoundCandidate(it.moveName, it.referenceSha256, it.similarity, it.changingSimilarity,
-                            it.matchingOffsetNanos, it.referenceOffsetNanos, it.matchedDurationNanos)
-                    }, referenceMatchAccepted = archived.referenceMatchAccepted,
-                    referenceSearchScopes = archived.referenceSearchScopes.map {
-                        FastMoveSoundSearchScope(ActivePokemonSide.valueOf(it.side), it.speciesName,
-                            it.moveNames, it.contextArticleIds)
-                    })
-            }.getOrNull() ?: return@mapNotNull null
+            val sound = archived.asScopedFastSound() ?: return@mapNotNull null
             article to sound
         }
         data class Pairing(val visual: ArchivedRealityArticle, val sound: ArchivedRealityArticle,

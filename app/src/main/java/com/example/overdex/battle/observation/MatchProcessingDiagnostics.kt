@@ -27,10 +27,13 @@ class MatchProcessingDiagnostics(
         val captureSequence: Long,
         val crySequence: Long,
     )
+    data class GradeInterval(val decision: String, val firstId: String, val lastId: String,
+        val firstSourceNanos: Long, val lastSourceNanos: Long, val samples: Int)
     data class Snapshot(val stages: Map<String, Timing>, val rebuilds: Map<String, Rebuild>,
         val completed: Long, val lastCompletedSequence: Long, val activeSequence: Long?,
         val activeStage: String?, val activeAgeNanos: Long, val cryPositiveCount: Long,
-        val recentCryPositives: List<CryPositiveTiming>)
+        val recentCryPositives: List<CryPositiveTiming>, val badgePixelReads: Map<String, Long>, val readerWork: Map<String, Long> = emptyMap(),
+        val recentGradeIntervals: List<GradeInterval> = emptyList())
     private class Counter {
         var calls = 0L; var elapsed = 0L; var cpu = 0L; var maximum = 0L; var invalidCpu = 0L
         var maximumCpu = 0L
@@ -40,6 +43,9 @@ class MatchProcessingDiagnostics(
     private val counters = linkedMapOf<String, Counter>()
     private val rebuildCounters = linkedMapOf<String, Rebuild>()
     private val recentCryPositives = ArrayDeque<CryPositiveTiming>()
+    private val gradeIntervals = ArrayDeque<GradeInterval>()
+    private val readerWork = mutableMapOf<String, Long>()
+    private val badgePixelReads = mutableMapOf<String, Long>()
     private var cryPositiveCount = 0L
     private var completed = 0L
     private var lastCompleted = Long.MIN_VALUE
@@ -86,6 +92,24 @@ class MatchProcessingDiagnostics(
         val old = rebuildCounters[key] ?: Rebuild(0, 0, 0)
         rebuildCounters[key] = Rebuild(old.calls + 1, old.totalInputs + inputs, maxOf(old.maximumInputs, inputs))
     }
+    /** Called at the counter itself, including unsuccessful adjacent-strip probes. */
+    @Synchronized fun recordBadgePixelRead(crop: String) {
+        badgePixelReads[crop] = (badgePixelReads[crop] ?: 0L) + 1
+    }
+    @Synchronized internal fun recordGradeDecision(reason: String, id: String, at: Long) {
+        recordReaderWork("grade.$reason")
+        val last = gradeIntervals.lastOrNull()
+        if (last != null && last.decision == reason && at >= last.lastSourceNanos) {
+            gradeIntervals.removeLast()
+            gradeIntervals.addLast(last.copy(lastId = id, lastSourceNanos = at, samples = last.samples + 1))
+        } else {
+            if (gradeIntervals.size >= 128) gradeIntervals.removeFirst()
+            gradeIntervals.addLast(GradeInterval(reason, id, id, at, at, 1))
+        }
+    }
+    @Synchronized fun recordReaderWork(kind: String) {
+        readerWork[kind] = (readerWork[kind] ?: 0L) + 1
+    }
     @Synchronized fun recordCryPositive(timing: CryPositiveTiming) {
         cryPositiveCount++
         if (recentCryPositives.size == MAX_CRY_POSITIVES) recentCryPositives.removeFirst()
@@ -95,7 +119,7 @@ class MatchProcessingDiagnostics(
         Timing(c.calls, c.elapsed, c.cpu, c.maximum, c.buckets.toList(), c.invalidCpu, c.maximumCpu, c.cpuBuckets.toList())
     }, rebuildCounters.toMap(), completed, lastCompleted, sequence, activeStage,
         if (sequence == null) 0 else (elapsedClock() - activeFrom).coerceAtLeast(0),
-        cryPositiveCount, recentCryPositives.toList())
+        cryPositiveCount, recentCryPositives.toList(), badgePixelReads.toMap(), readerWork.toMap(), gradeIntervals.toList())
 
     companion object {
         const val MAX_KEYS = 2048
