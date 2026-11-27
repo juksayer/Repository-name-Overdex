@@ -21,9 +21,12 @@ internal class ReplayTeamLossProjection(archive: MatchArchive) {
             val at = article.monotonicTimeNanos ?: return@mapNotNull null
             when (val p = article.payload) {
                 is ArchivedActivePokemonSpeciesWitnessed -> if (p.side == side)
-                    TeamLossObservation.Identity(article.articleId, at, p.speciesName, p.speciesId) else null
+                    TeamLossObservation.Identity(article.articleId, at, p.speciesName, p.speciesId,
+                    article.sourceId == "OPPONENT_SPECIES_OVERLAY_PIPELINE" && p.ocrMatchBasis?.startsWith("EXACT") == true &&
+                        article.confidence?.let { it in .80f..1f } == true) else null
                 is ArchivedActiveHpBarMeasured -> if (p.side == side && hpEvidence.supportsSurvivalAtCapture(article))
-                    TeamLossObservation.Alive(article.articleId, at) else null
+                    TeamLossObservation.Alive(article.articleId, at,
+                        article.sourceId == "OPPONENT_ACTIVE_HP_BAR_WITNESS" && p.fillColor in setOf("GREEN", "YELLOW", "RED") && article.confidence?.let { it in .80f..1f } == true) else null
                 is ArchivedCompleteHpBarObserved -> if (p.side == side && hpEvidence.corroboratedLiveProfile(article))
                     TeamLossObservation.Alive(article.articleId, at) else null
                 is ArchivedPlayerPokeBallCountMeasured -> if (side == "PLAYER" && p.maximumCount == 3)

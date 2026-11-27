@@ -14,6 +14,8 @@ import com.example.overdex.battle.archive.ArchivedStatChangeSoundMeasured
 import com.example.overdex.battle.archive.ArchivedStatChangeObserved
 
 import com.example.overdex.battle.archive.ArchivedBattleCryCandidatesMeasured
+import com.example.overdex.battle.archive.ArchivedBattleCryLocalized
+import com.example.overdex.battle.archive.ArchivedFinishingHitCredited
 import com.example.overdex.battle.archive.ArchivedActiveHpBarBorderPulseObserved
 import com.example.overdex.battle.archive.ArchivedHpBarBorderPulse
 import com.example.overdex.battle.archive.ArchivedActiveHpBarDamageTickMeasured
@@ -498,7 +500,7 @@ class MatchReplayModel(
             ::combatantFor, ::appearanceAt, ::sameFastMoveExchange)
         val recovered = observed + count + fastAudio + sliverLinks + terminalAudio + counters +
             listOfNotNull(evidence.incomingCryFinish(audioRecovery, retainedSliverEvidence.impactLights), cryCharge, frameLink, lastOpponentFastLink, terminalChargeDeparture?.candidate, missingTick)
-        val live = ReplayRecordedFinishingCredits.read(battleArchive, presentedKnockouts, charges, recovered, ::combatantFor, ::appearanceAt)
+        val live = ReplayRecordedFinishingCredits.read(archive, presentedKnockouts, charges, recovered, ::combatantFor, ::appearanceAt)
         val (eligible, expired) = (live + recovered).partition { link ->
             link !is ReplayFinishingFastAssociation || withinFinishingMoveWindow(link)
         }
@@ -584,7 +586,7 @@ class MatchReplayModel(
     private val supportedPresentationCycles by lazy {
         val inferred = finishingFastMoveAssociations.filter {
             it.basis in ReplayLastOpponentFastFinish.bases || it.basis == ReplayMissingTickFinish.BASIS || it.basis == ReplayShieldCounter.BASIS ||
-                it.basis == LiveFinishingHitResolver.CRY_EFFECT || (it.basis == LiveFinishingHitResolver.AUDIBLE_FAST &&
+                it.basis == LiveFinishingHitResolver.CRY_EFFECT || (it.basis in setOf(LiveFinishingHitResolver.AUDIBLE_FAST, LiveFinishingHitResolver.CRY_AFTER_AUDIO) &&
                     fastMoveCycles.none { cycle -> cycle.witness.articleIds.any(it.moveArticleIds::contains) })
         }.map { link ->
             val type = if (link.basis in ReplayLastOpponentFastFinish.bases) lastOpponentFastEvidence?.attackingMoves?.get(link.moveName)?.type
@@ -678,6 +680,69 @@ class MatchReplayModel(
             link.attackingSide == use.side && link.moveSourceAtNanos == use.sourceAtNanos &&
                 use.articleIds.any(link.moveArticleIds::contains)
         }
+
+    /** Supply terminal attribution without moving the earlier hit or changing the evidence track. */
+    private fun lastWitnessedAttack(knockout: ReplayKnockout): ReplayLastWitnessedAttack? {
+        val victim = knockout.side
+        val result = (matchResult?.payload as? ArchivedMatchEnded)?.result
+        if ((result != null && result != (if (victim == "OPPONENT") "WIN" else "LOSS")) ||
+            knockout.replacementAtNanos != null) return null
+        val by = when (val timing = knockout.timing) {
+            is ReplayFaintTiming.Cry -> timing.onset.atNanos
+            is ReplayFaintTiming.ZeroHp -> timing.frame.atNanos
+            is ReplayFaintTiming.Window -> timing.by.atNanos
+            else -> knockout.recordedAtNanos
+        }
+        val counts = actionArticles.mapNotNull { row ->
+            if (row.monotonicTimeNanos!! > by) return@mapNotNull null
+            when (val p = row.payload) {
+                is ArchivedOpponentBattleResourceCountMeasured -> p.visibleCount.takeIf {
+                    victim == "OPPONENT" && row.sourceId == "OPPONENT_POKE_BALLS_WITNESS" &&
+                        p.resource == "POKE_BALLS" && p.maximumCount == 3
+                }
+                is ArchivedPlayerPokeBallCountMeasured -> p.visibleCount.takeIf {
+                    victim == "PLAYER" && row.sourceId == "PLAYER_POKE_BALLS_WITNESS" && p.maximumCount == 3
+                }
+                else -> null
+            }
+        }
+        if (knockout.basis != DepartureCryFaint.LAST && counts.lastOrNull() != 1) return null
+        return lastWitnessedAttack(victim, knockout.appearanceAtNanos, by, knockout.appearanceAtNanos)
+    }
+
+    private fun lastWitnessedAttack(
+        victim: String, fromEvidence: Long, by: Long, recipientAppearance: Long?,
+    ): ReplayLastWitnessedAttack? {
+        val winner = oppositeSide(victim)
+        fun sameRecipient(at: Long) = recipientAppearance == null || appearanceAt(victim, at) == recipientAppearance
+        val interruption = actionArticles.lastOrNull { it.monotonicTimeNanos!! <= by && isReplayConnectionInterruption(it) }
+            ?.monotonicTimeNanos ?: Long.MIN_VALUE
+        val from = maxOf(fromEvidence, interruption)
+        if (from > by) return null
+        val origin = battleArchive.articles.filter { it.matchId == archive.matchId }
+            .groupBy { it.articleId }.mapNotNull { (id, copies) -> copies.distinct().singleOrNull()?.let { id to it } }.toMap()
+        val candidates = origin.values.mapNotNull { row ->
+            val p = row.payload as? ArchivedFastMoveUseObserved ?: return@mapNotNull null
+            val at = row.monotonicTimeNanos ?: return@mapNotNull null
+            val performer = p.attackerSpeciesName?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            if (p.attackingSide != winner || p.damagedSide != victim || at !in from..by ||
+                !sameRecipient(at) ||
+                fastMoveChargeWindows.any { at in it }) return@mapNotNull null
+            val active = combatantFor(winner, at) ?: return@mapNotNull null
+            if (normalizeSpeciesName(active.speciesName) != normalizeSpeciesName(performer)) return@mapNotNull null
+            ReplayLastWitnessedAttack(at, active.speciesName, identifiedMoveFor(winner, at), false, listOf(row.articleId))
+        } + finishingChargeCandidates.mapNotNull { charge ->
+            val at = charge.sourceAtNanos
+            if (charge.side != winner || !charge.completed || !charge.uniquelyOwned || charge.confirmedBlocked ||
+                at !in from..by || !sameRecipient(at) ||
+                appearanceAt(winner, charge.preparationAtNanos) != appearanceAt(winner, at)) return@mapNotNull null
+            val evidence = charge.articleIds.filter { it in origin }.sorted().takeIf { it.isNotEmpty() }
+                ?: return@mapNotNull null
+            val active = combatantFor(winner, at) ?: return@mapNotNull null
+            ReplayLastWitnessedAttack(at, active.speciesName, charge.moveName, true, evidence)
+        }
+        return ReplayLastWitnessedAttack.latest(candidates)
+    }
 
     private fun faintMarker(
         knockout: ReplayKnockout?, link: ReplayFinishingAttribution?, marker: ReplayEventMarker,
@@ -837,13 +902,15 @@ class MatchReplayModel(
             presentedKnockouts.forEach { knockout ->
                 val association = finishingAttributions.singleOrNull { it.recipientSide == knockout.side &&
                     it.recipientAppearanceAtNanos == knockout.appearanceAtNanos }
+                val fallback = if (association == null) lastWitnessedAttack(knockout) else null
                 add(faintMarker(knockout, association, ReplayEventMarker("faint:${knockout.side}:${knockout.appearanceAtNanos}",
                     ReplayEventMarkerKind.FAINT, knockout.recordedAtNanos, knockout.side, "Faint · ${BattleSpeciesDisplay.name(knockout.speciesName)}" +
-                        (association?.let { " · ${it.creditLabel()}" } ?: "") +
+                        (association?.let { " · ${it.creditLabel()}" } ?: fallback?.let { " · ${it.label} · last witnessed" } ?: "") +
                         (if (knockout.basis in setOf(ReplaySliverExchange.DEPARTURE, ReplayChargeDeparture.BASIS, ReplayFinishingEvidence.REPEAT_CHARGE)) " · inferred" else ""),
                     sourceAtNanos = association?.faintSourceAtNanos ?: knockout.recordedAtNanos,
                     sourceArticleIds = association?.evidenceArticleIds ?: knockout.sourceArticleIds,
-                    finishingAttribution = association)))
+                    finishingAttribution = association,
+                    lastWitnessedAttack = fallback)))
             }
             finishingFastMoveAssociations.filter { (it.basis in ReplayLastOpponentFastFinish.bases || it.basis == ReplayMissingTickFinish.BASIS) &&
                 presentedKnockouts.none { ko -> ko.side == it.recipientSide && ko.appearanceAtNanos == it.recipientAppearanceAtNanos }
@@ -863,6 +930,16 @@ class MatchReplayModel(
                     sourceAtNanos = link.faintSourceAtNanos, sourceArticleIds = link.evidenceArticleIds,
                     finishingAttribution = link)))
             }
+            addAll(ReplayUnnamedOpponentFaints.markers(battleArchive, this).map { marker ->
+                // An unnamed zero-HP marker already proves this was the last
+                // opponent slot, and cites its one-ball reading first.
+                val zero = marker.faintTiming as? ReplayFaintTiming.ZeroHp ?: return@map marker
+                val one = replayArticlesById[marker.sourceArticleIds.firstOrNull()]?.monotonicTimeNanos
+                    ?: return@map marker
+                val fallback = lastWitnessedAttack("OPPONENT", one, zero.frame.atNanos, null) ?: return@map marker
+                marker.copy(label = "${marker.label} · ${fallback.label} · last witnessed",
+                    lastWitnessedAttack = fallback)
+            })
             val cryTimedFaints = filter { it.kind == ReplayEventMarkerKind.FAINT && it.faintTiming is ReplayFaintTiming.Cry }
             audioRecovery.partialCryCandidates.forEach { cry ->
                 val player = combatantFor("PLAYER", cry.estimatedOnsetNanos)
@@ -1516,7 +1593,13 @@ class MatchReplayModel(
      * selects the animation instant while every supporting kind stays visible.
      */
     private fun reconstructChargedMoveUses(): List<ReplayChargedMoveUse> {
-        val recoveredAnnouncements = reconstructNamedChargedMoveAnnouncements()
+        val named = reconstructNamedChargedMoveAnnouncements()
+        val recorded = recordedBannerPerformances()
+        val recoveredAnnouncements = named.map { use ->
+            val performance = recorded.singleOrNull { it.side == use.side && it.moveName.equals(use.moveName, true) &&
+                sameChargeAnnouncementEpisode(it.sourceAtNanos, use.sourceAtNanos) }
+            if (performance == null) use else use.copy(articleIds = use.articleIds + performance.articleIds)
+        } + recorded.filter { performance -> named.none { sameChargeAnnouncementEpisode(it.sourceAtNanos, performance.sourceAtNanos) } }
         val evidence = actionArticles.mapNotNull { article ->
             val atNanos = article.monotonicTimeNanos ?: return@mapNotNull null
             if (replayQteProgressGrade(article) != null) {
@@ -1750,6 +1833,35 @@ class MatchReplayModel(
             it.monotonicTimeNanos!! > from && it.monotonicTimeNanos!! <= to &&
                 (isReplayGetReadyCue(it) || isReplayAttackIncomingCue(it))
         }
+    }
+
+    /** Restore the specific announcement occurrence identified live, including its original crop.
+     * Revisions are in custody order. Repeated sightings of one banner describe one performance. */
+    private fun recordedBannerPerformances(): List<ReplayChargedMoveUse> {
+        val latest = archive.articles.filter { it.matchId == archive.matchId &&
+            it.sourceId == "FINISHING_HIT_INTERPRETER" && it.payload is ArchivedFinishingHitCredited
+        }.associateBy { (it.payload as ArchivedFinishingHitCredited).faintArticleId }
+        if (latest.isEmpty()) return emptyList()
+        val ledger = archive.articles.associateBy { it.articleId }
+        return latest.values.mapNotNull { article ->
+            val hit = article.payload as ArchivedFinishingHitCredited
+            if (!hit.valid || hit.moveKind != "CHARGED" || hit.attackingSide != "PLAYER" || hit.damagedSide != "OPPONENT" ||
+                hit.basis !in setOf(LiveFinishingHitResolver.LEAD_BANNER, LiveFinishingHitResolver.OVERLAPPING_BANNER)) return@mapNotNull null
+            val refs = article.evidenceReferences.orEmpty().toSet()
+            val banner = replayArticlesById[hit.moveArticleId] ?: return@mapNotNull null
+            val at = banner.monotonicTimeNanos ?: return@mapNotNull null
+            if (banner.articleId !in refs || hit.faintArticleId !in refs || hit.cryArticleId !in refs ||
+                banner.sourceId != "ANNOUNCEMENT_WITNESS" || banner.payload !is ArchivedRawText ||
+                at != hit.moveSourceAtNanos || !hit.attackerSpeciesName.equals(combatantFor(hit.attackingSide, at)?.speciesName, true)) return@mapNotNull null
+            val loss = ledger[hit.faintArticleId]?.payload as? ArchivedActivePokemonFaintedWitnessed ?: return@mapNotNull null
+            val cry = replayArticlesById[hit.cryArticleId]?.payload as? ArchivedBattleCryLocalized ?: return@mapNotNull null
+            if (loss.side != hit.damagedSide || loss.speciesId != cry.speciesId || !loss.speciesName.equals(hit.recipientSpeciesName, true)) return@mapNotNull null
+            val cue = refs.mapNotNull(replayArticlesById::get).singleOrNull { it.payload == ArchivedChargeMoveUsedAnnounced &&
+                it.monotonicTimeNanos == at } ?: return@mapNotNull null
+            if (actionArticles.any { it.payload is ArchivedChargedMoveEnergySpent && sameChargeAnnouncementEpisode(at, it.monotonicTimeNanos!!) }) return@mapNotNull null
+            ReplayChargedMoveUse(hit.attackingSide, at, at, hit.moveName, 3, setOf("LIVE_RESOLVED_ANNOUNCEMENT"),
+                articleIds = setOf(banner.articleId, cue.articleId))
+        }.distinctBy { it.articleIds }
     }
 
     /** Raw announcements remain usable even if live inference missed the energy article. */

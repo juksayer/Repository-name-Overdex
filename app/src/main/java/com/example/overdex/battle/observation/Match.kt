@@ -216,7 +216,8 @@ class Match(
     internal val faintSignals = MatchFaintSignals(custody,
         com.example.overdex.battle.inference.LiveTeamLossHistory(ActivePokemonSide.OPPONENT, rebuildCounter("hud_faints"), faintHistoryCache),
         realityTimeline::getArticles)
-    private val finishingHits = com.example.overdex.battle.inference.LiveFinishingHitResolver()
+    internal val finishingReviewDiagnostics = processingDiagnostics?.let { com.example.overdex.battle.inference.FinishingReviewDiagnostics() }
+    private val finishingHits = com.example.overdex.battle.inference.LiveFinishingHitResolver(finishingReviewDiagnostics)
 
     private fun broadcastArticle(article: RealityArticle, alreadyAnnounced: Boolean = false) {
         faintSignals.observe(article)
@@ -226,7 +227,7 @@ class Match(
         publishToArticleStreams(article, alreadyAnnounced)
     }
 
-    private fun publishToArticleStreams(article: RealityArticle, alreadyAnnounced: Boolean = false) {
+    internal fun publishToArticleStreams(article: RealityArticle, alreadyAnnounced: Boolean = false) {
         if (!alreadyAnnounced) _articles.tryEmit(article)
         if (LiveDepartureMoveSoundWitness.isInput(article)) departureAudioWake.tryEmit(Unit)
         preBattleRoute.publish(article)
@@ -247,7 +248,8 @@ class Match(
             realityTimeline.append(decision)
             battleMemory.timeline.record(decision)
             _articles.tryEmit(decision)
-            DroidballOverlayPresentation.recordFinishingCredit(matchId, credit)
+            val acceptedByHud = DroidballOverlayPresentation.recordFinishingCredit(matchId, credit)
+            finishingReviewDiagnostics?.published(credit.faintArticleId, decision.id.value, credit.moveArticleId, credit.valid, acceptedByHud)
         }
     }
 

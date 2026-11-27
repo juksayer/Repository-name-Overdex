@@ -82,10 +82,25 @@ internal class FastMoveAudioCandidateContext(
         if (!relevant(article.payload)) return
         val at = effectiveTime(article) ?: return
         if (!ids.add(article.id.value)) return
+        val check = article.payload as? SpeciesCheckMeasured
+        val entry = article.payload as? ActivePokemonSpeciesWitnessed
+        // Both badge readers can wake for one send-in. Once the entry witness assigns that
+        // exact banner to one side, its sibling check no longer invalidates the other side.
+        fun belongsToOtherSide(checkRow: RealityArticle, entryRow: RealityArticle): Boolean {
+            val opened = checkRow.payload as? SpeciesCheckMeasured ?: return false
+            val confirmed = entryRow.payload as? ActivePokemonSpeciesWitnessed ?: return false
+            return opened.reason == "ENTRY" && opened.status == "OPENED" &&
+                entryRow.sourceId.id == "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS" &&
+                confirmed.side != opened.side && entryRow.monotonicTimeNanos == opened.triggerMonotonicNanos &&
+                checkRow.evidenceReferences.orEmpty().any { it in entryRow.evidenceReferences.orEmpty() }
+        }
+        val sameTime = events.subMap(at to Long.MIN_VALUE, true, at to Long.MAX_VALUE, true)
+        if (check?.reason == "ENTRY" && sameTime.values.any { belongsToOtherSide(article, it.article) }) return
+        if (entry != null && sameTime.entries.removeAll { belongsToOtherSide(it.value.article, article) }) generation++
         val before = stateAt(at).key()
         val key = at to order++
         events[key] = Event(article, at, key.second)
-        if (stateAt(at).key() == before) {
+        if (stateAt(at).key() == before && article.sourceId.id != "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS") {
             // Frequent unchanged badge/type reads must not continually cancel work.
             events.remove(key)
         } else generation++

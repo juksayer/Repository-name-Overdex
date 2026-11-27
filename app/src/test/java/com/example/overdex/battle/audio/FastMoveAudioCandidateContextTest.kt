@@ -58,6 +58,27 @@ class FastMoveAudioCandidateContextTest {
     private suspend fun snapshot(context: FastMoveAudioCandidateContext, seconds: Long = 10) =
         requireNotNull(context.snapshot(at(seconds), at(seconds) + 1_200_000_000L))
 
+    @Test fun opponentEntryKeepsThePlayerCandidateInEitherArrivalOrder() = runBlocking {
+        for (entryFirst in listOf(false, true)) {
+            val context = FastMoveAudioCandidateContext(knowledge())
+            context.observe(config(1, 1, golbat, "Wing Attack"))
+            context.observe(species(player, golbat, 3, slot = 1))
+            context.observe(species(opponent, combusken, 4))
+            val check = cue(7, "ENTRY", player).copy(evidenceReferences = listOf("send-in"))
+            val entry = species(opponent, skarmory, 7).copy(sourceId = SourceId("ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"),
+                evidenceReferences = listOf("send-in"))
+            if (entryFirst) context.observe(entry)
+            context.observe(check)
+            if (!entryFirst) {
+                assertNull(snapshot(context).sideMoves[player])
+                context.observe(entry)
+            }
+            assertEquals(setOf("Wing Attack"), snapshot(context).sideMoves[player])
+            context.observe(cue(12, "SWITCH", player))
+            assertNull(snapshot(context, 14).sideMoves[player])
+        }
+    }
+
     @Test fun `Combusken search includes Ember and Peck alongside only the current player move`() = runBlocking {
         val context = FastMoveAudioCandidateContext(knowledge())
         context.observe(config(1, 1, golbat, "Wing Attack"))

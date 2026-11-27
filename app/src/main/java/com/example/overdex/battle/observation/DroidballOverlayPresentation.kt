@@ -88,13 +88,14 @@ object DroidballOverlayPresentation {
     private val _finishingCredit = MutableStateFlow<HudFinishingCredit?>(null)
     internal val finishingCredit = _finishingCredit.asStateFlow()
 
-    @Synchronized internal fun recordFinishingCredit(matchId: String, credit: FinishingHitCredited) {
-        if (energyForecastMatchId != matchId) return
+    @Synchronized internal fun recordFinishingCredit(matchId: String, credit: FinishingHitCredited): Boolean {
+        if (energyForecastMatchId != matchId) return false
         if (credit.valid) {
             _finishingCredit.value = HudFinishingCredit(credit, System.nanoTime() + 5_000_000_000L)
         } else if (_finishingCredit.value?.decision?.faintArticleId == credit.faintArticleId) {
             _finishingCredit.value = null
         }
+        return true
     }
     private val _battleBadgeSeen = MutableStateFlow(false)
     val battleBadgeSeen = _battleBadgeSeen.asStateFlow()

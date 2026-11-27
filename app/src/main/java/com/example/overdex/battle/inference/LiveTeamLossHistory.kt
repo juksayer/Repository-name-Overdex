@@ -64,10 +64,13 @@ internal class LiveTeamLossHistory(private val side: ActivePokemonSide,
         val id = article.id.value
         val observation = when (val p = article.payload) {
             is ActivePokemonSpeciesWitnessed -> if (p.side == side) {
-                TeamLossObservation.Identity(id, at, p.speciesName, p.speciesId)
+                TeamLossObservation.Identity(id, at, p.speciesName, p.speciesId,
+                    article.sourceId.id == "OPPONENT_SPECIES_OVERLAY_PIPELINE" && p.ocrMatchBasis?.startsWith("EXACT") == true &&
+                        article.confidence?.let { it in .80f..1f } == true)
             } else null
             is ActiveHpBarMeasured -> if (p.side == side && p.filledFraction > 0f && p.filledFraction <= 1f) {
-                TeamLossObservation.Alive(id, at)
+                TeamLossObservation.Alive(id, at,
+                        article.sourceId.id == "OPPONENT_ACTIVE_HP_BAR_WITNESS" && p.fillColor in setOf("GREEN", "YELLOW", "RED") && article.confidence?.let { it in .80f..1f } == true)
             } else null
             is PlayerPokeBallCountMeasured -> if (side == ActivePokemonSide.PLAYER && p.maximumCount == 3) {
                 TeamLossObservation.Count(id, at, p.visibleCount)

@@ -12,6 +12,7 @@ sealed interface TeamLossObservation {
         override val atNanos: Long,
         val speciesName: String,
         val speciesId: Int? = null,
+        val exactNativeBadge: Boolean = false,
     ) : TeamLossObservation
 
     data class Count(
@@ -21,7 +22,7 @@ sealed interface TeamLossObservation {
     ) : TeamLossObservation
 
     /** A valid independent positive-HP measurement, not an inferred attack or replay HP. */
-    data class Alive(override val articleId: String, override val atNanos: Long) : TeamLossObservation
+    data class Alive(override val articleId: String, override val atNanos: Long, val ordinaryLiveBar: Boolean = false) : TeamLossObservation
 }
 
 data class TeamLossCandidate(
@@ -71,7 +72,7 @@ object TeamLossResolver {
         }
     }
 
-    private data class AliveProof(val at: Long, val articleId: String, val identityIds: List<String>)
+    private data class AliveProof(val at: Long, val articleId: String, val identityIds: List<String>, val ordinaryLiveBar: Boolean)
     private data class Loss(
         val before: TeamLossObservation.Count,
         val after: TeamLossObservation.Count,
@@ -123,7 +124,7 @@ object TeamLossResolver {
             val appearance = appearances.getOrNull(appearanceIndex) ?: return@forEach
             val key = appearance.key ?: return@forEach
             val identityIds = appearance.identities.filter { it.atNanos <= proof.atNanos }.map { it.articleId }
-            alive.getOrPut(key) { mutableListOf() } += AliveProof(proof.atNanos, proof.articleId, identityIds)
+            alive.getOrPut(key) { mutableListOf() } += AliveProof(proof.atNanos, proof.articleId, identityIds, proof.ordinaryLiveBar)
         }
 
         val countGroups = clean.filterIsInstance<TeamLossObservation.Count>()
@@ -147,10 +148,29 @@ object TeamLossResolver {
                         evidence += identityConflictEvidence[identity.articleId].orEmpty()
                     }
             }
+            // Once only one member remains, a new exact badge with positive HP
+            // identifies the survivor. Side-only HP between the count and that
+            // badge cannot prove the outgoing appearance survived the loss.
+            val survivor = if (before.count == 2 && count.count == 1) appearances
+                .firstOrNull { it.at > count.atNanos }?.takeIf { next ->
+                    next.at - count.atNanos <= 3_000_000_000L && next.key != null &&
+                        next.identities.any { it.atNanos == next.at && it.exactNativeBadge } &&
+                        appearances.none { appearance -> appearance.at > next.at } &&
+                        appearances.none { appearance -> appearance.identities.any { it.atNanos in count.atNanos until next.at } }
+                } else null
+            val survivorHp = survivor?.let { next ->
+                alive[next.key].orEmpty().firstOrNull { it.ordinaryLiveBar && it.at in next.at until next.until }
+            }
+            if (survivor != null && survivorHp != null) {
+                evidence += survivor.identities.first { it.exactNativeBadge && it.atNanos == survivor.at }.articleId
+                evidence += survivorHp.articleId
+            }
             val candidates = interval.filter { it.key != null }.groupBy { it.key!! }
                 .mapNotNull { (key, visits) ->
                     // Identity alone may linger after a KO. Positive HP after the loss is independent survival proof.
-                    val proof = alive[key]?.firstOrNull { it.at > count.atNanos }
+                    val proof = alive[key]?.firstOrNull {
+                        it.at > count.atNanos && (survivor == null || survivorHp == null || it.at >= survivor.at)
+                    }
                     if (proof != null) {
                         evidence += proof.articleId
                         evidence += proof.identityIds

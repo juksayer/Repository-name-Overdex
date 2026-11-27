@@ -554,6 +554,25 @@ class RecordedMoondropFaintCryDeviceTest {
         assertEquals(hash, ReplayRetainedAudioRecovery.sha(file.readBytes()))
     }
 
+    @Test fun reviewedGolbatFinishesLandOnReopen() = runBlocking<Unit> {
+        assumeTrue(InstrumentationRegistry.getArguments().getString("reviewedGolbatFinishes") == "true")
+        val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        val repo = PokemonRepository(PokedexDatabase.getDatabase(ctx).pokemonDao(), LocalSpriteProvider(ctx.assets), GameMasterLoader(ctx))
+        val lookup = ReplayReferenceLookup.fromRepository(repo::getPokemonByName, repo::getAllSpeciesNames)
+        for ((fixture, expected) in listOf("fast" to "Wing Attack", "charged" to "Shadow Ball")) {
+            val file = File(ctx.cacheDir, "finishing-review/$fixture.odxmatch.zip")
+            val archive = file.inputStream().use(MatchArchivePackageReader::read)
+            val model = requireNotNull(prepareReplay(ctx, archive, android.net.Uri.fromFile(file), lookup, {}).replay).model
+            val faint = model.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT && "Vaporeon" in it.label }
+            val decision = requireNotNull(faint.finishingAttribution) { faint.toString() }
+            assertEquals("Golbat", decision.attackerSpeciesName)
+            assertEquals(expected, decision.moveName)
+            val landing = model.sceneAt(decision.landingAtNanos)
+            assertTrue(landing.fastMoveActions.any { it.finishingAssociation == decision } ||
+                landing.chargedMoveActions.any { it.finishingAssociation == decision })
+        }
+    }
+
     private suspend fun prepareRecorded(archive: MatchArchive, file: File): PreparedReplay {
         val ctx = InstrumentationRegistry.getInstrumentation().targetContext
         val catalog = GameMasterLoader(ctx)

@@ -175,3 +175,11 @@ internal fun isSideLocatedSpeciesSource(sourceId: String): Boolean = sourceId in
 
 private fun normalizeEntrySpecies(value: String): String =
     TeamRosterSpeciesAttributor.speciesKey(value)
+
+/** A selected lead can own its attack without waiting for a native player-name reading. */
+internal fun isAttackOwnerIdentity(row: com.example.overdex.battle.reality.RealityArticle): Boolean {
+    val identity = row.payload as? com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed ?: return false
+    return isSideLocatedSpeciesSource(row.sourceId.id) || row.sourceId.id == "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS" ||
+        (row.sourceId.id == "TEAM_SELECT_LEAD_INFERENCE" && identity.side == ActivePokemonSide.PLAYER &&
+            identity.speciesId != null && row.predecessorIds.isNotEmpty())
+}

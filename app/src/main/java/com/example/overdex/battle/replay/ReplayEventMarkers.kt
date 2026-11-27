@@ -21,6 +21,7 @@ data class ReplayEventMarker(
     val inferenceExplanation: String? = null,
     /** Recorded performer for an effect whose subject is the affected Pokémon. */
     val causeSide: String? = null,
+    val lastWitnessedAttack: ReplayLastWitnessedAttack? = null,
 ) {
     internal val initiatingSide: String? get() = when (kind) {
         ReplayEventMarkerKind.MATCH_START -> null

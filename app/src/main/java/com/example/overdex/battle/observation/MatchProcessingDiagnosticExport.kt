@@ -14,6 +14,14 @@ internal object MatchProcessingDiagnosticExport {
         val json = Json { classDiscriminator = "kind" }
         val report = buildJsonObject {
             put("matchId", match.matchId)
+            match.finishingReviewDiagnostics?.let { diagnostics ->
+                val ids = match.realityTimeline.getArticles().asSequence().filter { it.payload is com.example.overdex.battle.custody.FinishingHitCredited }
+                    .map { it.id.value }.toSet()
+                put("finishingReviews", buildJsonArray {
+                    for (review in diagnostics.snapshot()) add(JsonObject(json.encodeToJsonElement(review).jsonObject +
+                        ("presentInTimelineAtExport" to JsonPrimitive(review.decisionId in ids))))
+                })
+            }
             match.faintHistoryCache?.snapshot()?.let { c -> put("faintHistoryCache", buildJsonObject {
                 put("hits",c.hits); put("misses",c.misses); put("oversized",c.oversized)
                 put("evictions",c.evictions); put("entries",c.entries); put("retainedRows",c.retainedRows)

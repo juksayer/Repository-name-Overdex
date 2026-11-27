@@ -359,6 +359,28 @@ delays, switches, competing attacks and missing observations can move the true
 faint away from a simple move-start-plus-duration formula. This is a proposal,
 not an implemented or validated attribution or Replay rule.
 
+### Unnamed opponent faints in completed Replay
+
+A verified single-step native opponent ball-count drop can record an unnamed
+loss in Replay when no independently named faint already accounts for that
+interval. The count brackets the loss; it does not time the hit or select an
+outgoing species. Do not split a skipped count into invented event times.
+For the independently verified last opponent, nearby ordinary red and
+verified empty readings of the same HP bar can also establish an unnamed
+faint. A switch boundary, later positive HP, contradictory result or unresolved
+bar must not be treated as verified depletion. A win alone proves no faint.
+These markers do not change the archived Timeline, active species, or KO credit.
+
+### Trainer convention: last witnessed attack credit
+
+Once the final faint is independently established, Replay should credit the
+last witnessed opposing attack against that active recipient when stronger
+finishing evidence is absent. The attacker must already be identified.
+Ignore decorative attacks, outright blocks, and attacks on an earlier
+recipient. Label the fallback as last-witnessed credit. It does not establish
+a missing faint, the attack's finishing impact time, or measured zero HP.
+A trainer can separately record a witnessed finish that the archive missed.
+
 ### Missing final Fast Move tick in completed Replay
 
 If the active last opponent has a distinct departure cry, compare its last surviving whole bar and the subsequent recipient response with the side and duration of the attacker’s supported Fast Moves. In Moondrop archive `9489a918`, Golbat's last linked Wing Attack tick at GO+83.339 s left Vaporeon alive. The next expected landing at +84.339 s overlaps a changed whole bar at +84.289 s. Vaporeon's separate cry occurs at +85.255 s. Replay can credit that next Wing Attack as inferred when the previous linked hits dealt enough damage to finish the remaining HP. One unresolved bar column remains, and the next beat is a prediction. Preserve those facts when displaying the inferred landing.

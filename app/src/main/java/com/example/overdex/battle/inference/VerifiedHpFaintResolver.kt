@@ -155,7 +155,7 @@ internal object VerifiedHpFaintResolver {
         )
     }
 
-    private fun valid(hp: VerifiedHpFaintObservation.Hp): Boolean =
+    internal fun valid(hp: VerifiedHpFaintObservation.Hp): Boolean =
         hp.width != null && hp.height != null && hp.width > 0 && hp.height > 0 &&
             hp.left >= 0 && hp.top >= 0 && hp.right <= hp.width && hp.bottom < hp.height &&
             hp.barWidth >= 32 && hp.barHeight >= 6 && hp.fraction.isFinite() && hp.fraction in 0f..1f &&
@@ -163,7 +163,7 @@ internal object VerifiedHpFaintResolver {
             (hp.color == null || (hp.color == "EMPTY" && hp.fraction == 0f) ||
                 (hp.color in setOf("RED", "YELLOW", "GREEN") && hp.fraction > 0f))
 
-    private fun near(a: VerifiedHpFaintObservation.Hp, b: VerifiedHpFaintObservation.Hp): Boolean =
+    internal fun near(a: VerifiedHpFaintObservation.Hp, b: VerifiedHpFaintObservation.Hp): Boolean =
         a.width == b.width && a.height == b.height &&
             ActiveHpBarGeometry.matchesSize(b.barWidth, b.barHeight, a.barWidth, a.barHeight) &&
             abs(a.left - b.left) <= max(4, a.barWidth / 25) &&

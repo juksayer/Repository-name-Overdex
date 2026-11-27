@@ -841,7 +841,8 @@ fun MatchReplayScreen(
                         }
                         selectedDecision?.let { record ->
                             ReplayLcdText("Faint decision", heading = true)
-                            if (record.credit == null) ReplayLcdText("Finishing attack unresolved")
+                            if (record.credit == null && record.lastWitnessedAttack == null)
+                                ReplayLcdText("Finishing attack unresolved")
                             val origin = model.matchStartNanos ?: model.startNanos
                             for (entry in record.entries) {
                                 val ms = kotlin.math.round((entry.atNanos - origin) / 1_000_000.0).toLong()
