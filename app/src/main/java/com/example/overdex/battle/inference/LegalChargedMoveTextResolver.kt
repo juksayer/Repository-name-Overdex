@@ -52,6 +52,41 @@ internal object LegalChargedMoveTextResolver {
         (name.equals(stem, true) || name.equals(stem + "l", true) ||
             (stem.endsWith('|') && name.equals(stem.dropLast(1) + "l", true)))
 
+    /** Only compare fragments inside a native "performer used ..." sentence, after
+     * establishing the performer. Two source frames must independently agree. */
+    fun equippedGlyphCandidate(field: String, equipped: List<String>): String? {
+        val ink = field.trim().trimEnd('.')
+        if (ink.isEmpty()) return null
+        val readings = listOf(ink, ink.removeSuffix("!")).filter { it.isNotEmpty() }
+        return equipped.filter(String::isNotBlank).distinctBy { it.lowercase() }.singleOrNull { move ->
+            val target = move.lowercase()
+            readings.any { raw ->
+                val reading = raw.lowercase()
+                when {
+                    reading == target -> true
+                    reading.length == 1 -> reading[0].isLetter() && reading[0] == target.first()
+                    else -> {
+                        val observed = wordShape(reading)
+                        listOf(target, target.substringAfterLast(' ')).any { reference ->
+                            val expected = wordShape(reference)
+                            reference.length >= 4 && (observed == expected ||
+                                expected.endsWith("ll") && observed in listOf(expected.dropLast(1), expected + "l"))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun wordShape(value: String): String = value.map { glyph ->
+        when (glyph) {
+            '8' -> 'b'
+            '1', '|', '!', 'i' -> 'l'
+            'e' -> 'a' // Closed bowl in the small announcement lettering.
+            else -> glyph
+        }
+    }.joinToString("")
+
     private fun normalize(value: String) = SpeciesOcrTypography.normalizeLabel(value)
 
     /**

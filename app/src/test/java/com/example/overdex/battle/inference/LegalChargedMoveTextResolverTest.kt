@@ -8,6 +8,21 @@ import org.junit.Test
 class LegalChargedMoveTextResolverTest {
     private val earthPower = Move("Earth Power", PokemonType.GROUND, 90, 55, false)
 
+    @Test fun damagedMoveFieldsCompareAgainstTheEstablishedOwnersEquippedMoves() {
+        val golbat = listOf("Shadow Ball", "Poison Fang")
+        for (field in listOf("Shadow Bal!", "Shadow Bal", "Shadow Bal!l", "8a!11", "Be||.", "S")) {
+            assertEquals(field, "Shadow Ball", LegalChargedMoveTextResolver.equippedGlyphCandidate(field, golbat))
+        }
+        assertEquals("Poison Fang", LegalChargedMoveTextResolver.equippedGlyphCandidate("P", golbat))
+        for (field in listOf("Bal!l", "Be||", "8a!11")) {
+            assertNull(LegalChargedMoveTextResolver.equippedGlyphCandidate(field, listOf("Shadow Ball", "Energy Ball")))
+        }
+        assertNull(LegalChargedMoveTextResolver.equippedGlyphCandidate("S", listOf("Shadow Ball", "Sludge Bomb")))
+        for (field in listOf("", "!", "8", "S cloud", "Ball used S", "Shadow Bolt")) {
+            assertNull(field, LegalChargedMoveTextResolver.equippedGlyphCandidate(field, golbat))
+        }
+    }
+
     @Test fun `one extra terminal S after a complete legal name is an explicit OCR repair`() {
         val match = LegalChargedMoveTextResolver.bestMatches("Earth Powers", listOf(earthPower)).single()
         assertEquals(earthPower, match.move)

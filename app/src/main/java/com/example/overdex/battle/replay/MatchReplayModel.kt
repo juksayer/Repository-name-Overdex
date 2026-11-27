@@ -501,7 +501,7 @@ class MatchReplayModel(
             ::combatantFor, ::appearanceAt, ::sameFastMoveExchange)
         val recovered = observed + count + fastAudio + sliverLinks + terminalAudio + counters +
             listOfNotNull(evidence.incomingCryFinish(audioRecovery, retainedSliverEvidence.impactLights), cryCharge, frameLink, lastOpponentFastLink, terminalChargeDeparture?.candidate, missingTick)
-        val live = ReplayRecordedFinishingCredits.read(archive, presentedKnockouts, charges, recovered, ::combatantFor, ::appearanceAt, finishingCreditRows)
+        val live = ReplayRecordedFinishingCredits.read(archive, presentedKnockouts, charges, recovered, ::combatantFor, ::appearanceAt, finishingCreditRows, ::sameChargeAnnouncementEpisode)
         val (eligible, expired) = (live + recovered).partition { link ->
             link !is ReplayFinishingFastAssociation || withinFinishingMoveWindow(link)
         }
@@ -1845,7 +1845,7 @@ class MatchReplayModel(
         return latest.values.mapNotNull { article ->
             val hit = article.payload as ArchivedFinishingHitCredited
             if (!hit.valid || hit.moveKind != "CHARGED" || hit.attackingSide != "PLAYER" || hit.damagedSide != "OPPONENT" ||
-                hit.basis !in setOf(LiveFinishingHitResolver.LEAD_BANNER, LiveFinishingHitResolver.OVERLAPPING_BANNER)) return@mapNotNull null
+                hit.basis !in LiveFinishingHitResolver.BANNER_BASES) return@mapNotNull null
             val refs = article.evidenceReferences.orEmpty().toSet()
             val banner = replayArticlesById[hit.moveArticleId] ?: return@mapNotNull null
             val at = banner.monotonicTimeNanos ?: return@mapNotNull null
@@ -1974,7 +1974,7 @@ class MatchReplayModel(
         if (alias.length < 3 || actors.values.any { it.speciesName.equals(alias, true) } ||
             player.speciesName == opponent.speciesName || player.isFainted) return null
         val reading = banner.value.substring(banner.groups[2]!!.range.first)
-        if ('!' !in reading || reading.contains(" used ", ignoreCase = true)) return null
+        if (reading.contains(" used ", ignoreCase = true)) return null
         val stem = reading.substringBefore('!').trim()
         if (stem.length < 7) return null
         val equipped = configuredPlayerMembers.flatMap { member ->
@@ -1983,20 +1983,35 @@ class MatchReplayModel(
             }.map { member to it }
         }.singleOrNull() ?: return null
         if (!equipped.first.speciesName.equals(player.speciesName, true)) return null
-        val cropId = row.evidenceReferences.orEmpty().singleOrNull { id ->
-            val source = replayArticlesById[id]
-            source?.monotonicTimeNanos == at && (source.payload as? ArchivedCropCaptured)?.cropName == "AnnouncementCrop"
-        } ?: return null
+        val cropId = announcementCropId(row) ?: return null
         fun nicknameKey(value: String) = value.filterNot(Char::isWhitespace).lowercase()
         fun missingSymbol(longer: String, shorter: String) = longer.length == shorter.length + 1 &&
             longer.indices.any { i -> !longer[i].isLetterOrDigit() && longer.removeRange(i, i + 1) == shorter }
+        val normalizedMove = normalizeSpeciesName(equipped.second)
+        val clipped = normalizedMove.endsWith("LL") && normalizeSpeciesName(stem) == normalizedMove.dropLast(1)
+        val corroboration = if (clipped && replayArticlesById[cropId]?.sourceId == "ANNOUNCEMENT_CROP_CAPTURE")
+            actionArticles.firstNotNullOfOrNull { other ->
+                val time = other.monotonicTimeNanos!!
+                if (other.sourceId != row.sourceId || time <= at || !sameChargeAnnouncementEpisode(at, time) ||
+                    appearanceAt("PLAYER", time) != appearanceAt("PLAYER", at) ||
+                    combatantFor("PLAYER", time)?.speciesId != player.speciesId ||
+                    appearanceAt("OPPONENT", time) != appearanceAt("OPPONENT", at)) return@firstNotNullOfOrNull null
+                val text = (other.payload as? ArchivedRawText)?.value?.trim() ?: return@firstNotNullOfOrNull null
+                val next = NAMED_MOVE_PATTERN.matchEntire(text) ?: return@firstNotNullOfOrNull null
+                if (nicknameKey(next.groupValues[1]) != nicknameKey(alias) ||
+                    normalizeSpeciesName(next.groupValues[2]) != normalizedMove.dropLast(1)) return@firstNotNullOfOrNull null
+                val nextCrop = announcementCropId(other)?.takeIf {
+                    it != cropId && replayArticlesById[it]?.sourceId == "ANNOUNCEMENT_CROP_CAPTURE"
+                } ?: return@firstNotNullOfOrNull null
+                setOf(other.articleId, nextCrop)
+            } else null
         val badge = replayArticles.lastOrNull {
             it.sourceId == "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_RAW" &&
                 it.monotonicTimeNanos!! in maxOf(appearanceAt("PLAYER", at), at - CHARGE_MOVE_PREPARATION_MAX_NANOS)..at &&
                 (it.payload as? ArchivedRawText)?.value?.let { value ->
                     val read = nicknameKey(value)
                     val named = nicknameKey(alias)
-                    read == named || (stem.equals(equipped.second, true) && named.any { c -> !c.isLetterOrDigit() } &&
+                    read == named || ((stem.equals(equipped.second, true) || corroboration != null) && named.any { c -> !c.isLetterOrDigit() } &&
                         (missingSymbol(named, read) || missingSymbol(read, named)))
                 } == true
         }
@@ -2007,6 +2022,11 @@ class MatchReplayModel(
                 image?.cropName == "PlayerActiveSpeciesTextCrop" && image.nativeTeamBadgePresent == true
         }
         val phase = archivedChargeSideProof(at)
+        val corroboratingFrames = corroboration.orEmpty().takeIf { badgeId != null }.orEmpty()
+        // An unterminated long reading can name the charge when only its last
+        // doubled letter was lost and the same appearance performed a player QTE.
+        if (corroboratingFrames.isEmpty() && '!' !in reading && (phase?.first != "PLAYER" || !equipped.second.endsWith("ll", true) ||
+                !equipped.second.dropLast(1).equals(stem, true))) return null
         val ownerProof = if (badgeId != null) setOf(badge!!.articleId, badgeId)
         else if (phase?.first == "PLAYER") phase.second else {
             val playerPool = possibleChargedMoves[normalizeSpeciesName(player.speciesName)].orEmpty()
@@ -2019,9 +2039,17 @@ class MatchReplayModel(
         val configuration = playerTeamConfiguration.recordsAt().single { it.payload == equipped.first }
         return ReplayChargedMoveUse("PLAYER", at, at, equipped.second, 3,
             setOf("NAMED_CHARGED_MOVE", if (badgeId != null) "CONFIGURED_MOVE_AND_NATIVE_NICKNAME_BADGE"
-                else "CONFIGURED_MOVE_AND_DISTINCT_ACTIVE_MOVE_POOLS"),
-            articleIds = setOf(row.articleId, cropId, configuration.articleId) + ownerProof)
+                else "CONFIGURED_MOVE_AND_DISTINCT_ACTIVE_MOVE_POOLS") +
+                listOfNotNull("REPEATED_CONFIGURED_MOVE_PREFIX".takeIf { corroboratingFrames.isNotEmpty() }),
+            articleIds = setOf(row.articleId, cropId, configuration.articleId) + ownerProof + corroboratingFrames)
     }
+
+    private fun announcementCropId(row: ArchivedRealityArticle): String? =
+        row.evidenceReferences.orEmpty().singleOrNull { id ->
+            val source = replayArticlesById[id]
+            source?.monotonicTimeNanos == row.monotonicTimeNanos &&
+                (source?.payload as? ArchivedCropCaptured)?.cropName == "AnnouncementCrop"
+        }
 
     /** A repeated final l can merge with the banner's exclamation mark under HUD text.
      * The earlier clean use corroborates spelling only. Its IDs and clock belong to that use.
@@ -3102,10 +3130,21 @@ private class ReplayIdentityTrack private constructor(
 
         private fun unresolvedIntervals(side: String, articles: List<ArchivedRealityArticle>,
             observations: List<ReplayIdentityObservation>): List<ReplayIdentityGap> {
+            val projectedLosses = articles.filter { row ->
+                val faint = row.payload as? ArchivedActivePokemonFaintedWitnessed
+                faint?.side == side && faint.basis == ReplayTeamLossProjection.BASIS
+            }.groupBy { it.monotonicTimeNanos }
             val checks = articles.mapNotNull { row ->
                 val check = row.payload as? ArchivedSpeciesCheckMeasured ?: return@mapNotNull null
-                check.takeIf { check.side == side && check.status == "OPENED" &&
-                    check.reason in com.example.overdex.battle.observation.SpeciesCheckCoordinator.VERIFICATION_REASONS }
+                if (check.side != side || check.status != "OPENED" ||
+                    check.reason !in com.example.overdex.battle.observation.SpeciesCheckCoordinator.VERIFICATION_REASONS) return@mapNotNull null
+                // The count can catch up after the replacement has entered. Keep its
+                // verified appearance when this exact drop was assigned to the outgoing Pokémon.
+                if (check.reason == "BALL_DECREASE" && confirmedReplacementBeforeCount(side, row,
+                        check.triggerMonotonicNanos, observations, projectedLosses[check.triggerMonotonicNanos].orEmpty())) {
+                    return@mapNotNull null
+                }
+                check
             }.sortedBy { it.triggerMonotonicNanos }
             val hp = com.example.overdex.battle.observation.AppearanceHpBudget()
             val result = mutableListOf<ReplayIdentityGap>()
@@ -3145,6 +3184,31 @@ private class ReplayIdentityTrack private constructor(
             }
             since?.let { result += ReplayIdentityGap(it..Long.MAX_VALUE, hpCheckOnly) }
             return result
+        }
+
+        private fun confirmedReplacementBeforeCount(
+            side: String,
+            check: ArchivedRealityArticle,
+            at: Long,
+            observations: List<ReplayIdentityObservation>,
+            losses: List<ArchivedRealityArticle>,
+        ): Boolean {
+            val count = check.evidenceReferences.orEmpty().singleOrNull() ?: return false
+            val loss = losses.singleOrNull { count in it.evidenceReferences.orEmpty() } ?: return false
+            val fainted = (loss.payload as ArchivedActivePokemonFaintedWitnessed).speciesId ?: return false
+            val refs = loss.evidenceReferences.orEmpty()
+            val badge = observations.lastOrNull { it.atNanos <= at } ?: return false
+            if (badge.speciesId == null || badge.speciesId == fainted ||
+                badge.sourceId != "${side}_SPECIES_OVERLAY_PIPELINE" || badge.evidenceArticleIds.isEmpty() ||
+                badge.articleId !in refs) return false
+            val entry = observations.lastOrNull {
+                it.atNanos < badge.atNanos && it.sourceId == "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS" &&
+                    it.speciesId == badge.speciesId && it.articleId in refs
+            } ?: return false
+            return observations.lastOrNull { it.atNanos < entry.atNanos && it.speciesId != entry.speciesId }
+                ?.speciesId == fainted && observations.none {
+                it.atNanos in entry.atNanos..at && it.speciesId != badge.speciesId
+            }
         }
 
         private fun isBracketedCryContradiction(
