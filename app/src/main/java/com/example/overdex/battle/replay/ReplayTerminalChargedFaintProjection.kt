@@ -50,13 +50,19 @@ internal class ReplayTerminalChargedFaintProjection(archive: MatchArchive, proje
 
 internal fun ArchivedRealityArticle.terminalFinishRecord(): TerminalFinishRecord? {
     val at = monotonicTimeNanos ?: return null
-    val p = runCatching<TestimonyPayload?> {
+    val p = terminalPayload() ?: return null
+    if (!TerminalChargedFaintResolver.relevant(p, sourceId)) return null
+    return TerminalFinishRecord(articleId, at, sourceId, confidence, p)
+}
+
+internal fun ArchivedRealityArticle.terminalPayload(): TestimonyPayload? =
+    runCatching<TestimonyPayload?> {
         when (val p = payload) {
             is ArchivedPlayerTeamRosterConfirmation -> PlayerTeamRosterConfirmation(p.confirmed, List(3) { p.speciesBySlot.getOrNull(it) })
             is ArchivedPlayerTeamRosterSlotWitnessed -> if (p.slot in 1..3)
                 PlayerTeamRosterSlotWitnessed(p.slot, p.speciesName, p.speciesId) else null
             is ArchivedPlayerTeamSlotConfigured -> runCatching {
-                PlayerTeamSlotConfigured(p.slot, p.speciesName, p.speciesId, p.fastMoveName, p.chargedMoveNames)
+                PlayerTeamSlotConfigured(p.slot, p.speciesName, p.speciesId, p.fastMoveName, p.chargedMoveNames, p.ownedPokemon)
             }.getOrNull()
             is ArchivedTerminalParticleObservations -> TerminalParticleObservations(ActivePokemonSide.valueOf(p.requestedRecipient),
                 p.phaseAtNanos, p.sourceDeadlineNanos, p.samples, p.ended, p.totalSamples)
@@ -92,7 +98,4 @@ internal fun ArchivedRealityArticle.terminalFinishRecord(): TerminalFinishRecord
             ArchivedScreenIgnoredByUser -> ScreenIgnoredByUser
             else -> null
         }
-    }.getOrElse { ScreenIgnoredByUser } ?: return null
-    if (!TerminalChargedFaintResolver.relevant(p, sourceId)) return null
-    return TerminalFinishRecord(articleId, at, sourceId, confidence, p)
-}
+    }.getOrElse { ScreenIgnoredByUser }

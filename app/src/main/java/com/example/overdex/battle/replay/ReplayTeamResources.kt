@@ -1,8 +1,9 @@
 package com.example.overdex.battle.replay
 
 import com.example.overdex.battle.archive.*
+import com.example.overdex.battle.inference.DepartureCryFaint
 
-/** Null means no count was recorded; a hidden badge must not look like zero. */
+/** The displayed team count includes confirmed losses. A hidden badge alone has no count. */
 data class ReplayTeamResources(val pokeBalls: Int? = null, val shields: Int? = null)
 
 internal class ReplayResourceTrack(
@@ -15,6 +16,12 @@ internal class ReplayResourceTrack(
     // than briefly resurrecting a ball on the incoming Pokemon's badge. This
     // never guesses a starting count or subtracts an extra ball from a reading.
     private val fittedCounts = knockouts.filter { it.side == side && it.verifiedPokeBallsAfter != null }
+    // The last badge ball remains visible in the game. Its resolved departure cry
+    // changes the displayed number of conscious Pokémon without adding a measurement.
+    private val finalCryAt = knockouts.singleOrNull {
+        it.side == side && it.basis == DepartureCryFaint.LAST && it.replacementAtNanos == null
+    }?.let { (it.timing as? ReplayFaintTiming.Cry)?.onset?.atNanos }
+
     private val measurements = articles.filter {
         it.payload is ArchivedPlayerPokeBallCountMeasured || it.payload is ArchivedPlayerShieldCountMeasured ||
             it.payload is ArchivedOpponentBattleResourceCountMeasured
@@ -47,6 +54,7 @@ internal class ReplayResourceTrack(
                 balls = minOf(balls ?: 3, knockout.verifiedPokeBallsAfter!!)
             }
         }
+        if (balls == 1 && finalCryAt != null && cursor >= finalCryAt) balls = 0
         return ReplayTeamResources(balls, shields)
     }
 }

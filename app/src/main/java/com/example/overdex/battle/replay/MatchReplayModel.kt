@@ -113,6 +113,7 @@ class MatchReplayModel(
             else -> false
         }
     }), retainedSliverEvidence.lastBallReadings).withQualifiedBattleIdentities().withWitnessedBattleStart()
+    private val finishingCreditRows = reviewedBannerCredits(archive)
     private val teamLossProjection = ReplayTeamLossProjection(battleArchive)
     private val hpFaintProjection = ReplayVerifiedHpFaintProjection(battleArchive, teamLossProjection.articles)
     private val terminalFaintProjection = ReplayTerminalChargedFaintProjection(battleArchive, hpFaintProjection.articles, audioRecovery.cries)
@@ -500,7 +501,7 @@ class MatchReplayModel(
             ::combatantFor, ::appearanceAt, ::sameFastMoveExchange)
         val recovered = observed + count + fastAudio + sliverLinks + terminalAudio + counters +
             listOfNotNull(evidence.incomingCryFinish(audioRecovery, retainedSliverEvidence.impactLights), cryCharge, frameLink, lastOpponentFastLink, terminalChargeDeparture?.candidate, missingTick)
-        val live = ReplayRecordedFinishingCredits.read(archive, presentedKnockouts, charges, recovered, ::combatantFor, ::appearanceAt)
+        val live = ReplayRecordedFinishingCredits.read(archive, presentedKnockouts, charges, recovered, ::combatantFor, ::appearanceAt, finishingCreditRows)
         val (eligible, expired) = (live + recovered).partition { link ->
             link !is ReplayFinishingFastAssociation || withinFinishingMoveWindow(link)
         }
@@ -1838,9 +1839,7 @@ class MatchReplayModel(
     /** Restore the specific announcement occurrence identified live, including its original crop.
      * Revisions are in custody order. Repeated sightings of one banner describe one performance. */
     private fun recordedBannerPerformances(): List<ReplayChargedMoveUse> {
-        val latest = archive.articles.filter { it.matchId == archive.matchId &&
-            it.sourceId == "FINISHING_HIT_INTERPRETER" && it.payload is ArchivedFinishingHitCredited
-        }.associateBy { (it.payload as ArchivedFinishingHitCredited).faintArticleId }
+        val latest = finishingCreditRows.associateBy { (it.payload as ArchivedFinishingHitCredited).faintArticleId }
         if (latest.isEmpty()) return emptyList()
         val ledger = archive.articles.associateBy { it.articleId }
         return latest.values.mapNotNull { article ->

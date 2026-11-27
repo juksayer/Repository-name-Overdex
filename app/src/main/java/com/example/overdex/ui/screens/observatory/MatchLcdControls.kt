@@ -303,7 +303,7 @@ private fun ReplayLcdEvent(
     val byline = attribution?.takeIf { faint }?.let {
         val move = it.moveName ?: if (it is ReplayFinishingFastAssociation) "Fast Move" else "Charged Move"
         "$move by ${BattleSpeciesDisplay.name(it.attackerSpeciesName)}"
-    }
+    } ?: current.lastWitnessedAttack?.label
     val mirrorFaint = faint && attribution != null &&
         BattleSpeciesDisplay.name(attribution.attackerSpeciesName) == faintName
     val affectedSide = side.takeIf {
@@ -361,7 +361,7 @@ private fun ReplayLcdEvent(
         }
         affectedSide?.let { ReplayLcdText(it, textAlign = align) }
         if (shared && current.kind != ReplayEventMarkerKind.MATCH_START) {
-            ReplayLcdText(if (faint) "Cause unconfirmed" else "Initiating side unconfirmed")
+            if (!faint || byline == null) ReplayLcdText(if (faint) "Cause unconfirmed" else "Initiating side unconfirmed")
         }
         byline?.let { ReplayLcdText(it, textAlign = align) }
         if (current.kind == ReplayEventMarkerKind.CONCESSION) {

@@ -39,6 +39,7 @@ import com.example.overdex.battle.archive.ArchivedRawText
 import com.example.overdex.battle.archive.ArchivedRealityArticle
 import com.example.overdex.battle.archive.ArchivedTestimonyPayload
 import com.example.overdex.battle.archive.MatchArchive
+import com.example.overdex.battle.archive.MatchArchiveSerializer
 import com.example.overdex.battle.replay.MatchReplayModel
 import com.example.overdex.battle.replay.ReplayCorrectionKind
 import com.example.overdex.battle.replay.ReplayCorrectionSide
@@ -46,6 +47,7 @@ import com.example.overdex.battle.replay.ReplayTrainerCorrection
 import com.example.overdex.battle.replay.ReplayTrainerCorrectionStore
 import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.screens.observatory.MatchReplayScreen
+import com.example.overdex.ui.screens.observatory.ReplayLcdEventDetails
 import com.example.overdex.ui.screens.observatory.formatReplayTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -53,6 +55,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
+import java.util.zip.ZipFile
 import java.util.UUID
 
 /** Exercises the real LCD viewport and case buttons with an isolated Replay fixture. */
@@ -97,6 +100,35 @@ class ReplayLcdLayoutDeviceTest {
         click("Playback settings")
         click("Restart Replay")
         compose.runOnIdle { assertEquals(matchStart, fixture.cursor) }
+    }
+
+    @Test fun savedGolbatFinishShowsOneConsistentCauseOnTheLcd() =
+        checkGolbatFinishOnLcd("2026-11-27_11-17-30_ba9d7864-29a0-48b7-ac68-91866c46e2fd.odxmatch.zip")
+
+    @Test fun clippedOpeningStillShowsCreditedFinishingAttackOnTheLcd() =
+        checkGolbatFinishOnLcd("2026-11-27_11-41-19_0cd485a7-b0f5-4b5d-b86d-da5074d63927.odxmatch.zip")
+
+    private fun checkGolbatFinishOnLcd(filename: String) {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val file = File(context.filesDir, "match_archives/$filename")
+        org.junit.Assume.assumeTrue("Requires the saved Moondrop match $filename", file.isFile)
+        val archive = ZipFile(file).use { zip ->
+            zip.getInputStream(zip.getEntry("timeline.json")).use { MatchArchiveSerializer.deserialize(it.bufferedReader().readText()) }
+        }
+        val model = MatchReplayModel(archive)
+        val faint = model.eventMarkers.single { it.label.startsWith("Faint · Vaporeon") }
+        val charges = model.eventMarkers.filter { it.label.startsWith("Charged move · Shadow Ball") }
+        assertEquals(2, charges.size)
+        assertTrue(charges.first().finishingAttribution == null)
+        assertTrue(faint.finishingAttribution != null)
+        assertEquals(faint.finishingAttribution, charges.last().finishingAttribution)
+        compose.setContent {
+            ReplayLcdEventDetails(model.eventMarkers, faint.atNanos, faint.id, model.startNanos,
+                model.matchStartNanos, model.startNanos)
+        }
+        compose.onNode(hasText("Shadow Ball by Golbat") and hasAnyAncestor(hasTestTag("replay-events-player"))).assertIsDisplayed()
+        compose.onNodeWithText("Vaporeon fainted").assertIsDisplayed()
+        compose.onNodeWithText("Cause unconfirmed").assertDoesNotExist()
     }
 
     @Test fun latestPlaybackAndEventDetailsUseSeparateInitiatorColumns() {

@@ -25,7 +25,13 @@ data class ReplayEventMarker(
 ) {
     internal val initiatingSide: String? get() = when (kind) {
         ReplayEventMarkerKind.MATCH_START -> null
-        ReplayEventMarkerKind.FAINT -> finishingAttribution?.attackingSide ?: causeSide
+        ReplayEventMarkerKind.FAINT -> finishingAttribution?.attackingSide ?: causeSide ?: lastWitnessedAttack?.let {
+            when (side) {
+                "PLAYER" -> "OPPONENT"
+                "OPPONENT" -> "PLAYER"
+                else -> null
+            }
+        }
         ReplayEventMarkerKind.BUFF, ReplayEventMarkerKind.DEBUFF -> causeSide
         else -> side
     }?.takeIf { it == "PLAYER" || it == "OPPONENT" }
