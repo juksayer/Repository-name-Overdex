@@ -504,12 +504,20 @@ class MatchReplayModel(
         val live = ReplayRecordedFinishingCredits.read(archive, presentedKnockouts, charges, recovered, ::combatantFor, ::appearanceAt, finishingCreditRows, ::sameChargeAnnouncementEpisode)
         val establishedCandidates = live + recovered
         val mixedAtDeparture = presentedKnockouts.mapNotNull { faint ->
-            if (faint.basis != DepartureCryFaint.LAST || establishedCandidates.any {
-                it.recipientSide == faint.side && it.recipientAppearanceAtNanos == faint.appearanceAtNanos
-            }) return@mapNotNull null
+            if (faint.basis != DepartureCryFaint.LAST) return@mapNotNull null
             val at = faint.recordedAtNanos
             val attacker = oppositeSide(faint.side)
             val owner = combatantFor(attacker, at) ?: return@mapNotNull null
+            val handoff = terminalFaintProjection.finalPlayerHandoffReferences
+            if (faint.side == "PLAYER" && handoff.isNotEmpty() && faint.sourceArticleIds.containsAll(handoff)) {
+                ReplayLastOpponentFastFinish.afterPlayerHandoff(exchangeArticles, faint, owner, appearanceAt(attacker, at),
+                    availableFastMoves(attacker, at), availableFastMoves(faint.side, at), audioRecovery, ::appearanceAt)?.let {
+                    return@mapNotNull it
+                }
+            }
+            if (establishedCandidates.any {
+                    it.recipientSide == faint.side && it.recipientAppearanceAtNanos == faint.appearanceAtNanos
+                }) return@mapNotNull null
             val name = identifiedMoveFor(attacker, at) ?: return@mapNotNull null
             val duration = recordedMoveDuration(attacker, owner.speciesName, name, at) ?: return@mapNotNull null
             ReplayLastOpponentFastFinish.mixedAtConfirmedDeparture(actionArticles, faint, owner,
@@ -600,6 +608,7 @@ class MatchReplayModel(
     private val supportedPresentationCycles by lazy {
         val inferred = finishingFastMoveAssociations.filter {
             it.basis in ReplayLastOpponentFastFinish.bases || it.basis == ReplayLastOpponentFastFinish.MIXED_NEAR_DEPARTURE ||
+                it.basis == ReplayLastOpponentFastFinish.CONFIRMED_PLAYER_HANDOFF ||
                 it.basis == ReplayMissingTickFinish.BASIS || it.basis == ReplayShieldCounter.BASIS ||
                 it.basis == LiveFinishingHitResolver.CRY_EFFECT || (it.basis in setOf(LiveFinishingHitResolver.AUDIBLE_FAST, LiveFinishingHitResolver.CRY_AFTER_AUDIO) &&
                     fastMoveCycles.none { cycle -> cycle.witness.articleIds.any(it.moveArticleIds::contains) })
@@ -1041,11 +1050,19 @@ class MatchReplayModel(
                             ReplayEventMarkers.sameCryOccurrence(cry, whole)
                     })
                 } else null
-                val purpose = if (supportsFaint) "supports faint" else "purpose unknown"
+                val handoffAudioIds = terminalFaintProjection.handoffDepartureAudioIds
+                val handoffFaint = if (side == "PLAYER" && handoffAudioIds.isNotEmpty())
+                    cryTimedFaints.singleOrNull { marker -> marker.side == side &&
+                        audioRecovery.cries.any { whole ->
+                            whole.fragments.any { it.estimatedOnsetNanos == marker.atNanos &&
+                                it.articleId in handoffAudioIds && it.articleId in marker.sourceArticleIds } &&
+                                ReplayEventMarkers.sameCryOccurrence(cry, whole)
+                        } } else null
+                val purpose = if (supportsFaint || handoffFaint != null) "supports faint" else "purpose unknown"
                 add(ReplayEventMarker("partial-cry:${cry.speciesId}:${cry.estimatedOnsetNanos}",
                     ReplayEventMarkerKind.POSSIBLE_CRY, cry.estimatedOnsetNanos, side,
                     "Possible cry · $label · $purpose", sourceAtNanos = cry.fragments.minOf { it.captureAtNanos },
-                    sourceArticleIds = cry.fragments.map { it.articleId }.distinct(), corroboratedFaintId = sameFaint?.id))
+                    sourceArticleIds = cry.fragments.map { it.articleId }.distinct(), corroboratedFaintId = (sameFaint ?: handoffFaint)?.id))
             }
             addAll(ReplayEventMarkers.activeChanges(mapOf("PLAYER" to playerIdentityTrack.appearances(),
                 "OPPONENT" to opponentIdentityTrack.appearances()), knockoutTrack.knockouts, replayArticlesById))

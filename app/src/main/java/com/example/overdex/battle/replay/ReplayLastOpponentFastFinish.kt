@@ -26,6 +26,7 @@ data class ReplayLastOpponentFastEvidence(
 internal object ReplayLastOpponentFastFinish {
     const val BASIS = "LAST_OPPONENT_CRY_AND_RECEIVED_FAST_MOVE_PATTERN"
     const val MIXED_NEAR_DEPARTURE = "SIDE_SCOPED_SOUND_AND_FINAL_DEPARTURE_CRY"
+    const val CONFIRMED_PLAYER_HANDOFF = "CONFIRMED_PLAYER_HANDOFF_AND_FAST_MOVE_AUDIO"
     const val PLAYER_FAINT = "LAST_PLAYER_CRY_AND_RECEIVED_FAST_MOVE_PATTERN"
     val bases = setOf(BASIS, PLAYER_FAINT)
     private const val S = 1_000_000_000L
@@ -95,11 +96,6 @@ internal object ReplayLastOpponentFastFinish {
         val cryMatch = audio.cries.singleOrNull { it.speciesId == target.speciesId &&
             abs(it.estimatedOnsetNanos - at) <= 50_000_000L &&
             it.fragments.any { fragment -> fragment.referenceSha256 == sound.referenceSha256 } } ?: return null
-        fun strong(c: ReplayMixedAudioCandidate) = c.fragments.any { a -> c.fragments.any { b ->
-            a.referenceSha256 == b.referenceSha256 && minOf(a.correlation, b.correlation) >= .5f &&
-                abs(a.estimatedOnsetNanos - b.estimatedOnsetNanos) <= 5_000_000L &&
-                abs(a.referenceOffsetNanos - b.referenceOffsetNanos) >= a.durationNanos
-        } }
         val candidates = audio.mixedCandidates.filter { it.moveName in evidence.attackingMoves }
         val possible = candidates.filter { candidate ->
             val turns = evidence.attackingMoves[candidate.moveName]?.turns ?: return@filter false
@@ -175,6 +171,85 @@ internal object ReplayLastOpponentFastFinish {
             move.name,at,start,at,refs, (cryMatch.fragments.map { it.articleId } + hpRefs + sliver.articleId).distinct(),
             (listOfNotNull(badge.articleId, cry.articleId, result?.articleId, blackout?.first?.articleId, blackout?.second?.articleId) + burst).distinct(), ownerSince, basis = if (recipient == "OPPONENT") BASIS else PLAYER_FAINT,
             departedBy = ReplayTimeBound(at, cry.articleId))
+    }
+
+    private fun strong(c: ReplayMixedAudioCandidate) = strong(c.fragments)
+
+    private fun strong(fragments: List<ReplayAudioFragment>) = fragments.any { a -> fragments.any { b ->
+        a.referenceSha256 == b.referenceSha256 && minOf(a.correlation, b.correlation) >= .5f &&
+            abs(a.estimatedOnsetNanos - b.estimatedOnsetNanos) <= 5_000_000L &&
+            abs(a.referenceOffsetNanos - b.referenceOffsetNanos) >= a.durationNanos
+    } }
+
+    /** The measured sound and aligned waveform portions agree on one use.
+     * The handoff and cry already established the KO independently of the move. */
+    fun afterPlayerHandoff(
+        rows: List<ArchivedRealityArticle>, knockout: ReplayKnockout, owner: ReplayCombatant,
+        ownerSince: Long, ownerMoves: List<Move>, targetMoves: List<Move>, audio: ReplayAudioRecovery,
+        appearanceAt: (String, Long) -> Long,
+    ): ReplayFinishingFastAssociation? {
+        val cry = (knockout.timing as? ReplayFaintTiming.Cry)?.onset ?: return null
+        val at = cry.atNanos
+        val moves = ownerMoves.associateBy { it.name }
+        val targetNames = targetMoves.map { it.name }.toSet()
+        if (owner.isFainted || ownerMoves.isEmpty() || targetNames.isEmpty()) return null
+        val matches = audio.mixedCandidates.filter { fit ->
+            val start = fit.estimatedOnsetNanos
+            val turns = moves[fit.moveName]?.turns ?: return@filter false
+            at - start in 1..(turns * S / 2) && start >= maxOf(ownerSince, knockout.appearanceAtNanos) &&
+                fit.moveName !in targetNames && strong(fit)
+        }
+        val match = matches.singleOrNull() ?: return null
+        val start = match.estimatedOnsetNanos
+        fun samePair(time: Long) = appearanceAt("OPPONENT", time) == ownerSince &&
+            appearanceAt("PLAYER", time) == knockout.appearanceAtNanos
+        if (!samePair(start) || !samePair(at)) return null
+        val proof = rows.mapNotNull { row ->
+            val sound = row.payload as? ArchivedFastMoveSoundMeasured ?: return@mapNotNull null
+            val clipAt = row.monotonicTimeNanos!!
+            if (row.sourceId != "FAST_MOVE_SOUND_WITNESS" || !sound.audible || !sound.referenceMatchAccepted ||
+                clipAt !in (start - S)..start || sound.referenceSearchScopes.size != 2) return@mapNotNull null
+            val attacker = sound.referenceSearchScopes.singleOrNull { it.side == "OPPONENT" } ?: return@mapNotNull null
+            val defender = sound.referenceSearchScopes.singleOrNull { it.side == "PLAYER" } ?: return@mapNotNull null
+            if (!attacker.speciesName.equals(owner.speciesName, true) ||
+                !defender.speciesName.equals(knockout.speciesName, true) ||
+                attacker.moveNames.toSet() != moves.keys || defender.moveNames.toSet() != targetNames) return@mapNotNull null
+            val best = sound.referenceCandidates.maxByOrNull { it.similarity } ?: return@mapNotNull null
+            if (best.moveName != match.moveName || best.similarity !in .95f..1f || best.changingSimilarity !in .85f..1f ||
+                best.matchingOffsetNanos !in 0..S || best.referenceOffsetNanos !in 0..S ||
+                abs(clipAt + best.matchingOffsetNanos - best.referenceOffsetNanos - start) > 50_000_000L) return@mapNotNull null
+            val clip = rows.singleOrNull { candidate ->
+                val clip = candidate.payload as? ArchivedAudioCaptured
+                candidate.articleId in row.evidenceReferences.orEmpty() &&
+                    candidate.monotonicTimeNanos == clipAt && clip?.captureSource == "PLAYBACK_POKEMON_GO" &&
+                    strong(match.fragments.filter { f ->
+                        f.articleId == candidate.articleId && f.captureAtNanos == clipAt && f.audioSha256 == clip.sha256 &&
+                            f.referenceSha256 == best.referenceSha256 && f.correlation in .5f..1f &&
+                            f.durationNanos in 200_000_000L..clip.durationNanos &&
+                            f.queryOffsetNanos in 0..(clip.durationNanos - f.durationNanos)
+                    })
+            } ?: return@mapNotNull null
+            listOf(row.articleId, clip.articleId)
+        }.singleOrNull() ?: return null
+        val lastHp = rows.lastOrNull { row ->
+            val hp = row.payload as? ArchivedActiveHpBarMeasured ?: return@lastOrNull false
+            row.monotonicTimeNanos!! in (start - 750_000_000L) until start &&
+                row.sourceId == "PLAYER_ACTIVE_HP_BAR_WITNESS" && hp.side == "PLAYER" && hp.fillColor == "RED" &&
+                hp.filledFraction in Float.MIN_VALUE..0.125f && row.confidence?.let { it in .90f..1f } == true
+        } ?: return null
+        if (rows.any { row ->
+                val time = row.monotonicTimeNanos!!
+                val hp = row.payload as? ArchivedActiveHpBarMeasured
+                (time in start..at && (row.payload == ArchivedAttackIncoming || row.payload == ArchivedGetReadyWitnessed ||
+                    row.payload == ArchivedChargeMoveUsedAnnounced || row.payload is ArchivedChargedMoveEnergySpent)) ||
+                    (time > start && row.sourceId == "PLAYER_ACTIVE_HP_BAR_WITNESS" && hp?.side == "PLAYER" &&
+                        hp.fillColor in setOf("GREEN", "YELLOW", "RED") && hp.filledFraction > 0f &&
+                        row.confidence?.let { it in .80f..1f } == true)
+            }) return null
+        return ReplayFinishingFastAssociation("OPPONENT", owner.speciesName, "PLAYER", knockout.speciesName,
+            knockout.appearanceAtNanos, match.moveName, at, start, at, proof, listOf(cry.articleId),
+            (knockout.sourceArticleIds + lastHp.articleId).distinct(), ownerSince,
+            basis = CONFIRMED_PLAYER_HANDOFF, departedBy = cry)
     }
 
     /** A match-level audio winner can mask a second sound at a different offset.

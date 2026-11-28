@@ -21,7 +21,20 @@ object TypeEffectivenessEngine {
     }
     
     private fun getMultiplier(attackType: PokemonType, defenderType: PokemonType): Double {
+        // GO treats a traditional immunity as two resistance steps. This matters
+        // when the defender's other type is weak to the same attack.
+        val doubleResistance = when (attackType) {
+            PokemonType.NORMAL, PokemonType.FIGHTING -> defenderType == PokemonType.GHOST
+            PokemonType.GHOST -> defenderType == PokemonType.NORMAL
+            PokemonType.ELECTRIC -> defenderType == PokemonType.GROUND
+            PokemonType.GROUND -> defenderType == PokemonType.FLYING
+            PokemonType.PSYCHIC -> defenderType == PokemonType.DARK
+            PokemonType.DRAGON -> defenderType == PokemonType.FAIRY
+            PokemonType.POISON -> defenderType == PokemonType.STEEL
+            else -> false
+        }
         return when {
+            doubleResistance -> 0.625 * 0.625
             defenderType.getWeaknesses().contains(attackType) -> 1.6
             defenderType.getResistances().contains(attackType) -> 0.625
             else -> 1.0

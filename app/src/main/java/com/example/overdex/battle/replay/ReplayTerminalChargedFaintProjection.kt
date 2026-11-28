@@ -16,16 +16,19 @@ internal class ReplayTerminalChargedFaintProjection(archive: MatchArchive, proje
         (it.payload as? ArchivedActivePokemonFaintedWitnessed)?.basis == TerminalChargedFaintResolver.BASIS
     }
     private val records = source.mapNotNull { it.terminalFinishRecord() }
-    // Match reviewed audio back to its original clip. Prefer the live onset when both
-    // readers localized the same occurrence. Both paths retain their source clocks.
-    private val audioRecords = recoveredCries.distinct().mapNotNull { cry ->
-        if (records.any { (it.payload as? BattleCryLocalized)?.speciesId == cry.speciesId &&
-                kotlin.math.abs(it.at - cry.estimatedOnsetNanos) < 100_000_000L }) return@mapNotNull null
-        val fragment = cry.supportedFragment(unique) ?: return@mapNotNull null
-        TerminalFinishRecord(fragment.articleId, cry.estimatedOnsetNanos, "LOCALIZED_BATTLE_CRY_WITNESS",
-            fragment.correlation, BattleCryLocalized(cry.speciesId, fragment.referenceSha256,
-                fragment.correlation, fragment.durationNanos, "replay-reviewed-waveform"),
-            cryMatchedThroughNanos = fragment.captureAtNanos + fragment.queryOffsetNanos + fragment.durationNanos)
+    private fun reviewedAudio(recoveredCries: List<ReplayRecoveredCry>, onsetToleranceNanos: Long = 0) =
+        recoveredCries.distinct().mapNotNull { cry ->
+            val fragment = cry.supportedFragment(unique, onsetToleranceNanos) ?: return@mapNotNull null
+            TerminalFinishRecord(fragment.articleId, fragment.estimatedOnsetNanos, "LOCALIZED_BATTLE_CRY_WITNESS",
+                fragment.correlation, BattleCryLocalized(cry.speciesId, fragment.referenceSha256,
+                    fragment.correlation, fragment.durationNanos, "replay-reviewed-waveform"),
+                cryMatchedThroughNanos = fragment.captureAtNanos + fragment.queryOffsetNanos + fragment.durationNanos)
+        }
+    // Prefer the live onset when both readers localized the same occurrence.
+    private val audioRecords = reviewedAudio(recoveredCries).filterNot { reviewed ->
+        records.any { (it.payload as? BattleCryLocalized)?.speciesId ==
+            (reviewed.payload as BattleCryLocalized).speciesId &&
+            kotlin.math.abs(it.at - reviewed.at) < 100_000_000L }
     }
     private val savedFaints = source.filter { (it.payload as? ArchivedActivePokemonFaintedWitnessed)
         ?.let { faint -> DepartureCryFaint.isBasis(faint.basis) } == true }
@@ -40,7 +43,16 @@ internal class ReplayTerminalChargedFaintProjection(archive: MatchArchive, proje
         return loss.copy(evidenceReferences = (loss.evidenceReferences + originals.map { it.articleId }).distinct())
     }
 
-    val resolutionsByArticleId = (DepartureCryFaint.resolve(records + audioRecords) + TerminalChargedFaintResolver.resolve(records))
+    // Review groups overlapping clips. Use the qualified fragment's own onset
+    // when its time differs slightly from the grouped occurrence.
+    private val handoffAudio = reviewedAudio(recoveredCries, onsetToleranceNanos = 10_000_000L)
+    private val handoff = ReplayFinalPlayerHandoff.resolve(source.filter { it.monotonicTimeNanos != null }
+        .sortedBy { it.monotonicTimeNanos }, handoffAudio)
+
+    val finalPlayerHandoffReferences = handoff.singleOrNull { it.basis == DepartureCryFaint.LAST }?.evidenceReferences.orEmpty()
+    val handoffDepartureAudioIds = handoff.mapTo(hashSetOf()) { it.sourceArticleId }
+
+    val resolutionsByArticleId = (DepartureCryFaint.resolve(records + audioRecords) + TerminalChargedFaintResolver.resolve(records) + handoff)
         .distinctBy { it.side to TeamLossResolver.speciesKey(it.owner.speciesName) }
         .filterNot { loss -> existing.any { a ->
             (a.payload as? ArchivedActivePokemonFaintedWitnessed)?.let {
@@ -52,7 +64,9 @@ internal class ReplayTerminalChargedFaintProjection(archive: MatchArchive, proje
         val original = unique[loss.sourceArticleId] ?: return@mapNotNull null
         val sample = (original.payload as? ArchivedTerminalParticleObservations)?.samples
             ?.singleOrNull { it.sourceAtNanos == loss.atNanos }
-        if (sample == null && original.payload !is ArchivedBattleCryLocalized && audioRecords.none { it.id == original.articleId }) return@mapNotNull null
+        if (sample == null && original.payload !is ArchivedBattleCryLocalized &&
+            audioRecords.none { it.id == original.articleId } &&
+            original.articleId !in handoffDepartureAudioIds) return@mapNotNull null
         original.copy(articleId = id, sourceId = "REPLAY_TERMINAL_CHARGED_FAINT_PROJECTION",
             perceivedAt = sample?.wallTimeMillis ?: (original.perceivedAt + (loss.atNanos - original.monotonicTimeNanos!!) / 1_000_000L), monotonicTimeNanos = loss.atNanos,
             payload = ArchivedActivePokemonFaintedWitnessed(loss.side.name, loss.owner.speciesName,

@@ -2,6 +2,7 @@ package com.example.overdex.ui
 
 import com.example.overdex.battle.preview.directoryCropRegion
 import com.example.overdex.battle.preview.withDirectoryCropRegion
+import com.example.overdex.battle.team.review
 import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
@@ -1980,6 +1981,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 )
             }
         }
+    }
+
+    internal suspend fun reviewBattleTeam(team: CurrentBattleTeam) = withContext(Dispatchers.Default) {
+        team.review(gameMasterLoader)
     }
 
     fun saveCurrentBattleTeam(team: CurrentBattleTeam) {

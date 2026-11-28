@@ -35,13 +35,17 @@ fun BattleTeamLibraryScreen(
     val owned by viewModel.ownedTeamChoices.collectAsState()
     val current by viewModel.currentBattleTeam.collectAsState()
     var species by remember { mutableStateOf<Map<Int, Pokemon>>(emptyMap()) }
+    var forms by remember { mutableStateOf<Map<String, Pokemon>>(emptyMap()) }
     LaunchedEffect(owned) {
         species = owned.flatMap { it.members }.map { it.speciesId }.distinct().mapNotNull { id ->
             viewModel.getPokemonById(id)?.let { id to it }
         }.toMap()
+        forms = owned.flatMap { it.members }.mapNotNull { it.speciesName }.distinct().mapNotNull { name ->
+            viewModel.getPokemonByName(name)?.let { name to it }
+        }.toMap()
     }
     val choices = saved.map { TeamChoice(it.name, it.team, saved = it) } +
-        owned.map { TeamChoice("CARDS: ${it.name}", it.resolve(species), owned = it) }
+        owned.map { TeamChoice("CARDS: ${it.name}", it.resolve(species, forms), owned = it) }
     var selected by remember { mutableIntStateOf(0) }
     var lead by remember(selected) { mutableIntStateOf(0) }
     val choice = choices.getOrNull(selected)
@@ -96,6 +100,13 @@ fun BattleTeamLibraryScreen(
         selected = selected.coerceIn(0, labels.lastIndex)
         listState.animateScrollToItem(selected)
     }
+    var reviewing by remember { mutableStateOf<TeamChoice?>(null) }
+    val reviewChoice = reviewing
+    if (reviewChoice?.team != null) {
+        BattleTeamReviewScreen(viewModel, reviewChoice.label, reviewChoice.team, filterSettings,
+            onFilterSettingsChange, onBack = { reviewing = null })
+        return
+    }
     ODXFiShell(
         viewModel = viewModel, showBattleOverlay = false,
         filterSettings = filterSettings, onFilterSettingsChange = onFilterSettingsChange,
@@ -105,6 +116,7 @@ fun BattleTeamLibraryScreen(
         onRight = { if (keyboard.isVisible) keyboard.handleRight() else if (!editingName) lead = (lead + 1) % 3 },
         onA = ::activate, onB = ::back,
         onSelect = { if (keyboard.isVisible) keyboard.close() else if (!editingName && choice != null) useChoice(edit = true) },
+        onSelectLong = { if (!editingName && choice?.team != null) reviewing = choice },
         onStart = { if (editingName) finishSave() else beginSave() }, startLabel = "SAVE",
         keyboardController = keyboard, onKeyActivated = ::key,
         lcdContent = if (keyboard.isVisible) null else {{
@@ -119,6 +131,7 @@ fun BattleTeamLibraryScreen(
                         Text("LEAD: ${it.speciesName}\n[←/→] Change lead", color = TerminalGreen, fontSize = 12.sp)
                     }
                     TerminalMenuOption(if (choice != null) "USE TEAM" else labels[selected], selected = false, onClick = ::activate)
+                    if (choice?.team != null) TerminalMenuOption("REVIEW THIS TEAM", selected = false, onClick = { reviewing = choice })
                     if (choice?.team != null) TerminalMenuOption("EDIT THIS LINEUP", selected = false, onClick = { useChoice(edit = true) })
                     choice?.saved?.let { team ->
                         TerminalMenuOption("REPLACE WITH CURRENT LINEUP", selected = false, onClick = { beginSave(team) })

@@ -1076,11 +1076,14 @@ internal class ReplayFinishingEvidence(
     }
 }
 
-internal fun ReplayRecoveredCry.supportedFragment(byId: Map<String, ArchivedRealityArticle>) = fragments.firstOrNull { f ->
+internal fun ReplayRecoveredCry.supportedFragment(
+    byId: Map<String, ArchivedRealityArticle>,
+    onsetToleranceNanos: Long = 0,
+) = fragments.firstOrNull { f ->
     val row = byId[f.articleId]
     val clip = row?.payload as? ArchivedAudioCaptured
     clip?.captureSource == "PLAYBACK_POKEMON_GO" && row.monotonicTimeNanos == f.captureAtNanos && clip.sha256 == f.audioSha256 &&
-        f.estimatedOnsetNanos == estimatedOnsetNanos && f.referenceSha256.isNotBlank() &&
+        kotlin.math.abs(f.estimatedOnsetNanos - estimatedOnsetNanos) <= onsetToleranceNanos && f.referenceSha256.isNotBlank() &&
         f.durationNanos >= 500_000_000L && f.queryOffsetNanos in 0..(clip.durationNanos - f.durationNanos) &&
         f.referenceOffsetNanos in 0..(referenceDurationNanos - f.durationNanos) &&
         f.correlation in .93f..1f && f.correlation - (f.runnerUpCorrelation ?: 1f) >= .35f
