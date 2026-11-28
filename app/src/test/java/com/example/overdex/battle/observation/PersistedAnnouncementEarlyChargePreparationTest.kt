@@ -96,7 +96,7 @@ class PersistedAnnouncementEarlyChargePreparationTest {
             val crop = fixture.capture()
             fixture.reader.admit.complete(Unit)
             fixture.awaitRawBlocked()
-            fixture.assertEarlyCue(crop, AcceptedChargeCaptureCueKind.PLAYER_QTE_PROGRESS)
+            fixture.assertEarlyCue(crop, AcceptedChargeCaptureCueKind.PLAYER_QTE_PROGRESS, "NICE")
             fixture.custody.releasePublication.complete(Unit)
             fixture.awaitAccepted()
 
@@ -247,9 +247,9 @@ class PersistedAnnouncementEarlyChargePreparationTest {
 
         suspend fun awaitRawBlocked() = withTimeout(5_000) { custody.rawReachedPublication.await() }
 
-        fun assertEarlyCue(crop: RealityArticle, kind: AcceptedChargeCaptureCueKind) {
+        fun assertEarlyCue(crop: RealityArticle, kind: AcceptedChargeCaptureCueKind, grade: String? = null) {
             assertEquals(listOf(AcceptedChargeCaptureCue(kind, crop.id.value, capturedAt,
-                clock.get(), crop.perceivedAt)), cues.toList())
+                clock.get(), crop.perceivedAt, grade)), cues.toList())
             assertTrue("Preparation must precede latency and raw custody submissions", recordsAtCue.single().isEmpty())
             assertTrue("Raw testimony is preserved while its publication is blocked",
                 custody.getRecords().any { it.sourceId.id == "${source}_OCR" })

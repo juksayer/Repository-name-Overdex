@@ -27,13 +27,26 @@ internal class ReplayTerminalChargedFaintProjection(archive: MatchArchive, proje
                 fragment.correlation, fragment.durationNanos, "replay-reviewed-waveform"),
             cryMatchedThroughNanos = fragment.captureAtNanos + fragment.queryOffsetNanos + fragment.durationNanos)
     }
+    private val savedFaints = source.filter { (it.payload as? ArchivedActivePokemonFaintedWitnessed)
+        ?.let { faint -> DepartureCryFaint.isBasis(faint.basis) } == true }
+
+    private fun includeOriginalFaint(loss: TerminalChargedFaintResolution): TerminalChargedFaintResolution {
+        val originals = savedFaints.filter { row ->
+            val faint = row.payload as ArchivedActivePokemonFaintedWitnessed
+            row.monotonicTimeNanos == loss.atNanos && faint.basis == loss.basis &&
+                faint.side == loss.side.name && faint.speciesId == loss.owner.speciesId &&
+                (loss.sourceArticleId in row.evidenceReferences.orEmpty() || loss.sourceArticleId in row.predecessorIds)
+        }
+        return loss.copy(evidenceReferences = (loss.evidenceReferences + originals.map { it.articleId }).distinct())
+    }
+
     val resolutionsByArticleId = (DepartureCryFaint.resolve(records + audioRecords) + TerminalChargedFaintResolver.resolve(records))
         .distinctBy { it.side to TeamLossResolver.speciesKey(it.owner.speciesName) }
         .filterNot { loss -> existing.any { a ->
             (a.payload as? ArchivedActivePokemonFaintedWitnessed)?.let {
                 it.side == loss.side.name && it.speciesName?.let(TeamLossResolver::speciesKey) ==
                     TeamLossResolver.speciesKey(loss.owner.speciesName) } == true
-        } }.associateBy { "replay-terminal-charge:${it.side}:${it.sourceArticleId}:${it.atNanos}" }
+        } }.map(::includeOriginalFaint).associateBy { "replay-terminal-charge:${it.side}:${it.sourceArticleId}:${it.atNanos}" }
 
     val articles = existing + resolutionsByArticleId.mapNotNull { (id, loss) ->
         val original = unique[loss.sourceArticleId] ?: return@mapNotNull null

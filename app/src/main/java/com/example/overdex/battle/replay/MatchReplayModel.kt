@@ -720,6 +720,18 @@ class MatchReplayModel(
             ?.monotonicTimeNanos ?: Long.MIN_VALUE
         val from = maxOf(fromEvidence, interruption)
         if (from > by) return null
+        val localSurvivalAt by lazy {
+            actionArticles.asReversed().asSequence()
+                .dropWhile { it.monotonicTimeNanos!! > by }
+                .takeWhile { it.monotonicTimeNanos!! >= from }
+                .filter { (it.payload as? ArchivedActiveHpBarDamageTickMeasured)?.damagedSide == victim }
+                .firstNotNullOfOrNull { hpEvidence.corroboratedPostHitSurvivalAt(it, by, ::sameRecipient) }
+        }
+        // Judge survival after reception. A red sliver during a move's windup
+        // can still be the HP that the hit goes on to remove.
+        fun survived(receipt: Long) = recipientAppearance != null && receipt < by &&
+            sameRecipient(receipt) && ((localSurvivalAt ?: Long.MIN_VALUE) > receipt ||
+                finishingEvidence.hasLivingHpAfter(victim, recipientAppearance, receipt + 1, by))
         val origin = battleArchive.articles.filter { it.matchId == archive.matchId }
             .groupBy { it.articleId }.mapNotNull { (id, copies) -> copies.distinct().singleOrNull()?.let { id to it } }.toMap()
         val candidates = origin.values.mapNotNull { row ->
@@ -731,12 +743,23 @@ class MatchReplayModel(
                 fastMoveChargeWindows.any { at in it }) return@mapNotNull null
             val active = combatantFor(winner, at) ?: return@mapNotNull null
             if (normalizeSpeciesName(active.speciesName) != normalizeSpeciesName(performer)) return@mapNotNull null
+            val receipt = if ("HP_DAMAGE_TICK" in p.evidenceKinds) {
+                (row.predecessorIds + row.evidenceReferences.orEmpty()).mapNotNull(origin::get)
+                    .filter { source ->
+                        val tick = source.payload as? ArchivedActiveHpBarDamageTickMeasured ?: return@filter false
+                        val time = source.monotonicTimeNanos ?: return@filter false
+                        tick.damagedSide == victim && time in at..by && sameRecipient(time) &&
+                            appearanceAt(winner, time) == appearanceAt(winner, at)
+                    }.maxByOrNull { it.monotonicTimeNanos!! }
+            } else null
+            if (survived(receipt?.monotonicTimeNanos ?: at)) return@mapNotNull null
             ReplayLastWitnessedAttack(at, active.speciesName, identifiedMoveFor(winner, at), false, listOf(row.articleId))
         } + finishingChargeCandidates.mapNotNull { charge ->
             val at = charge.sourceAtNanos
             if (charge.side != winner || !charge.completed || !charge.uniquelyOwned || charge.confirmedBlocked ||
                 at !in from..by || !sameRecipient(at) ||
-                appearanceAt(winner, charge.preparationAtNanos) != appearanceAt(winner, at)) return@mapNotNull null
+                appearanceAt(winner, charge.preparationAtNanos) != appearanceAt(winner, at) ||
+                survived(charge.impactAtNanos)) return@mapNotNull null
             val evidence = charge.articleIds.filter { it in origin }.sorted().takeIf { it.isNotEmpty() }
                 ?: return@mapNotNull null
             val active = combatantFor(winner, at) ?: return@mapNotNull null
@@ -850,7 +873,17 @@ class MatchReplayModel(
     }
 
     private val playerConcession by lazy {
-        matchResult?.let { ReplayPlayerConcession.resolve(actionArticles, timedArticles, it, endingDarkCropIds, hpEvidence) }
+        matchResult?.let { result ->
+            ReplayPlayerConcession.resolve(actionArticles, timedArticles, result, endingDarkCropIds, hpEvidence)
+                ?.let concession@{ marker ->
+                    val present = combatantFor("PLAYER", marker.sourceAtNanos) ?: return@concession marker
+                    marker.copy(label = "Loss by concession · ${present.displayName} on field · Inferred")
+                }
+        }
+    }
+
+    private val recordedFaintOwners by lazy {
+        ReplayRecordedFinishingCredits.readOwners(archive, finishingCreditRows)
     }
 
     /** Seek destinations reuse the same completed-archive projections as the battlefield. */
@@ -903,13 +936,17 @@ class MatchReplayModel(
             presentedKnockouts.forEach { knockout ->
                 val association = finishingAttributions.singleOrNull { it.recipientSide == knockout.side &&
                     it.recipientAppearanceAtNanos == knockout.appearanceAtNanos }
-                val fallback = if (association == null) lastWitnessedAttack(knockout) else null
+                val fallback = if (association == null) {
+                    knockout.sourceArticleIds.mapNotNull(recordedFaintOwners::get).distinct().singleOrNull()
+                        ?: lastWitnessedAttack(knockout)
+                } else null
                 add(faintMarker(knockout, association, ReplayEventMarker("faint:${knockout.side}:${knockout.appearanceAtNanos}",
                     ReplayEventMarkerKind.FAINT, knockout.recordedAtNanos, knockout.side, "Faint · ${BattleSpeciesDisplay.name(knockout.speciesName)}" +
-                        (association?.let { " · ${it.creditLabel()}" } ?: fallback?.let { " · ${it.label} · last witnessed" } ?: "") +
+                        (association?.let { " · ${it.creditLabel()}" } ?: fallback?.let { " · ${it.label}" + if (it.ownerOnly) "" else " · last witnessed" } ?: "") +
                         (if (knockout.basis in setOf(ReplaySliverExchange.DEPARTURE, ReplayChargeDeparture.BASIS, ReplayFinishingEvidence.REPEAT_CHARGE)) " · inferred" else ""),
                     sourceAtNanos = association?.faintSourceAtNanos ?: knockout.recordedAtNanos,
-                    sourceArticleIds = association?.evidenceArticleIds ?: knockout.sourceArticleIds,
+                    sourceArticleIds = association?.evidenceArticleIds
+                        ?: (knockout.sourceArticleIds + fallback?.sourceArticleIds.orEmpty()).distinct(),
                     finishingAttribution = association,
                     lastWitnessedAttack = fallback)))
             }
@@ -2761,7 +2798,7 @@ class MatchReplayModel(
             .firstOrNull { normalizeSpeciesName(it.name) == normalizeSpeciesName(moveName) }
     }
 
-    private fun combatantFor(side: String, atNanos: Long): ReplayCombatant? = when (side) {
+    internal fun combatantFor(side: String, atNanos: Long): ReplayCombatant? = when (side) {
         "PLAYER" -> playerIdentityTrack.combatantAt(atNanos)
         "OPPONENT" -> opponentIdentityTrack.combatantAt(atNanos)
         else -> null

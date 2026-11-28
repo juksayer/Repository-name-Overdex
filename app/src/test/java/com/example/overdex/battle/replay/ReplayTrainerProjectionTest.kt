@@ -65,6 +65,8 @@ class ReplayTrainerProjectionTest {
         assertEquals("OPPONENT", marker.initiatingSide)
         assertEquals("Win by concession · Trainer entry by Trainer", marker.label)
         assertEquals(at, marker.atNanos)
+        assertEquals("Win by concession · ${source.opponent!!.displayName} on field · Trainer entry by Trainer",
+            projection.markers { side, time -> if (side == "OPPONENT" && time == at) source.opponent else null }.single().label)
         assertEquals(source, projection.apply(source, at - 1))
         assertEquals(source.copy(trainerConcession = ReplayCorrectionSide.OPPONENT), projection.apply(source, at))
         assertTrue(projection.soundEvents(emptyList()) { source }.isEmpty())

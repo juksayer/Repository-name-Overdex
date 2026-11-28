@@ -80,13 +80,48 @@ internal class ReplayHpEvidence(
      * A last-known display value must never be carried forward across a later hit.
      * The caller also owns the appearance/side interval.
      */
-    fun confirmsLiveHp(article: ArchivedRealityArticle, at: Long = article.monotonicTimeNanos ?: Long.MIN_VALUE): Boolean {
+    fun confirmsLiveHp(article: ArchivedRealityArticle, at: Long = article.monotonicTimeNanos ?: Long.MIN_VALUE): Boolean =
+        confirmsLiveHp(article, at, requireMatchAnchor = true)
+
+    /** A native received tick and a repeatedly settled bar can verify survival
+     * locally when the first bar of the match had different geometry. */
+    fun corroboratedPostHitSurvivalAt(
+        receipt: ArchivedRealityArticle, by: Long, sameAppearance: (Long) -> Boolean,
+    ): Long? {
+        val tick = receipt.payload as? ArchivedActiveHpBarDamageTickMeasured ?: return null
+        val hit = receipt.monotonicTimeNanos ?: return null
+        if (receipt.sourceId != "${tick.damagedSide}_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS" ||
+            tick.beforeFraction !in 0f..1f || tick.afterFraction !in 0f..tick.beforeFraction ||
+            tick.afterFraction == tick.beforeFraction || !sameAppearance(hit)) return null
+        val baseline = ordinaryReadings[tick.damagedSide to hit]?.singleOrNull() ?: return null
+        if (!confirmsLiveHp(baseline, hit, requireMatchAnchor = false)) return null
+        val bar = baseline.payload as ArchivedActiveHpBarMeasured
+        if (bar.filledFraction != tick.afterFraction) return null
+        val width = bar.barRight - bar.barLeft
+        val height = bar.barBottom - bar.barTop
+        return ordinaryReadings.asSequence().mapNotNull { (key, reads) ->
+            val (side, time) = key
+            val at = time ?: return@mapNotNull null
+            if (side != tick.damagedSide || at <= hit || at > by || !sameAppearance(at)) return@mapNotNull null
+            at.takeIf { reads.all { sample ->
+                val live = sample.payload as ArchivedActiveHpBarMeasured
+                live.filledFraction == bar.filledFraction && live.fillColor == bar.fillColor &&
+                    live.sourceWidth == bar.sourceWidth && live.sourceHeight == bar.sourceHeight &&
+                    kotlin.math.abs(live.barLeft - bar.barLeft) <= width / 4 &&
+                    kotlin.math.abs(live.barTop - bar.barTop) <= height * 3 &&
+                    ActiveHpBarGeometry.matchesSize(live.barRight - live.barLeft, live.barBottom - live.barTop, width, height) &&
+                    confirmsLiveHp(sample, at, requireMatchAnchor = false)
+            } }
+        }.sortedDescending().take(2).toList().takeIf { it.size == 2 }?.first()
+    }
+
+    private fun confirmsLiveHp(article: ArchivedRealityArticle, at: Long, requireMatchAnchor: Boolean): Boolean {
         val hp = article.payload as? ArchivedActiveHpBarMeasured ?: return false
         val capturedAt = article.monotonicTimeNanos ?: return false
         if (at < capturedAt || at - capturedAt > FRESH_HP_NANOS ||
             article.confidence?.let { it.isFinite() && it in .80f..1f } != true ||
             !hp.filledFraction.isFinite() || hp.filledFraction <= 0f || hp.filledFraction > 1f ||
-            hp.fillColor !in setOf("GREEN", "YELLOW", "RED") || !accepts(article)) return false
+            hp.fillColor !in setOf("GREEN", "YELLOW", "RED") || !accepts(article, requireMatchAnchor)) return false
         val width = hp.sourceWidth ?: return false
         val height = hp.sourceHeight ?: return false
         if (hp.barLeft < 0 || hp.barTop < 0 || hp.barRight > width || hp.barBottom >= height ||
@@ -194,7 +229,9 @@ internal class ReplayHpEvidence(
         }
     }
 
-    fun accepts(article: ArchivedRealityArticle): Boolean {
+    fun accepts(article: ArchivedRealityArticle): Boolean = accepts(article, requireMatchAnchor = true)
+
+    private fun accepts(article: ArchivedRealityArticle, requireMatchAnchor: Boolean): Boolean {
         if (article.payload is ArchivedActiveHpBarMeasured) {
             // Legacy missing confidence can retain historical display data, but cannot
             // pass confirmsLiveHp. Explicitly weak/invalid values cannot create damage.
@@ -227,7 +264,7 @@ internal class ReplayHpEvidence(
         // sprite (134×26), while the real bars were about 193×17. Such a shape
         // must not establish a near-empty HP baseline for the whole appearance.
         if (!bar.hasBarShape()) return false
-        val anchor = anchors[side] ?: return true
+        val anchor = anchors[side]?.takeIf { requireMatchAnchor } ?: return true
         return ActiveHpBarGeometry.matchesSize(
             bar.barRight - bar.barLeft, bar.barBottom - bar.barTop,
             anchor.barRight - anchor.barLeft, anchor.barBottom - anchor.barTop

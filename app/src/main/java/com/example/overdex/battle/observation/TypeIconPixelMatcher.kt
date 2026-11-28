@@ -13,11 +13,18 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
+/** Read access in local coordinates, for a packed image or a region of one. */
+internal interface TypeIconPixelSource {
+    val width: Int
+    val height: Int
+    fun pixel(x: Int, y: Int): Int
+}
+
 /** Pixel-only implementation so geometry and rejection can be checked on the JVM. */
-internal class TypeIconPixels(val width: Int, val height: Int, val argb: IntArray) {
+internal class TypeIconPixels(override val width: Int, override val height: Int, val argb: IntArray) : TypeIconPixelSource {
     init { require(width > 0 && height > 0 && argb.size == width * height) }
 
-    fun pixel(x: Int, y: Int): Int = argb[y * width + x]
+    override fun pixel(x: Int, y: Int): Int = argb[y * width + x]
 
     fun sample(x: Double, y: Double): Int {
         val sx = x.coerceIn(0.0, (width - 1).toDouble())

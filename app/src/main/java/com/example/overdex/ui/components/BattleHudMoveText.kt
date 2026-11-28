@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * Adjustable lettering and an offset shadow contrast with the battlefield.
+ * Adjustable lettering and an outlined shadow contrast with the battlefield.
  */
 @Composable
 internal fun BattleHudMoveText(
@@ -32,9 +32,10 @@ internal fun BattleHudMoveText(
     modifier: Modifier = Modifier,
 ) {
     val backingStyle = with(LocalDensity.current) {
+        val shadowColor = Color(appearance.shadowColor)
         TextStyle(
-            drawStyle = Stroke(width = .45.dp.toPx()),
-            shadow = Shadow(Color(appearance.shadowColor), Offset(1.35.dp.toPx(), 1.5.dp.toPx()), 1.dp.toPx()),
+            drawStyle = Stroke(width = 1.5.dp.toPx()),
+            shadow = Shadow(shadowColor, Offset(0f, .35.dp.toPx()), 1.15.dp.toPx()),
         )
     }
     Box(modifier.semantics(mergeDescendants = true) { }) {
@@ -43,7 +44,7 @@ internal fun BattleHudMoveText(
         Text(
             text = text.text,
             modifier = Modifier.matchParentSize().clearAndSetSemantics { },
-            color = Color(appearance.textColor),
+            color = Color(appearance.shadowColor),
             style = backingStyle,
             fontSize = appearance.fontSp.sp,
             lineHeight = (appearance.fontSp + 2).sp,

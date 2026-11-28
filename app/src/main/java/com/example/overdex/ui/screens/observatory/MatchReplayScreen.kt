@@ -284,7 +284,7 @@ fun MatchReplayScreen(
             }) }
     }
     val eventMarkers = remember(model, playbackStart, playbackEnd, trainerProjection) {
-        ReplayEventMarkers.lcdMarkers((model.eventMarkers + trainerProjection?.markers().orEmpty())
+        ReplayEventMarkers.lcdMarkers((model.eventMarkers + trainerProjection?.markers(model::combatantFor).orEmpty())
             .filter { it.atNanos in playbackStart..playbackEnd }.sortedBy { it.atNanos })
     }
     var selectedMarkerId by remember(replayArchive.matchId, playbackWindow) { mutableStateOf<String?>(null) }

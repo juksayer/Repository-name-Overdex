@@ -14,6 +14,7 @@ internal data class AcceptedChargeCaptureCue(
     val capturedAtNanos: Long,
     val recognizedAtNanos: Long,
     val capturedAtWallTimeMillis: Long,
+    val grade: String? = null,
 )
 
 /**
@@ -118,7 +119,8 @@ internal class AcceptedChargeCapturePreparation(private val matchId: String) {
             }
             val recipients = if (hudGrade && kind == AcceptedChargeCaptureCueKind.PLAYER_QTE_PROGRESS)
                 listOfNotNull(subscribers[AcceptedChargeCaptureConsumer.HUD]) else targets
-            recipients to AcceptedChargeCaptureCue(kind, crop.id.value, at, recognizedAtNanos, crop.perceivedAt)
+            val gradeText = if (grade) acceptedText.trim().removeSuffix("!").uppercase(java.util.Locale.ROOT) else null
+            recipients to AcceptedChargeCaptureCue(kind, crop.id.value, at, recognizedAtNanos, crop.perceivedAt, gradeText)
         }
         // Never acquire a reader's state lock while holding this handoff lock. Detach/close
         // reject pending callbacks where possible; the reader's own generation and lifecycle guards

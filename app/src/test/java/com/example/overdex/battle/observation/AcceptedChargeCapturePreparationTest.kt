@@ -71,6 +71,7 @@ class AcceptedChargeCapturePreparationTest {
         offer(handoff, crop("old-grade", 10, QTE), "EXCELLENT", QTE, recognizedAt = 13 * SECOND)
         offer(handoff, crop("qte-excellent", 13, QTE), "EXCELLENT", QTE)
         assertEquals(listOf("qte-nice", "qte-great", "qte-excellent"), cues.map { it.cropArticleId })
+        assertEquals(listOf("NICE", "GREAT", "EXCELLENT"), cues.map { it.grade })
         assertTrue(cues.all { it.kind == AcceptedChargeCaptureCueKind.PLAYER_QTE_PROGRESS })
     }
 
@@ -210,7 +211,7 @@ class AcceptedChargeCapturePreparationTest {
         offer(handoff, source, "GREAT", QTE, 13 * SECOND)
 
         val expected = AcceptedChargeCaptureCue(AcceptedChargeCaptureCueKind.PLAYER_QTE_PROGRESS,
-            "shared-qte", 10 * SECOND, 12 * SECOND, source.perceivedAt)
+            "shared-qte", 10 * SECOND, 12 * SECOND, source.perceivedAt, grade = "GREAT")
         assertEquals(listOf(expected), hp)
         assertEquals(hp, terminal)
         assertSame("One accepted cue is fanned out without changing provenance", hp.single(), terminal.single())

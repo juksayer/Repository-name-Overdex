@@ -419,7 +419,7 @@ private fun OverlayPanel(
             // the entire lower section while that source-bounded phase is active;
             // the native window shrinks and its capture footprint follows suit.
             // Keep the roster header and its calibrated seam stable.
-            if (!chargeTextProtected) Column(Modifier.fillMaxWidth().padding(start = 8.dp, end = 2.dp, bottom = 2.dp),
+            if (!chargeTextProtected) Column(Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 2.dp),
                 horizontalAlignment = Alignment.End) {
                 if (opponentMoves != null) {
                     val context = LocalContext.current
@@ -429,19 +429,24 @@ private fun OverlayPanel(
                         val unsubscribe = prefs.observeHud { appearance = it }
                         onDispose { unsubscribe() }
                     }
-                    if (opponentMoves.fastMoves.isNotEmpty()) {
-                        MovePossibilityLine(opponentMoves.fastMoves, moveLabels, appearance,
-                            assumedMove = estimate?.takeUnless { it.moveIdentified }?.assumedMoveName)
-                    }
-                    if (opponentMoves.chargedMoves.isNotEmpty()) {
-                        MovePossibilityLine(opponentMoves.chargedMoves, moveLabels, appearance,
-                            energy = estimate?.energy,
-                            fastGain = opponentMoves.fastMoves.firstOrNull {
-                                it.name.equals(estimate?.assumedMoveName, ignoreCase = true)
-                            }?.energy)
+                    // Give the move rows the requested extra five screen pixels without moving
+                    // the roster or letting type and hazard icons extend outside the window.
+                    val rightInset = with(density) { (2.dp.toPx() - 5f).coerceAtLeast(0f).toDp() }
+                    Column(Modifier.fillMaxWidth().padding(end = rightInset)) {
+                        if (opponentMoves.fastMoves.isNotEmpty()) {
+                            MovePossibilityLine(opponentMoves.fastMoves, moveLabels, appearance,
+                                assumedMove = estimate?.takeUnless { it.moveIdentified }?.assumedMoveName)
+                        }
+                        if (opponentMoves.chargedMoves.isNotEmpty()) {
+                            MovePossibilityLine(opponentMoves.chargedMoves, moveLabels, appearance,
+                                energy = estimate?.energy,
+                                fastGain = opponentMoves.fastMoves.firstOrNull {
+                                    it.name.equals(estimate?.assumedMoveName, ignoreCase = true)
+                                }?.energy)
+                        }
                     }
                 }
-                OpponentHudStatus(estimate)
+                Box(Modifier.padding(end = 2.dp)) { OpponentHudStatus(estimate) }
             }
             // Once explicitly selected, keep the experiment reachable after
             // Save & Close without adding controls to ordinary battle sessions.
@@ -476,12 +481,11 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?, trai
         if (species == null || spriteUrl == null) {
             Text("?", color = Color(0xFF397D77), fontSize = 14.sp, fontWeight = FontWeight.Bold)
         } else {
-            // GO's badge already names the active Pokémon. Use the entire card
-            // for its picture, retaining the name for accessibility only.
+            // The game badge names the active Pokémon. Retain the sprite name for accessibility.
             AsyncImage(
                 model = spriteRequest,
                 contentDescription = "${BattleSpeciesDisplay.name(species.speciesName)} sprite",
-                modifier = Modifier.size(36.dp).alpha(if (species.isFainted || trainerReminder) 0.35f else 1f)
+                modifier = Modifier.size(33.dp).alpha(if (species.isFainted || trainerReminder) 0.35f else 1f)
                     .semantics { stateDescription = when { species.isFainted -> "Fainted"; trainerReminder -> "Trainer marked fainted; tap to undo"; else -> "Not fainted; tap to mark" } },
                 contentScale = ContentScale.Fit,
                 colorFilter = if (species.isFainted || trainerReminder) {

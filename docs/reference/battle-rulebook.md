@@ -377,9 +377,28 @@ Once the final faint is independently established, Replay should credit the
 last witnessed opposing attack against that active recipient when stronger
 finishing evidence is absent. The attacker must already be identified.
 Ignore decorative attacks, outright blocks, and attacks on an earlier
-recipient. Label the fallback as last-witnessed credit. It does not establish
+recipient. If verified living HP from the named recipient appears after a
+candidate's reception and before its faint, exclude that occurrence as
+nonlethal. HP seen before reception can still be removed by that attack.
+If the opening width cannot verify the later bar, a native tick and co-timed
+positive fill, corroborated by the same fill and compatible geometry on two
+later frames of that appearance, can establish survival for this fallback.
+Label the fallback as last-witnessed credit. It does not establish
 a missing faint, the attack's finishing impact time, or measured zero HP.
 A trainer can separately record a witnessed finish that the archive missed.
+
+### Save the opposing Pokémon at a confirmed final cry
+
+If a confirmed final departure cry establishes a faint and the source-time
+active appearance identifies the opposing Pokémon, save that Pokémon's KO
+credit against the existing faint before Replay opens. Use a supported move
+when the finishing occurrence is established. If the move is unresolved,
+store the owner and the cry reference with the move marked unknown. Replay
+can display that owner without creating an attack animation or a damage time.
+Later move evidence can revise the same credit without adding a second faint.
+A result label or a concession alone does not establish a KO. For an
+independently established player concession, show the active player Pokémon
+at the surrender prompt when its identity is known.
 
 ### Missing final Fast Move tick in completed Replay
 
@@ -1228,6 +1247,7 @@ recognition accuracy claim or implemented inference change.
 | CRY-06 — completed Replay, last opponent and an HP identity check | The native one-ball panel, sided entry, active badge and distinct departure cry establish the same final opponent across an HP-only identity check. | Keep that opponent visible through the finishing exchange. A recipient border pulse followed by a complete, settled living bar on the same appearance describes an earlier nonlethal hit. | A separate departure or conflicting identity keeps the handoff unresolved. A later independently supported attack still competes for credit. In the 7:30 replay, Golbat’s second Shadow Ball lands at Vaporeon’s departure cry; its first stays nonlethal. |
 | CRY-06 — last Fast Move, either side in completed Replay | The last active recipient cries after an acoustically identified opposing Fast Move within its duration. A reliable complete bar shows only damage color or empty HP, or two comparable earlier hits establish sufficient damage for a mixed-color sliver. | A localized departure burst, the correct outcome label, two consecutive dark transition crops, or the adjudicated outcome can confirm the ending. Start the audio search at the cry and look backward on the source clock. Cite the attack, recipient, cry and confirmation separately. | A live column still represents surviving HP at that frame. Unknown pixels cannot prove an empty bar. A later surviving bar, living return, competing attack, shield or contradictory result can defeat attribution. A capture of the trainer’s hand alone does not identify a retrieval gesture. |
 | CRY-06 — live last-opponent repeat cry | The listener independently identifies two separate cries of the established last opponent. A sided entry announcement or native badge corroborates entrance, subsequent badges establish the active species, one native ball remains, and the player roster excludes a mirror. | Record one faint at the second cry onset. Use the listener’s waveform acceptance and competing-sound checks. | A later living bar or replacement blocks the inference. The separate orange-impact path retains its own 0.90 threshold. In the November 24 17:08 archive the 0.828 repeat qualifies and the later named attack evidence credits only Golbat’s finishing Shadow Ball. |
+| CRY-06 — live final cry and archive handoff | A confirmed last-active faint cites its localized departure cry. Saved playback audio and the established participants’ move references can support a lookback. | Run the bounded lookback on the match’s source clock. Before saving, let this review finish or reach its five-second wait limit, then drain its submitted evidence and any resulting credit. Stopping capture leaves already-saved audio eligible. | An earlier repeat-cry comparison does not settle the confirmed-faint lookback. An ambiguous sound or an unfinished review can leave the cause open. The saved 3:12 recording tests both overlapping clips with a stop during review. |
 | CRY-06 — team changes before GO | For the last opponent’s cry, identify the player’s team from the latest complete pre-GO selection. All three configured slots share the selection’s capture time. A later confirmed team scan takes precedence. | Cite the active selection when excluding a mirror and retain all superseded entries in the ledger. | Keep slots from different selections separate. A more recent partial reading that puts the same species on the player’s team leaves the cry’s side unresolved. The 9:58 Moondrop archive `4a7895cf` exercises two complete selections. |
 | CRY-06 · named charge before the last departure cry, completed Replay | The last active recipient has an independently resolved departure cry. A uniquely owned, completed charge is followed by a centered whole bar with visible live HP and an orange damage trail, then the cry within 2.5 seconds of the announcement. | Use the cry as the estimated projectile landing and faint time. Retain the announcement, bar and cry at their own source times. | A later surviving bar, a block, an appearance change or a competing attack can withhold credit. The mixed-color bar supplies no measured zero-HP time. If the impact reader misses the exchange, a recent damaged ordinary bar and a verified match to the saved departure audio can support the same inferred landing. November 23, 8:37 Moondrop, Golbat versus Vaporeon. |
 | CRY-06 — charge audio in the live HUD | A preserved charged-effect recording follows a one-ball opponent badge. A complete participating species' cry matches in that recording at correlation ≥ 0.90 and passes the competing-species check. A full fit from 0.85 to below 0.90 also qualifies if another team species was compared and every other species scores at least 0.20 lower in that window. | Supply the original audio reference and localized onset to the usual cry and faint checks. Repeated slices and continuous capture of the same occurrence count once. | The charge clip by itself establishes neither a faint nor its cause. |

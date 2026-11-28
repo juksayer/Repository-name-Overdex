@@ -945,7 +945,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             observationDispatcher.register(DecisiveBattleCrySpeciesWitness())
             observationDispatcher.register(com.example.overdex.battle.audio.LiveLocalizedCryWitness(
                 getApplication(), audioArtifactStore, teamResourceSnapshotGate::requestDepartureCheck))
-            observationDispatcher.register(com.example.overdex.battle.audio.LiveDepartureMoveSoundWitness(getApplication()))
+            // Saved-audio review belongs to the Match through archival. Stopping
+            // capture or starting the next match must not cancel its final read.
+            com.example.overdex.battle.audio.LiveDepartureMoveSoundWitness(getApplication()).also { witness ->
+                witness.start(match)
+                match.custody.submitAvailability(SourceId(witness.observerId.id), true, System.currentTimeMillis())
+            }
             observationDispatcher.register(com.example.overdex.battle.audio.LiveFastMoveSoundWitness(
                 getApplication(), audioArtifactStore))
             observationDispatcher.register(com.example.overdex.battle.audio.StatChangeSoundWitness(
@@ -1766,7 +1771,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 // Before taking the archive snapshot, let already-accepted
                 // testimony (including any final diagnostic or stop reason)
                 // finish publishing on Match's separate serial dispatcher.
-                drainingMatch?.awaitEvidenceQueueDrained()
+                drainingMatch?.awaitArchiveEvidencePublished()
                 // Preserve refreshed metadata even if publishing the media archive fails.
                 summaryInboxReady.await()
                 summaryInboxMutex.withLock {

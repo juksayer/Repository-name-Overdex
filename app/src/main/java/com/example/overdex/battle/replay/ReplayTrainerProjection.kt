@@ -51,7 +51,7 @@ internal class ReplayTrainerProjection(
             it.matchOffsetNanos <= faint.matchOffsetNanos }
     }
 
-    fun markers(): List<ReplayEventMarker> = entries.mapNotNull { entry ->
+    fun markers(combatantAt: (String, Long) -> ReplayCombatant? = { _, _ -> null }): List<ReplayEventMarker> = entries.mapNotNull { entry ->
         val time = at(entry) ?: return@mapNotNull null
         val kind = when (entry.kind) {
             ReplayCorrectionKind.FAST_MOVE -> ReplayEventMarkerKind.FAST_MOVE
@@ -61,7 +61,9 @@ internal class ReplayTrainerProjection(
         }
         val credited = creditedMove(entry)
         val label = if (entry.kind == ReplayCorrectionKind.CONCESSION) {
-            "${entry.side.concessionLabel} · Trainer entry by ${entry.authorName}"
+            val combatant = combatantAt(entry.side.name, time)
+            val onField = combatant?.let { " · ${it.displayName} on field" }.orEmpty()
+            "${entry.side.concessionLabel}$onField · Trainer entry by ${entry.authorName}"
         } else {
             "Trainer entry · ${entry.speciesName} · ${entry.moveName ?: "faint"} · ${entry.authorName}" +
                 (credited?.let { " · KO by ${it.moveName}" } ?: "")

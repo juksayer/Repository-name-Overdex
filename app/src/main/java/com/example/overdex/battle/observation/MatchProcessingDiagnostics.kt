@@ -33,7 +33,7 @@ class MatchProcessingDiagnostics(
         val completed: Long, val lastCompletedSequence: Long, val activeSequence: Long?,
         val activeStage: String?, val activeAgeNanos: Long, val cryPositiveCount: Long,
         val recentCryPositives: List<CryPositiveTiming>, val badgePixelReads: Map<String, Long>, val readerWork: Map<String, Long> = emptyMap(),
-        val recentGradeIntervals: List<GradeInterval> = emptyList())
+        val recentGradeIntervals: List<GradeInterval> = emptyList(), val glyphWindows: List<QteGlyphWindowMetrics.GlyphWindow> = emptyList())
     private class Counter {
         var calls = 0L; var elapsed = 0L; var cpu = 0L; var maximum = 0L; var invalidCpu = 0L
         var maximumCpu = 0L
@@ -43,6 +43,7 @@ class MatchProcessingDiagnostics(
     private val counters = linkedMapOf<String, Counter>()
     private val rebuildCounters = linkedMapOf<String, Rebuild>()
     private val recentCryPositives = ArrayDeque<CryPositiveTiming>()
+    internal val qteGlyph = QteGlyphWindowMetrics()
     private val gradeIntervals = ArrayDeque<GradeInterval>()
     private val readerWork = mutableMapOf<String, Long>()
     private val badgePixelReads = mutableMapOf<String, Long>()
@@ -119,7 +120,7 @@ class MatchProcessingDiagnostics(
         Timing(c.calls, c.elapsed, c.cpu, c.maximum, c.buckets.toList(), c.invalidCpu, c.maximumCpu, c.cpuBuckets.toList())
     }, rebuildCounters.toMap(), completed, lastCompleted, sequence, activeStage,
         if (sequence == null) 0 else (elapsedClock() - activeFrom).coerceAtLeast(0),
-        cryPositiveCount, recentCryPositives.toList(), badgePixelReads.toMap(), readerWork.toMap(), gradeIntervals.toList())
+        cryPositiveCount, recentCryPositives.toList(), badgePixelReads.toMap(), readerWork.toMap() + qteGlyph.rejections(), gradeIntervals.toList(), qteGlyph.windows())
 
     companion object {
         const val MAX_KEYS = 2048

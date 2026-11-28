@@ -8,6 +8,42 @@ import java.io.File
 import java.util.zip.ZipFile
 
 class ReplayFinishingAttributionTest {
+    @Test fun `saved final cry credits the opposing Pokemon without inventing a projectile`() {
+        val at = 7*S
+        val cry = row("cry", at, ArchivedBattleCryLocalized(364, "reference", .97f, S, "test"),
+            "LOCALIZED_BATTLE_CRY_WITNESS")
+        val loss = faint.copy(payload = ArchivedActivePokemonFaintedWitnessed("OPPONENT", "Sealeo", 364,
+            com.example.overdex.battle.inference.DepartureCryFaint.LAST), evidenceReferences = listOf("opponent", "cry"))
+        val decision = row("credit", at, ArchivedFinishingHitCredited("faint", "PLAYER", "Camerupt",
+            "OPPONENT", "Sealeo", "Unknown move", "UNKNOWN", "cry",
+            com.example.overdex.battle.inference.LiveFinishingHitResolver.FINAL_CRY_OWNER, at, at, "cry"),
+            "FINISHING_HIT_INTERPRETER", listOf("faint", "opponent", "player-${S}", "cry"))
+        val team = row("roster", S / 2,
+            ArchivedPlayerTeamRosterConfirmation(true, listOf("Camerupt", "Turtonator", "Gourgeist")))
+        val badge = row("sealeo-badge", 3*S, ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Sealeo", 364),
+            "SPECIES_WITNESS")
+        val ball = row("last-ball", 4*S, ArchivedOpponentBattleResourceCountMeasured("POKE_BALLS", 1, 3),
+            "OPPONENT_POKE_BALLS_WITNESS")
+        val archive = match(listOf(team, cry.copy(articleId = "entry", monotonicTimeNanos = 2*S), badge,
+            hp("live", 4*S, .03f, "RED"), ball, cry, loss, decision))
+        val original = MatchArchiveSerializer.serialize(archive)
+        val model = MatchReplayModel(archive)
+        val marker = model.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }
+        assertEquals("Faint · Sealeo · KO credited to Camerupt", marker.label)
+        assertEquals("PLAYER", marker.initiatingSide)
+        assertEquals(at, marker.atNanos)
+        assertTrue("credit" in marker.sourceArticleIds)
+        assertTrue(model.finishingAttributions.isEmpty())
+        assertTrue(model.sceneAt(at).fastMoveActions.isEmpty())
+        assertTrue(model.sceneAt(at).chargedMoveActions.isEmpty())
+        assertEquals(original, MatchArchiveSerializer.serialize(archive))
+
+        val revoked = decision.copy(articleId = "withdrawal",
+            payload = (decision.payload as ArchivedFinishingHitCredited).copy(valid = false))
+        val revised = MatchReplayModel(archive.copy(articles = archive.articles + revoked))
+        assertNull(revised.eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }.lastWitnessedAttack)
+    }
+
     @Test fun `credited fast landing keeps both appearances when the attacker has switched by the faint`() {
         val archive = match(fastRows() + player(6*S, "Turtonator", 776) + faint)
         val before = MatchArchiveSerializer.serialize(archive)
@@ -170,6 +206,27 @@ class ReplayFinishingAttributionTest {
         val second = use.copy(articleId = "rival", payload = (use.payload as ArchivedFastMoveUseObserved).copy(useId = "other"))
         assertTrue(MatchReplayModel(match(listOf(badge, use, second, faint, won))).finishingAttributions.isEmpty())
         assertTrue(MatchReplayModel(match(listOf(badge, use, won))).finishingAttributions.isEmpty())
+    }
+
+    @Test fun `last witnessed fallback excludes verified survival only after the hit`() {
+        val useAt = HIT - 250_000_000L
+        val use = row("wing", useAt, ArchivedFastMoveUseObserved("wing", "PLAYER", "OPPONENT",
+            attackerSpeciesName = "Camerupt", evidenceKinds = listOf("HP_DAMAGE_TICK"), basis = "test"),
+            refs = listOf("tick"))
+        val tick = row("tick", HIT, ArchivedActiveHpBarDamageTickMeasured("OPPONENT", .04f, .003f, .037f))
+        val badge = row("last-ball", 2*S, ArchivedOpponentBattleResourceCountMeasured("POKE_BALLS", 1, 3),
+            "OPPONENT_POKE_BALLS_WITNESS")
+        // The interval only supports the last-witnessed fallback, so verify that
+        // the marker does not restore an occurrence ruled out by later HP.
+        val finalFaint = faint.copy(monotonicTimeNanos = 9*S)
+        fun marker(reading: ArchivedRealityArticle) = MatchReplayModel(match(listOf(badge, use, reading, tick, finalFaint)))
+            .eventMarkers.single { it.kind == ReplayEventMarkerKind.FAINT }
+
+        val beforeImpact = hp("before-impact", HIT - 100_000_000L, .04f, "RED")
+        val survived = hp("post-impact", HIT + 200_000_000L, .003f, "RED")
+        assertEquals(listOf("wing"), marker(beforeImpact).lastWitnessedAttack?.sourceArticleIds)
+        assertNull(marker(survived).lastWitnessedAttack)
+        assertEquals(listOf("wing"), marker(survived.copy(confidence = .50f)).lastWitnessedAttack?.sourceArticleIds)
     }
 
     @Test fun `orange pending damage can revert to red when the recipient knocks out the attacker`() {

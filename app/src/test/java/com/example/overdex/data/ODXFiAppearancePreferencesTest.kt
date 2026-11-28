@@ -71,7 +71,7 @@ class ODXFiAppearancePreferencesTest {
         assertEquals(ODXFiAppearance(), ODXFiAppearancePreferences(store.preferences).read())
         assertEquals("keep", store.values["unrelated"])
         assertEquals(setOf("case_color", "button_color", "bezel_color", "hud_text", "hud_shadow",
-            "hud_font", "hud_padding", "hud_bloom"), store.writtenKeys)
+            "hud_font_sp", "hud_padding", "hud_bloom"), store.writtenKeys)
     }
 
     @Test fun `failed durable saves report failure and preserve all saved colors including reset`() {
@@ -92,9 +92,18 @@ class ODXFiAppearancePreferencesTest {
         val custom = ODXFiAppearance(hud = HudMoveAppearance(0xffddffaa.toInt(), 0xff122334.toInt(), 11, 60, 3))
         assertTrue(ODXFiAppearancePreferences(store.preferences).write(custom))
         assertEquals(custom, ODXFiAppearancePreferences(store.preferences).read())
-        store.values["hud_font"] = "invalid"
+        store.values["hud_font_sp"] = "invalid"
         store.values["hud_padding"] = 99
-        assertEquals(custom.hud.copy(fontSp = 8, rowPaddingDp = 8), ODXFiAppearancePreferences(store.preferences).read().hud)
+        assertEquals(custom.hud.copy(fontSp = 7, rowPaddingDp = 8), ODXFiAppearancePreferences(store.preferences).read().hud)
+    }
+
+    @Test fun `legacy HUD font shrinks once and the next saved size reads back as entered`() {
+        val store = FakePreferences(mapOf("hud_font" to 11))
+        val preferences = ODXFiAppearancePreferences(store.preferences)
+        val migrated = preferences.read()
+        assertEquals(10, migrated.hud.fontSp)
+        assertTrue(preferences.write(migrated))
+        assertEquals(10, preferences.read().hud.fontSp)
     }
 
     private class FakePreferences(initialValues: Map<String, Any> = emptyMap(), private val commitSucceeds: Boolean = true) {

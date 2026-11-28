@@ -7,7 +7,7 @@ import java.util.Locale
 data class HudMoveAppearance(
     val textColor: Int = -1,
     val shadowColor: Int = 0xFF000000.toInt(),
-    val fontSp: Int = 8,
+    val fontSp: Int = 7,
     val bloomPercent: Int = 100,
     val rowPaddingDp: Int = 0,
 ) {
@@ -64,7 +64,9 @@ class ODXFiAppearancePreferences internal constructor(private val preferences: S
         hud = HudMoveAppearance().let { defaults ->
             HudMoveAppearance(
                 readColor("hud_text", defaults.textColor), readColor("hud_shadow", defaults.shadowColor),
-                readInt("hud_font", defaults.fontSp), readInt("hud_bloom", defaults.bloomPercent),
+                // Read the legacy size one point smaller until the trainer saves a new size.
+                readInt(HUD_FONT_SP, readInt("hud_font", defaults.fontSp + 1).coerceIn(6, 16) - 1),
+                readInt("hud_bloom", defaults.bloomPercent),
                 readInt("hud_padding", defaults.rowPaddingDp),
             ).bounded()
         },
@@ -79,7 +81,7 @@ class ODXFiAppearancePreferences internal constructor(private val preferences: S
             val hud = appearance.hud.bounded()
             putString("hud_text", odxFiColorHex(hud.textColor))
             putString("hud_shadow", odxFiColorHex(hud.shadowColor))
-            putInt("hud_font", hud.fontSp)
+            putInt(HUD_FONT_SP, hud.fontSp)
             putInt("hud_bloom", hud.bloomPercent)
             putInt("hud_padding", hud.rowPaddingDp)
         }
@@ -113,6 +115,7 @@ class ODXFiAppearancePreferences internal constructor(private val preferences: S
     }
 
     private companion object {
+        const val HUD_FONT_SP = "hud_font_sp"
         const val PREFERENCES = "overdex_odx_fi_appearance"
         const val CASE_COLOR = "case_color"
         const val BUTTON_COLOR = "button_color"

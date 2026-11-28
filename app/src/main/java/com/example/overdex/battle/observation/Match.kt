@@ -49,6 +49,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -162,6 +164,8 @@ class Match(
     // Only a wake-up is conflated. The audio worker reads all new source rows from the ledger.
     private val departureAudioWake = MutableSharedFlow<Unit>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     internal val departureAudioUpdates = departureAudioWake.asSharedFlow()
+    private val departureAudioReviewedThrough = MutableStateFlow(0)
+    @Volatile private var departureAudioWorker: Job? = null
 
     private val rawArticlePublication = RawArticlePublication(realityTimeline::articleForSequence)
     private val announcementInbox = Channel<RealityArticle>(16, BufferOverflow.DROP_OLDEST)
@@ -1254,6 +1258,23 @@ class Match(
             if (next.lastOrNull()?.sequenceNumber == accepted.lastOrNull()?.sequenceNumber) return
             accepted = next
         }
+    }
+
+    internal fun launchDepartureAudioReview(review: suspend CoroutineScope.() -> Unit): Job =
+        matchScope.launch(Dispatchers.Default, block = review).also { departureAudioWorker = it }
+
+    internal fun markDepartureAudioReviewed(articleCount: Int) {
+        departureAudioReviewedThrough.value = articleCount
+    }
+
+    /** Include receipts produced by the bounded saved-audio review in the archive snapshot. */
+    suspend fun awaitArchiveEvidencePublished() {
+        awaitEvidenceQueueDrained()
+        if (departureAudioWorker?.isActive != true) return
+        val target = realityTimeline.getArticles().size
+        departureAudioWake.tryEmit(Unit)
+        withTimeoutOrNull(5_000L) { departureAudioReviewedThrough.first { it >= target } }
+        awaitEvidenceQueueDrained()
     }
 
     private suspend fun awaitPublicationOf(accepted: List<CustodyRecord>) {

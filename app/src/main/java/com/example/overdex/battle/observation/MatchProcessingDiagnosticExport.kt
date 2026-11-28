@@ -4,6 +4,7 @@ import com.example.overdex.battle.archive.RealityArticleArchiveMapper
 import com.example.overdex.battle.custody.HpObservationPipelineMeasured
 import com.example.overdex.battle.custody.TestimonyRecord
 import kotlinx.serialization.json.*
+import com.example.overdex.model.PokemonType
 import java.io.File
 
 /** Called by the archive worker, never by the testimony queue or a Witness. */
@@ -46,6 +47,28 @@ internal object MatchProcessingDiagnosticExport {
             }
             put("acceptedTestimony", match.custody.getRecords().count { it is TestimonyRecord })
             put("readerWork", buildJsonObject { snapshot.readerWork.forEach { (name, count) -> put(name, count) } })
+            put("qteGlyphWindows", buildJsonArray {
+                for (row in snapshot.glyphWindows) add(buildJsonObject {
+                    put("cueId", row.cueId)
+                    put("reason", row.reason)
+                    put("cueSourceNanos", row.cueSourceNanos)
+                    put("openedNanos", row.openedNanos)
+                    put("framesDelivered", row.framesDelivered)
+                    put("comparableFramePairs", row.comparableFramePairs)
+                    put("missedPublishedFrames", row.missedPublishedFrames)
+                    put("largestPublicationGap", row.largestPublicationGap)
+                    put("scans", row.scans)
+                    put("firstScanSourceNanos", row.firstScanSourceNanos)
+                    put("lastScanSourceNanos", row.lastScanSourceNanos)
+                    put("largestScanGapNanos", row.largestScanGapNanos)
+                    put("candidates", row.candidates)
+                    put("firstCandidateSourceNanos", row.firstCandidateSourceNanos)
+                    put("lastCandidateType", row.lastCandidateType?.let { PokemonType.entries[it].name })
+                    put("confirmedType", row.confirmedType?.let { PokemonType.entries[it].name })
+                    put("confirmedSourceNanos", row.confirmedSourceNanos)
+                    put("confirmedAtNanos", row.confirmedAtNanos)
+                })
+            })
             put("recentGradeIntervals", buildJsonArray {
                 for (span in snapshot.recentGradeIntervals) add(buildJsonObject {
                     put("decision", span.decision)
