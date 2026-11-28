@@ -1,6 +1,7 @@
 package com.example.overdex.battle.archive
 
 import com.example.overdex.battle.observation.BattleCalibrationPreviewSelection
+import com.example.overdex.battle.observation.FINAL_HIT_CROP_SOURCE
 
 /** Selects a self-contained Timeline slice for a requested archive profile. */
 object MatchArchiveArticleSelector {
@@ -52,6 +53,7 @@ object MatchArchiveArticleSelector {
         return when (article.sourceId) {
             "QTE_TYPE_ICONS_CAPTURE" -> crop.cropName == "QteTypeIconsCrop"
             "OPPONENT_TRAINER_HAND_CAPTURE" -> crop.cropName == "OpponentTrainerHandCrop"
+            FINAL_HIT_CROP_SOURCE -> crop.cropName in setOf("PlayerHpEvidenceCrop", "OpponentHpEvidenceCrop", "AnnouncementCrop")
             "CHARGED_IMPACT_HP_CAPTURE" -> crop.cropName == "ChargedImpactHpCrop"
             "CHARGED_IMPACT_ANNOUNCEMENT_CAPTURE" -> crop.cropName == "AnnouncementCrop"
             "FORCED_REPLACEMENT_MESSAGE_CAPTURE" -> crop.cropName == "ForcedReplacementMessageCrop"

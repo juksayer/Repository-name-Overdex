@@ -400,6 +400,15 @@ A result label or a concession alone does not establish a KO. For an
 independently established player concession, show the active player Pokémon
 at the surrender prompt when its identity is known.
 
+After completed review resolves a final departure from retained audio,
+credit the known opposing appearance even when the exact attack is unresolved.
+When two side-scoped comparisons locate the same known Fast Move at a
+separate offset from the other side's sound, a nearby damage-colored bar
+and the confirmed departure can support that occurrence. Keep the landing
+estimated from move duration and use the cry for the faint time. Do not
+interpret unresolved HP columns as measured zero. A stronger existing
+attack claim, later living HP, or a change of appearance blocks this fallback.
+
 ### Missing final Fast Move tick in completed Replay
 
 If the active last opponent has a distinct departure cry, compare its last surviving whole bar and the subsequent recipient response with the side and duration of the attacker’s supported Fast Moves. In Moondrop archive `9489a918`, Golbat's last linked Wing Attack tick at GO+83.339 s left Vaporeon alive. The next expected landing at +84.339 s overlaps a changed whole bar at +84.289 s. Vaporeon's separate cry occurs at +85.255 s. Replay can credit that next Wing Attack as inferred when the previous linked hits dealt enough damage to finish the remaining HP. One unresolved bar column remains, and the next beat is a prediction. Preserve those facts when displaying the inferred landing.

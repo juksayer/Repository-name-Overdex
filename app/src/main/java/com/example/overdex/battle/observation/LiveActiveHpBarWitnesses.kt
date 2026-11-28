@@ -223,7 +223,7 @@ internal class LiveActiveHpBarWitness(
 
     private fun checkTerminalFrame(match: Match, frame: CapturedVisualFrame) {
         val enabled = isEnabled()
-        synchronized(stateLock) {
+        val appearances = synchronized(stateLock) {
             if (terminalEnabled != enabled) {
                 // Ignore's last source frame is a boundary; the first newly
                 // enabled frame is eligible for fresh ordinary acquisition.
@@ -235,10 +235,11 @@ internal class LiveActiveHpBarWitness(
                 terminalEnabled = enabled
             }
             if (ended || !enabled) return
+            lastAppearanceAt.toMap()
         }
         terminalDiagnostics.receive(frame.capturedAtMonotonicTimeNanos, frame.publication)
         val results = terminalWatch.checkFrame(frame.bitmap.width, frame.bitmap.height,
-            frame.capturedAtMonotonicTimeNanos) { _, anchor ->
+            frame.capturedAtMonotonicTimeNanos) { side, anchor ->
             val cpuStarted = hpLocatorThreadCpuTimeNanos()
             val started = System.nanoTime()
             // Mask the complete local search, not only the old outline: a
@@ -252,6 +253,8 @@ internal class LiveActiveHpBarWitness(
                 System.nanoTime() - started,
                 if (cpuStarted != null && cpuFinished != null && cpuFinished >= cpuStarted) cpuFinished - cpuStarted else null,
             )
+            match.finalHitRecording?.recordHp(frame, side, appearances[side],
+                "TERMINAL", if (!observable) "OBSCURED" else sample?.fillColor?.name ?: "UNAVAILABLE", sample)
             sample
         }
         results.forEach { publishMeasurement(match, frame, it.side, it.sample.measurement, it.generation, true,
@@ -269,9 +272,12 @@ internal class LiveActiveHpBarWitness(
 
     private fun recordComplete(match: Match, frame: CapturedVisualFrame, side: ActivePokemonSide,
         sample: CompleteHpBarSample, generation: Long, cueIds: List<String> = emptyList()) = synchronized(stateLock) {
-        if (ended || !isEnabled()) return@synchronized
+        if (ended || !isEnabled() || completeTrack.generation(side) != generation) return@synchronized
         val change = completeTrack.accept(side, sample, frame.capturedAtMonotonicTimeNanos, generation)
-            ?: return@synchronized
+        match.finalHitRecording?.recordHp(frame, side, lastAppearanceAt[side],
+            if (cueIds.isEmpty()) "COMPLETE" else "CHARGED_IMPACT",
+            change?.status ?: sample.hpSample?.fillColor?.name ?: "GEOMETRY_ONLY", sample.hpSample, sample)
+        if (change == null) return@synchronized
         val b = sample.bounds
         val payload = com.example.overdex.battle.custody.CompleteHpBarObserved(side, b.left, b.top, b.right, b.bottom,
                 frame.bitmap.width, frame.bitmap.height, sample.interiorColumns, sample.liveColumns,
@@ -303,10 +309,16 @@ internal class LiveActiveHpBarWitness(
             if (chargedImpactWatch.cameraCueIds(request.side, request.anchor,
                     frame.capturedAtMonotonicTimeNanos) != null) return@forEach
             val bounds = TrackedTerminalHpBarMeasurer.searchBounds(frame.bitmap.width, frame.bitmap.height, request.anchor)
-            val sample = if (bounds != null && frame.canObserve(bounds))
-                measureCompleteFrame(frame, request.anchor) else null
+            val observable = bounds != null && frame.canObserve(bounds)
+            val sample = if (observable) measureCompleteFrame(frame, request.anchor) else null
             if (sample == null) {
-                completeTrack.unavailable(request.side, frame.capturedAtMonotonicTimeNanos, request.generation)
+                synchronized(stateLock) {
+                    if (!ended && isEnabled() && completeTrack.generation(request.side) == request.generation) {
+                        completeTrack.unavailable(request.side, frame.capturedAtMonotonicTimeNanos, request.generation)
+                        match.finalHitRecording?.recordHp(frame, request.side, lastAppearanceAt[request.side],
+                            "COMPLETE", if (observable) "UNAVAILABLE" else "OBSCURED")
+                    }
+                }
                 return@forEach
             }
             recordComplete(match, frame, request.side, sample, request.generation)
@@ -373,8 +385,11 @@ internal class LiveActiveHpBarWitness(
             if (cpuStarted != null && cpuFinished != null && cpuFinished >= cpuStarted) cpuFinished - cpuStarted else null)
         if (complete == null) {
             synchronized(stateLock) {
-                if (!ended && isEnabled() && chargedImpactWatch.current(request))
+                if (!ended && isEnabled() && chargedImpactWatch.current(request)) {
                     completeTrack.unavailable(request.side, frame.capturedAtMonotonicTimeNanos, completeGeneration)
+                    match.finalHitRecording?.recordHp(frame, request.side, lastAppearanceAt[request.side],
+                        "CHARGED_IMPACT", if (observable) "UNAVAILABLE" else "OBSCURED")
+                }
             }
             return
         }

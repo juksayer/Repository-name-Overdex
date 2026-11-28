@@ -107,6 +107,7 @@ class Match(
 
     /** Measurements of this pipeline only; none of these counters infer battle events. */
     internal val hpObservationDiagnostics = HpObservationDiagnostics()
+    internal var finalHitRecording: FinalHitRecording? = null
     /** Scheduling only: accepted reader text can prepare capture before ledger publication finishes. */
     internal val acceptedChargeCapturePreparation = AcceptedChargeCapturePreparation(matchId)
     private val hpDiagnosticLock = Any()
@@ -232,6 +233,9 @@ class Match(
     }
 
     internal fun publishToArticleStreams(article: RealityArticle, alreadyAnnounced: Boolean = false) {
+        if (article.payload is ActivePokemonFaintedWitnessed) {
+            article.monotonicTimeNanos?.let { finalHitRecording?.markFaint(it) }
+        }
         if (!alreadyAnnounced) _articles.tryEmit(article)
         if (LiveDepartureMoveSoundWitness.isInput(article)) departureAudioWake.tryEmit(Unit)
         preBattleRoute.publish(article)
@@ -1270,10 +1274,12 @@ class Match(
     /** Include receipts produced by the bounded saved-audio review in the archive snapshot. */
     suspend fun awaitArchiveEvidencePublished() {
         awaitEvidenceQueueDrained()
-        if (departureAudioWorker?.isActive != true) return
-        val target = realityTimeline.getArticles().size
-        departureAudioWake.tryEmit(Unit)
-        withTimeoutOrNull(5_000L) { departureAudioReviewedThrough.first { it >= target } }
+        if (departureAudioWorker?.isActive == true) {
+            val target = realityTimeline.getArticles().size
+            departureAudioWake.tryEmit(Unit)
+            withTimeoutOrNull(5_000L) { departureAudioReviewedThrough.first { it >= target } }
+        }
+        finalHitRecording?.publishForArchive(this)
         awaitEvidenceQueueDrained()
     }
 

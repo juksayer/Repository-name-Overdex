@@ -502,7 +502,20 @@ class MatchReplayModel(
         val recovered = observed + count + fastAudio + sliverLinks + terminalAudio + counters +
             listOfNotNull(evidence.incomingCryFinish(audioRecovery, retainedSliverEvidence.impactLights), cryCharge, frameLink, lastOpponentFastLink, terminalChargeDeparture?.candidate, missingTick)
         val live = ReplayRecordedFinishingCredits.read(archive, presentedKnockouts, charges, recovered, ::combatantFor, ::appearanceAt, finishingCreditRows, ::sameChargeAnnouncementEpisode)
-        val (eligible, expired) = (live + recovered).partition { link ->
+        val establishedCandidates = live + recovered
+        val mixedAtDeparture = presentedKnockouts.mapNotNull { faint ->
+            if (faint.basis != DepartureCryFaint.LAST || establishedCandidates.any {
+                it.recipientSide == faint.side && it.recipientAppearanceAtNanos == faint.appearanceAtNanos
+            }) return@mapNotNull null
+            val at = faint.recordedAtNanos
+            val attacker = oppositeSide(faint.side)
+            val owner = combatantFor(attacker, at) ?: return@mapNotNull null
+            val name = identifiedMoveFor(attacker, at) ?: return@mapNotNull null
+            val duration = recordedMoveDuration(attacker, owner.speciesName, name, at) ?: return@mapNotNull null
+            ReplayLastOpponentFastFinish.mixedAtConfirmedDeparture(actionArticles, faint, owner,
+                appearanceAt(attacker, at), name, duration, ::appearanceAt)
+        }
+        val (eligible, expired) = (establishedCandidates + mixedAtDeparture).partition { link ->
             link !is ReplayFinishingFastAssociation || withinFinishingMoveWindow(link)
         }
         val selection = ReplayFinishingAttributions.evaluate(eligible) {
@@ -586,7 +599,8 @@ class MatchReplayModel(
 
     private val supportedPresentationCycles by lazy {
         val inferred = finishingFastMoveAssociations.filter {
-            it.basis in ReplayLastOpponentFastFinish.bases || it.basis == ReplayMissingTickFinish.BASIS || it.basis == ReplayShieldCounter.BASIS ||
+            it.basis in ReplayLastOpponentFastFinish.bases || it.basis == ReplayLastOpponentFastFinish.MIXED_NEAR_DEPARTURE ||
+                it.basis == ReplayMissingTickFinish.BASIS || it.basis == ReplayShieldCounter.BASIS ||
                 it.basis == LiveFinishingHitResolver.CRY_EFFECT || (it.basis in setOf(LiveFinishingHitResolver.AUDIBLE_FAST, LiveFinishingHitResolver.CRY_AFTER_AUDIO) &&
                     fastMoveCycles.none { cycle -> cycle.witness.articleIds.any(it.moveArticleIds::contains) })
         }.map { link ->
@@ -683,6 +697,17 @@ class MatchReplayModel(
         }
 
     /** Supply terminal attribution without moving the earlier hit or changing the evidence track. */
+    private fun recoveredDepartureOwner(knockout: ReplayKnockout): ReplayLastWitnessedAttack? {
+        if (knockout.basis != DepartureCryFaint.LAST || knockout.replacementAtNanos != null ||
+            knockout.sourceArticleIds.any(withdrawnFaintCredits::contains)) return null
+        val at = (knockout.timing as? ReplayFaintTiming.Cry)?.onset?.atNanos ?: return null
+        val attacker = oppositeSide(knockout.side)
+        val owner = combatantFor(attacker, at) ?: return null
+        if (presentedKnockouts.any { it.side == attacker && it.appearanceAtNanos == appearanceAt(attacker, at) &&
+                it.presentationAtNanos <= at }) return null
+        return ReplayLastWitnessedAttack(at, owner.speciesName, null, false, knockout.sourceArticleIds, ownerOnly = true)
+    }
+
     private fun lastWitnessedAttack(knockout: ReplayKnockout): ReplayLastWitnessedAttack? {
         val victim = knockout.side
         val result = (matchResult?.payload as? ArchivedMatchEnded)?.result
@@ -882,6 +907,10 @@ class MatchReplayModel(
         }
     }
 
+    private val withdrawnFaintCredits by lazy {
+        finishingCreditRows.map { it.payload as ArchivedFinishingHitCredited }
+            .associateBy { it.faintArticleId }.filterValues { !it.valid }.keys
+    }
     private val recordedFaintOwners by lazy {
         ReplayRecordedFinishingCredits.readOwners(archive, finishingCreditRows)
     }
@@ -938,7 +967,7 @@ class MatchReplayModel(
                     it.recipientAppearanceAtNanos == knockout.appearanceAtNanos }
                 val fallback = if (association == null) {
                     knockout.sourceArticleIds.mapNotNull(recordedFaintOwners::get).distinct().singleOrNull()
-                        ?: lastWitnessedAttack(knockout)
+                        ?: lastWitnessedAttack(knockout) ?: recoveredDepartureOwner(knockout)
                 } else null
                 add(faintMarker(knockout, association, ReplayEventMarker("faint:${knockout.side}:${knockout.appearanceAtNanos}",
                     ReplayEventMarkerKind.FAINT, knockout.recordedAtNanos, knockout.side, "Faint · ${BattleSpeciesDisplay.name(knockout.speciesName)}" +

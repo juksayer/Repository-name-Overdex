@@ -62,6 +62,22 @@ class FinishingObservationArchiveTest {
         }
     }
 
+    @Test fun `compact archive retains buffered finish crops and HP readings at their source times`() {
+        val hash = "a".repeat(64)
+        val crop = ArchivedCropCaptured("artifacts/crops/sha256/$hash.png", hash,
+            1, "image/png", "AnnouncementCrop", 1080, 2400, 0, 600, 800, 700)
+        val pixels = RealityArticleArchiveMapper.map(live("buffered", RawTestimony("placeholder"), 11)).copy(
+            payload = crop, sourceId = "FINAL_HIT_BUFFERED_CROP")
+        val reading = RealityArticleArchiveMapper.map(live("reading", RawTestimony("status=UNAVAILABLE"), 12))
+            .copy(sourceId = "FINAL_HIT_HP_READ")
+        val unrelated = pixels.copy(articleId = "unrelated", sourceId = "OTHER")
+        val compact = MatchArchiveArticleSelector.select(listOf(pixels, reading, unrelated),
+            MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
+        val archive = MatchArchive(matchId = "finishing", articles = compact)
+        assertEquals(listOf(pixels, reading), compact)
+        assertEquals(archive, MatchArchiveSerializer.deserialize(MatchArchiveSerializer.serialize(archive)))
+    }
+
     private fun live(id: String, payload: TestimonyPayload, at: Long, refs: List<String> = emptyList()) = RealityArticle(
         ArticleId(id), 1000 + at, 9000, SourceId("TEST"), payload, evidenceReferences = refs,
         matchId = MatchId("finishing"), monotonicTimeNanos = at)

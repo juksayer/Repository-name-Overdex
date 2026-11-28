@@ -67,6 +67,7 @@ import com.example.overdex.battle.observation.PersistedAnnouncementPhraseWitness
 import com.example.overdex.battle.observation.PersistedAttackIncomingWitness
 import com.example.overdex.battle.observation.PersistedPlayerInactiveHpBarWitness
 import com.example.overdex.battle.observation.PersistedActiveHpBarCadenceWitness
+import com.example.overdex.battle.observation.FinalHitRecording
 import com.example.overdex.battle.observation.LiveActiveHpBarWitness
 import com.example.overdex.battle.observation.LiveActiveHpBarBorderCadenceWitness
 import com.example.overdex.battle.observation.LiveActiveHpBarBorderPulseWitness
@@ -740,6 +741,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val calibrationManager = CalibrationManager(getApplication())
         val calibration = calibrationManager.load()
         val customCrops = com.example.overdex.data.CustomBattleCropManager.from(getApplication()).load()
+        observationDispatcher.register(FinalHitRecording(input, calibration, cropArtifactStore) {
+            battleEvidenceLive() && session.phase.value ==
+                com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE
+        })
         val audioArtifactStore = FileAudioArtifactStore(getApplication<Application>().filesDir)
         // Brief battle phenomena need a dense sampling lane; stable panels use
         // the default five-fps cadence to leave capture capacity for them.
